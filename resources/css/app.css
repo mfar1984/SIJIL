@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        font-family: 'Poppins', system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    /* Custom component styles */
+    .sidebar-menu-item {
+        @apply flex items-center py-2 px-4 hover:bg-blue-50 relative;
+    }
+    
+    .sidebar-menu-item.active {
+        @apply bg-blue-100 text-blue-700;
+    }
+    
+    .sidebar-menu-item.active::before {
+        content: '';
+        @apply absolute left-0 top-0 h-full w-1 bg-blue-600 rounded-r;
+    }
+    
+    .sidebar-menu-item:hover::after,
+    .sidebar-menu-item.active::after {
+        content: '';
+        @apply absolute right-0 top-0 h-full w-1 bg-blue-500;
+    }
+    
+    .sidebar-submenu-item {
+        @apply flex items-center py-1.5 px-4 hover:bg-blue-50 relative;
+        border-top-left-radius: 9999px;
+        border-bottom-left-radius: 9999px;
+    }
+    
+    .sidebar-submenu-item.active {
+        @apply bg-blue-100 text-blue-700;
+        border-top-left-radius: 9999px;
+        border-bottom-left-radius: 9999px;
+    }
+    
+    /* Removed left ribbon for submenu items */
+    
+    .sidebar-submenu-item:hover::after,
+    .sidebar-submenu-item.active::after {
+        content: '';
+        @apply absolute right-0 top-0 h-full w-1 bg-blue-500;
+    }
+    
+    .hierarchical-menu {
+        @apply ml-4 border-l border-gray-200;
+        padding-left: 16px;
+    }
+    
+    /* Fixed horizontal line to connect with vertical line */
+    .hierarchical-menu-item::before {
+        content: '';
+        @apply absolute h-px bg-gray-200;
+        width: 16px;
+        top: 50%;
+        left: -16px;
+        transform: translateY(-50%);
+    }
+    
+    /* Fixed horizontal line to connect with vertical line */
+    .sidebar-submenu-item::before {
+        content: '';
+        @apply absolute h-px bg-gray-200;
+        width: 16px;
+        top: 50%;
+        left: -16px;
+        transform: translateY(-50%);
+    }
+    
+    .sidebar-separator {
+        @apply my-3 mx-4 border-t border-gray-200;
+    }
+    
+    /* Menu category hover effects */
+    .category-header > a:hover > div,
+    .category-header > div:hover {
+        @apply bg-blue-50;
+    }
+    
+    .category-header > a:hover::after,
+    .category-header > div:hover::after,
+    .category-header > a > div.bg-blue-100::after {
+        content: '';
+        @apply absolute right-0 top-0 h-full w-1 bg-blue-500;
+    }
+}

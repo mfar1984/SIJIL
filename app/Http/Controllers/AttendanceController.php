@@ -228,9 +228,12 @@ class AttendanceController extends Controller
                     ->join('attendance_sessions', 'attendance_records.attendance_id', '=', 'attendance_sessions.attendance_id')
                     ->where('attendance_sessions.id', $selectedSessionId)
                     ->select(
+                        'attendance_records.id as record_id',
+                        'participants.id as participant_id',
                         'participants.name',
                         'participants.organization as ic',
-                        'attendance_records.timestamp as time',
+                        'attendance_records.checkin_time',
+                        'attendance_records.checkout_time',
                         'attendance_records.status'
                     )
                     ->get();
@@ -287,13 +290,43 @@ class AttendanceController extends Controller
                 ->join('attendance_sessions', 'attendance_records.attendance_id', '=', 'attendance_sessions.attendance_id')
                 ->where('attendance_sessions.id', $sessionId)
                 ->select(
+                    'attendance_records.id as record_id',
+                    'participants.id as participant_id',
                     'participants.name',
                     'participants.organization as ic',
-                    'attendance_records.timestamp as time',
+                    'attendance_records.checkin_time',
+                    'attendance_records.checkout_time',
                     'attendance_records.status'
                 );
+            $search = $request->input('search');
+            $statusFilter = $request->input('status');
+            // Apply search filter
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('participants.name', 'like', "%$search%")
+                      ->orWhere('participants.organization', 'like', "%$search%")
+                      ->orWhere('participants.id', 'like', "%$search%")
+                      ;
+                });
+            }
+            // Apply status filter
+            if ($statusFilter) {
+                $query->where('attendance_records.status', $statusFilter);
+            }
             $total = $query->count();
             $participants = $query->skip(($page-1)*$perPage)->take($perPage)->get();
+            // Map to match frontend expectation
+            $participants = $participants->map(function($p) {
+                return [
+                    'record_id' => $p->record_id,
+                    'participant_id' => $p->participant_id,
+                    'name' => $p->name,
+                    'ic' => $p->ic,
+                    'time' => $p->checkin_time,
+                    'checkout_time' => $p->checkout_time,
+                    'status' => $p->status,
+                ];
+            });
         }
         return response()->json([
             'data' => $participants,

@@ -201,5 +201,25 @@ class RolesAndPermissionsSeeder extends Seeder
         }
         
         $organizerUser->assignRole('Organizer');
+
+        // Certificate permissions
+        Permission::create(['name' => 'view_certificates']);
+        Permission::create(['name' => 'generate_certificates']);
+        Permission::create(['name' => 'edit_templates']);
+        Permission::create(['name' => 'manage_certificates']);
+
+        // Assign certificate permissions to roles
+        $adminRole->givePermissionTo([
+            'view_certificates',
+            'generate_certificates',
+            'edit_templates',
+            'manage_certificates',
+        ]);
+
+        $organizerRole->givePermissionTo([
+            'view_certificates',
+            'generate_certificates',
+            'edit_templates',
+        ]);
     }
 }

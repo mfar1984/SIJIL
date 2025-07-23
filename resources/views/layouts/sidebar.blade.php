@@ -70,7 +70,7 @@
     </div>
     @endif
     
-    <!-- Certificate Section -->
+    <!-- Certificate Management -->
     @if(auth()->user()->can('view_certificates') || auth()->user()->can('generate_certificates') || auth()->user()->can('edit_templates'))
     <div class="mt-4"></div>
     <div class="category-header relative" onclick="toggleSection('certificate-section')">
@@ -84,17 +84,19 @@
     </div>
     <div id="certificate-section" class="hierarchical-menu" style="display: none;">
         @can('view_certificates')
-        <x-sidebar-submenu-item href="#" icon="card_membership">
-            All Certificate
+        <x-sidebar-submenu-item href="{{ route('certificates.index') }}" icon="list_alt" :active="request()->routeIs('certificates.index')">
+            Manage Certificates
         </x-sidebar-submenu-item>
         @endcan
+        
         @can('generate_certificates')
-        <x-sidebar-submenu-item href="#" icon="post_add">
-            Generate Certificate
+        <x-sidebar-submenu-item href="{{ route('certificates.create') }}" icon="add_circle" :active="request()->routeIs('certificates.create')">
+            Generate Certificates
         </x-sidebar-submenu-item>
         @endcan
+        
         @can('edit_templates')
-        <x-sidebar-submenu-item href="#" icon="design_services">
+        <x-sidebar-submenu-item href="{{ route('template.designer') }}" icon="design_services" :active="request()->routeIs('template.*')">
             Template Designer
         </x-sidebar-submenu-item>
         @endcan

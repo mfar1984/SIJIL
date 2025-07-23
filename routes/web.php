@@ -191,6 +191,26 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Template Designer Routes
+    Route::get('/template-designer', [App\Http\Controllers\TemplateDesignerController::class, 'index'])->name('template.designer');
+    Route::get('/template-designer/create', [App\Http\Controllers\TemplateDesignerController::class, 'create'])->name('template.create');
+    Route::post('/template-designer', [App\Http\Controllers\TemplateDesignerController::class, 'store'])->name('template.store');
+    Route::get('/template-designer/{id}/edit', [App\Http\Controllers\TemplateDesignerController::class, 'edit'])->name('template.edit');
+    Route::put('/template-designer/{id}', [App\Http\Controllers\TemplateDesignerController::class, 'update'])->name('template.update');
+    Route::delete('/template-designer/{id}', [App\Http\Controllers\TemplateDesignerController::class, 'destroy'])->name('template.destroy');
+    Route::get('/template-designer/{id}/editor', [App\Http\Controllers\TemplateDesignerController::class, 'editor'])->name('template.editor');
+    Route::post('/template-designer/{id}/editor', [App\Http\Controllers\TemplateDesignerController::class, 'saveEditor'])->name('template.editor.save');
+});
+
+// Certificate Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/certificates', [App\Http\Controllers\CertificateController::class, 'index'])->name('certificates.index');
+    Route::get('/certificates/create', [App\Http\Controllers\CertificateController::class, 'create'])->name('certificates.create');
+    Route::post('/certificates', [App\Http\Controllers\CertificateController::class, 'store'])->name('certificates.store');
+    Route::get('/certificates/{id}', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
+    Route::post('/certificates/preview', [App\Http\Controllers\CertificateController::class, 'preview'])->name('certificates.preview');
+    Route::get('/api/certificates/participants', [App\Http\Controllers\CertificateController::class, 'getParticipants'])->name('api.certificates.participants');
 });
 
 require __DIR__.'/auth.php';

@@ -1,0 +1,484 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Certificate;
+use App\Models\CertificateTemplate;
+use App\Models\Event;
+use App\Models\Participant;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use TCPDF;
+use setasign\Fpdi\Tcpdf\Fpdi;
+
+class CertificateController extends Controller
+{
+    /**
+     * Display a listing of the certificates.
+     */
+    public function index()
+    {
+        // Get events based on user role
+        if (auth()->user()->hasRole('Administrator')) {
+            $events = Event::orderBy('start_date')->get(['id', 'name']);
+        } else {
+            $events = Event::where('user_id', auth()->id())->orderBy('start_date')->get(['id', 'name']);
+        }
+
+        $templates = CertificateTemplate::all(['id', 'name']);
+        
+        return view('certificates.index', compact('events', 'templates'));
+    }
+    
+    /**
+     * Show the certificate generation form.
+     */
+    public function create()
+    {
+        // Get events based on user role
+        if (auth()->user()->hasRole('Administrator')) {
+            $events = Event::orderBy('start_date')->get(['id', 'name']);
+        } else {
+            $events = Event::where('user_id', auth()->id())->orderBy('start_date')->get(['id', 'name']);
+        }
+
+        $templates = CertificateTemplate::all(['id', 'name']);
+        
+        return view('certificates.create', compact('events', 'templates'));
+    }
+    
+    /**
+     * Get participants for an event (API endpoint).
+     */
+    public function getParticipants(Request $request)
+    {
+        $eventId = $request->input('event_id');
+        $source = $request->input('source', 'participants'); // 'participants' or 'attendance'
+        
+        if (!$eventId) {
+            return response()->json(['error' => 'Event ID is required'], 400);
+        }
+        
+        // Check if user has access to this event
+        if (!auth()->user()->hasRole('Administrator')) {
+            $event = Event::where('id', $eventId)
+                ->where('user_id', auth()->id())
+                ->first();
+            
+            if (!$event) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+        }
+        
+        if ($source === 'attendance') {
+            // Get participants from attendance records (present only)
+            $participants = DB::table('participants')
+                ->join('attendance_records', 'participants.id', '=', 'attendance_records.participant_id')
+                ->join('attendances', 'attendance_records.attendance_id', '=', 'attendances.id')
+                ->where('attendances.event_id', $eventId)
+                ->where('attendance_records.status', 'present')
+                ->select('participants.id', 'participants.name', 'participants.organization')
+                ->distinct()
+                ->get();
+        } else {
+            // Get all participants for the event
+            $participants = Participant::where('event_id', $eventId)
+                ->select('id', 'name', 'organization')
+                ->get();
+        }
+        
+        return response()->json($participants);
+    }
+    
+    /**
+     * Generate certificates for selected participants.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'event_id' => 'required|exists:events,id',
+            'template_id' => 'required|exists:certificate_templates,id',
+            'participants' => 'required|array',
+            'participants.*' => 'exists:participants,id',
+        ]);
+        
+        $eventId = $request->input('event_id');
+        $templateId = $request->input('template_id');
+        $participantIds = $request->input('participants');
+        
+        \Log::debug("Certificate generation started", [
+            'event_id' => $eventId,
+            'template_id' => $templateId,
+            'participant_count' => count($participantIds),
+            'participants' => $participantIds
+        ]);
+        
+        // Check if user has access to this event
+        if (!auth()->user()->hasRole('Administrator')) {
+            $event = Event::where('id', $eventId)
+                ->where('user_id', auth()->id())
+                ->first();
+            
+            if (!$event) {
+                return back()->with('error', 'Unauthorized to generate certificates for this event');
+            }
+        }
+        
+        $event = Event::findOrFail($eventId);
+        $template = CertificateTemplate::findOrFail($templateId);
+        
+        \Log::debug("Found event and template", [
+            'event' => $event->name,
+            'template' => $template->name,
+            'template_pdf' => $template->pdf_file,
+            'template_placeholders' => $template->placeholders
+        ]);
+        
+        $generatedCount = 0;
+        $errors = [];
+        
+        foreach ($participantIds as $participantId) {
+            try {
+                $participant = Participant::findOrFail($participantId);
+                
+                \Log::debug("Processing participant", [
+                    'participant_id' => $participantId,
+                    'participant_name' => $participant->name
+                ]);
+                
+                // Check if certificate already exists
+                $existingCertificate = Certificate::where('event_id', $eventId)
+                    ->where('participant_id', $participantId)
+                    ->where('template_id', $templateId)
+                    ->first();
+                
+                if ($existingCertificate) {
+                    $errors[] = "Certificate for {$participant->name} already exists";
+                    \Log::debug("Certificate already exists", [
+                        'participant_name' => $participant->name,
+                        'certificate_id' => $existingCertificate->id
+                    ]);
+                    continue;
+                }
+                
+                // Generate PDF certificate
+                $pdfPath = $this->generateCertificatePDF($event, $participant, $template);
+                
+                \Log::debug("PDF generated", [
+                    'participant_name' => $participant->name,
+                    'pdf_path' => $pdfPath
+                ]);
+                
+                // Create certificate record
+                $certificate = Certificate::create([
+                    'event_id' => $eventId,
+                    'participant_id' => $participantId,
+                    'template_id' => $templateId,
+                    'certificate_number' => Certificate::generateCertificateNumber(),
+                    'pdf_file' => $pdfPath,
+                    'generated_at' => now(),
+                    'generated_by' => Auth::id(),
+                ]);
+                
+                \Log::debug("Certificate record created", [
+                    'certificate_id' => $certificate->id,
+                    'certificate_number' => $certificate->certificate_number
+                ]);
+                
+                $generatedCount++;
+            } catch (\Exception $e) {
+                $errors[] = "Error generating certificate for participant ID {$participantId}: " . $e->getMessage();
+                \Log::error("Error generating certificate", [
+                    'participant_id' => $participantId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+        }
+        
+        \Log::debug("Certificate generation completed", [
+            'generated_count' => $generatedCount,
+            'error_count' => count($errors)
+        ]);
+        
+        if ($generatedCount > 0) {
+            $message = "{$generatedCount} certificate(s) generated successfully.";
+            if (count($errors) > 0) {
+                $message .= " There were " . count($errors) . " error(s).";
+            }
+            return redirect()->route('certificates.index')->with('success', $message);
+        } else {
+            return back()->with('error', 'Failed to generate certificates: ' . implode(', ', $errors));
+        }
+    }
+    
+    /**
+     * Display the specified certificate.
+     */
+    public function show($id)
+    {
+        $certificate = Certificate::with(['event', 'participant', 'template', 'generator'])->findOrFail($id);
+        
+        // Check if user has access to this certificate
+        if (!auth()->user()->hasRole('Administrator')) {
+            $event = Event::where('id', $certificate->event_id)
+                ->where('user_id', auth()->id())
+                ->first();
+            
+            if (!$event) {
+                return back()->with('error', 'Unauthorized to view this certificate');
+            }
+        }
+        
+        return view('certificates.show', compact('certificate'));
+    }
+    
+    /**
+     * Preview a certificate without generating it.
+     */
+    public function preview(Request $request)
+    {
+        $request->validate([
+            'event_id' => 'required|exists:events,id',
+            'participant_id' => 'required|exists:participants,id',
+            'template_id' => 'required|exists:certificate_templates,id',
+        ]);
+        
+        $eventId = $request->input('event_id');
+        $participantId = $request->input('participant_id');
+        $templateId = $request->input('template_id');
+        
+        // Check if user has access to this event
+        if (!auth()->user()->hasRole('Administrator')) {
+            $event = Event::where('id', $eventId)
+                ->where('user_id', auth()->id())
+                ->first();
+            
+            if (!$event) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+        }
+        
+        $event = Event::findOrFail($eventId);
+        $participant = Participant::findOrFail($participantId);
+        $template = CertificateTemplate::findOrFail($templateId);
+        
+        try {
+            // Generate temporary PDF certificate for preview
+            $pdfPath = $this->generateCertificatePDF($event, $participant, $template, true);
+            
+            return response()->json([
+                'success' => true,
+                'preview_url' => asset('storage/' . $pdfPath),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to generate preview: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+    
+    /**
+     * Generate a certificate PDF
+     */
+    private function generateCertificatePDF(Event $event, Participant $participant, CertificateTemplate $template, bool $isPreview = false)
+    {
+        // Get the template PDF path
+        $templatePath = storage_path('app/public/' . $template->pdf_file);
+        
+        if (!file_exists($templatePath)) {
+            \Log::error("Template PDF file not found", ['path' => $templatePath]);
+            throw new \Exception("Template PDF file not found");
+        }
+        
+        // Create new PDF using FPDI with TCPDF
+        $pdf = new \setasign\Fpdi\Tcpdf\Fpdi($template->orientation === 'portrait' ? 'P' : 'L', 'mm', 'A4', true, 'UTF-8', false);
+        
+        // Set document information
+        $pdf->SetCreator('eSijil');
+        $pdf->SetAuthor('eSijil Certificate System');
+        $pdf->SetTitle('Certificate for ' . $participant->name);
+        $pdf->SetSubject('Certificate');
+        
+        // Remove default header/footer
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        
+        // Add a page
+        $pdf->AddPage();
+        
+        // Import the template PDF as background
+        try {
+            $pageCount = $pdf->setSourceFile($templatePath);
+            $tplIdx = $pdf->importPage(1);
+            $pdf->useTemplate($tplIdx, 0, 0, $pdf->getPageWidth(), $pdf->getPageHeight());
+        } catch (\Exception $e) {
+            \Log::error("Error importing template PDF", ['error' => $e->getMessage()]);
+            throw new \Exception("Error importing template PDF: " . $e->getMessage());
+        }
+        
+        /**
+         * Process placeholders
+         */
+        if ($template->placeholders) {
+            // Check if placeholders is a JSON string and decode it if needed
+            $placeholders = $template->placeholders;
+            if (is_string($placeholders)) {
+                $placeholders = json_decode($placeholders, true);
+                \Log::debug("Decoded placeholders from JSON string", ['count' => count($placeholders)]);
+            }
+            
+            \Log::debug("Processing placeholders", ['count' => count($placeholders)]);
+            
+            // Scale factor to convert mm to points (1 mm = 2.83465 points in TCPDF)
+            $mmToPointFactor = 2.83465;
+            
+            foreach ($placeholders as $placeholder) {
+                // Get placeholder properties (in mm)
+                $x = $placeholder['x'];
+                $y = $placeholder['y'];
+                $fontSize = $placeholder['fontSize'];
+                $fontFamily = $this->mapFontFamily($placeholder['fontFamily']);
+                $color = $this->hexToRgb($placeholder['color']);
+                $style = '';
+                
+                if ($placeholder['bold']) $style .= 'B';
+                if ($placeholder['italic']) $style .= 'I';
+                if ($placeholder['underline']) $style .= 'U';
+                
+                // Convert mm to points for TCPDF
+                $xPt = $x * $mmToPointFactor;
+                $yPt = $y * $mmToPointFactor;
+                
+                // Set font
+                $pdf->SetFont($fontFamily, $style, $fontSize);
+                
+                // Set text color
+                $pdf->SetTextColor($color['r'], $color['g'], $color['b']);
+                
+                // Get the text to display based on placeholder type
+                $placeholderType = $placeholder['type'];
+                // Remove {{ and }} if present
+                if (strpos($placeholderType, '{{') === 0 && strpos($placeholderType, '}}') === strlen($placeholderType) - 2) {
+                    $placeholderType = substr($placeholderType, 2, -2);
+                } elseif (strpos($placeholderType, '{') === 0 && strpos($placeholderType, '}') === strlen($placeholderType) - 1) {
+                    $placeholderType = substr($placeholderType, 1, -1);
+                }
+                
+                $text = $this->getPlaceholderText($placeholderType, $event, $participant);
+                
+                \Log::debug("Adding placeholder to PDF", [
+                    'type' => $placeholderType,
+                    'text' => $text,
+                    'x' => $x,
+                    'y' => $y,
+                    'xPt' => $xPt,
+                    'yPt' => $yPt,
+                    'fontSize' => $fontSize,
+                    'fontFamily' => $fontFamily,
+                    'style' => $style
+                ]);
+                
+                // Make sure text is visible by ensuring it's on top of all content
+                $pdf->SetAlpha(1);
+                
+                // Add text - using Cell with explicit height for better text rendering
+                $pdf->SetXY($xPt, $yPt);
+                $pdf->Cell(0, 10, $text, 0, 1, 'L', 0);
+                
+                // Add a debug marker to verify position
+                if ($isPreview) {
+                    $pdf->SetDrawColor(255, 0, 0);
+                    $pdf->Circle($xPt, $yPt, 1);
+                }
+            }
+        } else {
+            \Log::warning("No placeholders found in template", ['template_id' => $template->id]);
+        }
+        
+        // Output the PDF
+        if ($isPreview) {
+            // For preview, save to temporary file
+            $outputPath = storage_path('app/public/certificate-previews/');
+            if (!file_exists($outputPath)) {
+                mkdir($outputPath, 0755, true);
+            }
+            $outputFile = 'preview_' . time() . '_' . $participant->id . '.pdf';
+            $pdf->Output($outputPath . $outputFile, 'F');
+            return 'certificate-previews/' . $outputFile;
+        } else {
+            // For actual certificate, save to certificates folder
+            $outputPath = storage_path('app/public/certificates/');
+            if (!file_exists($outputPath)) {
+                mkdir($outputPath, 0755, true);
+            }
+            $outputFile = 'certificate_' . time() . '_' . $participant->id . '.pdf';
+            $pdf->Output($outputPath . $outputFile, 'F');
+            return 'certificates/' . $outputFile;
+        }
+    }
+    
+    /**
+     * Map font family to TCPDF font.
+     */
+    private function mapFontFamily($fontFamily)
+    {
+        $fontMap = [
+            'Arial, sans-serif' => 'helvetica',
+            "'Times New Roman', serif" => 'times',
+            "'Courier New', monospace" => 'courier',
+            'Georgia, serif' => 'times',
+            'Verdana, sans-serif' => 'helvetica',
+            "'Trebuchet MS', sans-serif" => 'helvetica',
+        ];
+        
+        return $fontMap[$fontFamily] ?? 'helvetica';
+    }
+    
+    /**
+     * Convert hex color to RGB.
+     */
+    private function hexToRgb($hex)
+    {
+        $hex = str_replace('#', '', $hex);
+        
+        if (strlen($hex) === 3) {
+            $r = hexdec(substr($hex, 0, 1) . substr($hex, 0, 1));
+            $g = hexdec(substr($hex, 1, 1) . substr($hex, 1, 1));
+            $b = hexdec(substr($hex, 2, 1) . substr($hex, 2, 1));
+        } else {
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+        }
+        
+        return ['r' => $r, 'g' => $g, 'b' => $b];
+    }
+    
+    /**
+     * Get the text for a placeholder
+     */
+    private function getPlaceholderText($type, Event $event, Participant $participant)
+    {
+        \Log::debug("Getting placeholder text", ['type' => $type]);
+        
+        switch ($type) {
+            case 'name':
+                return $participant->name;
+            case 'organization':
+                return $participant->organization;
+            case 'event':
+                return $event->name;
+            case 'date':
+                return now()->format('d F Y');
+            case 'identity_card':
+                return $participant->identity_card ?? '';
+            default:
+                \Log::warning("Unknown placeholder type", ['type' => $type]);
+                return '';
+        }
+    }
+} 

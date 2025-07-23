@@ -6,6 +6,7 @@ use App\Models\CertificateTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema; // Added this import for Schema
 
 class TemplateDesignerController extends Controller
 {
@@ -14,7 +15,7 @@ class TemplateDesignerController extends Controller
      */
     public function index()
     {
-        $templates = CertificateTemplate::orderBy('created_at', 'desc')->get();
+        $templates = CertificateTemplate::orderBy('created_at', 'desc')->paginate(10);
         
         return view('templates.index', compact('templates'));
     }
@@ -28,6 +29,22 @@ class TemplateDesignerController extends Controller
     }
 
     /**
+     * Show the designer page for creating a new template.
+     */
+    public function designer(Request $request, $id = null)
+    {
+        $template = null;
+        $templateLibraries = [];
+        $categories = ['landscape', 'portrait']; // Basic categories
+        
+        if ($id) {
+            $template = CertificateTemplate::findOrFail($id);
+        }
+        
+        return view('templates.designer', compact('template', 'templateLibraries', 'categories'));
+    }
+
+    /**
      * Store a newly created template in storage.
      */
     public function store(Request $request)
@@ -35,22 +52,65 @@ class TemplateDesignerController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'pdf_file' => 'required|file|mimes:pdf|max:10240', // 10MB max
+            'pdf_file' => 'required_without:background_pdf|file|mimes:pdf|max:10240', // 10MB max
+            'background_pdf' => 'nullable|string',
             'orientation' => 'required|in:portrait,landscape',
+            'template_data' => 'nullable|string',
         ]);
 
-        // Store the PDF file
-        $pdfPath = $request->file('pdf_file')->store('certificate-templates', 'public');
+        // Log request data untuk debugging
+        \Log::info('Template store request data:', [
+            'has_template_data' => $request->has('template_data'),
+            'template_data_length' => $request->has('template_data') ? strlen($request->template_data) : 0,
+        ]);
 
-        // Create the template
-        $template = CertificateTemplate::create([
+        $templateData = $request->template_data;
+        if (is_string($templateData)) {
+            $templateData = json_decode($templateData, true);
+            
+            // Log decoded template data
+            \Log::info('Template data decoded:', [
+                'elements_count' => isset($templateData['elements']) ? count($templateData['elements']) : 0,
+                'template_data' => $templateData
+            ]);
+        }
+
+        $pdfPath = null;
+        $backgroundPdf = null;
+
+        // Check if we have a PDF file uploaded
+        if ($request->hasFile('pdf_file')) {
+            $pdfPath = $request->file('pdf_file')->store('certificate-templates', 'public');
+            $backgroundPdf = Storage::url($pdfPath);
+        } 
+        // If no file but background_pdf is provided (URL or existing file)
+        elseif ($request->has('background_pdf') && $request->background_pdf) {
+            $backgroundPdf = $request->background_pdf;
+            // If the background_pdf is a file URL, set as pdf_file too
+            if (strpos($backgroundPdf, '/storage/') !== false) {
+                $pdfPath = str_replace('/storage/', '', $backgroundPdf);
+            }
+        }
+
+        // Prepare data for creating template
+        $templateData = [
             'name' => $request->name,
             'description' => $request->description,
             'pdf_file' => $pdfPath,
+            'background_pdf' => $backgroundPdf,
             'orientation' => $request->orientation,
-            'placeholders' => [],
+            'template_data' => $templateData,
+            'placeholders' => [], // Keep the old placeholders field empty
             'created_by' => auth()->id(),
-        ]);
+        ];
+
+        // Check if is_active column exists and add it to template data if it does
+        if (Schema::hasColumn('certificate_templates', 'is_active')) {
+            $templateData['is_active'] = $request->has('is_active') ? $request->is_active : true;
+        }
+
+        // Create the template
+        $template = CertificateTemplate::create($templateData);
 
         return redirect()->route('template.designer')
             ->with('success', 'Template created successfully.');
@@ -83,10 +143,30 @@ class TemplateDesignerController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'pdf_file' => 'nullable|file|mimes:pdf|max:10240', // 10MB max
+            'background_pdf' => 'nullable|string',
             'orientation' => 'required|in:portrait,landscape',
+            'template_data' => 'nullable|string',
+        ]);
+
+        // Log request data untuk debugging
+        \Log::info('Template update request data:', [
+            'template_id' => $id,
+            'has_template_data' => $request->has('template_data'),
+            'template_data_length' => $request->has('template_data') ? strlen($request->template_data) : 0,
         ]);
 
         $template = CertificateTemplate::findOrFail($id);
+
+        $templateData = $request->template_data;
+        if (is_string($templateData)) {
+            $templateData = json_decode($templateData, true);
+            
+            // Log decoded template data
+            \Log::info('Template data decoded for update:', [
+                'elements_count' => isset($templateData['elements']) ? count($templateData['elements']) : 0,
+                'template_data' => $templateData
+            ]);
+        }
 
         // Update PDF file if provided
         if ($request->hasFile('pdf_file')) {
@@ -98,12 +178,30 @@ class TemplateDesignerController extends Controller
             // Store new file
             $pdfPath = $request->file('pdf_file')->store('certificate-templates', 'public');
             $template->pdf_file = $pdfPath;
+            $template->background_pdf = Storage::url($pdfPath);
+        }
+        // If no file but background_pdf is provided (URL or existing file)
+        elseif ($request->has('background_pdf') && $request->background_pdf) {
+            $backgroundPdf = $request->background_pdf;
+            $template->background_pdf = $backgroundPdf;
+            
+            // If the background_pdf is a file URL, set as pdf_file too
+            if (strpos($backgroundPdf, '/storage/') !== false) {
+                $template->pdf_file = str_replace('/storage/', '', $backgroundPdf);
+            }
         }
 
         // Update other fields
         $template->name = $request->name;
         $template->description = $request->description;
         $template->orientation = $request->orientation;
+        $template->template_data = $templateData;
+        
+        // Update is_active field if it exists
+        if (Schema::hasColumn('certificate_templates', 'is_active')) {
+            $template->is_active = $request->has('is_active') ? $request->is_active : $template->is_active;
+        }
+        
         $template->save();
 
         return redirect()->route('template.designer')
@@ -129,90 +227,37 @@ class TemplateDesignerController extends Controller
     }
 
     /**
-     * Show the template editor.
+     * Duplicate a template
      */
-    public function editor($id)
+    public function duplicate($id)
     {
         $template = CertificateTemplate::findOrFail($id);
         
-        // Convert placeholders to mm if needed
-        $template->convertPlaceholdersToMm();
+        $newTemplate = $template->replicate();
+        $newTemplate->name = $template->name . ' (Copy)';
+        $newTemplate->save();
         
-        return view('templates.editor', compact('template'));
+        return redirect()->route('template.designer')
+            ->with('success', 'Template duplicated successfully.');
     }
 
     /**
-     * Save the template design.
+     * Upload a background image for the template
      */
-    public function saveEditor(Request $request, $id)
+    public function uploadBackground(Request $request)
     {
-        try {
-            Log::info('Saving editor template', [
-                'template_id' => $id,
-                'request_data' => $request->all()
-            ]);
-            
-            $request->validate([
-                'placeholders' => 'required|array',
-            ]);
-
-            $template = CertificateTemplate::findOrFail($id);
-            
-            // Ensure all placeholders use the correct format
-            $placeholders = $request->placeholders;
-            
-            Log::info('Processing placeholders', [
-                'count' => count($placeholders),
-                'placeholders' => $placeholders
-            ]);
-            
-            foreach ($placeholders as $key => $placeholder) {
-                // Ensure placeholder type uses {{name}} format
-                if (isset($placeholder['type'])) {
-                    $type = $placeholder['type'];
-                    if (strpos($type, '{{') !== 0 || strpos($type, '}}') !== strlen($type) - 2) {
-                        // Remove any existing braces
-                        $cleanType = trim($type, '{}');
-                        $placeholders[$key]['type'] = '{{' . $cleanType . '}}';
-                    }
-                }
-                
-                // Ensure coordinates and font size are stored as numbers
-                if (isset($placeholder['x'])) {
-                    $placeholders[$key]['x'] = (float) $placeholder['x'];
-                }
-                
-                if (isset($placeholder['y'])) {
-                    $placeholders[$key]['y'] = (float) $placeholder['y'];
-                }
-                
-                if (isset($placeholder['fontSize'])) {
-                    $placeholders[$key]['fontSize'] = (float) $placeholder['fontSize'];
-                }
-            }
-            
-            Log::info('Saving processed placeholders', [
-                'processed_placeholders' => $placeholders
-            ]);
-            
-            $template->placeholders = $placeholders;
-            $template->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Template design saved successfully.'
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error saving template editor', [
-                'template_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:10240', // 10MB max
+        ]);
+        
+        // Store the file
+        $path = $request->file('file')->store('certificate-templates', 'public');
+        $url = Storage::url($path);
+        
+        return response()->json([
+            'success' => true,
+            'url' => $url,
+            'path' => $path
+        ]);
     }
 }

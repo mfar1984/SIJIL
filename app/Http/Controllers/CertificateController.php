@@ -18,7 +18,7 @@ class CertificateController extends Controller
     /**
      * Display a listing of the certificates.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Get events based on user role
         if (auth()->user()->hasRole('Administrator')) {
@@ -29,7 +29,29 @@ class CertificateController extends Controller
 
         $templates = CertificateTemplate::all(['id', 'name']);
         
-        return view('certificates.index', compact('events', 'templates'));
+        // Query to fetch certificates with filters
+        $query = Certificate::with(['event', 'participant', 'template']);
+        
+        // Apply filters
+        if ($request->has('event_id') && $request->event_id) {
+            $query->where('event_id', $request->event_id);
+        }
+        
+        if ($request->has('template_id') && $request->template_id) {
+            $query->where('template_id', $request->template_id);
+        }
+        
+        // Add access control for non-admin users
+        if (!auth()->user()->hasRole('Administrator')) {
+            $query->whereHas('event', function($q) {
+                $q->where('user_id', auth()->id());
+            });
+        }
+        
+        // Get paginated results
+        $certificates = $query->orderBy('created_at', 'desc')->paginate(10);
+        
+        return view('certificates.index', compact('events', 'templates', 'certificates'));
     }
     
     /**
@@ -321,9 +343,104 @@ class CertificateController extends Controller
         }
         
         /**
-         * Process placeholders
+         * Process template elements (from new template_data) or old placeholders
          */
-        if ($template->placeholders) {
+        if ($template->template_data && isset($template->template_data['elements']) && is_array($template->template_data['elements'])) {
+            // Using new template_data format
+            \Log::debug("Processing template_data elements", ['count' => count($template->template_data['elements'])]);
+            
+            // Scale factor to convert mm to points (1 mm = 2.83465 points in TCPDF)
+            $mmToPointFactor = 2.83465;
+            
+            foreach ($template->template_data['elements'] as $element) {
+                if ($element['type'] === 'text') {
+                    // Get element properties
+                    $x = $element['x'];
+                    $y = $element['y'];
+                    $fontSize = $element['fontSize'] ?? 16;
+                    $fontFamily = $this->mapFontFamily($element['fontFamily'] ?? 'Arial');
+                    $color = $this->hexToRgb($element['color'] ?? '#000000');
+                    $style = '';
+                    
+                    if (isset($element['fontWeight']) && $element['fontWeight'] === 'bold') $style .= 'B';
+                    if (isset($element['fontStyle']) && $element['fontStyle'] === 'italic') $style .= 'I';
+                    if (isset($element['textDecoration']) && $element['textDecoration'] === 'underline') $style .= 'U';
+                    
+                    // Get the content and replace placeholders
+                    $content = $element['content'] ?? '';
+                    
+                    // Process placeholders in content with format {{placeholder}}
+                    $content = preg_replace_callback('/\{\{([^}]+)\}\}/', function($matches) use ($event, $participant) {
+                        $placeholderType = trim($matches[1]);
+                        return $this->getPlaceholderText($placeholderType, $event, $participant);
+                    }, $content);
+                    
+                    // Convert template coordinates to TCPDF points
+                    // TCPDF uses top-left origin while our template may use different reference points
+                    // We need to scale coordinates proportionally to the page size
+                    $pageWidth = $pdf->getPageWidth();
+                    $pageHeight = $pdf->getPageHeight();
+                    
+                    // Calculate position as percentage of template size, then apply to actual page size
+                    $xPt = ($x / $template->template_data['width']) * $pageWidth;
+                    $yPt = ($y / $template->template_data['height']) * $pageHeight;
+                    
+                    // Set font
+                    $pdf->SetFont($fontFamily, $style, $fontSize);
+                    
+                    // Set text color
+                    $pdf->SetTextColor($color['r'], $color['g'], $color['b']);
+                    
+                    \Log::debug("Adding text element to PDF", [
+                        'content' => $content,
+                        'x' => $x,
+                        'y' => $y,
+                        'xPt' => $xPt,
+                        'yPt' => $yPt,
+                        'fontSize' => $fontSize,
+                        'fontFamily' => $fontFamily,
+                        'style' => $style
+                    ]);
+                    
+                    // Make sure text is visible by ensuring it's on top of all content
+                    $pdf->SetAlpha(1);
+                    
+                    // Set text alignment
+                    $align = 'L'; // Default: Left
+                    if (isset($element['textAlign'])) {
+                        if ($element['textAlign'] === 'center') $align = 'C';
+                        elseif ($element['textAlign'] === 'right') $align = 'R';
+                    }
+                    
+                    // Handle text alignment with proper positioning
+                    $cellWidth = 0; // Auto-width by default
+                    
+                    // For centered text, we need to calculate width for proper centering
+                    if ($align === 'C') {
+                        // For centered text, set cell width to page width 
+                        // and position X at beginning of page
+                        $cellWidth = $pageWidth;
+                        $xPt = 0;
+                    } else if ($align === 'R') {
+                        // For right-aligned text, position from right edge
+                        $cellWidth = $pageWidth - $xPt;
+                    }
+                    
+                    // Add text - using Cell with explicit height for better text rendering
+                    // Use ln=0 to avoid line breaks that cause page breaks
+                    $pdf->SetXY($xPt, $yPt);
+                    $pdf->Cell($cellWidth, 10, $content, 0, 0, $align, 0);
+                    
+                    // Add a debug marker to verify position
+                    if ($isPreview) {
+                        $pdf->SetDrawColor(255, 0, 0);
+                        $pdf->Circle($xPt, $yPt, 1);
+                    }
+                }
+                // Handle other element types if needed (e.g., images)
+            }
+        } elseif ($template->placeholders) {
+            // Fall back to legacy placeholders format
             // Check if placeholders is a JSON string and decode it if needed
             $placeholders = $template->placeholders;
             if (is_string($placeholders)) {
@@ -331,7 +448,7 @@ class CertificateController extends Controller
                 \Log::debug("Decoded placeholders from JSON string", ['count' => count($placeholders)]);
             }
             
-            \Log::debug("Processing placeholders", ['count' => count($placeholders)]);
+            \Log::debug("Processing legacy placeholders", ['count' => count($placeholders)]);
             
             // Scale factor to convert mm to points (1 mm = 2.83465 points in TCPDF)
             $mmToPointFactor = 2.83465;
@@ -349,9 +466,17 @@ class CertificateController extends Controller
                 if ($placeholder['italic']) $style .= 'I';
                 if ($placeholder['underline']) $style .= 'U';
                 
-                // Convert mm to points for TCPDF
-                $xPt = $x * $mmToPointFactor;
-                $yPt = $y * $mmToPointFactor;
+                // Convert template coordinates to TCPDF points using the same approach
+                $pageWidth = $pdf->getPageWidth();
+                $pageHeight = $pdf->getPageHeight();
+                
+                // For legacy format, use A4 size as reference (210×297 mm for portrait)
+                $templateWidth = $template->orientation == 'portrait' ? 210 : 297;
+                $templateHeight = $template->orientation == 'portrait' ? 297 : 210;
+                
+                // Calculate position as percentage of template size, then apply to actual page size
+                $xPt = ($x / $templateWidth) * $pageWidth;
+                $yPt = ($y / $templateHeight) * $pageHeight;
                 
                 // Set font
                 $pdf->SetFont($fontFamily, $style, $fontSize);
@@ -385,9 +510,16 @@ class CertificateController extends Controller
                 // Make sure text is visible by ensuring it's on top of all content
                 $pdf->SetAlpha(1);
                 
+                // Default alignment is left
+                $align = 'L';
+                
+                // Handle text alignment with proper positioning
+                $cellWidth = 0; // Auto-width by default
+                
                 // Add text - using Cell with explicit height for better text rendering
+                // Use ln=0 to avoid line breaks that cause page breaks
                 $pdf->SetXY($xPt, $yPt);
-                $pdf->Cell(0, 10, $text, 0, 1, 'L', 0);
+                $pdf->Cell($cellWidth, 10, $text, 0, 0, $align, 0);
                 
                 // Add a debug marker to verify position
                 if ($isPreview) {
@@ -396,7 +528,7 @@ class CertificateController extends Controller
                 }
             }
         } else {
-            \Log::warning("No placeholders found in template", ['template_id' => $template->id]);
+            \Log::warning("No template elements or placeholders found in template", ['template_id' => $template->id]);
         }
         
         // Output the PDF
@@ -428,11 +560,18 @@ class CertificateController extends Controller
     {
         $fontMap = [
             'Arial, sans-serif' => 'helvetica',
+            'Arial' => 'helvetica',
             "'Times New Roman', serif" => 'times',
+            'Times New Roman' => 'times',
             "'Courier New', monospace" => 'courier',
+            'Courier New' => 'courier',
             'Georgia, serif' => 'times',
+            'Georgia' => 'times',
             'Verdana, sans-serif' => 'helvetica',
+            'Verdana' => 'helvetica',
             "'Trebuchet MS', sans-serif" => 'helvetica',
+            'Trebuchet MS' => 'helvetica',
+            'Tahoma' => 'helvetica',
         ];
         
         return $fontMap[$fontFamily] ?? 'helvetica';
@@ -465,20 +604,23 @@ class CertificateController extends Controller
     {
         \Log::debug("Getting placeholder text", ['type' => $type]);
         
-        switch ($type) {
+        switch (strtolower(trim($type))) {
             case 'name':
+            case 'participant_name':
                 return $participant->name;
             case 'organization':
                 return $participant->organization;
             case 'event':
+            case 'event_name':
                 return $event->name;
             case 'date':
+            case 'event_date':
                 return now()->format('d F Y');
             case 'identity_card':
                 return $participant->identity_card ?? '';
             default:
                 \Log::warning("Unknown placeholder type", ['type' => $type]);
-                return '';
+                return ''; 
         }
     }
 } 

@@ -15,41 +15,41 @@
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-semibold text-gray-800">Create Certificate Template</h3>
                 </div>
-
+                    
                 <form action="{{ route('template.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-
+                        
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Template Name -->
                         <div>
                             <x-input-label for="name" :value="__('Template Name')" />
-                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
+                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" required autofocus />
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
                         </div>
-
+                        
                         <!-- Description -->
                         <div>
                             <x-input-label for="description" :value="__('Description')" />
-                            <textarea id="description" name="description" rows="3" class="block w-full mt-1 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50">{{ old('description') }}</textarea>
+                            <textarea id="description" name="description" rows="3" class="block w-full mt-1 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50"></textarea>
                             <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
-
+                        
                         <!-- Orientation -->
                         <div>
                             <x-input-label for="orientation" :value="__('Orientation')" />
                             <div class="mt-2 flex gap-4">
                                 <div class="flex items-center">
-                                    <input id="portrait" name="orientation" type="radio" value="portrait" class="h-4 w-4 text-primary-DEFAULT focus:ring-primary-DEFAULT" checked>
-                                    <label for="portrait" class="ml-2 block text-sm font-medium text-gray-700">Portrait (210×297mm)</label>
+                                    <input id="landscape" name="orientation" type="radio" value="landscape" class="h-4 w-4 text-primary-DEFAULT focus:ring-primary-DEFAULT" checked>
+                                    <label for="landscape" class="ml-2 block text-sm font-medium text-gray-700">Landscape (297×210mm)</label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input id="landscape" name="orientation" type="radio" value="landscape" class="h-4 w-4 text-primary-DEFAULT focus:ring-primary-DEFAULT">
-                                    <label for="landscape" class="ml-2 block text-sm font-medium text-gray-700">Landscape (297×210mm)</label>
+                                    <input id="portrait" name="orientation" type="radio" value="portrait" class="h-4 w-4 text-primary-DEFAULT focus:ring-primary-DEFAULT">
+                                    <label for="portrait" class="ml-2 block text-sm font-medium text-gray-700">Portrait (210×297mm)</label>
                                 </div>
                             </div>
                             <x-input-error :messages="$errors->get('orientation')" class="mt-2" />
                         </div>
-
+                        
                         <!-- PDF Background -->
                         <div>
                             <x-input-label for="pdf_file" :value="__('PDF Background')" />
@@ -72,6 +72,23 @@
                             </div>
                             <x-input-error :messages="$errors->get('pdf_file')" class="mt-2" />
                         </div>
+
+                        <!-- Template Data (Hidden) -->
+                        <input type="hidden" name="template_data" value="{{ json_encode([
+                            'width' => 297,
+                            'height' => 210,
+                            'elements' => [
+                                [
+                                    'type' => 'text',
+                                    'content' => 'Certificate of Completion',
+                                    'x' => 148,
+                                    'y' => 40,
+                                    'fontSize' => 16,
+                                    'fontWeight' => 'bold',
+                                    'textAlign' => 'center'
+                                ]
+                            ]
+                        ]) }}">
                     </div>
 
                     <div class="flex items-center justify-end mt-8">
@@ -88,4 +105,44 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('pdf_file');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            
+            if (fileInput && fileNameDisplay) {
+                fileInput.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        fileNameDisplay.textContent = this.files[0].name;
+                        fileNameDisplay.parentElement.classList.remove('hidden');
+                    } else {
+                        fileNameDisplay.parentElement.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Handle orientation change
+            const landscapeRadio = document.getElementById('landscape');
+            const portraitRadio = document.getElementById('portrait');
+            const templateDataInput = document.querySelector('input[name="template_data"]');
+            
+            if (landscapeRadio && portraitRadio && templateDataInput) {
+                const updateTemplateData = (isLandscape) => {
+                    const templateData = JSON.parse(templateDataInput.value);
+                    if (isLandscape) {
+                        templateData.width = 297;
+                        templateData.height = 210;
+                    } else {
+                        templateData.width = 210;
+                        templateData.height = 297;
+                    }
+                    templateDataInput.value = JSON.stringify(templateData);
+                };
+                
+                landscapeRadio.addEventListener('change', () => updateTemplateData(true));
+                portraitRadio.addEventListener('change', () => updateTemplateData(false));
+            }
+        });
+    </script>
 </x-app-layout> 

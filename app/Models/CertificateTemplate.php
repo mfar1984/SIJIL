@@ -19,8 +19,10 @@ class CertificateTemplate extends Model
         'name',
         'description',
         'pdf_file',
+        'background_pdf',
         'orientation',
         'placeholders',
+        'template_data',
         'is_active',
         'created_by',
     ];
@@ -32,6 +34,7 @@ class CertificateTemplate extends Model
      */
     protected $casts = [
         'placeholders' => 'array',
+        'template_data' => 'array',
         'is_active' => 'boolean',
     ];
 

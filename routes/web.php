@@ -199,8 +199,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/template-designer/{id}/edit', [App\Http\Controllers\TemplateDesignerController::class, 'edit'])->name('template.edit');
     Route::put('/template-designer/{id}', [App\Http\Controllers\TemplateDesignerController::class, 'update'])->name('template.update');
     Route::delete('/template-designer/{id}', [App\Http\Controllers\TemplateDesignerController::class, 'destroy'])->name('template.destroy');
-    Route::get('/template-designer/{id}/editor', [App\Http\Controllers\TemplateDesignerController::class, 'editor'])->name('template.editor');
-    Route::post('/template-designer/{id}/editor', [App\Http\Controllers\TemplateDesignerController::class, 'saveEditor'])->name('template.editor.save');
+    Route::get('/template-designer/designer/{id?}', [App\Http\Controllers\TemplateDesignerController::class, 'designer'])->name('template.designer.create');
+    Route::post('/template-designer/{id}/duplicate', [App\Http\Controllers\TemplateDesignerController::class, 'duplicate'])->name('template.duplicate');
+    Route::post('/template-designer/upload-background', [App\Http\Controllers\TemplateDesignerController::class, 'uploadBackground'])->name('template.upload-background');
+    Route::get('/template-designer/{id}/show', [App\Http\Controllers\TemplateDesignerController::class, 'show'])->name('template.show');
 });
 
 // Certificate Routes
@@ -214,3 +216,12 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Debug route
+Route::get('/debug-alpine', function() {
+    return view('templates.debug-alpine');
+})->name('debug.alpine');
+
+Route::get('/debug-template', function() {
+    return view('debug-template');
+})->name('debug.template');

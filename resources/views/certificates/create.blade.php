@@ -124,9 +124,29 @@
                     </div>
                     <div id="previewContainer" class="hidden">
                         <div class="border rounded-md p-4 bg-gray-50">
-                            <h3 class="text-sm font-medium text-gray-700 mb-2">Certificate Preview</h3>
-                            <div class="aspect-w-16 aspect-h-9 bg-white border">
-                                <iframe id="previewFrame" class="w-full h-full"></iframe>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-sm font-medium text-gray-700">Certificate Preview</h3>
+                                <button type="button" id="expandPreviewBtn" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded flex items-center">
+                                    <span class="material-icons text-xs mr-1">fullscreen</span>
+                                    Expand
+                                </button>
+                            </div>
+                            <div id="regularPreview" class="bg-white border">
+                                <iframe id="previewFrame" class="w-full" style="height: 500px;"></iframe>
+                            </div>
+                            <!-- Fullscreen Modal Preview -->
+                            <div id="fullscreenPreview" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+                                <div class="bg-white rounded-lg w-11/12 h-5/6 flex flex-col">
+                                    <div class="flex justify-between items-center p-4 border-b">
+                                        <h3 class="font-medium">Certificate Preview</h3>
+                                        <button id="closeFullscreenBtn" class="text-gray-500 hover:text-gray-700">
+                                            <span class="material-icons">close</span>
+                                        </button>
+                                    </div>
+                                    <div class="flex-1 overflow-auto p-4">
+                                        <iframe id="fullscreenFrame" class="w-full h-full border-0"></iframe>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -160,6 +180,10 @@
             const generateBtn = document.getElementById('generateBtn');
             const previewContainer = document.getElementById('previewContainer');
             const previewFrame = document.getElementById('previewFrame');
+            const expandPreviewBtn = document.getElementById('expandPreviewBtn');
+            const fullscreenPreview = document.getElementById('fullscreenPreview');
+            const closeFullscreenBtn = document.getElementById('closeFullscreenBtn');
+            const fullscreenFrame = document.getElementById('fullscreenFrame');
             
             let participants = [];
             
@@ -180,6 +204,17 @@
             
             // Preview certificate
             previewBtn.addEventListener('click', previewCertificate);
+            
+            // Fullscreen preview handlers
+            expandPreviewBtn.addEventListener('click', function() {
+                fullscreenPreview.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+            });
+            
+            closeFullscreenBtn.addEventListener('click', function() {
+                fullscreenPreview.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scrolling
+            });
             
             // Check form validity
             function checkFormValidity() {
@@ -338,7 +373,11 @@
                 .then(data => {
                     if (data.success) {
                         previewFrame.src = data.preview_url;
+                        fullscreenFrame.src = data.preview_url;
                         previewContainer.classList.remove('hidden');
+                        
+                        // Scroll to the preview
+                        previewContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     } else {
                         alert('Error generating preview: ' + data.error);
                     }

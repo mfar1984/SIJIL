@@ -5,91 +5,90 @@
         <span>Template Designer</span>
     </x-slot>
 
-    <x-slot name="title">Certificate Template Designer</x-slot>
+    <x-slot name="title">Certificate Templates</x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Header with Title and Create Button -->
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-semibold text-gray-900">Template Library</h1>
-                <a href="{{ route('template.create') }}" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md flex items-center">
-                    <span class="material-icons mr-1">add</span>
-                    Create Template
-                </a>
-            </div>
-
-            <!-- Filter by Category -->
-            <div class="mb-6">
-                <div class="bg-white rounded-md shadow-sm p-4">
-                    <h2 class="text-lg font-medium text-gray-700 mb-3">Filter by Category</h2>
-                    <div class="flex flex-wrap gap-2">
-                        <a href="{{ route('template.designer') }}" class="px-3 py-1 rounded-full {{ request()->query('category') ? 'bg-gray-100 text-gray-700' : 'bg-primary-DEFAULT text-white' }}">
-                            All
-                        </a>
-                        <a href="{{ route('template.designer', ['category' => 'portrait']) }}" class="px-3 py-1 rounded-full {{ request()->query('category') == 'portrait' ? 'bg-primary-DEFAULT text-white' : 'bg-gray-100 text-gray-700' }}">
-                            Portrait
-                        </a>
-                        <a href="{{ route('template.designer', ['category' => 'landscape']) }}" class="px-3 py-1 rounded-full {{ request()->query('category') == 'landscape' ? 'bg-primary-DEFAULT text-white' : 'bg-gray-100 text-gray-700' }}">
-                            Landscape
-                        </a>
-                    </div>
+            <div class="flex justify-between mb-6">
+                <h2 class="text-xl font-semibold text-gray-800">Template Management</h2>
+                <div class="flex gap-2">
+                    <a href="{{ route('template.designer.create') }}" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md flex items-center">
+                        <span class="material-icons mr-1 text-sm">add</span>
+                        Visual Designer
+                    </a>
+                    <a href="{{ route('template.create') }}" class="border border-gray-300 hover:border-primary-DEFAULT text-gray-700 px-4 py-2 rounded-md flex items-center">
+                        <span class="material-icons mr-1 text-sm">add</span>
+                        Simple Create
+                    </a>
                 </div>
             </div>
+            
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div class="p-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-3 text-left">Template Name</th>
+                                    <th class="px-4 py-3 text-left">Description</th>
+                                    <th class="px-4 py-3 text-left">Status</th>
+                                    <th class="px-4 py-3 text-left">Created Date</th>
+                                    <th class="px-4 py-3 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($templates as $template)
+                                    <tr class="border-b">
+                                        <td class="px-4 py-3 font-medium">{{ $template->name }}</td>
+                                        <td class="px-4 py-3 text-gray-600">{{ $template->description ?? 'No description' }}</td>
+                                        <td class="px-4 py-3">
+                                            @if($template->is_active)
+                                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+                                            @else
+                                                <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3">{{ $template->created_at->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <div class="flex justify-center space-x-1">
+                                                <a href="{{ route('template.show', $template->id) }}" class="p-1 text-blue-600 hover:text-blue-800" title="View">
+                                                    <span class="material-icons text-sm">visibility</span>
+                                                </a>
+                                                <a href="{{ route('template.edit', $template->id) }}" class="p-1 text-primary-DEFAULT hover:text-primary-dark" title="Edit">
+                                                    <span class="material-icons text-sm">edit</span>
+                                                </a>
+                                                <a href="{{ route('template.designer.create', ['id' => $template->id]) }}" class="p-1 text-amber-600 hover:text-amber-800" title="Design">
+                                                    <span class="material-icons text-sm">design_services</span>
+                                                </a>
+                                                <form action="{{ route('template.duplicate', $template->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="p-1 text-purple-600 hover:text-purple-800" title="Duplicate">
+                                                        <span class="material-icons text-sm">content_copy</span>
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('template.destroy', $template->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this template?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="p-1 text-red-600 hover:text-red-800" title="Delete">
+                                                        <span class="material-icons text-sm">delete</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-6 text-center text-gray-500">No templates found.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
 
-            <!-- Templates Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                @forelse($templates as $template)
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
-                        <div class="relative h-48 bg-gray-100">
-                            @if($template->pdf_file)
-                                <iframe src="{{ asset('storage/' . $template->pdf_file) }}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-full"></iframe>
-                                <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-1 text-xs font-medium shadow-sm">
-                                    {{ ucfirst($template->orientation) }}
-                                </div>
-                            @else
-                                <div class="flex items-center justify-center h-full">
-                                    <span class="text-gray-400 text-5xl material-icons">image</span>
-                                </div>
-                            @endif
-                        </div>
-                        <div class="w-full flex-1 flex flex-col items-center p-4">
-                            <h2 class="font-semibold text-base text-gray-700 mb-1">{{ $template->name }}</h2>
-                            <p class="text-xs text-gray-500 mb-2">{{ $template->orientation }} · {{ $template->created_at ? $template->created_at->format('d M Y') : 'No date' }}</p>
-                            <div class="flex space-x-3">
-                                <a href="{{ route('template.edit', $template->id) }}" class="text-primary-DEFAULT text-xs font-medium underline flex items-center">
-                                    <span class="material-icons text-xs mr-1">edit</span>
-                                    Edit
-                                </a>
-                                @if($template->pdf_file)
-                                    <a href="{{ route('template.editor', $template->id) }}" class="text-green-600 text-xs font-medium underline flex items-center">
-                                        <span class="material-icons text-xs mr-1">design_services</span>
-                                        Design
-                                    </a>
-                                @endif
-                                <form action="{{ route('template.destroy', $template->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this template?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 text-xs font-medium underline flex items-center">
-                                        <span class="material-icons text-xs mr-1">delete</span>
-                                        Delete
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                    <div class="mt-4">
+                        {{ $templates->links() }}
                     </div>
-                @empty
-                    <div class="col-span-full bg-white rounded-lg shadow-sm p-8 text-center">
-                        <div class="flex flex-col items-center">
-                            <span class="material-icons text-gray-400 text-5xl mb-4">description</span>
-                            <h3 class="text-lg font-medium text-gray-700 mb-2">No Templates Found</h3>
-                            <p class="text-gray-500 mb-6">Get started by creating your first certificate template</p>
-                            <a href="{{ route('template.create') }}" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md flex items-center">
-                                <span class="material-icons mr-1">add</span>
-                                Create Template
-                            </a>
-                        </div>
-                    </div>
-                @endforelse
+                </div>
             </div>
         </div>
     </div>

@@ -64,7 +64,21 @@ class ParticipantsController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
+            'identity_card' => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'date_of_birth' => 'nullable|date',
+            'address1' => 'nullable|string|max:255',
+            'address2' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'postcode' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:100',
+            'manual_state' => 'nullable|string|max:100',
+            'manual_city' => 'nullable|string|max:100',
+            'manual_postcode' => 'nullable|string|max:20',
+            'gender' => 'nullable|in:male,female,other',
             'organization' => 'nullable|string|max:255',
+            'job_title' => 'nullable|string|max:255',
             'event_id' => 'required|exists:events,id',
             'status' => 'required|in:active,inactive',
             'notes' => 'nullable|string',
@@ -77,12 +91,41 @@ class ParticipantsController extends Controller
                 ->with('error', 'You do not have permission to add participants to this event.');
         }
 
+        // Process address fields
+        $state = $request->state;
+        $city = $request->city;
+        $postcode = $request->postcode;
+        
+        // If "others" is selected for state, use the manual input fields
+        if ($request->state == 'others') {
+            $state = $request->manual_state;
+            $city = $request->manual_city;
+            $postcode = $request->manual_postcode;
+        }
+
         // Create a new participant
         $participant = new Participant();
         $participant->name = $request->name;
         $participant->email = $request->email;
         $participant->phone = $request->phone;
+        
+        // Handle identity card and passport fields
+        $participant->identity_card = $request->identity_card;
+        $participant->passport_no = $request->passport_no;
+        
+        $participant->date_of_birth = $request->date_of_birth;
+        
+        // Update address fields individually
+        $participant->address1 = $request->address1;
+        $participant->address2 = $request->address2;
+        $participant->city = $city;
+        $participant->state = $state;
+        $participant->postcode = $postcode;
+        $participant->country = $request->country ?? 'Malaysia';
+        
+        $participant->gender = $request->gender;
         $participant->organization = $request->organization;
+        $participant->job_title = $request->job_title;
         $participant->status = $request->status;
         $participant->event_id = $request->event_id;
         $participant->registration_date = now();
@@ -111,8 +154,18 @@ class ParticipantsController extends Controller
                 ->with('error', 'You do not have permission to view this participant.');
         }
 
+        // Get all attendance records for this participant, with attendance, session, and certificate
+        $attendanceRecords = \App\Models\AttendanceRecord::with(['attendance.event', 'attendanceSession'])
+            ->where('participant_id', $participant->id)
+            ->get();
+
+        // Get all certificates for this participant
+        $certificates = \App\Models\Certificate::where('participant_id', $participant->id)->get();
+
         return view('participants.show', [
-            'participant' => $participant
+            'participant' => $participant,
+            'attendanceRecords' => $attendanceRecords,
+            'certificates' => $certificates,
         ]);
     }
 
@@ -159,7 +212,21 @@ class ParticipantsController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
+            'identity_card' => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'date_of_birth' => 'nullable|date',
+            'address1' => 'nullable|string|max:255',
+            'address2' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'postcode' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:100',
+            'manual_state' => 'nullable|string|max:100',
+            'manual_city' => 'nullable|string|max:100',
+            'manual_postcode' => 'nullable|string|max:20',
+            'gender' => 'nullable|in:male,female,other',
             'organization' => 'nullable|string|max:255',
+            'job_title' => 'nullable|string|max:255',
             'event_id' => 'required|exists:events,id',
             'status' => 'required|in:active,inactive',
             'notes' => 'nullable|string',
@@ -182,11 +249,40 @@ class ParticipantsController extends Controller
             }
         }
 
+        // Process address fields
+        $state = $request->state;
+        $city = $request->city;
+        $postcode = $request->postcode;
+        
+        // If "others" is selected for state, use the manual input fields
+        if ($request->state == 'others') {
+            $state = $request->manual_state;
+            $city = $request->manual_city;
+            $postcode = $request->manual_postcode;
+        }
+
         // Update the participant
         $participant->name = $request->name;
         $participant->email = $request->email;
         $participant->phone = $request->phone;
+        
+        // Handle identity card and passport fields
+        $participant->identity_card = $request->identity_card;
+        $participant->passport_no = $request->passport_no;
+        
+        $participant->date_of_birth = $request->date_of_birth;
+        
+        // Update address fields individually
+        $participant->address1 = $request->address1;
+        $participant->address2 = $request->address2;
+        $participant->city = $city;
+        $participant->state = $state;
+        $participant->postcode = $postcode;
+        $participant->country = $request->country ?? 'Malaysia';
+        
+        $participant->gender = $request->gender;
         $participant->organization = $request->organization;
+        $participant->job_title = $request->job_title;
         $participant->status = $request->status;
         $participant->event_id = $request->event_id;
         $participant->notes = $request->notes;

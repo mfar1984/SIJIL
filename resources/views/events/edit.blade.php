@@ -98,6 +98,12 @@
                         </div>
                         <p class="mt-1 text-[10px] text-gray-500">Provide a detailed description of the event</p>
                     </div>
+                    <!-- Event Terms & Conditions -->
+                    <div class="mb-4">
+                        <label for="condition" class="block text-xs font-medium text-gray-700 mb-1">Event Terms & Conditions</label>
+                        <textarea name="condition" id="condition" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">{{ old('condition', $event->condition) }}</textarea>
+                        <p class="text-[10px] text-gray-500 mt-1">Example: Only participants aged 18 and above, must bring IC, etc.</p>
+                    </div>
                 </div>
                 
                 <!-- Date and Time -->

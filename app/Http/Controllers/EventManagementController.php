@@ -60,6 +60,7 @@ class EventManagementController extends Controller
             'name' => 'required|string|max:255',
             'organizer' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'condition' => 'nullable|string',
             'start_date' => 'required|date',
             'start_time' => 'required',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -74,6 +75,7 @@ class EventManagementController extends Controller
         $event->name = $request->name;
         $event->organizer = $request->organizer;
         $event->description = $request->description;
+        $event->condition = $request->condition;
         $event->start_date = $request->start_date;
         $event->start_time = $request->start_time;
         $event->end_date = $request->end_date;
@@ -174,6 +176,7 @@ class EventManagementController extends Controller
             'name' => 'required|string|max:255',
             'organizer' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'condition' => 'nullable|string',
             'start_date' => 'required|date',
             'start_time' => 'required',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -202,6 +205,7 @@ class EventManagementController extends Controller
         $event->name = $request->name;
         $event->organizer = $request->organizer;
         $event->description = $request->description;
+        $event->condition = $request->condition;
         $event->start_date = $request->start_date;
         $event->start_time = $request->start_time;
         $event->end_date = $request->end_date;
@@ -367,40 +371,78 @@ class EventManagementController extends Controller
             'phone' => 'nullable|string|max:20',
             'organization' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
+            'identity_card' => 'nullable|string|max:20',
+            'passport_no' => 'nullable|string|max:20',
+            'gender' => 'nullable|in:male,female,other',
+            'date_of_birth' => 'nullable|date',
+            'job_title' => 'nullable|string|max:255',
+            'address1' => 'nullable|string|max:255',
+            'address2' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'postcode' => 'nullable|string|max:10',
+            'country' => 'nullable|string|max:100',
+            'manual_state' => 'nullable|string|max:100',
+            'manual_city' => 'nullable|string|max:100',
+            'manual_postcode' => 'nullable|string|max:10',
         ]);
         
         $event = Event::where('registration_link', $token)->first();
-        
         if (!$event) {
             abort(404, 'Event not found');
         }
-        
         if ($event->isRegistrationExpired()) {
             return redirect()->back()->with('error', 'Registration for this event has expired.');
         }
-        
         // Check if already registered with same email
         $existingRegistration = Participant::where('event_id', $event->id)
             ->where('email', $request->email)
             ->exists();
-            
         if ($existingRegistration) {
             return redirect()->back()->with('error', 'You are already registered for this event with this email address.');
         }
-        
+        // Format phone number with country code
+        $phone = $request->phone;
+        if ($phone) {
+            $phone = ltrim($phone, '+');
+            if (substr($phone, 0, 1) === '0') {
+                $phone = substr($phone, 1);
+            }
+            if (!preg_match('/^60/', $phone)) {
+                $phone = '60' . $phone;
+            }
+        }
+        // Handle address fields
+        $state = $request->state;
+        $city = $request->city;
+        $postcode = $request->postcode;
+        if ($state === 'others') {
+            $state = $request->manual_state;
+            $city = $request->manual_city;
+            $postcode = $request->manual_postcode;
+        }
         $participant = new Participant([
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => $phone,
             'organization' => $request->organization,
             'notes' => $request->notes,
+            'identity_card' => $request->identity_card,
+            'passport_no' => $request->passport_no,
+            'gender' => $request->gender,
+            'date_of_birth' => $request->date_of_birth,
+            'job_title' => $request->job_title,
+            'address1' => $request->address1,
+            'address2' => $request->address2,
+            'state' => $state,
+            'city' => $city,
+            'postcode' => $postcode,
+            'country' => $request->country,
             'status' => 'active',
             'registration_date' => now(),
             'event_id' => $event->id,
         ]);
-        
         $participant->save();
-        
         return redirect()->back()->with('success', 'Thank you for registering! You will receive a confirmation email shortly.');
     }
     

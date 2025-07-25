@@ -46,292 +46,410 @@ $initialIsActive = $template && $template->is_active ? true : false;
 
     <x-slot name="title">{{ $template ? 'Edit Template' : 'Create Template' }}</x-slot>
 
-    <!-- Debug section - will be hidden in production -->
-    <div class="bg-red-100 p-4 mb-4 rounded-md">
-        <h3 class="font-bold">Debug Info</h3>
-        <p>Template ID: {{ $template ? $template->id : 'New' }}</p>
-        <p>Elements Count: {{ isset($templateData['elements']) ? count($templateData['elements']) : 0 }}</p>
-        <p>Using placeholder format: <code>@{{ "{{participant_name}}" }}</code> (double curly braces)</p>
-    </div>
-
     <div x-data="templateDesigner()" x-init="initialize()">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Step 1: Background Selection -->
-            <div x-show="step === 1" class="bg-white overflow-hidden shadow-sm rounded-lg">
-                <div class="p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Step 1: Choose Certificate Background</h2>
+        <div class="bg-white rounded shadow-md border border-gray-300">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center">
+                            <span class="material-icons mr-2 text-primary-DEFAULT">design_services</span>
+                            <h1 class="text-xl font-bold text-gray-800">{{ $template ? 'Edit Template Design' : 'Create Template Design' }}</h1>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 ml-8">{{ $template ? 'Customize the layout and elements of ' . $template->name : 'Create and position elements for your certificate' }}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="{{ route('template.designer') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <span class="material-icons text-xs mr-1">arrow_back</span>
+                            Back to Templates
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <!-- Step 1: Background Selection -->
+                <div x-show="step === 1" class="border rounded-lg bg-white p-6 shadow-sm">
+                    <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                        <span class="material-icons text-primary-DEFAULT text-base mr-1">palette</span>
+                        Step 1: Choose Certificate Background
+                    </h2>
                     
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Orientation</label>
-                        <div class="flex gap-4">
-                            <div class="flex items-center">
+                    <div class="mb-6 ml-6">
+                        <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                            <span class="material-icons text-primary-DEFAULT text-base mr-1">crop_landscape</span>
+                            Orientation
+                        </label>
+                        <div class="flex gap-4 mt-2">
+                            <label class="flex items-center">
                                 <input id="landscape" name="orientation" type="radio" value="landscape" class="h-4 w-4 text-primary-DEFAULT focus:ring-primary-DEFAULT" x-model="orientation">
-                                <label for="landscape" class="ml-2 block text-sm font-medium text-gray-700">Landscape (297×210mm)</label>
-                            </div>
-                            <div class="flex items-center">
+                                <span class="ml-2 text-sm">Landscape (297×210mm)</span>
+                            </label>
+                            <label class="flex items-center">
                                 <input id="portrait" name="orientation" type="radio" value="portrait" class="h-4 w-4 text-primary-DEFAULT focus:ring-primary-DEFAULT" x-model="orientation">
-                                <label for="portrait" class="ml-2 block text-sm font-medium text-gray-700">Portrait (210×297mm)</label>
-                            </div>
+                                <span class="ml-2 text-sm">Portrait (210×297mm)</span>
+                            </label>
                         </div>
                     </div>
                     
-                    <div class="mb-6">
+                    <div class="mb-6 ml-6">
+                        <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                            <span class="material-icons text-primary-DEFAULT text-base mr-1">picture_as_pdf</span>
+                            PDF Background
+                        </label>
                         <input type="file" accept=".pdf" class="hidden" id="pdf-upload" @change="handleBackgroundUpload($event)">
-                        <label for="pdf-upload" class="inline-block px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-md cursor-pointer">
-                            <span class="material-icons align-middle mr-1">upload</span>
+                        <label for="pdf-upload" class="inline-flex px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm font-medium items-center text-xs transition-colors duration-200 ease-in-out cursor-pointer">
+                            <span class="material-icons text-xs mr-1">upload_file</span>
                             Upload PDF Background
                         </label>
+                        <p class="text-xs text-gray-500 mt-1">Select a PDF file to use as the certificate background</p>
                     </div>
                     
                     <template x-if="selectedBackground">
-                        <div class="mb-6 border border-gray-300 rounded-lg p-4">
+                        <div class="mb-6 border border-gray-300 rounded-lg p-4 bg-gray-50 ml-6">
                             <div class="text-center">
-                                <h3 class="font-medium" x-text="`Selected: ${selectedBackground.name}`"></h3>
-                                <div class="mt-4 relative mx-auto" style="width: 300px; height: 212px;">
-                                    <iframe x-bind:src="selectedBackground.preview_image + '#toolbar=0&navpanes=0&scrollbar=0'" class="w-full h-full border"></iframe>
+                                <h3 class="text-sm font-medium" x-text="`Selected: ${selectedBackground.name}`"></h3>
+                                <div class="mt-4 relative mx-auto border border-gray-200 shadow-sm" style="width: 300px; height: 212px;">
+                                    <iframe x-bind:src="selectedBackground.preview_image + '#toolbar=0&navpanes=0&scrollbar=0'" class="w-full h-full"></iframe>
                                 </div>
-                                <button type="button" class="mt-4 px-4 py-2 bg-primary-DEFAULT hover:bg-primary-dark text-white font-medium rounded-md" @click="proceedToDesign">
+                                <button type="button" class="mt-4 px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mx-auto" @click="proceedToDesign">
+                                    <span class="material-icons text-xs mr-1">navigate_next</span>
                                     Proceed to Design Canvas
                                 </button>
                             </div>
                         </div>
                     </template>
                 </div>
-            </div>
-            
-            <!-- Step 2: Design Canvas -->
-            <div x-show="step === 2">
-                <form id="template-form" action="{{ $template ? route('template.update', $template->id) : route('template.store') }}" method="POST" enctype="multipart/form-data" @submit.prevent="handleSubmit">
-                    @csrf
-                    @if($template)
-                        @method('PUT')
-                    @endif
-                    
-                    <!-- Toolbar -->
-                    <div class="bg-white overflow-hidden shadow-sm rounded-lg mb-4 p-4">
-                        <div class="flex flex-wrap items-center justify-between gap-4">
-                            <div class="flex items-center space-x-4">
-                                <div>
-                                    <label for="name" class="block text-sm font-medium text-gray-700">Template Name</label>
-                                    <input type="text" id="name" name="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="name" required>
+                
+                <!-- Step 2: Design Canvas -->
+                <div x-show="step === 2">
+                    <form id="template-form" action="{{ $template ? route('template.update', $template->id) : route('template.store') }}" method="POST" enctype="multipart/form-data" @submit.prevent="handleSubmit">
+                        @csrf
+                        @if($template)
+                            @method('PUT')
+                        @endif
+                        
+                        <!-- Toolbar -->
+                        <div class="border rounded-lg bg-white p-4 shadow-sm mb-4">
+                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex items-center flex-wrap gap-3">
+                                    <div>
+                                        <label for="name" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                            <span class="material-icons text-primary-DEFAULT text-base mr-1">title</span>
+                                            Template Name
+                                        </label>
+                                        <input type="text" id="name" name="name" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring focus:ring-primary-light focus:border-primary-light" x-model="name" required>
+                                    </div>
+                                    
+                                    <div>
+                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addTextElement">
+                                            <span class="material-icons text-xs mr-1">text_fields</span>
+                                            Add Text
+                                        </button>
+                                    </div>
+                                    
+                                    <div>
+                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addImageElement">
+                                            <span class="material-icons text-xs mr-1">image</span>
+                                            Add Image
+                                        </button>
+                                        <input type="file" id="image-upload" accept="image/*" class="hidden" @change="handleImageUpload">
+                                    </div>
+                                    
+                                    <div>
+                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="step = 1">
+                                            <span class="material-icons text-xs mr-1">palette</span>
+                                            Background
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 <div>
-                                    <button type="button" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-2 rounded-md text-sm font-medium flex items-center" @click="addTextElement">
-                                        <span class="material-icons mr-1">text_fields</span>
-                                        Add Text
+                                    <button type="submit" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                        <span class="material-icons text-xs mr-1">save</span>
+                                        {{ $template ? 'Update Template' : 'Save Template' }}
                                     </button>
                                 </div>
-                                
-                                <div>
-                                    <button type="button" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-2 rounded-md text-sm font-medium flex items-center" @click="addImageElement">
-                                        <span class="material-icons mr-1">image</span>
-                                        Add Image
-                                    </button>
-                                    <input type="file" id="image-upload" accept="image/*" class="hidden" @change="handleImageUpload">
-                                </div>
-                                
-                                <div>
-                                    <button type="button" class="bg-white hover:bg-gray-100 border border-gray-300 px-3 py-2 rounded-md text-sm font-medium flex items-center" @click="step = 1">
-                                        <span class="material-icons mr-1">palette</span>
-                                        Background
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <button type="submit" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md flex items-center">
-                                    <span class="material-icons mr-1">save</span>
-                                    {{ $template ? 'Update Template' : 'Save Template' }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Element Properties -->
-                    <div x-show="selectedElement !== null" class="bg-white overflow-hidden shadow-sm rounded-lg mb-4 p-4">
-                        <div x-show="selectedElement && selectedElement.type === 'text'" class="space-y-4">
-                            <div class="flex flex-wrap gap-4">
-                                <div class="flex-1 min-w-[200px]">
-                                    <label for="content" class="block text-sm font-medium text-gray-700">Text Content</label>
-                                    <input type="text" id="content" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="selectedElement.content" @input="updateElement('content', $event.target.value)">
-                                </div>
-                                <div>
-                                    <label for="fontFamily" class="block text-sm font-medium text-gray-700">Font Family</label>
-                                    <select id="fontFamily" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="selectedElement.fontFamily" @change="updateElement('fontFamily', $event.target.value)">
-                                        <option value="Arial">Arial</option>
-                                        <option value="Times New Roman">Times New Roman</option>
-                                        <option value="Courier New">Courier New</option>
-                                        <option value="Georgia">Georgia</option>
-                                        <option value="Tahoma">Tahoma</option>
-                                        <option value="Verdana">Verdana</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="fontSize" class="block text-sm font-medium text-gray-700">Font Size</label>
-                                    <input type="number" id="fontSize" class="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="selectedElement.fontSize" @input="updateElement('fontSize', parseInt($event.target.value) || 12)">
-                                </div>
-                                <div>
-                                    <label for="color" class="block text-sm font-medium text-gray-700">Text Color</label>
-                                    <input type="color" id="color" class="mt-1 block rounded-md h-9 w-16 p-0" x-model="selectedElement.color" @input="updateElement('color', $event.target.value)">
-                                </div>
-                            </div>
-                            
-                            <div class="flex flex-wrap gap-2 items-center">
-                                <button type="button" 
-                                    class="px-2 py-1 rounded-md" 
-                                    :class="selectedElement.fontWeight === 'bold' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
-                                    @click="updateElement('fontWeight', selectedElement.fontWeight === 'bold' ? 'normal' : 'bold')"
-                                    title="Bold">
-                                    <span class="material-icons">format_bold</span>
-                                </button>
-                                <button type="button" 
-                                    class="px-2 py-1 rounded-md" 
-                                    :class="selectedElement.fontStyle === 'italic' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
-                                    @click="updateElement('fontStyle', selectedElement.fontStyle === 'italic' ? 'normal' : 'italic')"
-                                    title="Italic">
-                                    <span class="material-icons">format_italic</span>
-                                </button>
-                                <button type="button" 
-                                    class="px-2 py-1 rounded-md" 
-                                    :class="selectedElement.textDecoration === 'underline' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
-                                    @click="updateElement('textDecoration', selectedElement.textDecoration === 'underline' ? 'none' : 'underline')"
-                                    title="Underline">
-                                    <span class="material-icons">format_underlined</span>
-                                </button>
-                                
-                                <div class="mx-2 h-6 border-l border-gray-300"></div>
-                                
-                                <button type="button" 
-                                    class="px-2 py-1 rounded-md" 
-                                    :class="selectedElement.textAlign === 'left' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
-                                    @click="updateElement('textAlign', 'left')"
-                                    title="Align Left">
-                                    <span class="material-icons">format_align_left</span>
-                                </button>
-                                <button type="button" 
-                                    class="px-2 py-1 rounded-md" 
-                                    :class="selectedElement.textAlign === 'center' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
-                                    @click="updateElement('textAlign', 'center')"
-                                    title="Align Center">
-                                    <span class="material-icons">format_align_center</span>
-                                </button>
-                                <button type="button" 
-                                    class="px-2 py-1 rounded-md" 
-                                    :class="selectedElement.textAlign === 'right' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
-                                    @click="updateElement('textAlign', 'right')"
-                                    title="Align Right">
-                                    <span class="material-icons">format_align_right</span>
-                                </button>
-                                
-                                <div class="mx-2 h-6 border-l border-gray-300"></div>
-                                
-                                <button type="button" class="px-2 py-1 bg-red-600 text-white rounded-md" @click="deleteElement" title="Delete">
-                                    <span class="material-icons">delete</span>
-                                </button>
                             </div>
                         </div>
                         
-                        <div x-show="selectedElement && selectedElement.type === 'image'" class="space-y-4">
-                            <div class="flex flex-wrap gap-4">
-                                <div>
-                                    <label for="width" class="block text-sm font-medium text-gray-700">Width</label>
-                                    <input type="number" id="width" class="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="selectedElement.width" @input="updateElement('width', parseInt($event.target.value) || 20)">
-                                </div>
-                                <div>
-                                    <label for="height" class="block text-sm font-medium text-gray-700">Height</label>
-                                    <input type="number" id="height" class="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="selectedElement.height" @input="updateElement('height', parseInt($event.target.value) || 20)">
-                                </div>
-                                <div>
-                                    <label for="x" class="block text-sm font-medium text-gray-700">X Position</label>
-                                    <input type="number" id="x" class="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="Math.round(selectedElement.x || 0)" @input="updateElement('x', parseInt($event.target.value) || 0)">
-                                </div>
-                                <div>
-                                    <label for="y" class="block text-sm font-medium text-gray-700">Y Position</label>
-                                    <input type="number" id="y" class="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" x-model="Math.round(selectedElement.y || 0)" @input="updateElement('y', parseInt($event.target.value) || 0)">
-                                </div>
-                            </div>
+                        <!-- Design Canvas -->
+                        <div class="border rounded-lg bg-white p-6 shadow-sm relative">
+                            <h3 class="text-xs font-medium text-gray-700 mb-3 flex items-center">
+                                <span class="material-icons text-primary-DEFAULT text-base mr-1">design_services</span>
+                                Design Canvas
+                            </h3>
                             
-                            <div class="flex">
-                                <button type="button" class="px-2 py-1 bg-red-600 text-white rounded-md" @click="deleteElement" title="Delete">
-                                    <span class="material-icons">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Design Canvas -->
-                    <div class="bg-white overflow-hidden shadow-sm rounded-lg p-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Design Canvas - Click to place elements</h2>
-                        
-                        <div id="design-canvas" class="mx-auto relative border-2 border-dashed border-blue-500 overflow-hidden bg-white"
-                            :style="{
-                                width: orientation === 'portrait' ? '420px' : '594px',
-                                height: orientation === 'portrait' ? '594px' : '420px',
-                                cursor: draggedElement ? 'crosshair' : 'default'
-                            }"
-                            @click="handleCanvasClick">
+                            <p class="text-xs text-gray-500 mb-4 ml-6">Click to place elements on the canvas. Drag elements to reposition them.</p>
                             
-                            <!-- Background PDF -->
-                            <template x-if="selectedBackground">
-                                <iframe x-bind:src="selectedBackground.preview_image + '#toolbar=0&navpanes=0&scrollbar=0&view=FitH'" class="absolute top-0 left-0 w-full h-full border-0 pointer-events-none"></iframe>
-                            </template>
-                            
-                            <!-- Text Elements -->
-                            <template x-for="element in templateData.elements" :key="element.id">
-                                <template x-if="element.type === 'text'">
-                                    <div class="absolute cursor-move"
+                            <div class="flex flex-col lg:flex-row gap-4">
+                                <!-- Certificate Preview Canvas -->
+                                <div class="lg:w-2/3">
+                                    <div id="design-canvas" class="mx-auto relative border border-gray-300 overflow-hidden bg-white shadow-md"
                                         :style="{
-                                            left: `${(element.x / templateData.width) * 100}%`,
-                                            top: `${(element.y / templateData.height) * 100}%`,
-                                            fontSize: `${element.fontSize}px`,
-                                            fontFamily: element.fontFamily || 'Arial',
-                                            fontWeight: element.fontWeight || 'normal',
-                                            fontStyle: element.fontStyle || 'normal',
-                                            textDecoration: element.textDecoration || 'none',
-                                            color: element.color || '#000000',
-                                            textAlign: element.textAlign || 'left',
-                                            transform: element.textAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                            border: selectedElement && selectedElement.id === element.id ? '2px solid #ff9800' : '1px dashed transparent',
-                                            padding: '4px',
-                                            backgroundColor: selectedElement && selectedElement.id === element.id ? 'rgba(255,152,0,0.1)' : 'transparent',
-                                            minWidth: '50px'
+                                            width: orientation === 'portrait' ? '420px' : '594px',
+                                            height: orientation === 'portrait' ? '594px' : '420px',
+                                            cursor: draggedElement ? 'crosshair' : 'default'
                                         }"
-                                        @click="handleElementClick(element, $event)"
-                                        @mousedown="handleElementDrag(element, $event)">
-                                        <span x-text="element.content"></span>
+                                        @click="handleCanvasClick">
+                                        
+                                        <!-- Background PDF -->
+                                        <template x-if="selectedBackground">
+                                            <iframe x-bind:src="selectedBackground.preview_image + '#toolbar=0&navpanes=0&scrollbar=0&view=FitH'" class="absolute top-0 left-0 w-full h-full border-0 pointer-events-none"></iframe>
+                                        </template>
+                                        
+                                        <!-- Text Elements -->
+                                        <template x-for="element in templateData.elements" :key="element.id">
+                                            <template x-if="element.type === 'text'">
+                                                <div class="absolute cursor-move"
+                                                    :style="{
+                                                        left: `${(element.x / templateData.width) * 100}%`,
+                                                        top: `${(element.y / templateData.height) * 100}%`,
+                                                        fontSize: `${element.fontSize}px`,
+                                                        fontFamily: element.fontFamily || 'Arial',
+                                                        fontWeight: element.fontWeight || 'normal',
+                                                        fontStyle: element.fontStyle || 'normal',
+                                                        textDecoration: element.textDecoration || 'none',
+                                                        color: element.color || '#000000',
+                                                        textAlign: element.textAlign || 'left',
+                                                        transform: element.textAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                                        border: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : '1px dashed transparent',
+                                                        padding: '4px',
+                                                        backgroundColor: selectedElement && selectedElement.id === element.id ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                                                        minWidth: '50px'
+                                                    }"
+                                                    @click="handleElementClick(element, $event)"
+                                                    @mousedown="handleElementDrag(element, $event)">
+                                                    <span x-text="element.content"></span>
+                                                </div>
+                                            </template>
+                                            <template x-if="element.type === 'image'">
+                                                <div class="absolute"
+                                                    :style="{
+                                                        left: `${(element.x / templateData.width) * 100}%`,
+                                                        top: `${(element.y / templateData.height) * 100}%`,
+                                                        width: `${(element.width / templateData.width) * 100}%`,
+                                                        height: `${(element.height / templateData.height) * 100}%`
+                                                    }">
+                                                    <img :src="element.src" class="w-full h-full cursor-move"
+                                                        :style="{
+                                                            border: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : 'none'
+                                                        }"
+                                                        @click="handleElementClick(element, $event)"
+                                                        @mousedown="handleElementDrag(element, $event)">
+                                                </div>
+                                            </template>
+                                        </template>
                                     </div>
-                                </template>
-                                <template x-if="element.type === 'image'">
-                                    <div class="absolute"
-                                        :style="{
-                                            left: `${(element.x / templateData.width) * 100}%`,
-                                            top: `${(element.y / templateData.height) * 100}%`,
-                                            width: `${(element.width / templateData.width) * 100}%`,
-                                            height: `${(element.height / templateData.height) * 100}%`
-                                        }">
-                                        <img :src="element.src" class="w-full h-full cursor-move"
-                                            :style="{
-                                                border: selectedElement && selectedElement.id === element.id ? '2px solid #ff9800' : 'none'
-                                            }"
-                                            @click="handleElementClick(element, $event)"
-                                            @mousedown="handleElementDrag(element, $event)">
+                                    
+                                    <div class="mt-4 text-center">
+                                        <p class="text-xs text-gray-500">Add text elements with placeholder tags like <code>@{{participant_name}}</code> to be replaced with actual data.</p>
                                     </div>
-                                </template>
-                            </template>
+                                </div>
+                                
+                                <!-- Floating Element Properties Panel -->
+                                <div class="lg:w-1/3">
+                                    <!-- Text Element Properties -->
+                                    <div x-show="selectedElement !== null" class="border rounded-lg bg-white p-4 shadow-md">
+                                        <h3 class="text-xs font-medium text-gray-700 mb-3 bg-primary-light text-white p-2 rounded flex items-center">
+                                            <span class="material-icons text-base mr-1">tune</span>
+                                            Element Properties
+                                        </h3>
+                                        
+                                        <!-- Text Element Properties -->
+                                        <div x-show="selectedElement && selectedElement.type === 'text'">
+                                            <!-- Content -->
+                                            <div class="mb-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">Text Content</label>
+                                                <input type="text" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" x-model="selectedElement.content" @input="updateElement('content', $event.target.value)">
+                                            </div>
+                                            
+                                            <!-- Font Options -->
+                                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Font Family</label>
+                                                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white" x-model="selectedElement.fontFamily" @change="updateElement('fontFamily', $event.target.value)">
+                                                        <option value="Arial">Arial</option>
+                                                        <option value="Times New Roman">Times New Roman</option>
+                                                        <option value="Courier New">Courier New</option>
+                                                        <option value="Georgia">Georgia</option>
+                                                        <option value="Tahoma">Tahoma</option>
+                                                        <option value="Verdana">Verdana</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Font Size</label>
+                                                    <div class="flex items-center">
+                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" x-model="selectedElement.fontSize" @input="updateElement('fontSize', parseInt($event.target.value) || 12)">
+                                                        <span class="ml-1 text-xs text-gray-500">px</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Color -->
+                                            <div class="mb-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">Text Color</label>
+                                                <div class="flex items-center">
+                                                    <input type="color" class="h-8 w-16 border border-gray-300 rounded" x-model="selectedElement.color" @input="updateElement('color', $event.target.value)">
+                                                    <span class="ml-2 text-xs" x-text="selectedElement.color"></span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Text Formatting -->
+                                            <div class="mb-3 border-t border-gray-200 pt-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">Text Formatting</label>
+                                                <div class="flex flex-wrap gap-2">
+                                                    <button type="button" 
+                                                        class="p-1.5 rounded"
+                                                        :class="selectedElement.fontWeight === 'bold' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
+                                                        @click="updateElement('fontWeight', selectedElement.fontWeight === 'bold' ? 'normal' : 'bold')">
+                                                        <span class="material-icons text-xs">format_bold</span>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
+                                                        class="p-1.5 rounded"
+                                                        :class="selectedElement.fontStyle === 'italic' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
+                                                        @click="updateElement('fontStyle', selectedElement.fontStyle === 'italic' ? 'normal' : 'italic')">
+                                                        <span class="material-icons text-xs">format_italic</span>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
+                                                        class="p-1.5 rounded"
+                                                        :class="selectedElement.textDecoration === 'underline' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
+                                                        @click="updateElement('textDecoration', selectedElement.textDecoration === 'underline' ? 'none' : 'underline')">
+                                                        <span class="material-icons text-xs">format_underlined</span>
+                                                    </button>
+                                                    
+                                                    <div class="mx-1 h-6 border-l border-gray-300"></div>
+                                                    
+                                                    <button type="button" 
+                                                        class="p-1.5 rounded"
+                                                        :class="selectedElement.textAlign === 'left' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
+                                                        @click="updateElement('textAlign', 'left')">
+                                                        <span class="material-icons text-xs">format_align_left</span>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
+                                                        class="p-1.5 rounded"
+                                                        :class="selectedElement.textAlign === 'center' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
+                                                        @click="updateElement('textAlign', 'center')">
+                                                        <span class="material-icons text-xs">format_align_center</span>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
+                                                        class="p-1.5 rounded"
+                                                        :class="selectedElement.textAlign === 'right' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
+                                                        @click="updateElement('textAlign', 'right')">
+                                                        <span class="material-icons text-xs">format_align_right</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Position -->
+                                            <div class="mb-3 border-t border-gray-200 pt-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">Element Position</label>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">X Position</label>
+                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.x || 0)" @input="updateElement('x', parseInt($event.target.value) || 0)">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Y Position</label>
+                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.y || 0)" @input="updateElement('y', parseInt($event.target.value) || 0)">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Delete Button -->
+                                            <div class="mt-4">
+                                                <button type="button" class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium flex items-center justify-center" @click="deleteElement">
+                                                    <span class="material-icons text-xs mr-1">delete</span>
+                                                    Delete Element
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Image Element Properties -->
+                                        <div x-show="selectedElement && selectedElement.type === 'image'">
+                                            <!-- Dimensions -->
+                                            <div class="mb-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">Image Dimensions</label>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Width</label>
+                                                        <div class="flex items-center">
+                                                            <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="selectedElement.width" @input="updateElement('width', parseInt($event.target.value) || 20)">
+                                                            <span class="ml-1 text-xs text-gray-500">px</span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Height</label>
+                                                        <div class="flex items-center">
+                                                            <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="selectedElement.height" @input="updateElement('height', parseInt($event.target.value) || 20)">
+                                                            <span class="ml-1 text-xs text-gray-500">px</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Position -->
+                                            <div class="mb-3 border-t border-gray-200 pt-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">Image Position</label>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">X Position</label>
+                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.x || 0)" @input="updateElement('x', parseInt($event.target.value) || 0)">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Y Position</label>
+                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.y || 0)" @input="updateElement('y', parseInt($event.target.value) || 0)">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Delete Button -->
+                                            <div class="mt-4">
+                                                <button type="button" class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium flex items-center justify-center" @click="deleteElement">
+                                                    <span class="material-icons text-xs mr-1">delete</span>
+                                                    Delete Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Add Elements Panel when no element is selected -->
+                                    <div x-show="!selectedElement" class="border rounded-lg bg-white p-4 shadow-md">
+                                        <div class="text-center p-4">
+                                            <span class="material-icons text-primary-DEFAULT text-2xl">add_circle</span>
+                                            <p class="text-sm font-medium text-gray-700 mt-2">Add Elements</p>
+                                            <p class="text-xs text-gray-500 mb-4">Add text or images to your certificate</p>
+                                            
+                                            <div class="flex justify-center gap-2">
+                                                <button type="button" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium flex items-center" @click="addTextElement">
+                                                    <span class="material-icons text-xs mr-1">text_fields</span>
+                                                    Add Text
+                                                </button>
+                                                <button type="button" class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium flex items-center" @click="addImageElement">
+                                                    <span class="material-icons text-xs mr-1">image</span>
+                                                    Add Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- Hidden Fields -->
-                    <input type="hidden" name="orientation" x-model="orientation">
-                    <input type="hidden" name="template_data" x-bind:value="JSON.stringify(templateData)">
-                    <template x-if="selectedBackground && selectedBackground.pdf_file instanceof File">
-                        <input type="file" name="pdf_file" id="pdf_file" class="hidden">
-                    </template>
-                    <template x-if="selectedBackground && !(selectedBackground.pdf_file instanceof File)">
-                        <input type="hidden" name="background_pdf" x-model="selectedBackground.pdf_file">
-                    </template>
-                </form>
+                        
+                        <!-- Hidden Fields -->
+                        <input type="hidden" name="orientation" x-model="orientation">
+                        <input type="hidden" name="template_data" x-bind:value="JSON.stringify(templateData)">
+                        <template x-if="selectedBackground && selectedBackground.pdf_file instanceof File">
+                            <input type="file" name="pdf_file" id="pdf_file" class="hidden">
+                        </template>
+                        <template x-if="selectedBackground && !(selectedBackground.pdf_file instanceof File)">
+                            <input type="hidden" name="background_pdf" x-model="selectedBackground.pdf_file">
+                        </template>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

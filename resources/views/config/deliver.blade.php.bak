@@ -1,0 +1,465 @@
+<x-app-layout>
+    <x-slot name="breadcrumb">
+        <span>Config</span>
+        <span class="mx-2 text-gray-500">/</span>
+        <span>Deliver</span>
+    </x-slot>
+
+    <x-slot name="title">Config Deliver</x-slot>
+
+    <div class="bg-white rounded shadow-md border border-gray-300" x-data="{ isEditing: false }">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="flex items-center">
+                        <span class="material-icons mr-2 text-primary-DEFAULT">settings_applications</span>
+                        <h1 class="text-xl font-bold text-gray-800">Config Deliver</h1>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 ml-8">Configure email and SMS delivery settings</p>
+                </div>
+                <div>
+                    <button 
+                        type="button" 
+                        @click="isEditing = !isEditing" 
+                        class="bg-gradient-to-r" 
+                        :class="isEditing ? 'from-green-600 to-green-500 hover:from-green-700 hover:to-green-600' : 'from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'"
+                        x-transition
+                    >
+                        <span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <span class="material-icons text-xs mr-1" x-text="isEditing ? 'save' : 'edit'"></span>
+                            <span x-text="isEditing ? 'Save Changes' : 'Edit Settings'"></span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4" x-data="{ activeTab: 'email' }">
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-200 mb-4">
+                <div class="flex flex-wrap -mb-px">
+                    <button 
+                        @click="activeTab = 'email'" 
+                        :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'email', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'email'}"
+                        class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
+                    >
+                        <span class="material-icons text-xs mr-2">email</span>
+                        Email Configuration
+                    </button>
+                    <button 
+                        @click="activeTab = 'sms'" 
+                        :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'sms', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'sms'}"
+                        class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
+                    >
+                        <span class="material-icons text-xs mr-2">sms</span>
+                        SMS Configuration
+                    </button>
+                </div>
+            </div>
+            
+            <form>
+                <!-- Email Configuration Tab -->
+                <div x-show="activeTab === 'email'" class="space-y-4">
+                    <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
+                        <div class="flex">
+                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <div class="text-xs text-blue-700">
+                                <p class="font-medium">Email Configuration</p>
+                                <p class="mt-1">Configure your email sending settings. Make sure to test your configuration after saving.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b border-gray-200 pb-5">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-4">SMTP Settings</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <!-- Mail Driver -->
+                            <div>
+                                <label for="mail_driver" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">settings</span>
+                                    Mail Driver
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">dns</span>
+                                    </div>
+                                    <select 
+                                        id="mail_driver" 
+                                        name="mail_driver" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                        <option value="smtp">SMTP</option>
+                                        <option value="mailgun">Mailgun</option>
+                                        <option value="ses">Amazon SES</option>
+                                        <option value="sendmail">Sendmail</option>
+                                    </select>
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Select the mail service provider to use</p>
+                            </div>
+                            
+                            <!-- Encryption -->
+                            <div>
+                                <label for="mail_encryption" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">security</span>
+                                    Encryption
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">enhanced_encryption</span>
+                                    </div>
+                                    <select 
+                                        id="mail_encryption" 
+                                        name="mail_encryption" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                        <option value="tls">TLS</option>
+                                        <option value="ssl">SSL</option>
+                                        <option value="none">None</option>
+                                    </select>
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Connection encryption protocol</p>
+                            </div>
+                            
+                            <!-- Mail Host -->
+                            <div>
+                                <label for="mail_host" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">dns</span>
+                                    Mail Host
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">language</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="mail_host" 
+                                        name="mail_host" 
+                                        value="smtp.mailtrap.io" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">SMTP server hostname (e.g., smtp.gmail.com)</p>
+                            </div>
+                            
+                            <!-- Mail Port -->
+                            <div>
+                                <label for="mail_port" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">settings_ethernet</span>
+                                    Mail Port
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">pin</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="mail_port" 
+                                        name="mail_port" 
+                                        value="2525" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">SMTP server port (e.g., 587 for TLS, 465 for SSL)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Mail Username -->
+                            <div>
+                                <label for="mail_username" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">person</span>
+                                    Mail Username
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">account_circle</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="mail_username" 
+                                        name="mail_username" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">SMTP authentication username</p>
+                            </div>
+                            
+                            <!-- Mail Password -->
+                            <div>
+                                <label for="mail_password" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    Mail Password
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                    </div>
+                                    <input 
+                                        type="password" 
+                                        id="mail_password" 
+                                        name="mail_password" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">SMTP authentication password</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b border-gray-200 pb-5">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-4">Email Sender Settings</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- From Address -->
+                            <div>
+                                <label for="mail_from_address" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">alternate_email</span>
+                                    From Address
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">email</span>
+                                    </div>
+                                    <input 
+                                        type="email" 
+                                        id="mail_from_address" 
+                                        name="mail_from_address" 
+                                        value="no-reply@example.com" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Email address that will appear in the From field</p>
+                            </div>
+                            
+                            <!-- From Name -->
+                            <div>
+                                <label for="mail_from_name" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">badge</span>
+                                    From Name
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">person</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="mail_from_name" 
+                                        name="mail_from_name" 
+                                        value="SIJIL System" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Name that will appear in the From field</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center">
+                        <button 
+                            type="button" 
+                            class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs flex items-center"
+                            :class="{'opacity-50 cursor-not-allowed': !isEditing}"
+                            :disabled="!isEditing"
+                        >
+                            <span class="material-icons text-xs mr-1">send</span>
+                            Send Test Email
+                        </button>
+                        <span class="text-xs text-gray-500 ml-3">Test your email configuration by sending a test email.</span>
+                    </div>
+                </div>
+                
+                <!-- SMS Configuration Tab -->
+                <div x-show="activeTab === 'sms'" class="space-y-4">
+                    <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
+                        <div class="flex">
+                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <div class="text-xs text-blue-700">
+                                <p class="font-medium">SMS Configuration</p>
+                                <p class="mt-1">Configure your SMS gateway settings. Supported providers: Twilio, Nexmo, and AWS SNS.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b border-gray-200 pb-5">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-4">SMS Provider Settings</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- SMS Provider -->
+                            <div>
+                                <label for="sms_provider" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">sms</span>
+                                    SMS Provider
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">business</span>
+                                    </div>
+                                    <select 
+                                        id="sms_provider" 
+                                        name="sms_provider" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                        <option value="twilio">Twilio</option>
+                                        <option value="nexmo">Nexmo (Vonage)</option>
+                                        <option value="aws_sns">AWS SNS</option>
+                                    </select>
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Select your SMS gateway provider</p>
+                            </div>
+                            
+                            <!-- Region -->
+                            <div>
+                                <label for="sms_region" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">public</span>
+                                    Region
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">language</span>
+                                    </div>
+                                    <select 
+                                        id="sms_region" 
+                                        name="sms_region" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                        <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                        <option value="us-east-1">US East</option>
+                                        <option value="eu-west-1">EU (Ireland)</option>
+                                    </select>
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Select the region for your SMS provider</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b border-gray-200 pb-5">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-4">Twilio Settings</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Twilio Account SID -->
+                            <div>
+                                <label for="twilio_sid" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">fingerprint</span>
+                                    Twilio Account SID
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">vpn_key</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="twilio_sid" 
+                                        name="twilio_sid" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Your Twilio account SID from the Twilio dashboard</p>
+                            </div>
+                            
+                            <!-- Twilio Auth Token -->
+                            <div>
+                                <label for="twilio_token" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    Twilio Auth Token
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                    </div>
+                                    <input 
+                                        type="password" 
+                                        id="twilio_token" 
+                                        name="twilio_token" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Your Twilio authentication token</p>
+                            </div>
+                            
+                            <!-- From Number -->
+                            <div>
+                                <label for="twilio_from" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
+                                    From Number
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons text-[#004aad] text-base">call</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="twilio_from" 
+                                        name="twilio_from" 
+                                        placeholder="+12345678901" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        :class="{'bg-gray-50': !isEditing}"
+                                        :disabled="!isEditing"
+                                    >
+                                </div>
+                                <p class="mt-1 text-[10px] text-gray-500">Twilio phone number to send SMS from (with country code)</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-700 mb-4">SMS Template</h2>
+                        <div class="relative">
+                            <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                                <span class="material-icons text-[#004aad] text-base">description</span>
+                            </div>
+                            <textarea 
+                                id="sms_template" 
+                                name="sms_template" 
+                                rows="3" 
+                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 min-h-[60px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                :class="{'bg-gray-50': !isEditing}"
+                                :disabled="!isEditing"
+                            >Hello {name}, your event {event_name} is starting soon. Please don't forget to bring your ID. Thank you!</textarea>
+                        </div>
+                        <p class="mt-1 text-[10px] text-gray-500">Available variables: {name}, {event_name}, {date}, {location}</p>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center">
+                        <button 
+                            type="button" 
+                            class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs flex items-center"
+                            :class="{'opacity-50 cursor-not-allowed': !isEditing}"
+                            :disabled="!isEditing"
+                        >
+                            <span class="material-icons text-xs mr-1">sms</span>
+                            Send Test SMS
+                        </button>
+                        <span class="text-xs text-gray-500 ml-3">Test your SMS configuration by sending a test message.</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('alpine:init', () => {
+            // Alpine.js configuration if needed
+        })
+    </script>
+</x-app-layout> 

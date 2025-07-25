@@ -623,4 +623,15 @@ class CertificateController extends Controller
                 return ''; 
         }
     }
+
+    public function destroy($id)
+    {
+        $certificate = Certificate::findOrFail($id);
+        // Delete PDF file if exists
+        if ($certificate->pdf_file && \Storage::disk('public')->exists($certificate->pdf_file)) {
+            \Storage::disk('public')->delete($certificate->pdf_file);
+        }
+        $certificate->delete();
+        return redirect()->route('certificates.index')->with('success', 'Certificate deleted successfully.');
+    }
 } 

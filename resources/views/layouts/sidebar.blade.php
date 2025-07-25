@@ -4,7 +4,7 @@
         <a href="{{ route('dashboard') }}" class="block relative">
             <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('dashboard') ? 'bg-blue-100' : '' }} relative">
                 <div class="flex items-center">
-                    <span class="material-icons text-xs text-gray-500 mr-3">dashboard</span>
+                    <span class="material-icons text-base text-blue-500 mr-3">dashboard</span>
                     <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Dashboard</p>
                 </div>
             </div>
@@ -17,7 +17,7 @@
         <a href="{{ route('event.management') }}" class="block relative">
             <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('event.management') ? 'bg-blue-100' : '' }} relative">
                 <div class="flex items-center">
-                    <span class="material-icons text-xs text-gray-500 mr-3">event</span>
+                    <span class="material-icons text-base text-green-500 mr-3">event</span>
                     <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Event Management</p>
                 </div>
             </div>
@@ -31,7 +31,7 @@
         <a href="{{ route('participants') }}" class="block relative">
             <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('participants') ? 'bg-blue-100' : '' }} relative">
                 <div class="flex items-center">
-                    <span class="material-icons text-xs text-gray-500 mr-3">people</span>
+                    <span class="material-icons text-base text-purple-500 mr-3">people</span>
                     <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Participants</p>
                 </div>
             </div>
@@ -45,7 +45,7 @@
     <div class="category-header relative" onclick="toggleSection('attendance-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-xs text-gray-500 mr-3">how_to_reg</span>
+                <span class="material-icons text-base text-orange-500 mr-3">how_to_reg</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Attendance</p>
             </div>
             <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="attendance-section-icon">expand_more</span>
@@ -63,7 +63,7 @@
         </x-sidebar-submenu-item>
         @endcan
         @can('view_archives')
-        <x-sidebar-submenu-item href="#" icon="inventory">
+        <x-sidebar-submenu-item href="{{ route('attendance.archive') }}" icon="inventory">
             Archive
         </x-sidebar-submenu-item>
         @endcan
@@ -76,7 +76,7 @@
     <div class="category-header relative" onclick="toggleSection('certificate-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-xs text-gray-500 mr-3">workspace_premium</span>
+                <span class="material-icons text-base text-yellow-500 mr-3">workspace_premium</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Certificate</p>
             </div>
             <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="certificate-section-icon">expand_more</span>
@@ -109,7 +109,7 @@
     <div class="category-header relative" onclick="toggleSection('reports-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-xs text-gray-500 mr-3">assessment</span>
+                <span class="material-icons text-base text-red-500 mr-3">assessment</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Reports</p>
             </div>
             <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="reports-section-icon">expand_more</span>
@@ -117,17 +117,17 @@
     </div>
     <div id="reports-section" class="hierarchical-menu" style="display: none;">
         @can('view_attendance_reports')
-        <x-sidebar-submenu-item href="#" icon="summarize">
+        <x-sidebar-submenu-item href="{{ route('reports.attendance.index') }}" icon="summarize" :active="request()->routeIs('reports.attendance.index')">
             Attendance Reports
         </x-sidebar-submenu-item>
         @endcan
         @can('view_event_statistics')
-        <x-sidebar-submenu-item href="#" icon="insights">
+        <x-sidebar-submenu-item href="{{ route('reports.statistics') }}" icon="insights" :active="request()->routeIs('reports.statistics')">
             Event Statistics
         </x-sidebar-submenu-item>
         @endcan
         @can('view_certificate_reports')
-        <x-sidebar-submenu-item href="#" icon="description">
+        <x-sidebar-submenu-item href="{{ route('reports.certificates') }}" icon="description" :active="request()->routeIs('reports.certificates')">
             Certificate Reports
         </x-sidebar-submenu-item>
         @endcan
@@ -140,7 +140,7 @@
     <div class="category-header relative" onclick="toggleSection('campaign-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-xs text-gray-500 mr-3">campaign</span>
+                <span class="material-icons text-base text-pink-500 mr-3">campaign</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Campaign</p>
             </div>
             <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="campaign-section-icon">expand_more</span>
@@ -148,17 +148,14 @@
     </div>
     <div id="campaign-section" class="hierarchical-menu" style="display: none;">
         @can('view_campaigns')
-        <x-sidebar-submenu-item href="#" icon="campaign">
+        <x-sidebar-submenu-item href="{{ route('campaign.index') }}" icon="campaign" :active="request()->routeIs('campaign.index')">
             Campaign
         </x-sidebar-submenu-item>
         @endcan
         @can('view_database_users')
-        <x-sidebar-submenu-item href="#" icon="group">
-            Database User
-        </x-sidebar-submenu-item>
         @endcan
         @can('manage_delivery')
-        <x-sidebar-submenu-item href="#" icon="settings_applications">
+        <x-sidebar-submenu-item href="{{ route('config.deliver') }}" icon="settings_applications" :active="request()->routeIs('config.deliver')">
             Config Delivery
         </x-sidebar-submenu-item>
         @endcan
@@ -168,10 +165,10 @@
     @can('view_helpdesk')
     <div class="mt-4"></div>
     <div class="category-header relative">
-        <a href="#" class="block relative">
-            <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+        <a href="{{ route('helpdesk.index') }}" class="block relative">
+            <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('helpdesk.index') ? 'bg-blue-100' : '' }} relative">
                 <div class="flex items-center">
-                    <span class="material-icons text-xs text-gray-500 mr-3">help</span>
+                    <span class="material-icons text-base text-teal-500 mr-3">help</span>
                     <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Helpdesk</p>
                 </div>
             </div>
@@ -187,7 +184,7 @@
     <div class="category-header relative" onclick="toggleSection('settings-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-xs text-gray-500 mr-3">settings</span>
+                <span class="material-icons text-base text-cyan-600 mr-3">settings</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Settings</p>
             </div>
             <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="settings-section-icon">expand_more</span>
@@ -195,7 +192,7 @@
     </div>
     <div id="settings-section" class="hierarchical-menu" style="display: none;">
         @can('manage_settings')
-        <x-sidebar-submenu-item href="#" icon="settings">
+        <x-sidebar-submenu-item href="{{ route('settings.global-config') }}" icon="settings" :active="request()->routeIs('settings.global-config')">
             Global Config
         </x-sidebar-submenu-item>
         @endcan
@@ -210,10 +207,10 @@
         </x-sidebar-submenu-item>
         @endcan
         @can('view_settings')
-        <x-sidebar-submenu-item href="#" icon="event_note">
+        <x-sidebar-submenu-item href="{{ route('settings.log-activity') }}" icon="event_note" :active="request()->routeIs('settings.log-activity')">
             Log Activity
         </x-sidebar-submenu-item>
-        <x-sidebar-submenu-item href="#" icon="security">
+        <x-sidebar-submenu-item href="{{ route('settings.security-audit') }}" icon="security" :active="request()->routeIs('settings.security-audit')">
             Security & Audit
         </x-sidebar-submenu-item>
         @endcan

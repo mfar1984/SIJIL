@@ -26,4 +26,9 @@ class AttendanceRecord extends Model
     {
         return $this->belongsTo(Participant::class);
     }
+
+    public function attendanceSession()
+    {
+        return $this->belongsTo(\App\Models\AttendanceSession::class, 'attendance_session_id');
+    }
 }

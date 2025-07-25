@@ -232,8 +232,6 @@ class AttendanceController extends Controller
                         'participants.id as participant_id',
                         'participants.name',
                         'participants.organization as ic',
-                        'attendance_records.checkin_time',
-                        'attendance_records.checkout_time',
                         'attendance_records.status'
                     )
                     ->get();
@@ -336,5 +334,29 @@ class AttendanceController extends Controller
                 'per_page' => $perPage,
             ]
         ]);
+    }
+
+    public function archive()
+    {
+        $user = Auth::user();
+        $query = Attendance::with('event')->where('status', 'archived');
+
+        if ($user->hasRole('Organizer')) {
+            $eventIds = \App\Models\Event::where('user_id', $user->id)->pluck('id');
+            $query->whereIn('event_id', $eventIds);
+        }
+        // Administrator sees all archives
+
+        $attendances = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->get();
+
+        return view('attendance.archive', compact('attendances'));
+    }
+
+    public function archiveAction($id)
+    {
+        $attendance = Attendance::findOrFail($id);
+        $attendance->status = 'archived';
+        $attendance->save();
+        return redirect()->route('attendance.index')->with('success', 'Attendance archived successfully.');
     }
 }

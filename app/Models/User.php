@@ -78,6 +78,22 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+    /**
+     * Get the events created by the user.
+     */
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+    
+    /**
+     * Get the campaigns created by the user.
+     */
+    public function campaigns()
+    {
+        return $this->hasMany(Campaign::class);
+    }
     
     // Note: The hasRole and hasPermission methods are now provided by the HasRoles trait
     // So we've removed the custom implementations here

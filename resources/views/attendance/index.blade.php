@@ -23,7 +23,7 @@
         </div>
         
         <div class="p-4">
-            <!-- Attendance Table -->
+            <!-- Attendance Table (as is) -->
             <div class="overflow-visible border border-gray-200 rounded">
                 <table class="min-w-full border-collapse">
                     <thead>
@@ -63,6 +63,16 @@
                                     <a href="{{ route('attendance.edit', $attendance->id) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
                                         <span class="material-icons text-yellow-600 text-xs">edit</span>
                                     </a>
+                                    @if($attendance->status !== 'archived')
+                                        <form method="POST" action="{{ route('attendance.archive-action', $attendance->id) }}" style="display:inline;">
+                                            @csrf
+                                            <button type="submit" class="p-1 bg-warning-50 rounded hover:bg-warning-100 border border-warning-100" onclick="return confirm('Archive this attendance?')" title="Archive">
+                                                <span class="material-icons text-warning-600 text-xs">archive</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="p-1 bg-secondary-50 rounded text-secondary-600 text-xs">Archived</span>
+                                    @endif
                                     <form method="POST" action="{{ route('attendance.destroy', $attendance->id) }}" onsubmit="return confirm('Are you sure you want to delete this attendance session?')" class="inline-block">
                                         @csrf
                                         @method('DELETE')

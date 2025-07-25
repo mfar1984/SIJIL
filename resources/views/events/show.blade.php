@@ -128,6 +128,18 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Event Terms & Conditions -->
+                    <div class="mt-4">
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">rule</span>
+                            Event Terms & Conditions
+                        </label>
+                        <div class="relative">
+                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] py-2 px-3 border min-h-[60px] whitespace-pre-wrap">
+                                {{ $event->condition ?? 'No terms & conditions provided.' }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             

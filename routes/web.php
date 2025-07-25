@@ -162,6 +162,16 @@ Route::get('/attendance/create', [AttendanceController::class, 'create'])
 Route::post('/attendance', [AttendanceController::class, 'store'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_attendance'])
     ->name('attendance.store');
+
+// Move archive route here before the dynamic {attendance} route
+Route::get('/attendance/archive', [AttendanceController::class, 'archive'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_archives'])
+    ->name('attendance.archive');
+
+Route::post('/attendance/{attendance}/archive', [AttendanceController::class, 'archiveAction'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_attendance'])
+    ->name('attendance.archive-action');
+
 Route::get('/attendance/{attendance}', [AttendanceController::class, 'show'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_attendance'])
     ->name('attendance.show');
@@ -210,9 +220,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/certificates', [App\Http\Controllers\CertificateController::class, 'index'])->name('certificates.index');
     Route::get('/certificates/create', [App\Http\Controllers\CertificateController::class, 'create'])->name('certificates.create');
     Route::post('/certificates', [App\Http\Controllers\CertificateController::class, 'store'])->name('certificates.store');
-    Route::get('/certificates/{id}', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
     Route::post('/certificates/preview', [App\Http\Controllers\CertificateController::class, 'preview'])->name('certificates.preview');
     Route::get('/api/certificates/participants', [App\Http\Controllers\CertificateController::class, 'getParticipants'])->name('api.certificates.participants');
+    Route::delete('/certificates/{certificate}', [App\Http\Controllers\CertificateController::class, 'destroy'])
+        ->middleware(['auth', 'verified'])
+        ->name('certificates.destroy');
 });
 
 require __DIR__.'/auth.php';
@@ -225,3 +237,132 @@ Route::get('/debug-alpine', function() {
 Route::get('/debug-template', function() {
     return view('debug-template');
 })->name('debug.template');
+
+// Reports Routes
+Route::prefix('reports')->group(function () {
+    Route::get('/attendance', [App\Http\Controllers\ReportsController::class, 'attendanceIndex'])
+        ->name('reports.attendance.index');
+    
+    Route::get('/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceShow'])
+        ->name('reports.attendance.show');
+    
+    Route::delete('/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceDelete'])
+        ->name('reports.attendance.delete');
+    
+    Route::post('/attendance/export', [App\Http\Controllers\ReportsController::class, 'attendanceExport'])
+        ->name('reports.attendance.export');
+    
+    Route::get('/statistics', [App\Http\Controllers\ReportsStatisticsController::class, 'index'])
+        ->name('reports.statistics');
+    
+    Route::get('/certificates', [App\Http\Controllers\ReportsCertificateController::class, 'index'])
+        ->name('reports.certificates');
+    
+    Route::get('/certificates/{id}', [App\Http\Controllers\ReportsCertificateController::class, 'show'])
+        ->name('reports.certificates.show');
+    
+    Route::get('/certificates/{id}/download', [App\Http\Controllers\ReportsCertificateController::class, 'download'])
+        ->name('reports.certificates.download');
+    
+    Route::delete('/certificates/{id}', [App\Http\Controllers\ReportsCertificateController::class, 'destroy'])
+        ->name('reports.certificates.delete');
+});
+
+// Campaign Routes
+Route::prefix('campaign')->group(function () {
+    Route::get('/', [App\Http\Controllers\CampaignController::class, 'index'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_campaigns'])
+        ->name('campaign.index');
+    
+    Route::get('/create', [App\Http\Controllers\CampaignController::class, 'create'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':create_campaigns'])
+        ->name('campaign.create');
+    
+    Route::post('/', [App\Http\Controllers\CampaignController::class, 'store'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':create_campaigns'])
+        ->name('campaign.store');
+    
+    Route::get('/{campaign}', [App\Http\Controllers\CampaignController::class, 'show'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_campaigns'])
+        ->name('campaign.show');
+    
+    Route::get('/{campaign}/edit', [App\Http\Controllers\CampaignController::class, 'edit'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':edit_campaigns'])
+        ->name('campaign.edit');
+    
+    Route::put('/{campaign}', [App\Http\Controllers\CampaignController::class, 'update'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':edit_campaigns'])
+        ->name('campaign.update');
+    
+    Route::delete('/{campaign}', [App\Http\Controllers\CampaignController::class, 'destroy'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':delete_campaigns'])
+        ->name('campaign.destroy');
+    
+    Route::post('/{campaign}/process', [App\Http\Controllers\CampaignController::class, 'process'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':edit_campaigns'])
+        ->name('campaign.process');
+});
+
+// Campaign tracking routes (no authentication required)
+Route::get('/track/open/{campaign}/{recipient}', [App\Http\Controllers\CampaignController::class, 'trackOpen'])
+    ->name('track.open');
+Route::get('/track/click/{campaign}/{recipient}/{url}', [App\Http\Controllers\CampaignController::class, 'trackClick'])
+    ->name('track.click');
+
+// Config Routes
+Route::prefix('config')->group(function () {
+    Route::get('/deliver', [App\Http\Controllers\DeliveryConfigController::class, 'index'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_delivery'])
+        ->name('config.deliver');
+        
+    Route::post('/deliver/email', [App\Http\Controllers\DeliveryConfigController::class, 'saveEmailConfig'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_delivery'])
+        ->name('config.deliver.email');
+        
+    Route::post('/deliver/sms', [App\Http\Controllers\DeliveryConfigController::class, 'saveSmsConfig'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_delivery'])
+        ->name('config.deliver.sms');
+        
+    Route::post('/deliver/test-email', [App\Http\Controllers\DeliveryConfigController::class, 'sendTestEmail'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_delivery'])
+        ->name('config.deliver.test-email');
+        
+    Route::post('/deliver/test-email-to-address', [App\Http\Controllers\DeliveryConfigController::class, 'sendTestEmailToAddress'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_delivery'])
+        ->name('config.deliver.test-email-to-address');
+        
+    Route::post('/deliver/test-sms', [App\Http\Controllers\DeliveryConfigController::class, 'sendTestSms'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_delivery'])
+        ->name('config.deliver.test-sms');
+});
+
+// Helpdesk Routes
+Route::prefix('helpdesk')->group(function () {
+    Route::get('/', function () {
+        return view('helpdesk.index');
+    })->middleware(['auth', 'verified', PermissionMiddleware::class.':view_helpdesk'])
+    ->name('helpdesk.index');
+});
+
+// Settings Routes
+Route::prefix('settings')->group(function () {
+    Route::get('/log-activity', function () {
+        return view('settings.log-activity');
+    })->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+    ->name('settings.log-activity');
+    
+    Route::get('/security-audit', function () {
+        return view('settings.security-audit');
+    })->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+    ->name('settings.security-audit');
+    
+    Route::get('/global-config', function () {
+        return view('settings.global-config');
+    })->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+    ->name('settings.global-config');
+});
+
+Route::get('/reports/attendance', [App\Http\Controllers\ReportsController::class, 'attendanceIndex'])->name('reports.attendance.index');
+Route::get('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceShow'])->name('reports.attendance.show');
+Route::post('/reports/attendance/export', [App\Http\Controllers\ReportsController::class, 'attendanceExport'])->name('reports.attendance.export');
+Route::delete('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceDelete'])->name('reports.attendance.delete');

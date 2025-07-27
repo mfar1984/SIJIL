@@ -169,6 +169,25 @@
         </div>
     </div>
 
+    <!-- Modal for sending email -->
+    <div id="sendEmailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="px-6 py-4 border-b flex items-center justify-between">
+                <h3 class="text-lg font-medium">Send Certificate Email</h3>
+                <button onclick="closeSendEmailModal()" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="px-6 py-4">
+                <p id="sendEmailText" class="mb-4 text-sm text-gray-700"></p>
+                <div class="flex justify-end">
+                    <button onclick="closeSendEmailModal()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-xs mr-2">Cancel</button>
+                    <button id="sendEmailConfirmBtn" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2 rounded-md text-xs font-semibold shadow-sm flex items-center">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript for the page -->
     <script>
         function filterCertificates() {
@@ -214,16 +233,48 @@
             window.print();
         }
 
+        let currentCertificateId = null;
+        let currentEmail = null;
         function sendEmail(certificateId, email) {
-            // Check if email is available
             if (!email) {
                 alert('No email address available for this participant.');
                 return;
             }
-            
-            // In a real implementation, this would send an API request to send the email
-            alert('This feature will be implemented in a future update. Email would be sent to: ' + email);
+            currentCertificateId = certificateId;
+            currentEmail = email;
+            document.getElementById('sendEmailText').innerText = `Send certificate to: ${email}`;
+            document.getElementById('sendEmailModal').classList.remove('hidden');
         }
+        function closeSendEmailModal() {
+            document.getElementById('sendEmailModal').classList.add('hidden');
+            currentCertificateId = null;
+            currentEmail = null;
+        }
+        document.getElementById('sendEmailConfirmBtn').onclick = function() {
+            if (!currentCertificateId || !currentEmail) return;
+            fetch(`/reports/certificates/${currentCertificateId}/send-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                closeSendEmailModal();
+                if (data.success) {
+                    alert('Email sent successfully!\n' + data.message);
+                } else {
+                    alert('Failed to send email.\n' + (data.message || 'Unknown error.'));
+                }
+            })
+            .catch(() => {
+                closeSendEmailModal();
+                alert('Failed to send email.');
+            });
+        };
         
         // Initialize date range picker if available
         document.addEventListener('DOMContentLoaded', function() {

@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class RoleManagementController extends Controller
 {
@@ -74,6 +75,74 @@ class RoleManagementController extends Controller
     }
     
     /**
+     * Get permission matrix structure
+     */
+    private function getPermissionMatrix()
+    {
+        return [
+            'Dashboard' => ['read'],
+            'Event' => [
+                'Event Management' => ['create', 'read', 'update', 'delete'],
+                'Survey' => ['create', 'read', 'update', 'delete'],
+            ],
+            'Participants' => ['create', 'read', 'update', 'delete'],
+            'Certificate' => [
+                'All Certificate' => ['read'],
+                'Generate Certificate' => ['create', 'read'],
+                'Template Designer' => ['create', 'read', 'update', 'delete'],
+            ],
+            'Attendance' => [
+                'Manage Attendance' => ['create', 'read', 'update', 'delete'],
+                'Archive' => ['read'],
+            ],
+            'Reports' => [
+                'Attendance Reports' => ['read'],
+                'Event Statistics' => ['read'],
+                'Certificate Reports' => ['read'],
+            ],
+            'Campaign' => [
+                'Campaign' => ['create', 'read', 'update', 'delete'],
+                'Config Delivery' => ['read', 'update'],
+            ],
+            'Helpdesk' => ['read', 'update'],
+            'Settings' => [
+                'Global Config' => ['read', 'update'],
+                'Role Management' => ['create', 'read', 'update', 'delete'],
+                'User Management' => ['create', 'read', 'update', 'delete'],
+                'Log Activity' => ['read'],
+                'Security & Audit' => ['read'],
+            ],
+        ];
+    }
+
+    /**
+     * Convert permission matrix to flat array of permission names
+     */
+    private function getPermissionNames()
+    {
+        $matrix = $this->getPermissionMatrix();
+        $permissions = [];
+        
+        foreach ($matrix as $main => $sub) {
+            if (is_array($sub) && isset($sub[0]) && is_string($sub[0])) {
+                // Direct permissions (like Dashboard)
+                foreach ($sub as $action) {
+                    $permissions[] = Str::slug($main) . '.' . $action;
+                }
+            } else {
+                // Sub-menu permissions
+                foreach ($sub as $subName => $actions) {
+                    foreach ($actions as $action) {
+                        $permissions[] = Str::slug($subName) . '.' . $action;
+                    }
+                }
+            }
+        }
+        
+        return $permissions;
+    }
+
+    /**
      * Display the specified role.
      *
      * @param  int  $id
@@ -82,30 +151,18 @@ class RoleManagementController extends Controller
     public function show($id)
     {
         // Find the role by ID
-        $role = Role::with('permissions')->findOrFail($id);
+        $role = Role::with('permissions')->withCount('users')->findOrFail($id);
         
-        // Get all permissions grouped by module for display
-        $permissionGroups = Permission::getGroupedPermissions();
+        // Get permission matrix
+        $permissionMatrix = $this->getPermissionMatrix();
         
-        // Format permissions for view
-        $permissions = [];
-        foreach ($permissionGroups as $group => $groupData) {
-            $permissions[$group] = [
-                'title' => $groupData['title'],
-                'items' => [],
-            ];
-            
-            foreach ($groupData['items'] as $name => $displayName) {
-                $permissions[$group]['items'][$name] = [
-                    'name' => $displayName,
-                    'granted' => $role->hasPermissionTo($name),
-                ];
-            }
-        }
+        // Get role's current permissions
+        $rolePermissions = $role->permissions->pluck('name')->toArray();
         
         return view('settings.role-show', [
             'role' => $role,
-            'permissions' => $permissions
+            'permissionMatrix' => $permissionMatrix,
+            'rolePermissions' => $rolePermissions
         ]);
     }
     
@@ -120,16 +177,16 @@ class RoleManagementController extends Controller
         // Find the role by ID
         $role = Role::with('permissions')->findOrFail($id);
         
-        // Get all permissions grouped by module
-        $permissions = Permission::getGroupedPermissions();
+        // Get permission matrix
+        $permissionMatrix = $this->getPermissionMatrix();
         
-        // Get role's permission IDs
-        $rolePermissionIds = $role->permissions->pluck('id')->toArray();
+        // Get role's current permissions
+        $rolePermissions = $role->permissions->pluck('name')->toArray();
         
         return view('settings.role-edit', [
             'role' => $role,
-            'permissions' => $permissions,
-            'rolePermissionIds' => $rolePermissionIds
+            'permissionMatrix' => $permissionMatrix,
+            'rolePermissions' => $rolePermissions
         ]);
     }
     
@@ -178,7 +235,7 @@ class RoleManagementController extends Controller
             }
         }
         
-        return redirect()->route('role.management')
+        return redirect()->route('role.show', $role->id)
             ->with('success', 'Role updated successfully!');
     }
     

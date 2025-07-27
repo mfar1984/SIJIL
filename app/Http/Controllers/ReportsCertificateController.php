@@ -176,4 +176,129 @@ class ReportsCertificateController extends Controller
         
         return redirect()->route('reports.certificates')->with('success', 'Certificate deleted successfully.');
     }
+
+    /**
+     * Send certificate email to participant
+     */
+    public function sendEmail(Request $request, $id)
+    {
+        $certificate = \App\Models\Certificate::with(['participant', 'event', 'template'])
+            ->where('certificate_number', $id)
+            ->orWhere('id', $id)
+            ->firstOrFail();
+
+        // Check permission
+        if (!auth()->user()->hasRole('Administrator')) {
+            $event = $certificate->event;
+            if (!$event || $event->user_id != auth()->id()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to send this certificate.'], 403);
+            }
+        }
+
+        $email = $certificate->participant->email ?? null;
+        if (!$email) {
+            return response()->json(['success' => false, 'message' => 'No email address available for this participant.'], 422);
+        }
+
+        // Ambil config delivery aktif untuk user ini
+        $userId = auth()->id();
+        $config = \App\Models\DeliveryConfig::where('user_id', $userId)
+            ->where('config_type', 'email')
+            ->where('is_active', true)
+            ->first();
+        if (!$config) {
+            return response()->json(['success' => false, 'message' => 'No active email delivery configuration found.'], 422);
+        }
+        $settings = $config->settings;
+        $provider = $config->provider;
+        $fromName = $settings['from_name'] ?? 'SIJIL System';
+        $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
+
+        // Set konfigurasi mail dinamis
+        switch ($provider) {
+            case 'smtp':
+                config([
+                    'mail.default' => 'smtp',
+                    'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
+                    'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
+                    'mail.mailers.smtp.encryption' => $settings['encryption'] === 'none' ? null : $settings['encryption'],
+                    'mail.mailers.smtp.username' => $settings['username'] ?? '',
+                    'mail.mailers.smtp.password' => $settings['password'] ?? '',
+                    'mail.from.address' => $fromAddress,
+                    'mail.from.name' => $fromName,
+                ]);
+                break;
+            case 'mailgun':
+                config([
+                    'mail.default' => 'mailgun',
+                    'services.mailgun.domain' => $settings['domain'] ?? '',
+                    'services.mailgun.secret' => $settings['secret'] ?? '',
+                    'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
+                    'mail.from.address' => $fromAddress,
+                    'mail.from.name' => $fromName,
+                ]);
+                break;
+            case 'ses':
+                config([
+                    'mail.default' => 'ses',
+                    'services.ses.key' => $settings['key'] ?? '',
+                    'services.ses.secret' => $settings['secret'] ?? '',
+                    'services.ses.region' => $settings['region'] ?? 'us-east-1',
+                    'mail.from.address' => $fromAddress,
+                    'mail.from.name' => $fromName,
+                ]);
+                break;
+        }
+
+        // Compose email
+        $event = $certificate->event;
+        $participant = $certificate->participant;
+        $user = auth()->user();
+        $subject = 'Your Certificate from ' . ($event->name ?? 'SIJIL System');
+
+        // Format tanggal dan waktu
+        $date = $event->start_date ? date('d M Y', strtotime($event->start_date)) : '';
+        if ($event->end_date && $event->end_date !== $event->start_date) {
+            $date .= ' to ' . date('d M Y', strtotime($event->end_date));
+        }
+        $time = $event->start_time ? substr($event->start_time, 0, 5) : '';
+        if ($event->end_time && $event->end_time !== $event->start_time) {
+            $time .= ' to ' . substr($event->end_time, 0, 5);
+        }
+        $location = $event->location ?? '-';
+
+        $body = "Dear {$participant->name},\n\n" .
+            "We would like to extend our warmest congratulations on your successful completion of the program detailed below. Attached, you will find your certificate.\n\n" .
+            "Program Name: {$event->name}\n" .
+            "Date: {$date}\n" .
+            "Time: {$time}\n" .
+            "Location: {$location}\n\n" .
+            "We wish you all the best in your future endeavors.\n\n" .
+            "Kind regards,\n" .
+            "{$user->name}\n" .
+            ($user->phone ?? '');
+
+        try {
+            \Mail::raw($body, function ($mail) use ($email, $subject, $fromName, $fromAddress, $certificate) {
+                $mail->to($email)
+                    ->subject($subject)
+                    ->from($fromAddress, $fromName);
+                // Attach PDF if available
+                if ($certificate->pdf_file && \Storage::disk('public')->exists($certificate->pdf_file)) {
+                    $mail->attach(storage_path('app/public/' . $certificate->pdf_file), [
+                        'as' => 'Certificate_' . $certificate->certificate_number . '.pdf',
+                        'mime' => 'application/pdf',
+                    ]);
+                }
+            });
+            return response()->json(['success' => true, 'message' => 'Email sent successfully to ' . $email]);
+        } catch (\Exception $e) {
+            \Log::error('Certificate email sending error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'certificate_id' => $certificate->id,
+                'toEmail' => $email,
+            ]);
+            return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
+        }
+    }
 } 

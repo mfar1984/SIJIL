@@ -146,25 +146,71 @@
                     Role Permissions
                 </h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    @foreach($permissions as $group => $permission)
-                        <div class="border border-gray-200 rounded p-4">
-                            <h3 class="text-sm font-medium text-gray-700 mb-2">{{ $permission['title'] }}</h3>
-                            <div class="space-y-2">
-                                @foreach($permission['items'] as $key => $item)
-                                    <div class="flex items-center">
-                                        @if($item['granted'])
-                                            <span class="material-icons text-green-600 text-sm">check_circle</span>
-                                            <span class="ml-2 text-xs text-gray-700">{{ $item['name'] }}</span>
-                                        @else
-                                            <span class="material-icons text-red-600 text-sm">cancel</span>
-                                            <span class="ml-2 text-xs text-gray-400">{{ $item['name'] }}</span>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endforeach
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                        <thead class="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Create</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Read</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Update</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach($permissionMatrix as $main => $sub)
+                                @if(is_array($sub) && isset($sub[0]) && is_string($sub[0]))
+                                    <!-- Direct permissions (like Dashboard) -->
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3 text-xs font-medium text-gray-900">
+                                            {{ $main }}
+                                        </td>
+                                        @foreach(['create', 'read', 'update', 'delete'] as $action)
+                                            <td class="px-4 py-3 text-center">
+                                                @if(in_array($action, $sub))
+                                                    @if(in_array(Str::slug($main) . '.' . $action, $rolePermissions))
+                                                        <span class="material-icons text-green-600 text-base">check_circle</span>
+                                                    @else
+                                                        <span class="material-icons text-red-600 text-base">cancel</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-300 text-xs">-</span>
+                                                @endif
+                                            </td>
+                                        @endforeach
+                                    </tr>
+                                @else
+                                    <!-- Main category header -->
+                                    <tr class="bg-gray-100">
+                                        <td colspan="5" class="px-4 py-2 text-xs font-bold text-gray-700">
+                                            {{ $main }}
+                                        </td>
+                                    </tr>
+                                    <!-- Sub-menu permissions -->
+                                    @foreach($sub as $subName => $actions)
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-xs text-gray-900 pl-8">
+                                                {{ $subName }}
+                                            </td>
+                                            @foreach(['create', 'read', 'update', 'delete'] as $action)
+                                                <td class="px-4 py-3 text-center">
+                                                    @if(in_array($action, $actions))
+                                                        @if(in_array(Str::slug($subName) . '.' . $action, $rolePermissions))
+                                                            <span class="material-icons text-green-600 text-base">check_circle</span>
+                                                        @else
+                                                            <span class="material-icons text-red-600 text-base">cancel</span>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-gray-300 text-xs">-</span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
             

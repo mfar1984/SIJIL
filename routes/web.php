@@ -13,9 +13,28 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Test route for debugging permissions
+Route::get('/test-permission', function () {
+    $user = auth()->user();
+    return response()->json([
+        'user' => $user ? $user->name : 'Not authenticated',
+        'has_view_roles' => $user ? $user->hasPermissionTo('view_roles') : false,
+        'has_role_administrator' => $user ? $user->hasRole('Administrator') : false,
+        'permissions_count' => $user ? $user->getAllPermissions()->count() : 0,
+        'all_permissions' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
+    ]);
+})->middleware(['auth', 'verified'])->name('test.permission');
+
+// Test route for role management without permission middleware
+Route::get('/test-role-management', function () {
+    return view('settings.role-index', [
+        'roles' => \App\Models\Role::with('permissions')->paginate(10)
+    ]);
+})->middleware(['auth', 'verified'])->name('test.role.management');
+
+Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Role Management Routes with permission middleware
 Route::get('/role-management', [App\Http\Controllers\RoleManagementController::class, 'index'])
@@ -268,6 +287,8 @@ Route::prefix('reports')->group(function () {
         ->name('reports.certificates.delete');
 });
 
+Route::post('/reports/certificates/{id}/send-email', [App\Http\Controllers\ReportsCertificateController::class, 'sendEmail'])->name('reports.certificates.sendEmail');
+
 // Campaign Routes
 Route::prefix('campaign')->group(function () {
     Route::get('/', [App\Http\Controllers\CampaignController::class, 'index'])
@@ -337,11 +358,17 @@ Route::prefix('config')->group(function () {
 });
 
 // Helpdesk Routes
-Route::prefix('helpdesk')->group(function () {
-    Route::get('/', function () {
-        return view('helpdesk.index');
-    })->middleware(['auth', 'verified', PermissionMiddleware::class.':view_helpdesk'])
-    ->name('helpdesk.index');
+Route::middleware(['auth'])->prefix('helpdesk')->name('helpdesk.')->group(function () {
+    Route::get('/', [App\Http\Controllers\HelpdeskController::class, 'index'])->name('index');
+    Route::post('/', [App\Http\Controllers\HelpdeskController::class, 'store'])->name('store');
+    Route::get('{id}', [App\Http\Controllers\HelpdeskController::class, 'show'])->name('show');
+    Route::post('{id}/reply', [App\Http\Controllers\HelpdeskController::class, 'reply'])->name('reply');
+    Route::post('{id}/status', [App\Http\Controllers\HelpdeskController::class, 'updateStatus'])->name('status');
+    Route::get('message/{messageId}/attachment/{attachmentIndex}', [App\Http\Controllers\HelpdeskController::class, 'downloadAttachment'])->name('attachment');
+    
+    // Notification Routes
+    Route::get('/notifications', [App\Http\Controllers\HelpdeskController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notifications/mark-read', [App\Http\Controllers\HelpdeskController::class, 'markNotificationsAsRead'])->name('notifications.mark-read');
 });
 
 // Settings Routes
@@ -356,13 +383,111 @@ Route::prefix('settings')->group(function () {
     })->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
     ->name('settings.security-audit');
     
-    Route::get('/global-config', function () {
-        return view('settings.global-config');
-    })->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
-    ->name('settings.global-config');
+    Route::get('/global-config', [App\Http\Controllers\GlobalConfigController::class, 'index'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+        ->name('settings.global-config');
+        
+    Route::post('/global-config', [App\Http\Controllers\GlobalConfigController::class, 'update'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+        ->name('settings.global-config.update');
+        
+    Route::post('/global-config/regenerate-webhook-secret', [App\Http\Controllers\GlobalConfigController::class, 'regenerateWebhookSecret'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+        ->name('settings.global-config.regenerate-webhook');
+        
+    Route::post('/global-config/reset', [App\Http\Controllers\GlobalConfigController::class, 'reset'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+        ->name('settings.global-config.reset');
+        
+    Route::get('/global-config/api', [App\Http\Controllers\GlobalConfigController::class, 'getConfig'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+        ->name('settings.global-config.api');
 });
 
 Route::get('/reports/attendance', [App\Http\Controllers\ReportsController::class, 'attendanceIndex'])->name('reports.attendance.index');
 Route::get('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceShow'])->name('reports.attendance.show');
 Route::post('/reports/attendance/export', [App\Http\Controllers\ReportsController::class, 'attendanceExport'])->name('reports.attendance.export');
 Route::delete('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceDelete'])->name('reports.attendance.delete');
+
+// Survey Routes - Admin
+Route::middleware(['auth'])->prefix('survey')->name('survey.')->group(function () {
+    Route::get('/', [App\Http\Controllers\SurveyController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':view_surveys')
+        ->name('index');
+        
+    Route::get('/create', [App\Http\Controllers\SurveyController::class, 'create'])
+        ->middleware(PermissionMiddleware::class.':create_surveys')
+        ->name('create');
+        
+    Route::post('/', [App\Http\Controllers\SurveyController::class, 'store'])
+        ->middleware(PermissionMiddleware::class.':create_surveys')
+        ->name('store');
+        
+    Route::get('/{survey}', [App\Http\Controllers\SurveyController::class, 'show'])
+        ->middleware(PermissionMiddleware::class.':view_surveys')
+        ->name('show');
+        
+    Route::get('/{survey}/edit', [App\Http\Controllers\SurveyController::class, 'edit'])
+        ->middleware(PermissionMiddleware::class.':edit_surveys')
+        ->name('edit');
+        
+    Route::put('/{survey}', [App\Http\Controllers\SurveyController::class, 'update'])
+        ->middleware(PermissionMiddleware::class.':edit_surveys')
+        ->name('update');
+        
+    Route::delete('/{survey}', [App\Http\Controllers\SurveyController::class, 'destroy'])
+        ->middleware(PermissionMiddleware::class.':delete_surveys')
+        ->name('destroy');
+        
+    Route::post('/{survey}/publish', [App\Http\Controllers\SurveyController::class, 'togglePublish'])
+        ->middleware(PermissionMiddleware::class.':edit_surveys')
+        ->name('toggle-publish');
+    
+    // Question management
+    Route::post('/{survey}/questions', [App\Http\Controllers\SurveyController::class, 'storeQuestion'])
+        ->middleware(PermissionMiddleware::class.':manage_survey_questions')
+        ->name('questions.store');
+        
+    Route::put('/{survey}/questions/order', [App\Http\Controllers\SurveyController::class, 'updateQuestionOrder'])
+        ->middleware(PermissionMiddleware::class.':manage_survey_questions')
+        ->name('questions.order');
+        
+    Route::put('/{survey}/questions/{question}', [App\Http\Controllers\SurveyController::class, 'updateQuestion'])
+        ->middleware(PermissionMiddleware::class.':manage_survey_questions')
+        ->name('questions.update');
+        
+    Route::delete('/{survey}/questions/{question}', [App\Http\Controllers\SurveyController::class, 'destroyQuestion'])
+        ->middleware(PermissionMiddleware::class.':manage_survey_questions')
+        ->name('questions.destroy');
+    
+    // Responses and analytics
+    Route::get('/{survey}/responses', [App\Http\Controllers\SurveyController::class, 'showResponses'])
+        ->middleware(PermissionMiddleware::class.':view_survey_responses')
+        ->name('responses');
+        
+    // Export responses route (harus sebelum route dengan parameter)
+    Route::get('/{survey}/responses/export', [App\Http\Controllers\SurveyController::class, 'exportResponses'])
+        ->middleware(PermissionMiddleware::class.':export_survey_responses')
+        ->name('responses.export');
+        
+    // Route for AJAX view response detail
+    Route::get('/{survey}/responses/{response}', [App\Http\Controllers\SurveyController::class, 'viewResponse'])
+        ->middleware(PermissionMiddleware::class.':view_survey_responses')
+        ->name('responses.view');
+        
+    Route::delete('/{survey}/responses/{response}', [App\Http\Controllers\SurveyController::class, 'destroyResponse'])
+        ->middleware(PermissionMiddleware::class.':view_survey_responses')
+        ->name('responses.destroy');
+        
+    Route::get('/{survey}/analytics', [App\Http\Controllers\SurveyController::class, 'showAnalytics'])
+        ->middleware(PermissionMiddleware::class.':view_survey_responses')
+        ->name('analytics');
+});
+
+// Public Survey Routes
+Route::prefix('s')->name('public.survey.')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\PublicSurveyController::class, 'show'])->name('show');
+    Route::post('/{slug}/submit', [App\Http\Controllers\PublicSurveyController::class, 'submit'])->name('submit');
+    Route::get('/{slug}/thankyou', [App\Http\Controllers\PublicSurveyController::class, 'thankYou'])->name('thankyou');
+    Route::get('/{slug}/expired', [App\Http\Controllers\PublicSurveyController::class, 'expired'])->name('expired');
+});

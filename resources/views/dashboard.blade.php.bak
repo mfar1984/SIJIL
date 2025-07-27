@@ -1,0 +1,978 @@
+<x-app-layout>
+    <x-slot name="breadcrumb">
+        <span>Dashboard</span>
+    </x-slot>
+
+    <x-slot name="title">Analytics Dashboard</x-slot>
+    
+    <x-slot name="styles">
+        <style>
+            .chart-container {
+                background-color: white;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                height: 300px; 
+                position: relative;
+                border: 1px solid #e5e7eb;
+                margin-bottom: 20px;
+            }
+            
+            .flowbite-chart {
+                width: 100%;
+                height: 100%;
+            }
+            
+            .no-data-message {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 200px;
+                color: #6b7280;
+            }
+            
+            .no-data-message .material-icons {
+                font-size: 48px;
+                margin-bottom: 0.5rem;
+                color: #d1d5db;
+            }
+            
+            .chart-debug {
+                margin-top: 10px;
+                padding: 5px;
+                border: 1px solid #f00;
+                background-color: #fff8f8;
+                color: #800;
+                font-size: 12px;
+                display: block !important;
+            }
+        </style>
+    </x-slot>
+    
+    <x-slot name="scripts">
+        <!-- Flowbite CDN -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.js"></script>
+        <!-- ApexCharts CDN - flowbite charts requires it -->
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                console.clear();
+                console.log('DOM loaded, initializing Flowbite Charts...');
+                
+                // Check if ApexCharts is available (required by Flowbite Charts)
+                if (typeof ApexCharts === 'undefined') {
+                    console.error('ApexCharts not loaded - required for Flowbite Charts!');
+                    document.querySelectorAll('.chart-container').forEach(container => {
+                        container.innerHTML = '<div style="color:red;padding:20px;font-weight:bold;">Error: ApexCharts library not loaded (required by Flowbite Charts)</div>';
+                    });
+                    return;
+                }
+                
+                console.log('Charts dependencies loaded successfully');
+                
+                // DUMMY DATA FOR CHARTS
+                const dummyMonthlyData = {
+                    'Jan': 10, 'Feb': 15, 'Mar': 8, 'Apr': 12, 'May': 20, 
+                    'Jun': 18, 'Jul': 25, 'Aug': 22, 'Sep': 30, 'Oct': 28, 'Nov': 35, 'Dec': 40
+                };
+                
+                const dummyGenderData = {
+                    'Male': 58, 'Female': 42
+                };
+                
+                const dummyStatusData = {
+                    'Active': 75, 'Completed': 25
+                };
+                
+                const dummyCampaignData = [
+                    { name: 'Campaign 1', open_rate: 65, click_rate: 23 },
+                    { name: 'Campaign 2', open_rate: 72, click_rate: 18 },
+                    { name: 'Campaign 3', open_rate: 45, click_rate: 15 },
+                    { name: 'Campaign 4', open_rate: 80, click_rate: 30 }
+                ];
+                
+                const dummyAttendanceData = [
+                    { name: 'Event 1', attendance_rate: 88 },
+                    { name: 'Event 2', attendance_rate: 75 },
+                    { name: 'Event 3', attendance_rate: 92 },
+                    { name: 'Event 4', attendance_rate: 65 }
+                ];
+                
+                // Initialize all charts
+                initEventChart();
+                initParticipantChart();
+                initGenderChart();
+                initStatusChart();
+                initCampaignChart();
+                initAttendanceChart();
+                initGrowthChart();
+                
+                // Event Chart - Bar Chart
+                function initEventChart() {
+                    const options = {
+                        chart: {
+                            type: 'bar',
+                            height: '100%',
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: [
+                            {
+                                name: 'Events',
+                                color: '#3b82f6',
+                                data: Object.values(dummyMonthlyData)
+                            }
+                        ],
+                        xaxis: {
+                            categories: Object.keys(dummyMonthlyData),
+                            labels: {
+                                style: {
+                                    fontSize: '12px',
+                                    fontWeight: 500,
+                                },
+                            }
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Number of Events'
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        grid: {
+                            show: false,
+                        }
+                    };
+                    
+                    if (document.getElementById('eventsChart')) {
+                        const chart = new ApexCharts(document.getElementById('eventsChart'), options);
+                        chart.render();
+                        console.log('Events chart rendered successfully');
+                    } else {
+                        console.error('Events chart container not found');
+                    }
+                }
+                
+                // Participants Chart - Bar Chart
+                function initParticipantChart() {
+                    const options = {
+                        chart: {
+                            type: 'bar',
+                            height: '100%',
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: [
+                            {
+                                name: 'Participants',
+                                color: '#10b981',
+                                data: Object.values(dummyMonthlyData).map(val => val * 2) // Double the events count for participants
+                            }
+                        ],
+                        xaxis: {
+                            categories: Object.keys(dummyMonthlyData),
+                            labels: {
+                                style: {
+                                    fontSize: '12px',
+                                    fontWeight: 500,
+                                },
+                            }
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Number of Participants'
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        grid: {
+                            show: false,
+                        }
+                    };
+                    
+                    if (document.getElementById('participantsChart')) {
+                        const chart = new ApexCharts(document.getElementById('participantsChart'), options);
+                        chart.render();
+                        console.log('Participants chart rendered successfully');
+                    } else {
+                        console.error('Participants chart container not found');
+                    }
+                }
+                
+                // Gender Chart - Pie Chart
+                function initGenderChart() {
+                    const options = {
+                        chart: {
+                            type: 'pie',
+                            height: '100%',
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: Object.values(dummyGenderData),
+                        labels: Object.keys(dummyGenderData),
+                        colors: ['#4f46e5', '#ec4899'],
+                        legend: {
+                            position: 'bottom'
+                        },
+                        plotOptions: {
+                            pie: {
+                                dataLabels: {
+                                    offset: -25
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            formatter: function(val, opts) {
+                                return opts.w.config.series[opts.seriesIndex] + '%';
+                            },
+                        }
+                    };
+                    
+                    if (document.getElementById('genderChart')) {
+                        const chart = new ApexCharts(document.getElementById('genderChart'), options);
+                        chart.render();
+                        console.log('Gender chart rendered successfully');
+                    } else {
+                        console.error('Gender chart container not found');
+                    }
+                }
+                
+                // Status Chart - Pie Chart
+                function initStatusChart() {
+                    const options = {
+                        chart: {
+                            type: 'pie',
+                            height: '100%',
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: Object.values(dummyStatusData),
+                        labels: Object.keys(dummyStatusData),
+                        colors: ['#10b981', '#f59e0b'],
+                        legend: {
+                            position: 'bottom'
+                        },
+                        plotOptions: {
+                            pie: {
+                                dataLabels: {
+                                    offset: -25
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            formatter: function(val, opts) {
+                                return opts.w.config.series[opts.seriesIndex] + '%';
+                            },
+                        }
+                    };
+                    
+                    if (document.getElementById('statusChart')) {
+                        const chart = new ApexCharts(document.getElementById('statusChart'), options);
+                        chart.render();
+                        console.log('Status chart rendered successfully');
+                    } else {
+                        console.error('Status chart container not found');
+                    }
+                }
+                
+                // Campaign Chart - Bar Chart
+                function initCampaignChart() {
+                    const options = {
+                        chart: {
+                            type: 'bar',
+                            height: '100%',
+                            stacked: false,
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: [
+                            {
+                                name: 'Open Rate',
+                                color: '#4f46e5',
+                                data: dummyCampaignData.map(item => item.open_rate)
+                            },
+                            {
+                                name: 'Click Rate',
+                                color: '#f59e0b',
+                                data: dummyCampaignData.map(item => item.click_rate)
+                            }
+                        ],
+                        xaxis: {
+                            categories: dummyCampaignData.map(item => item.name),
+                            labels: {
+                                style: {
+                                    fontSize: '12px',
+                                    fontWeight: 500,
+                                },
+                            }
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Rate (%)'
+                            },
+                            max: 100
+                        },
+                        legend: {
+                            position: 'top'
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        grid: {
+                            show: false,
+                        }
+                    };
+                    
+                    if (document.getElementById('campaignChart')) {
+                        const chart = new ApexCharts(document.getElementById('campaignChart'), options);
+                        chart.render();
+                        console.log('Campaign chart rendered successfully');
+                    } else {
+                        console.error('Campaign chart container not found');
+                    }
+                }
+                
+                // Attendance Chart - Bar Chart
+                function initAttendanceChart() {
+                    const options = {
+                        chart: {
+                            type: 'bar',
+                            height: '100%',
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: [
+                            {
+                                name: 'Attendance Rate',
+                                color: '#10b981',
+                                data: dummyAttendanceData.map(item => item.attendance_rate)
+                            }
+                        ],
+                        xaxis: {
+                            categories: dummyAttendanceData.map(item => item.name),
+                            labels: {
+                                style: {
+                                    fontSize: '12px',
+                                    fontWeight: 500,
+                                },
+                            }
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Rate (%)'
+                            },
+                            max: 100
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        grid: {
+                            show: false,
+                        }
+                    };
+                    
+                    if (document.getElementById('attendanceChart')) {
+                        const chart = new ApexCharts(document.getElementById('attendanceChart'), options);
+                        chart.render();
+                        console.log('Attendance chart rendered successfully');
+                    } else {
+                        console.error('Attendance chart container not found');
+                    }
+                }
+                
+                // Growth Chart - Line Chart
+                function initGrowthChart() {
+                    // Calculate cumulative values
+                    const monthlyValues = Object.values(dummyMonthlyData);
+                    const cumulativeValues = [];
+                    let cumulative = 0;
+                    
+                    monthlyValues.forEach(value => {
+                        cumulative += value;
+                        cumulativeValues.push(cumulative);
+                    });
+                    
+                    const options = {
+                        chart: {
+                            type: 'line',
+                            height: '100%',
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: [
+                            {
+                                name: 'Cumulative Events',
+                                data: cumulativeValues,
+                                color: '#3b82f6'
+                            }
+                        ],
+                        xaxis: {
+                            categories: Object.keys(dummyMonthlyData),
+                            labels: {
+                                style: {
+                                    fontSize: '12px',
+                                    fontWeight: 500,
+                                },
+                            }
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Total Events'
+                            }
+                        },
+                        stroke: {
+                            curve: 'smooth',
+                            width: 3
+                        },
+                        markers: {
+                            size: 5,
+                            strokeColors: '#ffffff',
+                            strokeWidth: 2
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        grid: {
+                            show: true,
+                            strokeDashArray: 4,
+                            padding: {
+                                left: 2,
+                                right: 2,
+                                top: -20
+                            }
+                        }
+                    };
+                    
+                    if (document.getElementById('growthChart')) {
+                        const chart = new ApexCharts(document.getElementById('growthChart'), options);
+                        chart.render();
+                        console.log('Growth chart rendered successfully');
+                    } else {
+                        console.error('Growth chart container not found');
+                    }
+                }
+            });
+        </script>
+    </x-slot>
+
+    <div class="bg-white rounded shadow-md border border-gray-300">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="flex items-center">
+                        <span class="material-icons mr-2 text-primary-DEFAULT">dashboard</span>
+                        <h1 class="text-xl font-bold text-gray-800">Analytics Dashboard</h1>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 ml-8">Comprehensive analytics and statistics</p>
+                </div>
+                
+                <!-- Filter Form -->
+                <form action="{{ route('dashboard') }}" method="GET" class="flex items-center space-x-3">
+                    <div>
+                        <select name="period" id="period" class="text-xs rounded-md border-gray-300 shadow-sm">
+                            <option value="this_month" {{ $period == 'this_month' ? 'selected' : '' }}>This Month</option>
+                            <option value="last_month" {{ $period == 'last_month' ? 'selected' : '' }}>Last Month</option>
+                            <option value="last_3_months" {{ $period == 'last_3_months' ? 'selected' : '' }}>Last 3 Months</option>
+                            <option value="last_6_months" {{ $period == 'last_6_months' ? 'selected' : '' }}>Last 6 Months</option>
+                            <option value="this_year" {{ $period == 'this_year' ? 'selected' : '' }}>This Year</option>
+                            <option value="custom" {{ $period == 'custom' ? 'selected' : '' }}>Custom Range</option>
+                        </select>
+                    </div>
+                    <div id="customDateContainer" class="flex items-center space-x-2 {{ $period == 'custom' ? '' : 'hidden' }}">
+                        <div class="flex items-center">
+                            <label for="start_date" class="text-xs mr-1">From:</label>
+                            <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" class="text-xs rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="flex items-center">
+                            <label for="end_date" class="text-xs mr-1">To:</label>
+                            <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" class="text-xs rounded-md border-gray-300 shadow-sm">
+                        </div>
+                    </div>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow-sm text-xs">
+                        <span class="material-icons text-xs mr-1">filter_alt</span>
+                        Apply Filter
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <!-- Summary Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs font-medium">Total Events</p>
+                            <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalEvents) }}</h3>
+                        </div>
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <span class="material-icons text-blue-600">event</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs font-medium">Total Participants</p>
+                            <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalParticipants) }}</h3>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <span class="material-icons text-green-600">groups</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs font-medium">Certificates Issued</p>
+                            <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalCertificates) }}</h3>
+                        </div>
+                        <div class="p-3 bg-amber-100 rounded-full">
+                            <span class="material-icons text-amber-600">card_membership</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs font-medium">Total Attendance</p>
+                            <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalAttendance) }}</h3>
+                        </div>
+                        <div class="p-3 bg-purple-100 rounded-full">
+                            <span class="material-icons text-purple-600">how_to_reg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs font-medium">Total Campaigns</p>
+                            <h3 class="text-2xl font-semibold mt-1">{{ number_format($activeCampaigns) }}</h3>
+                        </div>
+                        <div class="p-3 bg-indigo-100 rounded-full">
+                            <span class="material-icons text-indigo-600">campaign</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section 1: Time Series -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Monthly Events Chart -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-medium text-gray-700 flex items-center">
+                            <span class="material-icons text-blue-600 mr-2">timeline</span>
+                            Events Over Time
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="chart-container">
+                            @if(!empty($monthlyEvents))
+                                <div id="eventsChart" class="flowbite-chart"></div>
+                                <!-- Debug display -->
+                                <div class="debug-data" style="display: none; margin-top: 10px; padding: 5px; background: #f8f8f8; font-size: 10px;">
+                                    Data: {{ json_encode($monthlyEvents) }}
+                                </div>
+                            @else
+                                <div class="no-data-message">
+                                    <span class="material-icons">event_busy</span>
+                                    <p>No event data available for the selected period</p>
+                                </div>
+                            @endif
+                        </div>
+                        @if(!empty($monthlyEvents))
+                            <div class="mt-3 p-2 bg-gray-50 rounded-md text-xs text-gray-500">
+                                <div class="flex justify-between">
+                                    <span>Peak: {{ array_search(max($monthlyEvents), $monthlyEvents) }}</span>
+                                    <span>Average: {{ count($monthlyEvents) > 0 ? round(array_sum(array_values($monthlyEvents)) / count($monthlyEvents), 1) : 0 }}</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Monthly Participants Chart -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-medium text-gray-700 flex items-center">
+                            <span class="material-icons text-green-600 mr-2">people</span>
+                            Participants Over Time
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="chart-container">
+                            @if(!empty($monthlyParticipants))
+                                <div id="participantsChart" class="flowbite-chart"></div>
+                                <!-- Debug display -->
+                                <div class="debug-data" style="display: none; margin-top: 10px; padding: 5px; background: #f8f8f8; font-size: 10px;">
+                                    Data: {{ json_encode($monthlyParticipants) }}
+                                </div>
+                            @else
+                                <div class="no-data-message">
+                                    <span class="material-icons">groups_off</span>
+                                    <p>No participant data available for the selected period</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Charts Section 2: Distribution -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Gender Distribution Chart -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-medium text-gray-700 flex items-center">
+                            <span class="material-icons text-purple-600 mr-2">pie_chart</span>
+                            Participant Gender Distribution
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="chart-container">
+                            @if(!empty($genderDistribution))
+                                <div id="genderChart" class="flowbite-chart"></div>
+                                <!-- Debug display -->
+                                <div class="debug-data" style="display: none; margin-top: 10px; padding: 5px; background: #f8f8f8; font-size: 10px;">
+                                    Data: {{ json_encode($genderDistribution) }}
+                                </div>
+                            @else
+                                <div class="no-data-message">
+                                    <span class="material-icons">pie_chart_off</span>
+                                    <p>No gender distribution data available</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Event Status Distribution Chart -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-medium text-gray-700 flex items-center">
+                            <span class="material-icons text-amber-600 mr-2">pie_chart</span>
+                            Event Status Distribution
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="chart-container">
+                            @if(!empty($eventStatusDistribution))
+                                <div id="statusChart" class="flowbite-chart"></div>
+                                <!-- Debug display -->
+                                <div class="debug-data" style="display: none; margin-top: 10px; padding: 5px; background: #f8f8f8; font-size: 10px;">
+                                    Data: {{ json_encode($eventStatusDistribution) }}
+                                </div>
+                            @else
+                                <div class="no-data-message">
+                                    <span class="material-icons">pie_chart_off</span>
+                                    <p>No event status data available</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section 3: Performance -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Campaign Performance Chart -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-medium text-gray-700 flex items-center">
+                            <span class="material-icons text-indigo-600 mr-2">campaign</span>
+                            Campaign Performance
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="chart-container">
+                            @if(isset($campaignPerformance) && $campaignPerformance->count() > 0)
+                                <div id="campaignChart" class="flowbite-chart"></div>
+                                <!-- Debug display -->
+                                <div class="debug-data" style="display: none; margin-top: 10px; padding: 5px; background: #f8f8f8; font-size: 10px;">
+                                    Data: {{ json_encode($campaignPerformance) }}
+                                </div>
+                            @else
+                                <div class="no-data-message">
+                                    <span class="material-icons">campaign</span>
+                                    <p>No campaign performance data available</p>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            if (document.getElementById('campaignChart')) {
+                                try {
+                                    const campaignLabels = {!! json_encode($campaignPerformance->pluck('name')->toArray()) !!};
+                                    const openRateData = {!! json_encode($campaignPerformance->pluck('open_rate')->toArray()) !!};
+                                    const clickRateData = {!! json_encode($campaignPerformance->pluck('click_rate')->toArray()) !!};
+                                    
+                                    console.log('Campaign labels:', campaignLabels);
+                                    console.log('Open rate data:', openRateData);
+                                    console.log('Click rate data:', clickRateData);
+                                    
+                                    new Chart(document.getElementById('campaignChart'), {
+                                        type: 'bar',
+                                        data: {
+                                            labels: campaignLabels,
+                                            datasets: [
+                                                {
+                                                    label: 'Open Rate (%)',
+                                                    data: openRateData,
+                                                    backgroundColor: 'rgba(79, 70, 229, 0.8)'
+                                                },
+                                                {
+                                                    label: 'Click Rate (%)',
+                                                    data: clickRateData,
+                                                    backgroundColor: 'rgba(245, 158, 11, 0.8)'
+                                                }
+                                            ]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true,
+                                                    max: 100
+                                                }
+                                            }
+                                        }
+                                    });
+                                    console.log('Campaign chart created directly');
+                                } catch (e) {
+                                    console.error('Error initializing campaign chart directly:', e);
+                                }
+                            } else {
+                                console.error('Campaign chart element not found');
+                            }
+                        });
+                        </script>
+                    </div>
+                </div>
+                
+                <!-- Attendance Rate Chart -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="p-4 border-b border-gray-200">
+                        <h3 class="font-medium text-gray-700 flex items-center">
+                            <span class="material-icons text-green-600 mr-2">how_to_reg</span>
+                            Attendance Rate by Event
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="chart-container">
+                            @if(isset($attendanceRateByEvent) && count($attendanceRateByEvent) > 0)
+                                <div id="attendanceChart" class="flowbite-chart"></div>
+                                <!-- Debug display -->
+                                <div class="debug-data" style="display: none; margin-top: 10px; padding: 5px; background: #f8f8f8; font-size: 10px;">
+                                    Data: {{ json_encode($attendanceRateByEvent) }}
+                                </div>
+                            @else
+                                <div class="no-data-message">
+                                    <span class="material-icons">how_to_reg</span>
+                                    <p>No attendance rate data available</p>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            if (document.getElementById('attendanceChart')) {
+                                try {
+                                    const attendanceData = {!! json_encode(collect($attendanceRateByEvent)->pluck('attendance_rate')->toArray()) !!};
+                                    const attendanceLabels = {!! json_encode(collect($attendanceRateByEvent)->pluck('name')->toArray()) !!};
+                                    
+                                    console.log('Attendance data:', attendanceData);
+                                    console.log('Attendance labels:', attendanceLabels);
+                                    
+                                    new Chart(document.getElementById('attendanceChart'), {
+                                        type: 'bar',
+                                        data: {
+                                            labels: attendanceLabels,
+                                            datasets: [{
+                                                label: 'Attendance Rate (%)',
+                                                data: attendanceData,
+                                                backgroundColor: 'rgba(16, 185, 129, 0.8)'
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true,
+                                                    max: 100
+                                                }
+                                            }
+                                        }
+                                    });
+                                    console.log('Attendance chart created directly');
+                                } catch (e) {
+                                    console.error('Error initializing attendance chart directly:', e);
+                                }
+                            } else {
+                                console.error('Attendance chart element not found');
+                            }
+                        });
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cumulative Growth Chart -->
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div class="p-4 border-b border-gray-200">
+                    <h3 class="font-medium text-gray-700 flex items-center">
+                        <span class="material-icons text-blue-600 mr-2">show_chart</span>
+                        Cumulative Event Growth
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="chart-container">
+                        @if(!empty($eventCumulativeGrowth))
+                            <div id="growthChart" class="flowbite-chart"></div>
+                            <!-- Debug display -->
+                            <div class="debug-data" style="display: none; margin-top: 10px; padding: 5px; background: #f8f8f8; font-size: 10px;">
+                                Data: {{ json_encode($eventCumulativeGrowth) }}
+                            </div>
+                        @else
+                            <div class="no-data-message">
+                                <span class="material-icons">show_chart</span>
+                                <p>No cumulative growth data available</p>
+                            </div>
+                        @endif
+                    </div>
+                    @if(!empty($eventCumulativeGrowth))
+                        <div class="mt-3 p-2 bg-gray-50 rounded-md text-xs text-gray-500">
+                            <div class="flex justify-between">
+                                @php
+                                    $firstValue = reset($eventCumulativeGrowth) ?: 0;
+                                    $lastValue = end($eventCumulativeGrowth) ?: 0;
+                                    $growthRate = $firstValue > 0 ? round(($lastValue - $firstValue) / $firstValue * 100, 1) : 0;
+                                @endphp
+                                <span>Growth rate: {{ $growthRate }}%</span>
+                                <span>Time range: {{ count($eventCumulativeGrowth) }} periods</span>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Script to handle the custom date range toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const periodSelect = document.getElementById('period');
+            const customDateContainer = document.getElementById('customDateContainer');
+            
+            if (periodSelect && customDateContainer) {
+                periodSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        customDateContainer.classList.remove('hidden');
+                    } else {
+                        customDateContainer.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+    
+    <!-- Debug Section - Only visible in debug mode -->
+    <div class="mt-6 p-4 bg-gray-100 rounded border border-gray-300 text-xs">
+        <h3 class="font-bold mb-2">Debug Information</h3>
+        
+        <div class="mb-2">
+            <strong>Events Data:</strong> 
+            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ json_encode($monthlyEvents, JSON_PRETTY_PRINT) }}</pre>
+        </div>
+        
+        <div class="mb-2">
+            <strong>Participants Data:</strong>
+            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ json_encode($monthlyParticipants, JSON_PRETTY_PRINT) }}</pre>
+        </div>
+        
+        <div class="mb-2">
+            <strong>Gender Distribution:</strong>
+            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ json_encode($genderDistribution, JSON_PRETTY_PRINT) }}</pre>
+        </div>
+        
+        <div class="mb-2">
+            <strong>Event Status Distribution:</strong>
+            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ json_encode($eventStatusDistribution, JSON_PRETTY_PRINT) }}</pre>
+        </div>
+        
+        <div class="mb-2">
+            <strong>Campaign Performance:</strong>
+            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ isset($campaignPerformance) ? json_encode($campaignPerformance->toArray(), JSON_PRETTY_PRINT) : 'No data' }}</pre>
+        </div>
+        
+        <div class="mb-2">
+            <strong>Attendance Rate by Event:</strong>
+            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ isset($attendanceRateByEvent) ? json_encode($attendanceRateByEvent->toArray(), JSON_PRETTY_PRINT) : 'No data' }}</pre>
+        </div>
+        
+        <div>
+            <strong>Cumulative Growth:</strong>
+            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ json_encode($eventCumulativeGrowth, JSON_PRETTY_PRINT) }}</pre>
+        </div>
+        
+        <div class="mt-4">
+            <button onclick="toggleChartInfo()" class="bg-blue-500 text-white px-3 py-1 rounded text-xs">Show Chart Elements</button>
+            <div id="chartInfo" class="mt-2 hidden"></div>
+        </div>
+        
+        <script>
+            function toggleChartInfo() {
+                const chartInfo = document.getElementById('chartInfo');
+                if (chartInfo.classList.contains('hidden')) {
+                    // Show chart information
+                    chartInfo.classList.remove('hidden');
+                    let info = '';
+                    
+                    // Check all chart canvases
+                    const charts = [
+                        'eventsChart', 'participantsChart', 'genderChart', 'statusChart',
+                        'campaignChart', 'attendanceChart', 'growthChart'
+                    ];
+                    
+                    charts.forEach(chartId => {
+                        const canvas = document.getElementById(chartId);
+                        if (canvas) {
+                            info += `<div class="mb-2"><strong>${chartId}:</strong> Found - Width: ${canvas.offsetWidth}, Height: ${canvas.offsetHeight}</div>`;
+                        } else {
+                            info += `<div class="mb-2"><strong>${chartId}:</strong> Not found in DOM</div>`;
+                        }
+                    });
+                    
+                    chartInfo.innerHTML = info;
+                } else {
+                    // Hide chart information
+                    chartInfo.classList.add('hidden');
+                }
+            }
+        </script>
+    </div>
+</x-app-layout>

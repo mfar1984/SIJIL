@@ -18,14 +18,14 @@ class Kernel extends ConsoleKernel
 
     /**
      * Define the application's command schedule.
-     *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
-     * @return void
      */
-    protected function schedule(Schedule $schedule)
+    protected function schedule(Schedule $schedule): void
     {
         // Process campaigns every minute
         $schedule->command('campaigns:process')->everyMinute();
+        
+        // Close resolved tickets that have been inactive for 7 days
+        $schedule->command('helpdesk:close-resolved')->daily();
     }
 
     /**

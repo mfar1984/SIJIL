@@ -80,16 +80,20 @@ select {
     
     .sidebar-submenu-item {
         @apply flex items-center py-2 px-4 hover:bg-blue-50 text-sm relative;
+        border-top-left-radius: 9999px;
+        border-bottom-left-radius: 9999px;
     }
     
     .sidebar-submenu-item.active {
         @apply bg-blue-50 text-blue-700;
+        border-top-left-radius: 9999px;
+        border-bottom-left-radius: 9999px;
     }
     
     .sidebar-submenu-item:hover::after,
     .sidebar-submenu-item.active::after {
         content: '';
-        @apply absolute right-0 top-0 h-full w-1 bg-blue-600 rounded-l;
+        @apply absolute right-0 top-0 h-full w-1 bg-blue-500;
     }
     
     .hierarchical-menu {
@@ -98,12 +102,20 @@ select {
     
     .hierarchical-menu-item::before {
         content: '';
-        @apply absolute left-0 top-1/2 w-4 h-px bg-gray-300;
+        @apply absolute h-px bg-gray-200;
+        width: 16px;
+        top: 50%;
+        left: -16px;
+        transform: translateY(-50%);
     }
     
     .sidebar-submenu-item::before {
         content: '';
-        @apply absolute left-0 top-1/2 w-4 h-px bg-gray-300;
+        @apply absolute h-px bg-gray-200;
+        width: 16px;
+        top: 50%;
+        left: -16px;
+        transform: translateY(-50%);
     }
     
     .sidebar-separator {

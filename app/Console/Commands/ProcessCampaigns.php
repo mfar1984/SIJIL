@@ -256,7 +256,15 @@ class ProcessCampaigns extends Command
                 
                 // Add tracking pixel at the end of the email
                 $trackingPixel = '<img src="' . url(route('track.open', ['campaign' => $campaign->id, 'recipient' => $recipientData])) . '" width="1" height="1" alt="" style="display: none;" />';
-                $personalizedBody .= $trackingPixel;
+                
+                // Ensure tracking pixel is properly added to HTML content
+                if (strpos($personalizedBody, '</body>') !== false) {
+                    // If there's a closing body tag, insert before it
+                    $personalizedBody = str_replace('</body>', $trackingPixel . '</body>', $personalizedBody);
+                } else {
+                    // Otherwise append to the end
+                    $personalizedBody .= $trackingPixel;
+                }
                 
                 // Send the email
                 Mail::html($personalizedBody, function ($message) use ($recipient, $subject, $fromAddress, $fromName) {

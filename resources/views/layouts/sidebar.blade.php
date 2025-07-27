@@ -13,15 +13,22 @@
     
     @can('view_events')
     <div class="mt-2"></div>
-    <div class="category-header relative">
-        <a href="{{ route('event.management') }}" class="block relative">
-            <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('event.management') ? 'bg-blue-100' : '' }} relative">
-                <div class="flex items-center">
-                    <span class="material-icons text-base text-green-500 mr-3">event</span>
-                    <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Event Management</p>
-                </div>
+    <div class="category-header relative" onclick="toggleSection('event-section')">
+        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+            <div class="flex items-center">
+                <span class="material-icons text-base text-green-500 mr-3">event</span>
+                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Event</p>
             </div>
-        </a>
+            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="event-section-icon">expand_more</span>
+        </div>
+    </div>
+    <div id="event-section" class="hierarchical-menu" style="display: none;">
+        <x-sidebar-submenu-item href="{{ route('event.management') }}" icon="calendar_month" :active="request()->routeIs('event.management')">
+            Event Management
+        </x-sidebar-submenu-item>
+        <x-sidebar-submenu-item href="{{ route('survey.index') }}" icon="quiz" :active="request()->routeIs('survey.*')">
+            Survey
+        </x-sidebar-submenu-item>
     </div>
     @endcan
     

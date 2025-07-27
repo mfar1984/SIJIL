@@ -51,6 +51,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view_certificates' => 'View Certificates',
                 'generate_certificates' => 'Generate Certificates',
                 'edit_templates' => 'Edit Templates',
+                'manage_certificates' => 'Manage Certificates',
             ],
             'attendance' => [
                 'view_attendance' => 'View Attendance',
@@ -74,6 +75,16 @@ class RolesAndPermissionsSeeder extends Seeder
             'helpdesk' => [
                 'view_helpdesk' => 'View Helpdesk',
                 'manage_helpdesk' => 'Manage Helpdesk',
+            ],
+            'survey' => [
+                'view_surveys' => 'View Surveys',
+                'create_surveys' => 'Create Surveys',
+                'edit_surveys' => 'Edit Surveys',
+                'delete_surveys' => 'Delete Surveys',
+                'manage_survey_questions' => 'Manage Survey Questions',
+                'view_survey_responses' => 'View Survey Responses',
+                'export_survey_responses' => 'Export Survey Responses',
+                'publish_surveys' => 'Publish Surveys',
             ],
             'settings' => [
                 'view_settings' => 'View Settings',
@@ -99,6 +110,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     // Update existing permission with new data
                     $permissionExists->update([
                         'display_name' => $display_name,
+                        'guard_name' => 'web', // Ensure guard_name is set
                         'group' => $group,
                         'description' => 'Permission to ' . strtolower($display_name)
                     ]);
@@ -117,6 +129,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'status' => 'active',
                 'created_by' => 'System',
             ]);
+        } else {
+            // Ensure the role has the correct guard_name
+            $adminRole->update(['guard_name' => 'web']);
         }
         
         // Assign all permissions to admin role
@@ -132,6 +147,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'status' => 'active',
                 'created_by' => 'System',
             ]);
+        } else {
+            // Ensure the role has the correct guard_name
+            $organizerRole->update(['guard_name' => 'web']);
         }
 
         // Organizer permissions
@@ -169,6 +187,13 @@ class RolesAndPermissionsSeeder extends Seeder
             
             'view_helpdesk',
             'manage_helpdesk',
+            
+            // Add organizer survey permissions
+            'view_surveys',
+            'create_surveys',
+            'edit_surveys',
+            'manage_survey_questions',
+            'view_survey_responses',
         ];
         
         $organizerRole->syncPermissions($organizerPermissions);
@@ -202,24 +227,6 @@ class RolesAndPermissionsSeeder extends Seeder
         
         $organizerUser->assignRole('Organizer');
 
-        // Certificate permissions
-        Permission::create(['name' => 'view_certificates']);
-        Permission::create(['name' => 'generate_certificates']);
-        Permission::create(['name' => 'edit_templates']);
-        Permission::create(['name' => 'manage_certificates']);
-
-        // Assign certificate permissions to roles
-        $adminRole->givePermissionTo([
-            'view_certificates',
-            'generate_certificates',
-            'edit_templates',
-            'manage_certificates',
-        ]);
-
-        $organizerRole->givePermissionTo([
-            'view_certificates',
-            'generate_certificates',
-            'edit_templates',
-        ]);
+        $this->command->info('All roles and permissions seeded successfully.');
     }
 }

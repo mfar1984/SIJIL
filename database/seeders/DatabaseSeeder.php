@@ -12,13 +12,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            PermissionMatrixSeeder::class, // Run this first to create new permission structure
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
             EventsSeeder::class,
             ParticipantsTableSeeder::class,
-            RealisticAttendanceRecordSeeder::class,
             TemplateSeeder::class,
-            CampaignSeeder::class, // Add the CampaignSeeder
+            AddCertificatePermissionsSeeder::class,
+            CampaignSeeder::class,
+            HelpdeskSeeder::class,
+            PermissionSeeder::class,
         ]);
     }
 }

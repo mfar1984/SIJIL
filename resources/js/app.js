@@ -10,6 +10,9 @@ window.Alpine = Alpine;
 
 Alpine.start();
 
+// Import Flowbite
+import 'flowbite';
+
 // Import intl-tel-input
 import 'intl-tel-input/build/css/intlTelInput.css';
 import intlTelInput from 'intl-tel-input';

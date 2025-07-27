@@ -17,20 +17,7 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage system-wide configuration settings</p>
                 </div>
-                <div>
-                    <button 
-                        type="button" 
-                        @click="isEditing = !isEditing" 
-                        class="bg-gradient-to-r" 
-                        :class="isEditing ? 'from-green-600 to-green-500 hover:from-green-700 hover:to-green-600' : 'from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'"
-                        x-transition
-                    >
-                        <span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1" x-text="isEditing ? 'save' : 'edit'"></span>
-                            <span x-text="isEditing ? 'Save Changes' : 'Edit Settings'"></span>
-                        </span>
-                    </button>
-                </div>
+
             </div>
         </div>
         
@@ -81,7 +68,8 @@
                 </div>
             </div>
             
-            <form>
+            <form method="POST" action="{{ route('settings.global-config.update') }}" enctype="multipart/form-data">
+                @csrf
                 <!-- General Settings Tab -->
                 <div x-show="activeTab === 'general'" class="space-y-4">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
@@ -115,7 +103,7 @@
                                         type="text" 
                                         id="org_name" 
                                         name="org_name" 
-                                        value="Sijil Event Management" 
+                                        value="{{ old('org_name', $config->org_name ?? '') }}" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
@@ -138,7 +126,7 @@
                                         type="email" 
                                         id="org_email" 
                                         name="org_email" 
-                                        value="contact@sijilevents.com" 
+                                        value="{{ old('org_email', $config->org_email ?? '') }}" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
@@ -164,10 +152,10 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="UTC">UTC</option>
-                                        <option value="Asia/Kuala_Lumpur" selected>Asia/Kuala Lumpur (UTC+8)</option>
-                                        <option value="Asia/Singapore">Asia/Singapore (UTC+8)</option>
-                                        <option value="Asia/Jakarta">Asia/Jakarta (UTC+7)</option>
+                                        <option value="UTC" {{ (old('timezone', $config->timezone ?? '') == 'UTC') ? 'selected' : '' }}>UTC</option>
+                                        <option value="Asia/Kuala_Lumpur" {{ (old('timezone', $config->timezone ?? '') == 'Asia/Kuala_Lumpur') ? 'selected' : '' }}>Asia/Kuala Lumpur (UTC+8)</option>
+                                        <option value="Asia/Singapore" {{ (old('timezone', $config->timezone ?? '') == 'Asia/Singapore') ? 'selected' : '' }}>Asia/Singapore (UTC+8)</option>
+                                        <option value="Asia/Jakarta" {{ (old('timezone', $config->timezone ?? '') == 'Asia/Jakarta') ? 'selected' : '' }}>Asia/Jakarta (UTC+7)</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">System default timezone for dates and times</p>
@@ -190,10 +178,10 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="Y-m-d">YYYY-MM-DD (e.g. 2023-06-15)</option>
-                                        <option value="d/m/Y" selected>DD/MM/YYYY (e.g. 15/06/2023)</option>
-                                        <option value="m/d/Y">MM/DD/YYYY (e.g. 06/15/2023)</option>
-                                        <option value="d-M-Y">DD-Mon-YYYY (e.g. 15-Jun-2023)</option>
+                                        <option value="Y-m-d" {{ (old('date_format', $config->date_format ?? 'd/m/Y') == 'Y-m-d') ? 'selected' : '' }}>YYYY-MM-DD (e.g. 2023-06-15)</option>
+                                        <option value="d/m/Y" {{ (old('date_format', $config->date_format ?? 'd/m/Y') == 'd/m/Y') ? 'selected' : '' }}>DD/MM/YYYY (e.g. 15/06/2023)</option>
+                                        <option value="m/d/Y" {{ (old('date_format', $config->date_format ?? 'd/m/Y') == 'm/d/Y') ? 'selected' : '' }}>MM/DD/YYYY (e.g. 06/15/2023)</option>
+                                        <option value="d-M-Y" {{ (old('date_format', $config->date_format ?? 'd/m/Y') == 'd-M-Y') ? 'selected' : '' }}>DD-Mon-YYYY (e.g. 15-Jun-2023)</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Format for displaying dates throughout the system</p>
@@ -217,7 +205,7 @@
                                     >
                                         <span class="material-icons text-xs mr-1 inline-block align-text-bottom">upload</span>
                                         Upload New Logo
-                                        <input type="file" class="hidden" :disabled="!isEditing">
+                                        <input type="file" name="org_logo" class="hidden" :disabled="!isEditing">
                                     </label>
                                     <p class="text-[10px] text-gray-500 mt-1">Recommended size: 200x200px, max 1MB</p>
                                 </div>
@@ -240,14 +228,14 @@
                                 </label>
                                 <div class="flex items-center mt-2">
                                     <label class="inline-flex items-center mr-4">
-                                        <input 
-                                            type="radio" 
-                                            name="maintenance_mode" 
-                                            value="0" 
-                                            class="text-primary-DEFAULT focus:ring-primary-light" 
-                                            checked
-                                            :disabled="!isEditing"
-                                        >
+                                                                            <input 
+                                        type="radio" 
+                                        name="maintenance_mode" 
+                                        value="0" 
+                                        class="text-primary-DEFAULT focus:ring-primary-light" 
+                                        {{ (old('maintenance_mode', $config->maintenance_mode ?? 0) == 0) ? 'checked' : '' }}
+                                        :disabled="!isEditing"
+                                    >
                                         <span class="ml-2 text-xs text-gray-700">Off</span>
                                     </label>
                                     <label class="inline-flex items-center">
@@ -256,6 +244,7 @@
                                             name="maintenance_mode" 
                                             value="1" 
                                             class="text-primary-DEFAULT focus:ring-primary-light"
+                                            {{ (old('maintenance_mode', $config->maintenance_mode ?? 0) == 1) ? 'checked' : '' }}
                                             :disabled="!isEditing"
                                         >
                                         <span class="ml-2 text-xs text-gray-700">On</span>
@@ -272,14 +261,14 @@
                                 </label>
                                 <div class="flex items-center mt-2">
                                     <label class="inline-flex items-center mr-4">
-                                        <input 
-                                            type="radio" 
-                                            name="debug_mode" 
-                                            value="0" 
-                                            class="text-primary-DEFAULT focus:ring-primary-light" 
-                                            checked
-                                            :disabled="!isEditing"
-                                        >
+                                                                            <input 
+                                        type="radio" 
+                                        name="debug_mode" 
+                                        value="0" 
+                                        class="text-primary-DEFAULT focus:ring-primary-light" 
+                                        {{ (old('debug_mode', $config->debug_mode ?? 0) == 0) ? 'checked' : '' }}
+                                        :disabled="!isEditing"
+                                    >
                                         <span class="ml-2 text-xs text-gray-700">Off</span>
                                     </label>
                                     <label class="inline-flex items-center">
@@ -288,6 +277,7 @@
                                             name="debug_mode" 
                                             value="1" 
                                             class="text-primary-DEFAULT focus:ring-primary-light"
+                                            {{ (old('debug_mode', $config->debug_mode ?? 0) == 1) ? 'checked' : '' }}
                                             :disabled="!isEditing"
                                         >
                                         <span class="ml-2 text-xs text-gray-700">On</span>
@@ -310,7 +300,7 @@
                                         type="number" 
                                         id="cache_lifetime" 
                                         name="cache_lifetime" 
-                                        value="60" 
+                                        value="{{ old('cache_lifetime', $config->cache_lifetime ?? 60) }}" 
                                         min="0" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
@@ -337,10 +327,10 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="10">10 items per page</option>
-                                        <option value="25" selected>25 items per page</option>
-                                        <option value="50">50 items per page</option>
-                                        <option value="100">100 items per page</option>
+                                        <option value="10" {{ (old('pagination', $config->pagination ?? 25) == 10) ? 'selected' : '' }}>10 items per page</option>
+                                        <option value="25" {{ (old('pagination', $config->pagination ?? 25) == 25) ? 'selected' : '' }}>25 items per page</option>
+                                        <option value="50" {{ (old('pagination', $config->pagination ?? 25) == 50) ? 'selected' : '' }}>50 items per page</option>
+                                        <option value="100" {{ (old('pagination', $config->pagination ?? 25) == 100) ? 'selected' : '' }}>100 items per page</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Number of items to display per page</p>
@@ -349,10 +339,13 @@
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="enable_error_reporting" value="0">
                                 <input 
                                     type="checkbox" 
+                                    name="enable_error_reporting"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('enable_error_reporting', $config->enable_error_reporting ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Enable system error reporting</span>
@@ -362,10 +355,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="enable_activity_logging" value="0">
                                 <input 
                                     type="checkbox" 
+                                    name="enable_activity_logging"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('enable_activity_logging', $config->enable_activity_logging ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Enable activity logging</span>
@@ -395,7 +391,7 @@
                                         type="number" 
                                         id="event_expiry" 
                                         name="event_expiry" 
-                                        value="48" 
+                                        value="{{ old('event_expiry', $config->event_expiry ?? 48) }}" 
                                         min="1" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
@@ -422,9 +418,9 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="draft">Draft</option>
-                                        <option value="published" selected>Published</option>
-                                        <option value="archived">Archived</option>
+                                        <option value="draft" {{ (old('default_event_status', $config->default_event_status ?? 'published') == 'draft') ? 'selected' : '' }}>Draft</option>
+                                        <option value="published" {{ (old('default_event_status', $config->default_event_status ?? 'published') == 'published') ? 'selected' : '' }}>Published</option>
+                                        <option value="archived" {{ (old('default_event_status', $config->default_event_status ?? 'published') == 'archived') ? 'selected' : '' }}>Archived</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Status assigned to newly created events</p>
@@ -448,17 +444,20 @@
                                     class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
-                                >Thank you for registering for this event. Please check your email for confirmation details.</textarea>
+                                >{{ old('registration_message', $config->registration_message ?? 'Thank you for registering for this event. Please check your email for confirmation details.') }}</textarea>
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Message shown after successful registration</p>
                         </div>
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="allow_multiple_registrations" value="0">
                                 <input 
                                     type="checkbox" 
+                                    name="allow_multiple_registrations"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('allow_multiple_registrations', $config->allow_multiple_registrations ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Allow multiple registrations per email</span>
@@ -467,10 +466,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="auto_send_confirmation_emails" value="0">
                                 <input 
                                     type="checkbox" 
+                                    name="auto_send_confirmation_emails"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('auto_send_confirmation_emails', $config->auto_send_confirmation_emails ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Automatically send confirmation emails</span>
@@ -512,7 +514,7 @@
                                         type="number" 
                                         id="min_password_length" 
                                         name="min_password_length" 
-                                        value="8" 
+                                        value="{{ old('min_password_length', $config->min_password_length ?? 8) }}" 
                                         min="6" 
                                         max="32" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
@@ -537,7 +539,7 @@
                                         type="number" 
                                         id="password_expiry" 
                                         name="password_expiry" 
-                                        value="90" 
+                                        value="{{ old('password_expiry', $config->password_expiry ?? 90) }}" 
                                         min="0" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
@@ -550,12 +552,13 @@
 
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="require_special_chars" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="require_special_chars"
                                     name="require_special_chars"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('require_special_chars', $config->require_special_chars ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Require special characters</span>
@@ -564,12 +567,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="require_numbers" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="require_numbers"
                                     name="require_numbers"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('require_numbers', $config->require_numbers ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Require numbers</span>
@@ -578,12 +582,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="require_uppercase" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="require_uppercase"
                                     name="require_uppercase"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('require_uppercase', $config->require_uppercase ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Require uppercase letters</span>
@@ -612,7 +617,7 @@
                                         type="number" 
                                         id="max_login_attempts" 
                                         name="max_login_attempts" 
-                                        value="5" 
+                                        value="{{ old('max_login_attempts', $config->max_login_attempts ?? 5) }}" 
                                         min="1" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
@@ -636,7 +641,7 @@
                                         type="number" 
                                         id="lockout_duration" 
                                         name="lockout_duration" 
-                                        value="15" 
+                                        value="{{ old('lockout_duration', $config->lockout_duration ?? 15) }}" 
                                         min="1" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
@@ -660,7 +665,7 @@
                                         type="number" 
                                         id="session_timeout" 
                                         name="session_timeout" 
-                                        value="120" 
+                                        value="{{ old('session_timeout', $config->session_timeout ?? 120) }}" 
                                         min="5" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
@@ -673,12 +678,13 @@
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="enable_2fa" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="enable_2fa"
                                     name="enable_2fa"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('enable_2fa', $config->enable_2fa ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Enable two-factor authentication</span>
@@ -687,12 +693,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="force_ssl" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="force_ssl"
                                     name="force_ssl"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('force_ssl', $config->force_ssl ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Force SSL/HTTPS connections</span>
@@ -708,12 +715,13 @@
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="log_failed_logins" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="log_failed_logins"
                                     name="log_failed_logins"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('log_failed_logins', $config->log_failed_logins ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Log failed login attempts</span>
@@ -722,12 +730,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="log_password_changes" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="log_password_changes"
                                     name="log_password_changes"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('log_password_changes', $config->log_password_changes ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Log password changes</span>
@@ -736,12 +745,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="log_permission_changes" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="log_permission_changes"
                                     name="log_permission_changes"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('log_permission_changes', $config->log_permission_changes ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Log permission changes</span>
@@ -750,12 +760,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="enable_security_alerts" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="enable_security_alerts"
                                     name="enable_security_alerts"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('enable_security_alerts', $config->enable_security_alerts ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Send security alerts to administrators</span>
@@ -798,16 +809,15 @@
                                             type="text" 
                                             id="primary_color" 
                                             name="primary_color" 
-                                            value="#004aad" 
+                                            value="{{ old('primary_color', $config->primary_color ?? '#004aad') }}" 
                                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                             :class="{'bg-gray-50': !isEditing}"
                                             :disabled="!isEditing"
                                         >
                                         <input 
                                             type="color" 
-                                            value="#004aad" 
+                                            value="{{ old('primary_color', $config->primary_color ?? '#004aad') }}" 
                                             class="h-[34px] w-10 border-0 p-0 ml-2"
-                                            :disabled="!isEditing"
                                         >
                                     </div>
                                 </div>
@@ -829,16 +839,15 @@
                                             type="text" 
                                             id="secondary_color" 
                                             name="secondary_color" 
-                                            value="#38bdf8" 
+                                            value="{{ old('secondary_color', $config->secondary_color ?? '#38bdf8') }}" 
                                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                             :class="{'bg-gray-50': !isEditing}"
                                             :disabled="!isEditing"
                                         >
                                         <input 
                                             type="color" 
-                                            value="#38bdf8" 
+                                            value="{{ old('secondary_color', $config->secondary_color ?? '#38bdf8') }}" 
                                             class="h-[34px] w-10 border-0 p-0 ml-2"
-                                            :disabled="!isEditing"
                                         >
                                     </div>
                                 </div>
@@ -862,9 +871,9 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="light" selected>Light</option>
-                                        <option value="dark">Dark</option>
-                                        <option value="system">System Default</option>
+                                        <option value="light" {{ (old('default_theme', $config->default_theme ?? 'light') == 'light') ? 'selected' : '' }}>Light</option>
+                                        <option value="dark" {{ (old('default_theme', $config->default_theme ?? 'light') == 'dark') ? 'selected' : '' }}>Dark</option>
+                                        <option value="system" {{ (old('default_theme', $config->default_theme ?? 'light') == 'system') ? 'selected' : '' }}>System Default</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Default color theme for new users</p>
@@ -887,11 +896,11 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="inter" selected>Inter</option>
-                                        <option value="roboto">Roboto</option>
-                                        <option value="poppins">Poppins</option>
-                                        <option value="opensans">Open Sans</option>
-                                        <option value="system">System Default</option>
+                                        <option value="inter" {{ (old('font_family', $config->font_family ?? 'inter') == 'inter') ? 'selected' : '' }}>Inter</option>
+                                        <option value="roboto" {{ (old('font_family', $config->font_family ?? 'inter') == 'roboto') ? 'selected' : '' }}>Roboto</option>
+                                        <option value="poppins" {{ (old('font_family', $config->font_family ?? 'inter') == 'poppins') ? 'selected' : '' }}>Poppins</option>
+                                        <option value="opensans" {{ (old('font_family', $config->font_family ?? 'inter') == 'opensans') ? 'selected' : '' }}>Open Sans</option>
+                                        <option value="system" {{ (old('font_family', $config->font_family ?? 'inter') == 'system') ? 'selected' : '' }}>System Default</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Font family for the user interface</p>
@@ -900,12 +909,13 @@
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="allow_user_theme_choice" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="allow_user_theme_choice"
                                     name="allow_user_theme_choice"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('allow_user_theme_choice', $config->allow_user_theme_choice ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Allow users to choose their own theme</span>
@@ -937,7 +947,7 @@
                                         >
                                             <span class="material-icons text-xs mr-1 inline-block align-text-bottom">upload</span>
                                             Upload Favicon
-                                            <input type="file" class="hidden" :disabled="!isEditing">
+                                            <input type="file" name="favicon" class="hidden" :disabled="!isEditing">
                                         </label>
                                         <p class="text-[10px] text-gray-500 mt-1">ICO/PNG format (32x32px)</p>
                                     </div>
@@ -957,7 +967,7 @@
                                     >
                                         <span class="material-icons text-xs mr-1 inline-block align-text-bottom">upload</span>
                                         Upload Background
-                                        <input type="file" class="hidden" :disabled="!isEditing">
+                                        <input type="file" name="login_background" class="hidden" :disabled="!isEditing">
                                     </label>
                                     <p class="text-[10px] text-gray-500 mt-1">Recommended size: 1920x1080px, max 2MB</p>
                                 </div>
@@ -981,10 +991,10 @@
                                     class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 font-mono"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
-                                >/* Custom CSS code */
+                                >{{ old('custom_css', $config->custom_css ?? '/* Custom CSS code */
 .custom-header {
   background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-}</textarea>
+}') }}</textarea>
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Custom CSS to apply to the application (use with caution)</p>
                         </div>
@@ -1014,9 +1024,9 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="expanded" selected>Expanded</option>
-                                        <option value="collapsed">Collapsed</option>
-                                        <option value="remember">Remember Last State</option>
+                                        <option value="expanded" {{ (old('sidebar_default', $config->sidebar_default ?? 'expanded') == 'expanded') ? 'selected' : '' }}>Expanded</option>
+                                        <option value="collapsed" {{ (old('sidebar_default', $config->sidebar_default ?? 'expanded') == 'collapsed') ? 'selected' : '' }}>Collapsed</option>
+                                        <option value="remember" {{ (old('sidebar_default', $config->sidebar_default ?? 'expanded') == 'remember') ? 'selected' : '' }}>Remember Last State</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Default sidebar state when user first logs in</p>
@@ -1039,9 +1049,9 @@
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <option value="compact">Compact</option>
-                                        <option value="default" selected>Default</option>
-                                        <option value="comfortable">Comfortable</option>
+                                        <option value="compact" {{ (old('table_density', $config->table_density ?? 'default') == 'compact') ? 'selected' : '' }}>Compact</option>
+                                        <option value="default" {{ (old('table_density', $config->table_density ?? 'default') == 'default') ? 'selected' : '' }}>Default</option>
+                                        <option value="comfortable" {{ (old('table_density', $config->table_density ?? 'default') == 'comfortable') ? 'selected' : '' }}>Comfortable</option>
                                     </select>
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Spacing density for table rows</p>
@@ -1050,12 +1060,13 @@
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="show_welcome_message" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="show_welcome_message"
                                     name="show_welcome_message"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('show_welcome_message', $config->show_welcome_message ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Show welcome message on dashboard</span>
@@ -1064,12 +1075,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="show_help_icons" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="show_help_icons"
                                     name="show_help_icons"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('show_help_icons', $config->show_help_icons ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Show help icons beside form fields</span>
@@ -1107,7 +1119,7 @@
                                 </div>
                                 <div>
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" checked class="sr-only peer" :disabled="!isEditing">
+                                        <input type="checkbox" name="email_new_user_registration" class="sr-only peer" {{ (old('email_new_user_registration', $config->email_new_user_registration ?? true)) ? 'checked' : '' }} :disabled="!isEditing">
                                         <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-DEFAULT"></div>
                                     </label>
                                 </div>
@@ -1232,7 +1244,7 @@
                                     type="number" 
                                     id="sms_reminder_hours" 
                                     name="sms_reminder_hours" 
-                                    value="24" 
+                                    value="{{ old('sms_reminder_hours', $config->sms_reminder_hours ?? 24) }}" 
                                     min="1" 
                                     max="72" 
                                     class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
@@ -1313,7 +1325,7 @@
                                     type="email" 
                                     id="admin_notification_email" 
                                     name="admin_notification_email" 
-                                    value="admin@sijilevents.com" 
+                                    value="{{ old('admin_notification_email', $config->admin_notification_email ?? '') }}" 
                                     class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
@@ -1356,7 +1368,7 @@
                                             name="api_status" 
                                             value="enabled" 
                                             class="text-primary-DEFAULT focus:ring-primary-light" 
-                                            checked
+                                            {{ (old('api_status', $config->api_status ?? 'enabled') == 'enabled') ? 'checked' : '' }}
                                             :disabled="!isEditing"
                                         >
                                         <span class="ml-2 text-xs text-gray-700">Enabled</span>
@@ -1367,6 +1379,7 @@
                                             name="api_status" 
                                             value="disabled" 
                                             class="text-primary-DEFAULT focus:ring-primary-light"
+                                            {{ (old('api_status', $config->api_status ?? 'enabled') == 'disabled') ? 'checked' : '' }}
                                             :disabled="!isEditing"
                                         >
                                         <span class="ml-2 text-xs text-gray-700">Disabled</span>
@@ -1385,16 +1398,16 @@
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <span class="material-icons text-[#004aad] text-base">data_usage</span>
                                     </div>
-                                    <input 
-                                        type="number" 
-                                        id="api_rate_limit" 
-                                        name="api_rate_limit" 
-                                        value="60" 
-                                        min="10" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                        :class="{'bg-gray-50': !isEditing}"
-                                        :disabled="!isEditing"
-                                    >
+                                                                    <input 
+                                    type="number" 
+                                    id="api_rate_limit" 
+                                    name="api_rate_limit" 
+                                    value="{{ old('api_rate_limit', $config->api_rate_limit ?? 60) }}" 
+                                    min="10" 
+                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    :class="{'bg-gray-50': !isEditing}"
+                                    :disabled="!isEditing"
+                                >
                                 </div>
                                 <p class="mt-1 text-[10px] text-gray-500">Maximum number of API requests per minute per client</p>
                             </div>
@@ -1402,12 +1415,13 @@
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="enable_api_keys" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="enable_api_keys"
                                     name="enable_api_keys"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('enable_api_keys', $config->enable_api_keys ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Require API keys for access</span>
@@ -1416,12 +1430,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="enable_oauth" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="enable_oauth"
                                     name="enable_oauth"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('enable_oauth', $config->enable_oauth ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Enable OAuth 2.0 authorization</span>
@@ -1430,12 +1445,13 @@
                         
                         <div class="mt-3">
                             <label class="flex items-center">
+                                <input type="hidden" name="api_cors_enabled" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="api_cors_enabled"
                                     name="api_cors_enabled"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('api_cors_enabled', $config->api_cors_enabled ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Allow CORS for API requests</span>
@@ -1458,7 +1474,7 @@
                                     class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
-                                >https://example.com, https://*.sijilevents.com</textarea>
+                                >{{ old('cors_domains', $config->cors_domains ?? 'https://example.com, https://*.sijilevents.com') }}</textarea>
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Domains allowed to make cross-origin API requests (comma separated)</p>
                         </div>
@@ -1573,12 +1589,13 @@
                         
                         <div class="mt-4">
                             <label class="flex items-center">
+                                <input type="hidden" name="enable_webhooks" value="0">
                                 <input 
                                     type="checkbox" 
-                                    id="enable_webhooks"
                                     name="enable_webhooks"
+                                    value="1"
                                     class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    checked
+                                    {{ (old('enable_webhooks', $config->enable_webhooks ?? true)) ? 'checked' : '' }}
                                     :disabled="!isEditing"
                                 >
                                 <span class="ml-2 text-xs text-gray-700">Enable webhooks</span>
@@ -1600,7 +1617,7 @@
                                         type="password" 
                                         id="webhook_secret" 
                                         name="webhook_secret" 
-                                        value="wh_sec_1a2b3c4d5e6f" 
+                                        value="{{ old('webhook_secret', $config->webhook_secret ?? 'wh_sec_1a2b3c4d5e6f') }}" 
                                         class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
@@ -1633,11 +1650,39 @@
                                     class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
-                                >event.created, event.updated, registration.completed, certificate.generated, attendance.recorded</textarea>
+                                >{{ old('webhook_events', $config->webhook_events ?? 'event.created, event.updated, registration.completed, certificate.generated, attendance.recorded') }}</textarea>
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Events that will trigger webhook notifications (comma separated)</p>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Form Submit Buttons -->
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button 
+                        type="button" 
+                        @click="isEditing = !isEditing" 
+                        x-show="!isEditing"
+                        class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                        x-transition
+                    >
+                        <span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <span class="material-icons text-xs mr-1">edit</span>
+                            <span>Edit Settings</span>
+                        </span>
+                    </button>
+                    
+                    <button 
+                        type="submit" 
+                        x-show="isEditing"
+                        class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
+                        x-transition
+                    >
+                        <span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <span class="material-icons text-xs mr-1">save</span>
+                            <span>Save Changes</span>
+                        </span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -1647,5 +1692,85 @@
         document.addEventListener('alpine:init', () => {
             // Alpine.js configuration if needed
         })
+
+        // Handle form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, looking for form...');
+            const form = document.querySelector('form[action*="global-config"]');
+            
+            if (form) {
+                console.log('Form found:', form.action);
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('Form submitted!');
+                    
+                    const formData = new FormData(form);
+                    
+                    // Debug: Log form data
+                    console.log('Form data:');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(key + ': ' + value);
+                    }
+                    
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    if (!submitButton) {
+                        console.error('Submit button not found!');
+                        return;
+                    }
+                    const originalText = submitButton.innerHTML;
+                    
+                    // Show loading state
+                    submitButton.innerHTML = '<span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out"><span class="material-icons text-xs mr-1">hourglass_empty</span> Saving...</span>';
+                    submitButton.disabled = true;
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response data:', data);
+                        if (data.success) {
+                            // Show success message
+                            alert('Configuration saved successfully!');
+                            
+                            // Reset edit mode
+                            const editButton = document.querySelector('button[onclick*="isEditing"]');
+                            if (editButton) {
+                                editButton.click();
+                            }
+                            
+                            // Refresh page to show updated data
+                            window.location.reload();
+                        } else if (data.errors) {
+                            // Show all validation errors
+                            let errorMsg = 'Validation failed:\n';
+                            for (const [field, messages] of Object.entries(data.errors)) {
+                                errorMsg += `- ${field}: ${messages.join(', ')}\n`;
+                            }
+                            alert(errorMsg);
+                        } else {
+                            // Show error message
+                            alert('Error: ' + (data.message || 'Failed to save configuration'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error: Failed to save configuration. Please try again.');
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        submitButton.innerHTML = originalText;
+                        submitButton.disabled = false;
+                    });
+                });
+            }
+        });
     </script>
 </x-app-layout> 

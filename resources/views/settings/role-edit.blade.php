@@ -112,30 +112,83 @@
                     </h2>
                     <p class="text-xs text-gray-500 mb-4">Select the permissions this role will have in the system</p>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @foreach($permissions as $group => $permission)
-                            <div class="border border-gray-200 rounded p-4">
-                                <h3 class="text-sm font-medium text-gray-700 mb-2">{{ $permission['title'] }}</h3>
-                                <div class="space-y-2">
-                                    @foreach($permission['items'] as $key => $label)
-                                        @php
-                                            $permissionId = App\Models\Permission::where('name', $key)->value('id');
-                                        @endphp
-                                        <div class="flex items-center">
-                                            <input 
-                                                type="checkbox" 
-                                                name="permissions[]" 
-                                                id="permission_{{ $key }}" 
-                                                value="{{ $permissionId }}"
-                                                class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light h-4 w-4"
-                                                {{ in_array($permissionId, $rolePermissionIds) ? 'checked' : '' }}
-                                            >
-                                            <label for="permission_{{ $key }}" class="ml-2 text-xs text-gray-700">{{ $label }}</label>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endforeach
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                            <thead class="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Create</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Read</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Update</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Delete</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                @foreach($permissionMatrix as $main => $sub)
+                                    @if(is_array($sub) && isset($sub[0]) && is_string($sub[0]))
+                                        <!-- Direct permissions (like Dashboard) -->
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-xs font-medium text-gray-900">
+                                                {{ $main }}
+                                            </td>
+                                            @foreach(['create', 'read', 'update', 'delete'] as $action)
+                                                <td class="px-4 py-3 text-center">
+                                                    @if(in_array($action, $sub))
+                                                        @php
+                                                            $permissionName = Str::slug($main) . '.' . $action;
+                                                            $permissionId = App\Models\Permission::where('name', $permissionName)->value('id');
+                                                        @endphp
+                                                        <input 
+                                                            type="checkbox" 
+                                                            name="permissions[]" 
+                                                            value="{{ $permissionId }}"
+                                                            class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light h-4 w-4"
+                                                            {{ in_array($permissionName, $rolePermissions) ? 'checked' : '' }}
+                                                        >
+                                                    @else
+                                                        <span class="text-gray-300 text-xs">-</span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @else
+                                        <!-- Main category header -->
+                                        <tr class="bg-gray-100">
+                                            <td colspan="5" class="px-4 py-2 text-xs font-bold text-gray-700">
+                                                {{ $main }}
+                                            </td>
+                                        </tr>
+                                        <!-- Sub-menu permissions -->
+                                        @foreach($sub as $subName => $actions)
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="px-4 py-3 text-xs text-gray-900 pl-8">
+                                                    {{ $subName }}
+                                                </td>
+                                                @foreach(['create', 'read', 'update', 'delete'] as $action)
+                                                    <td class="px-4 py-3 text-center">
+                                                        @if(in_array($action, $actions))
+                                                            @php
+                                                                $permissionName = Str::slug($subName) . '.' . $action;
+                                                                $permissionId = App\Models\Permission::where('name', $permissionName)->value('id');
+                                                            @endphp
+                                                            <input 
+                                                                type="checkbox" 
+                                                                name="permissions[]" 
+                                                                value="{{ $permissionId }}"
+                                                                class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light h-4 w-4"
+                                                                {{ in_array($permissionName, $rolePermissions) ? 'checked' : '' }}
+                                                            >
+                                                        @else
+                                                            <span class="text-gray-300 text-xs">-</span>
+                                                        @endif
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        @endforeach
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                     
                     <div class="mt-6 bg-blue-50 border border-blue-100 rounded p-4">
@@ -154,18 +207,16 @@
                 </div>
                 
                 <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
-                    <a 
-                        href="{{ route('role.show', $role->id) }}" 
-                        class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                    <a href="{{ route('role.management') }}" 
+                       class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                        <span class="material-icons text-base mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button 
-                        type="submit" 
-                        class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                    <button type="submit" 
+                            class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
-                        <span class="material-icons text-xs mr-1">save</span>
+                        <span class="material-icons text-base mr-1">save</span>
                         Update Role
                     </button>
                 </div>

@@ -143,46 +143,75 @@
                 </div>
             </div>
             
-            <!-- Filters -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label for="search" class="block text-xs font-medium text-gray-700 mb-1">Search</label>
-                    <input type="text" id="search" name="search" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" placeholder="Search by ticket ID or subject">
+            <!-- Show Entries & Filter Row -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                <!-- Show Entries Dropdown -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-600 font-medium">Show</span>
+                    <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
+                        <option value="10" @if(request('per_page', 10) == 10) selected @endif>10</option>
+                        <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
+                        <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
+                        <option value="100" @if(request('per_page') == 100) selected @endif>100</option>
+                    </select>
+                    <span class="text-xs text-gray-600">entries per page</span>
                 </div>
                 
-                <div>
-                    <label for="priority" class="block text-xs font-medium text-gray-700 mb-1">Priority</label>
-                    <select id="priority" name="priority" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
+                <!-- Search & Filter Controls -->
+                <form method="GET" action="{{ route('helpdesk.index') }}" class="flex flex-wrap gap-2 items-center">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search ticket ID, subject..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
+                    <select name="priority" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                         <option value="">All Priorities</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="urgent">Urgent</option>
+                        <option value="low" @if(request('priority') == 'low') selected @endif>Low</option>
+                        <option value="medium" @if(request('priority') == 'medium') selected @endif>Medium</option>
+                        <option value="high" @if(request('priority') == 'high') selected @endif>High</option>
+                        <option value="urgent" @if(request('priority') == 'urgent') selected @endif>Urgent</option>
                     </select>
-                </div>
-                
-                <div>
-                    <label for="category" class="block text-xs font-medium text-gray-700 mb-1">Category</label>
-                    <select id="category" name="category" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
+                    <select name="category" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[140px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                         <option value="">All Categories</option>
-                        <option value="technical">Technical Issue</option>
-                        <option value="billing">Billing</option>
-                        <option value="event">Event Management</option>
-                        <option value="account">Account Access</option>
+                        <option value="technical" @if(request('category') == 'technical') selected @endif>Technical Issue</option>
+                        <option value="billing" @if(request('category') == 'billing') selected @endif>Billing</option>
+                        <option value="event" @if(request('category') == 'event') selected @endif>Event Management</option>
+                        <option value="account" @if(request('category') == 'account') selected @endif>Account Access</option>
+                        <option value="other" @if(request('category') == 'other') selected @endif>Other</option>
                     </select>
-                </div>
-                
-                <div class="flex items-end">
-                    <button type="button" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">filter_list</span>
-                        Apply Filter
+                    <select name="status" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                        <option value="">All Status</option>
+                        <option value="open" @if(request('status') == 'open') selected @endif>Open</option>
+                        <option value="in_progress" @if(request('status') == 'in_progress') selected @endif>In Progress</option>
+                        <option value="resolved" @if(request('status') == 'resolved') selected @endif>Resolved</option>
+                        <option value="closed" @if(request('status') == 'closed') selected @endif>Closed</option>
+                    </select>
+                    <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
+                        </svg>
                     </button>
-                    <button type="button" class="ml-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">refresh</span>
-                        Reset
-                    </button>
-                </div>
+                    @if(request('search') || request('priority') || request('category') || request('status'))
+                        <a href="{{ route('helpdesk.index') }}?per_page={{ request('per_page', 10) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
+                    @endif
+                </form>
             </div>
+            
+            <!-- Search Results Summary -->
+            @if(request('search') || request('priority') || request('category') || request('status'))
+                <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-xs">
+                    <span class="font-medium">Search Results:</span>
+                    @if(request('search'))
+                        <span class="ml-2">Searching for "{{ request('search') }}"</span>
+                    @endif
+                    @if(request('priority'))
+                        <span class="ml-2">Priority: {{ ucfirst(request('priority')) }}</span>
+                    @endif
+                    @if(request('category'))
+                        <span class="ml-2">Category: {{ ucfirst(request('category')) }}</span>
+                    @endif
+                    @if(request('status'))
+                        <span class="ml-2">Status: {{ ucfirst(str_replace('_', ' ', request('status'))) }}</span>
+                    @endif
+                    <span class="ml-2">({{ $tickets->total() }} results)</span>
+                </div>
+            @endif
             
             <!-- Tickets Table: All Tickets -->
             <div x-show="activeTab === 'all'">
@@ -299,6 +328,20 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Pagination for Open Tickets -->
+                <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div class="mb-2 sm:mb-0 text-xs text-gray-500">
+                        @if($openTickets->total() > 0)
+                            Showing <span class="font-medium">{{ $openTickets->firstItem() }}</span> to <span class="font-medium">{{ $openTickets->lastItem() }}</span> of <span class="font-medium">{{ $openTickets->total() }}</span> tickets
+                        @else
+                            Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> tickets
+                        @endif
+                    </div>
+                    <div class="flex justify-end">
+                        {{ $openTickets->appends(request()->query())->links('components.pagination-modern') }}
+                    </div>
+                </div>
             </div>
             <!-- Tickets Table: In Progress -->
             <div x-show="activeTab === 'inProgress'">
@@ -352,6 +395,20 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+                
+                <!-- Pagination for In Progress Tickets -->
+                <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div class="mb-2 sm:mb-0 text-xs text-gray-500">
+                        @if($inProgressTickets->total() > 0)
+                            Showing <span class="font-medium">{{ $inProgressTickets->firstItem() }}</span> to <span class="font-medium">{{ $inProgressTickets->lastItem() }}</span> of <span class="font-medium">{{ $inProgressTickets->total() }}</span> tickets
+                        @else
+                            Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> tickets
+                        @endif
+                    </div>
+                    <div class="flex justify-end">
+                        {{ $inProgressTickets->appends(request()->query())->links('components.pagination-modern') }}
+                    </div>
                 </div>
             </div>
             <!-- Tickets Table: Resolved -->
@@ -407,32 +464,34 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Pagination for Resolved Tickets -->
+                <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div class="mb-2 sm:mb-0 text-xs text-gray-500">
+                        @if($resolvedTickets->total() > 0)
+                            Showing <span class="font-medium">{{ $resolvedTickets->firstItem() }}</span> to <span class="font-medium">{{ $resolvedTickets->lastItem() }}</span> of <span class="font-medium">{{ $resolvedTickets->total() }}</span> tickets
+                        @else
+                            Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> tickets
+                        @endif
+                    </div>
+                    <div class="flex justify-end">
+                        {{ $resolvedTickets->appends(request()->query())->links('components.pagination-modern') }}
+                    </div>
+                </div>
             </div>
             
-            <!-- Pagination -->
+            <!-- Pagination for All Tickets -->
             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-2 sm:mb-0 text-xs text-gray-500">
-                    Showing <span class="font-medium">1</span> to <span class="font-medium">4</span> of <span class="font-medium">16</span> tickets
+                    @if($tickets->total() > 0)
+                        Showing <span class="font-medium">{{ $tickets->firstItem() }}</span> to <span class="font-medium">{{ $tickets->lastItem() }}</span> of <span class="font-medium">{{ $tickets->total() }}</span> tickets
+                    @else
+                        Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> tickets
+                    @endif
                 </div>
                 <div class="flex justify-end">
-                    <div class="flex items-center space-x-1">
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs opacity-50 cursor-not-allowed">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-                        </a>
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs mr-2 opacity-50 cursor-not-allowed">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                        </a>
-                        <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">1</span>
-                        <a href="#" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium">2</a>
-                        <a href="#" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium">3</a>
-                        <a href="#" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium">4</a>
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs ml-2">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                        </a>
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zM10 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                        </a>
-                    </div>
+                    {{-- Using Laravel's built-in pagination links --}}
+                    {{ $tickets->appends(request()->query())->links('components.pagination-modern') }}
                 </div>
             </div>
         </div>

@@ -13,9 +13,46 @@ class TemplateDesignerController extends Controller
     /**
      * Display a listing of the templates.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $templates = CertificateTemplate::orderBy('created_at', 'desc')->paginate(10);
+        $query = CertificateTemplate::query();
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by orientation
+        if ($request->filled('orientation')) {
+            $query->where('orientation', $request->orientation);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_filter')) {
+            $today = now()->startOfDay();
+            switch ($request->date_filter) {
+                case 'today':
+                    $query->whereDate('created_at', $today->format('Y-m-d'));
+                    break;
+                case 'week':
+                    $query->whereBetween('created_at', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
+                    break;
+                case 'month':
+                    $query->whereBetween('created_at', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
+                    break;
+                case 'past':
+                    $query->where('created_at', '<', $today->format('Y-m-d'));
+                    break;
+            }
+        }
+
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
+        $templates = $query->orderBy('created_at', 'desc')->paginate($perPage);
         
         return view('templates.index', compact('templates'));
     }

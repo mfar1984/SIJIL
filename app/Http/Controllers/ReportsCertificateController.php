@@ -15,15 +15,6 @@ class ReportsCertificateController extends Controller
      */
     public function index(Request $request)
     {
-        // Get events for filter dropdown based on user role
-        if (auth()->user()->hasRole('Administrator')) {
-            $events = Event::orderBy('start_date')->get(['id', 'name']);
-        } else {
-            $events = Event::where('user_id', auth()->id())->orderBy('start_date')->get(['id', 'name']);
-        }
-        
-        $templates = CertificateTemplate::all(['id', 'name']);
-        
         // Query to fetch certificates with filters
         $query = Certificate::with(['event', 'participant', 'template']);
         
@@ -33,28 +24,62 @@ class ReportsCertificateController extends Controller
                 $q->where('user_id', auth()->id());
             });
         }
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->whereHas('participant', function($participantQuery) use ($searchTerm) {
+                    $participantQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                    ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+                })
+                ->orWhereHas('event', function($eventQuery) use ($searchTerm) {
+                    $eventQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                })
+                ->orWhere('certificate_number', 'LIKE', "%{$searchTerm}%");
+            });
+        }
         
         // Apply filters
-        if ($request->has('event_filter') && $request->event_filter) {
+        if ($request->filled('event_filter')) {
             $query->where('event_id', $request->event_filter);
         }
         
-        if ($request->has('template_filter') && $request->template_filter) {
+        if ($request->filled('template_filter')) {
             $query->where('template_id', $request->template_filter);
         }
-        
-        if ($request->has('date_range')) {
-            $dateRange = $request->date_range;
-            if (!empty($dateRange)) {
-                $dates = explode(' - ', $dateRange);
-                if (count($dates) === 2) {
-                    $query->whereBetween('generated_at', [$dates[0] . ' 00:00:00', $dates[1] . ' 23:59:59']);
-                }
+
+        // Filter by date range
+        if ($request->filled('date_filter')) {
+            $today = now()->startOfDay();
+            switch ($request->date_filter) {
+                case 'today':
+                    $query->whereDate('generated_at', $today->format('Y-m-d'));
+                    break;
+                case 'week':
+                    $query->whereBetween('generated_at', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
+                    break;
+                case 'month':
+                    $query->whereBetween('generated_at', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
+                    break;
+                case 'past':
+                    $query->where('generated_at', '<', $today->format('Y-m-d'));
+                    break;
             }
         }
         
-        // Get paginated results
-        $certificates = $query->orderBy('generated_at', 'desc')->paginate(10);
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
+        $certificates = $query->orderBy('generated_at', 'desc')->paginate($perPage);
+
+        // Get events for filter dropdown based on user role
+        if (auth()->user()->hasRole('Administrator')) {
+            $events = Event::orderBy('name')->get();
+        } else {
+            $events = Event::where('user_id', auth()->id())->orderBy('name')->get();
+        }
+        
+        $templates = CertificateTemplate::orderBy('name')->get();
         
         // Get summary statistics based on user role
         if (auth()->user()->hasRole('Administrator')) {

@@ -17,6 +17,7 @@
         "laravel/tinker": "^2.8",
         "propaganistas/laravel-phone": "^6.0",
         "setasign/fpdi": "^2.6",
+        "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-permission": "^6.3",
         "tecnickcom/tcpdf": "^6.10"
     },

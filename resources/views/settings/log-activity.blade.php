@@ -31,85 +31,98 @@
         </div>
         
         <div class="p-4">
-            <!-- Filters -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label for="search" class="block text-xs font-medium text-gray-700 mb-1">Search</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">search</span>
-                        </div>
-                        <input type="text" id="search" name="search" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Search logs...">
-                    </div>
-                </div>
-                
-                <div>
-                    <label for="log_type" class="block text-xs font-medium text-gray-700 mb-1">Log Type</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">category</span>
-                        </div>
-                        <select id="log_type" name="log_type" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                            <option value="">All Types</option>
-                            <option value="login">Login Activity</option>
-                            <option value="data">Data Modification</option>
-                            <option value="system">System Events</option>
-                            <option value="error">Errors</option>
+            <!-- Show Entries & Filter Row -->
+            <div class="mb-4">
+                <form method="GET" action="{{ route('settings.log-activity') }}" class="flex flex-wrap gap-2 items-center justify-between">
+                    <!-- Show Entries Dropdown -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-600 font-medium">Show</span>
+                        <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
+                            <option value="10" @if(request('per_page', 10) == 10) selected @endif>10</option>
+                            <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
+                            <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
+                            <option value="100" @if(request('per_page') == 100) selected @endif>100</option>
                         </select>
+                        <span class="text-xs text-gray-600">entries per page</span>
                     </div>
-                </div>
-                
-                <div>
-                    <label for="date_range" class="block text-xs font-medium text-gray-700 mb-1">Date Range</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">date_range</span>
-                        </div>
-                        <select id="date_range" name="date_range" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                            <option value="today">Today</option>
-                            <option value="yesterday">Yesterday</option>
-                            <option value="last7days">Last 7 Days</option>
-                            <option value="last30days">Last 30 Days</option>
-                            <option value="custom">Custom Range</option>
+                    
+                    <!-- Search & Filter Controls -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search description, log name, event..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
+                        <select name="log_name" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[140px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Log Names</option>
+                            @foreach($logNames as $logName)
+                                <option value="{{ $logName }}" @if(request('log_name') == $logName) selected @endif>{{ $logName }}</option>
+                            @endforeach
                         </select>
+                        <select name="event" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Events</option>
+                            @foreach($events as $event)
+                                <option value="{{ $event }}" @if(request('event') == $event) selected @endif>{{ $event }}</option>
+                            @endforeach
+                        </select>
+                        <select name="date_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Dates</option>
+                            <option value="today" @if(request('date_filter') == 'today') selected @endif>Today</option>
+                            <option value="week" @if(request('date_filter') == 'week') selected @endif>This Week</option>
+                            <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
+                            <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
+                        </select>
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
+                            </svg>
+                        </button>
+                        @if(request('search') || request('log_name') || request('event') || request('date_filter'))
+                            <a href="{{ route('settings.log-activity') }}?per_page={{ request('per_page', 10) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
+                        @endif
                     </div>
-                </div>
-                
-                <div class="flex items-end">
-                    <button type="button" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">filter_list</span>
-                        Apply Filter
-                    </button>
-                    <button type="button" class="ml-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">refresh</span>
-                        Reset
-                    </button>
-                </div>
+                </form>
             </div>
+            
+            <!-- Search Results Summary -->
+            @if(request('search') || request('log_name') || request('event') || request('date_filter'))
+                <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-xs">
+                    <span class="font-medium">Search Results:</span>
+                    @if(request('search'))
+                        <span class="ml-2">Searching for "{{ request('search') }}"</span>
+                    @endif
+                    @if(request('log_name'))
+                        <span class="ml-2">Log Name: {{ request('log_name') }}</span>
+                    @endif
+                    @if(request('event'))
+                        <span class="ml-2">Event: {{ request('event') }}</span>
+                    @endif
+                    @if(request('date_filter'))
+                        <span class="ml-2">Date: {{ ucfirst(str_replace('_', ' ', request('date_filter'))) }}</span>
+                    @endif
+                    <span class="ml-2">({{ $activities->total() }} results)</span>
+                </div>
+            @endif
             
             <!-- Log Summary -->
             <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-blue-50 rounded-md p-4 border border-blue-100">
                     <p class="text-xs text-blue-700 font-medium">Total Logs</p>
-                    <p class="text-2xl font-bold text-blue-800">2,547</p>
+                    <p class="text-2xl font-bold text-blue-800">{{ \Spatie\Activitylog\Models\Activity::count() }}</p>
                     <p class="text-[10px] text-blue-600 mt-1">All recorded activities</p>
                 </div>
                 
                 <div class="bg-green-50 rounded-md p-4 border border-green-100">
                     <p class="text-xs text-green-700 font-medium">User Activity</p>
-                    <p class="text-2xl font-bold text-green-800">1,892</p>
+                    <p class="text-2xl font-bold text-green-800">{{ \Spatie\Activitylog\Models\Activity::whereNotNull('causer_id')->count() }}</p>
                     <p class="text-[10px] text-green-600 mt-1">User-initiated actions</p>
                 </div>
                 
                 <div class="bg-amber-50 rounded-md p-4 border border-amber-100">
                     <p class="text-xs text-amber-700 font-medium">System Events</p>
-                    <p class="text-2xl font-bold text-amber-800">543</p>
+                    <p class="text-2xl font-bold text-amber-800">{{ \Spatie\Activitylog\Models\Activity::whereNull('causer_id')->count() }}</p>
                     <p class="text-[10px] text-amber-600 mt-1">Automated system operations</p>
                 </div>
                 
                 <div class="bg-red-50 rounded-md p-4 border border-red-100">
                     <p class="text-xs text-red-700 font-medium">Errors</p>
-                    <p class="text-2xl font-bold text-red-800">112</p>
+                    <p class="text-2xl font-bold text-red-800">{{ \Spatie\Activitylog\Models\Activity::where('event', 'like', '%error%')->orWhere('event', 'like', '%failed%')->count() }}</p>
                     <p class="text-[10px] text-red-600 mt-1">Errors and warnings</p>
                 </div>
             </div>
@@ -130,86 +143,38 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <tr class="text-xs hover:bg-gray-50">
-                            <td class="py-3 px-4 font-medium">#LOG-1001</td>
-                            <td class="py-3 px-4">2023-06-15 09:32:45</td>
-                            <td class="py-3 px-4">admin@example.com</td>
-                            <td class="py-3 px-4">192.168.1.100</td>
-                            <td class="py-3 px-4">User Login</td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Authentication</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                    <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="text-xs hover:bg-gray-50">
-                            <td class="py-3 px-4 font-medium">#LOG-1002</td>
-                            <td class="py-3 px-4">2023-06-15 10:15:22</td>
-                            <td class="py-3 px-4">admin@example.com</td>
-                            <td class="py-3 px-4">192.168.1.100</td>
-                            <td class="py-3 px-4">Create Event</td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">Data Modification</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                    <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="text-xs hover:bg-gray-50">
-                            <td class="py-3 px-4 font-medium">#LOG-1003</td>
-                            <td class="py-3 px-4">2023-06-15 11:05:37</td>
-                            <td class="py-3 px-4">system</td>
-                            <td class="py-3 px-4">127.0.0.1</td>
-                            <td class="py-3 px-4">Database Backup</td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">System</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                    <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="text-xs hover:bg-gray-50">
-                            <td class="py-3 px-4 font-medium">#LOG-1004</td>
-                            <td class="py-3 px-4">2023-06-15 11:45:12</td>
-                            <td class="py-3 px-4">organizer@example.com</td>
-                            <td class="py-3 px-4">192.168.1.105</td>
-                            <td class="py-3 px-4">Certificate Generation</td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">Data Modification</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Failed</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                    <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        @forelse($activities as $activity)
+                            <tr class="text-xs hover:bg-gray-50">
+                                <td class="py-3 px-4 font-medium">#LOG-{{ $activity->id }}</td>
+                                <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
+                                <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
+                                <td class="py-3 px-4">{{ request()->ip() }}</td>
+                                <td class="py-3 px-4">{{ $activity->description }}</td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{{ $activity->log_name ?: 'General' }}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">{{ $activity->event ?: 'Success' }}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex justify-center">
+                                        <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showActivityDetails({{ $activity->id }})">
+                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr class="text-xs">
+                                <td colspan="8" class="py-8 px-4 text-center text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <span class="material-icons text-gray-400 text-4xl mb-2">event_note</span>
+                                        <p class="text-sm">No activity logs found</p>
+                                        <p class="text-xs text-gray-400 mt-1">Activity logs will appear here when users perform actions</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -217,29 +182,18 @@
             <!-- Pagination -->
             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-2 sm:mb-0 text-xs text-gray-500">
-                    Showing <span class="font-medium">1</span> to <span class="font-medium">4</span> of <span class="font-medium">2,547</span> entries
+                    @if($activities->total() > 0)
+                        Showing <span class="font-medium">{{ $activities->firstItem() }}</span> to <span class="font-medium">{{ $activities->lastItem() }}</span> of <span class="font-medium">{{ $activities->total() }}</span> entries ({{ request('per_page', 10) }} per page)
+                    @else
+                        Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> entries
+                    @endif
                 </div>
                 <div class="flex justify-end">
-                    <div class="flex items-center space-x-1">
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs opacity-50 cursor-not-allowed">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-                        </a>
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs mr-2 opacity-50 cursor-not-allowed">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                        </a>
-                        <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">1</span>
-                        <a href="#" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium">2</a>
-                        <a href="#" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium">3</a>
-                        <a href="#" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium">4</a>
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs ml-2">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                        </a>
-                        <a href="#" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zM10 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                        </a>
-                    </div>
+                    {{ $activities->appends(request()->query())->links('components.pagination-modern') }}
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
     
@@ -329,33 +283,27 @@
         </div>
         
         <script>
-            document.querySelectorAll('button[title="View Details"]').forEach(button => {
-                button.addEventListener('click', function() {
-                    let row = this.closest('tr');
-                    let id = row.querySelector('td:first-child').textContent;
-                    let timestamp = row.querySelector('td:nth-child(2)').textContent;
-                    let user = row.querySelector('td:nth-child(3)').textContent;
-                    let ip = row.querySelector('td:nth-child(4)').textContent;
-                    let action = row.querySelector('td:nth-child(5)').textContent;
-                    let type = row.querySelector('td:nth-child(6) span').textContent;
-                    let status = row.querySelector('td:nth-child(7) span').textContent;
-                    
-                    // Set the data in Alpine.js store
-                    let details = {
-                        id: id,
-                        timestamp: timestamp,
-                        user: user,
-                        ip: ip,
-                        action: action,
-                        type: type,
-                        status: status
-                    };
-                    
-                    // Open the modal with the data
-                    let modal = document.querySelector('[x-data*="showModal"]').__x.$data;
-                    modal.logDetails = details;
-                    modal.showModal = true;
-                });
+            // Search debounce functionality
+            document.addEventListener('DOMContentLoaded', function() {
+                const searchInput = document.getElementById('searchInput');
+                let searchTimeout;
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', function() {
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            this.form.submit();
+                        }, 500);
+                    });
+                }
+
+                // Activity details modal functionality
+                window.showActivityDetails = function(activityId) {
+                    // You can implement AJAX call here to get activity details
+                    console.log('Showing details for activity:', activityId);
+                    // For now, we'll just show a simple alert
+                    alert('Activity details for ID: ' + activityId + '\n\nThis would show detailed information about the activity in a modal.');
+                };
             });
         </script>
     </div>

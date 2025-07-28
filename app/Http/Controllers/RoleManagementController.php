@@ -16,10 +16,29 @@ class RoleManagementController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
         // Get roles from database
-        $roles = Role::all();
+        $query = Role::with('permissions');
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('description', 'LIKE', "%{$search}%");
+            });
+        }
+        
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Get per_page parameter with default 10
+        $perPage = $request->get('per_page', 10);
+        
+        $roles = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return view('settings.role-management', [
             'roles' => $roles

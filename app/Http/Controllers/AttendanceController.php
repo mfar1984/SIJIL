@@ -17,7 +17,7 @@ class AttendanceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $query = Attendance::with('event');
@@ -31,9 +31,56 @@ class AttendanceController extends Controller
         }
         // Administrator sees all attendances
 
-        $attendances = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->get();
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('event', function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('location', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by event
+        if ($request->filled('event_id')) {
+            $query->where('event_id', $request->event_id);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_filter')) {
+            $today = now()->startOfDay();
+            switch ($request->date_filter) {
+                case 'today':
+                    $query->where('date', $today->format('Y-m-d'));
+                    break;
+                case 'week':
+                    $query->whereBetween('date', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
+                    break;
+                case 'month':
+                    $query->whereBetween('date', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
+                    break;
+                case 'past':
+                    $query->where('date', '<', $today->format('Y-m-d'));
+                    break;
+            }
+        }
+
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
+        $attendances = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->paginate($perPage);
+
+        // Get events for filter dropdown
+        if ($user->hasRole('Administrator')) {
+            $events = \App\Models\Event::orderBy('name')->get();
+        } else {
+            $events = \App\Models\Event::where('user_id', $user->id)->orderBy('name')->get();
+        }
         
-        return view('attendance.index', compact('attendances'));
+        return view('attendance.index', compact('attendances', 'events'));
     }
 
     /**
@@ -223,7 +270,7 @@ class AttendanceController extends Controller
 
             // Get participants for selected session
             if ($selectedSessionId) {
-                $participants = \DB::table('attendance_records')
+                $query = \DB::table('attendance_records')
                     ->join('participants', 'attendance_records.participant_id', '=', 'participants.id')
                     ->join('attendance_sessions', 'attendance_records.attendance_id', '=', 'attendance_sessions.attendance_id')
                     ->where('attendance_sessions.id', $selectedSessionId)
@@ -233,8 +280,13 @@ class AttendanceController extends Controller
                         'participants.name',
                         'participants.organization as ic',
                         'attendance_records.status'
-                    )
-                    ->get();
+                    );
+                
+                // Get paginated results with per_page parameter
+                $perPage = $request->get('per_page', 10);
+                $participants = $query->paginate($perPage);
+            } else {
+                $participants = collect([]);
             }
         }
 
@@ -336,7 +388,7 @@ class AttendanceController extends Controller
         ]);
     }
 
-    public function archive()
+    public function archive(Request $request)
     {
         $user = Auth::user();
         $query = Attendance::with('event')->where('status', 'archived');
@@ -347,9 +399,51 @@ class AttendanceController extends Controller
         }
         // Administrator sees all archives
 
-        $attendances = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->get();
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('event', function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('location', 'LIKE', "%{$searchTerm}%");
+            });
+        }
 
-        return view('attendance.archive', compact('attendances'));
+        // Filter by event
+        if ($request->filled('event_id')) {
+            $query->where('event_id', $request->event_id);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_filter')) {
+            $today = now()->startOfDay();
+            switch ($request->date_filter) {
+                case 'today':
+                    $query->where('date', $today->format('Y-m-d'));
+                    break;
+                case 'week':
+                    $query->whereBetween('date', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
+                    break;
+                case 'month':
+                    $query->whereBetween('date', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
+                    break;
+                case 'past':
+                    $query->where('date', '<', $today->format('Y-m-d'));
+                    break;
+            }
+        }
+
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
+        $attendances = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->paginate($perPage);
+
+        // Get events for filter dropdown
+        if ($user->hasRole('Administrator')) {
+            $events = \App\Models\Event::orderBy('name')->get();
+        } else {
+            $events = \App\Models\Event::where('user_id', $user->id)->orderBy('name')->get();
+        }
+
+        return view('attendance.archive', compact('attendances', 'events'));
     }
 
     public function archiveAction($id)

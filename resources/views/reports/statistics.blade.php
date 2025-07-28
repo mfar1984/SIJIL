@@ -27,52 +27,6 @@
         </div>
         
         <div class="p-4">
-            <!-- Filters -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label for="date_filter" class="block text-xs font-medium text-gray-700 mb-1">Date Range</label>
-                    <select id="date_filter" name="date_filter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                        <option value="last_30" {{ $dateFilter == 'last_30' ? 'selected' : '' }}>Last 30 Days</option>
-                        <option value="last_90" {{ $dateFilter == 'last_90' ? 'selected' : '' }}>Last 90 Days</option>
-                        <option value="last_6_months" {{ $dateFilter == 'last_6_months' ? 'selected' : '' }}>Last 6 Months</option>
-                        <option value="last_year" {{ $dateFilter == 'last_year' ? 'selected' : '' }}>Last Year</option>
-                        <option value="custom" {{ $dateFilter == 'custom' ? 'selected' : '' }}>Custom Range</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="event_type" class="block text-xs font-medium text-gray-700 mb-1">Event Type</label>
-                    <select id="event_type" name="event_type" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                        <option value="">All Types</option>
-                        <option value="Conference" {{ $eventType == 'Conference' ? 'selected' : '' }}>Conference</option>
-                        <option value="Workshop" {{ $eventType == 'Workshop' ? 'selected' : '' }}>Workshop</option>
-                        <option value="Training" {{ $eventType == 'Training' ? 'selected' : '' }}>Training</option>
-                        <option value="Seminar" {{ $eventType == 'Seminar' ? 'selected' : '' }}>Seminar</option>
-                        <option value="Gaming" {{ $eventType == 'Gaming' ? 'selected' : '' }}>Gaming</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="organizer" class="block text-xs font-medium text-gray-700 mb-1">Organizer</label>
-                    <select id="organizer" name="organizer" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                        <option value="">All Organizers</option>
-                        @foreach($organizers as $organizer)
-                            <option value="{{ $organizer->id }}" {{ $organizerId == $organizer->id ? 'selected' : '' }}>{{ $organizer->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="flex items-end">
-                    <button type="button" onclick="applyStatisticsFilters()" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">filter_list</span>
-                        Apply Filter
-                    </button>
-                    <button type="button" onclick="resetStatisticsFilters()" class="ml-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">refresh</span>
-                        Reset
-                    </button>
-                </div>
-            </div>
             
             <!-- Summary Cards -->
             <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -173,6 +127,67 @@
                 <div class="p-4 border-b border-gray-200">
                     <h3 class="text-sm font-medium text-gray-700">Top Performing Events</h3>
                 </div>
+                
+                <!-- Show Entries & Filter Row -->
+                <div class="p-4 border-b border-gray-200">
+                    <form method="GET" action="{{ route('reports.statistics') }}" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <!-- Show Entries Dropdown (Left) -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-600 font-medium">Show</span>
+                            <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
+                                <option value="5" @if(request('per_page', 5) == 5) selected @endif>5</option>
+                                <option value="10" @if(request('per_page') == 10) selected @endif>10</option>
+                                <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
+                                <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
+                            </select>
+                            <span class="text-xs text-gray-600">entries per page</span>
+                        </div>
+                        
+                        <!-- Search & Filter Controls (Right) -->
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search event name, location..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
+                            <select name="event_type" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                                <option value="">All Types</option>
+                                <option value="Conference" @if(request('event_type') == 'Conference') selected @endif>Conference</option>
+                                <option value="Workshop" @if(request('event_type') == 'Workshop') selected @endif>Workshop</option>
+                                <option value="Training" @if(request('event_type') == 'Training') selected @endif>Training</option>
+                                <option value="Seminar" @if(request('event_type') == 'Seminar') selected @endif>Seminar</option>
+                                <option value="Gaming" @if(request('event_type') == 'Gaming') selected @endif>Gaming</option>
+                            </select>
+                            <select name="status_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                                <option value="">All Status</option>
+                                <option value="active" @if(request('status_filter') == 'active') selected @endif>Active</option>
+                                <option value="completed" @if(request('status_filter') == 'completed') selected @endif>Completed</option>
+                                <option value="cancelled" @if(request('status_filter') == 'cancelled') selected @endif>Cancelled</option>
+                            </select>
+                            <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
+                                </svg>
+                            </button>
+                            @if(request('search') || request('event_type') || request('status_filter'))
+                                <a href="{{ route('reports.statistics') }}?per_page={{ request('per_page', 5) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Search Results Summary -->
+                @if(request('search') || request('event_type') || request('status_filter'))
+                    <div class="px-4 py-2 bg-blue-50 border-b border-blue-200 text-blue-700 text-xs">
+                        <span class="font-medium">Search Results:</span>
+                        @if(request('search'))
+                            <span class="ml-2">Searching for "{{ request('search') }}"</span>
+                        @endif
+                        @if(request('event_type'))
+                            <span class="ml-2">Type: {{ request('event_type') }}</span>
+                        @endif
+                        @if(request('status_filter'))
+                            <span class="ml-2">Status: {{ ucfirst(request('status_filter')) }}</span>
+                        @endif
+                        <span class="ml-2">({{ $events->total() }} results)</span>
+                    </div>
+                @endif
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-primary-light text-white">
@@ -281,31 +296,17 @@
             }
         });
         
-        function applyStatisticsFilters() {
-            const dateFilter = document.getElementById('date_filter').value;
-            const eventType = document.getElementById('event_type').value;
-            const organizer = document.getElementById('organizer').value;
-            
-            let queryParams = [];
-            
-            if (dateFilter) {
-                queryParams.push(`date_filter=${dateFilter}`);
-            }
-            
-            if (eventType) {
-                queryParams.push(`event_type=${encodeURIComponent(eventType)}`);
-            }
-            
-            if (organizer) {
-                queryParams.push(`organizer=${organizer}`);
-            }
-            
-            const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-            window.location.href = `{{ route('reports.statistics') }}${queryString}`;
-        }
+        // Debounce search input
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
         
-        function resetStatisticsFilters() {
-            window.location.href = "{{ route('reports.statistics') }}";
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.form.submit();
+                }, 500); // Wait 500ms after user stops typing
+            });
         }
         
         function exportStatistics() {

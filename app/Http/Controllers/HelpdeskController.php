@@ -51,17 +51,18 @@ class HelpdeskController extends Controller
         }
         
         // Clone the query for pagination
-        $tickets = (clone $baseQuery)->latest()->paginate(10);
+        $perPage = $request->get('per_page', 10);
+        $tickets = (clone $baseQuery)->latest()->paginate($perPage);
         
-        // Get tickets for different tabs
-        $openTickets = (clone $baseQuery)->where('status', 'open')->latest()->get();
-        $inProgressTickets = (clone $baseQuery)->where('status', 'in_progress')->latest()->get();
-        $resolvedTickets = (clone $baseQuery)->where('status', 'resolved')->latest()->get();
+        // Get tickets for different tabs (using pagination for consistency)
+        $openTickets = (clone $baseQuery)->where('status', 'open')->latest()->paginate($perPage);
+        $inProgressTickets = (clone $baseQuery)->where('status', 'in_progress')->latest()->paginate($perPage);
+        $resolvedTickets = (clone $baseQuery)->where('status', 'resolved')->latest()->paginate($perPage);
         
-        // Get counts for different statuses
-        $openCount = $openTickets->count();
-        $inProgressCount = $inProgressTickets->count();
-        $resolvedCount = $resolvedTickets->count();
+        // Get counts for different statuses (using separate queries for counts)
+        $openCount = (clone $baseQuery)->where('status', 'open')->count();
+        $inProgressCount = (clone $baseQuery)->where('status', 'in_progress')->count();
+        $resolvedCount = (clone $baseQuery)->where('status', 'resolved')->count();
         
         // For admin, get a list of users who can be assigned to tickets
         $assignableUsers = $isAdmin ? User::whereHas('roles', function($q) {

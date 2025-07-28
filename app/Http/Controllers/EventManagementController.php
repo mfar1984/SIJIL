@@ -20,17 +20,54 @@ class EventManagementController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Using database for events
-        if (auth()->user()->hasRole('Administrator')) {
-            $events = Event::all();
-        } else {
-            $events = Event::where('user_id', auth()->id())->get();
+        // Start with base query
+        $query = Event::with('participants');
+
+        // For non-Administrator users, filter by their events
+        if (!auth()->user()->hasRole('Administrator')) {
+            $query->where('user_id', auth()->id());
         }
-        
-        // Uncomment ini untuk menggunakan sample data
-        // $events = $this->getSampleEvents();
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('organizer', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('location', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_filter')) {
+            $today = now()->startOfDay();
+            switch ($request->date_filter) {
+                case 'today':
+                    $query->where('start_date', $today->format('Y-m-d'));
+                    break;
+                case 'week':
+                    $query->whereBetween('start_date', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
+                    break;
+                case 'month':
+                    $query->whereBetween('start_date', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
+                    break;
+                case 'past':
+                    $query->where('start_date', '<', $today->format('Y-m-d'));
+                    break;
+            }
+        }
+
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
+        $events = $query->orderBy('start_date', 'desc')->paginate($perPage);
 
         return view('event-management', [
             'events' => $events

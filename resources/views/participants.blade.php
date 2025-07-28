@@ -93,14 +93,6 @@
                 </div>
             @endif
             
-            <!-- Entries Info -->
-            <div class="text-xs text-gray-500 mb-2">
-                Showing {{ $participants->firstItem() ?? 0 }} to {{ $participants->lastItem() ?? 0 }} of {{ $participants->total() }} entries
-                @if($participants->total() > 0)
-                    ({{ request('per_page', 10) }} per page)
-                @endif
-            </div>
-            
             <!-- Participants Table -->
             <div class="overflow-visible border border-gray-200 rounded">
                 <table class="min-w-full border-collapse">
@@ -156,8 +148,9 @@
             <!-- Pagination Row -->
             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-2 sm:mb-0 text-xs text-gray-500">
-                    @if ($participants->total() > 0)
-                        Page {{ $participants->currentPage() }} of {{ $participants->lastPage() }}
+                    Showing {{ $participants->firstItem() ?? 0 }} to {{ $participants->lastItem() ?? 0 }} of {{ $participants->total() }} entries
+                    @if($participants->total() > 0)
+                        ({{ request('per_page', 10) }} per page)
                     @endif
                 </div>
                 <div class="flex justify-end">

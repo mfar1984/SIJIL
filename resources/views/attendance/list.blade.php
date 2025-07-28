@@ -15,28 +15,38 @@
             </div>
         </div>
         <div class="p-6">
-            <!-- Filter Section -->
-            <div class="bg-gray-50 border border-gray-200 rounded p-4 mb-6 flex flex-col md:flex-row md:items-end md:space-x-4 space-y-2 md:space-y-0">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Event</label>
-                    <select x-model="selectedEventId" @change="fetchSessions()" class="form-select w-56 text-xs rounded border-gray-300">
+            <!-- Search & Filter Row -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                <!-- Show Entries Dropdown -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-600 font-medium">Show</span>
+                    <select x-model="perPage" @change="goToPage(1)" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-xs text-gray-600">entries per page</span>
+                </div>
+                
+                <!-- Search & Filter Controls -->
+                <form @submit.prevent="goToPage(1)" class="flex flex-wrap gap-2 items-center">
+                    <!-- Event Filter -->
+                    <select x-model="selectedEventId" @change="fetchSessions()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right max-w-[200px] truncate" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                        <option value="">Select Event</option>
                         <template x-for="event in events" :key="event.id">
                             <option :value="event.id" x-text="event.name"></option>
                         </template>
                     </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Session</label>
-                    <select x-model="selectedSessionId" @change="goToPage(1)" class="form-select w-40 text-xs rounded border-gray-300">
+                    
+                    <!-- Session Filter -->
+                    <select x-model="selectedSessionId" @change="goToPage(1)" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right max-w-[200px] truncate" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                        <option value="">Select Session</option>
                         <template x-for="session in sessions" :key="session.id">
                             <option :value="session.id" x-text="session.name"></option>
                         </template>
                     </select>
-                </div>
-            </div>
-            <!-- Search & Filter Row -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end mb-4 gap-2">
-                <form @submit.prevent="goToPage(1)" class="flex flex-wrap gap-2 items-center justify-end w-full sm:w-auto">
+                    
                     <input type="text" x-model="search" placeholder="Search name, IC..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" />
                     <select x-model="status" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]">
                         <option value="">All Status</option>

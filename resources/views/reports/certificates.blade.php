@@ -31,44 +31,6 @@
         </div>
         
         <div class="p-4">
-            <!-- Filters -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label for="event_filter" class="block text-xs font-medium text-gray-700 mb-1">Event</label>
-                    <select id="event_filter" name="event_filter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                        <option value="">All Events</option>
-                        @foreach($events as $event)
-                            <option value="{{ $event->id }}" {{ request('event_filter') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="template_filter" class="block text-xs font-medium text-gray-700 mb-1">Template</label>
-                    <select id="template_filter" name="template_filter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                        <option value="">All Templates</option>
-                        @foreach($templates as $template)
-                            <option value="{{ $template->id }}" {{ request('template_filter') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="date_range" class="block text-xs font-medium text-gray-700 mb-1">Issue Date</label>
-                    <input type="text" id="date_range" name="date_range" value="{{ request('date_range') }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" placeholder="Select date range">
-                </div>
-                
-                <div class="flex items-end">
-                    <button type="button" onclick="filterCertificates()" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">filter_list</span>
-                        Apply Filter
-                    </button>
-                    <button type="button" onclick="resetCertificateFilters()" class="ml-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">refresh</span>
-                        Reset
-                    </button>
-                </div>
-            </div>
             
             <!-- Certificate Summary -->
             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -99,6 +61,75 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Show Entries & Filter Row -->
+            <div class="mb-4">
+                <form method="GET" action="{{ route('reports.certificates') }}" class="flex flex-wrap gap-2 items-center justify-between">
+                    <!-- Show Entries Dropdown -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-600 font-medium">Show</span>
+                        <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
+                            <option value="10" @if(request('per_page', 10) == 10) selected @endif>10</option>
+                            <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
+                            <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
+                            <option value="100" @if(request('per_page') == 100) selected @endif>100</option>
+                        </select>
+                        <span class="text-xs text-gray-600">entries per page</span>
+                    </div>
+                    
+                    <!-- Search & Filter Controls -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search participant name, email, event, certificate #..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
+                        <select name="event_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right max-w-[200px] truncate" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Events</option>
+                            @foreach($events as $event)
+                                <option value="{{ $event->id }}" @if(request('event_filter') == $event->id) selected @endif class="truncate">{{ $event->name }}</option>
+                            @endforeach
+                        </select>
+                        <select name="template_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right max-w-[200px] truncate" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Templates</option>
+                            @foreach($templates as $template)
+                                <option value="{{ $template->id }}" @if(request('template_filter') == $template->id) selected @endif class="truncate">{{ $template->name }}</option>
+                            @endforeach
+                        </select>
+                        <select name="date_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Dates</option>
+                            <option value="today" @if(request('date_filter') == 'today') selected @endif>Today</option>
+                            <option value="week" @if(request('date_filter') == 'week') selected @endif>This Week</option>
+                            <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
+                            <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
+                        </select>
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
+                            </svg>
+                        </button>
+                        @if(request('search') || request('event_filter') || request('template_filter') || request('date_filter'))
+                            <a href="{{ route('reports.certificates') }}?per_page={{ request('per_page', 10) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Search Results Summary -->
+            @if(request('search') || request('event_filter') || request('template_filter') || request('date_filter'))
+                <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-xs">
+                    <span class="font-medium">Search Results:</span>
+                    @if(request('search'))
+                        <span class="ml-2">Searching for "{{ request('search') }}"</span>
+                    @endif
+                    @if(request('event_filter'))
+                        <span class="ml-2">Event: {{ $events->find(request('event_filter'))->name ?? 'Unknown' }}</span>
+                    @endif
+                    @if(request('template_filter'))
+                        <span class="ml-2">Template: {{ $templates->find(request('template_filter'))->name ?? 'Unknown' }}</span>
+                    @endif
+                    @if(request('date_filter'))
+                        <span class="ml-2">Date: {{ ucfirst(str_replace('_', ' ', request('date_filter'))) }}</span>
+                    @endif
+                    <span class="ml-2">({{ $certificates->total() }} results)</span>
+                </div>
+            @endif
             
             <!-- Certificate Table -->
             <div class="overflow-visible border border-gray-200 rounded">
@@ -190,37 +221,17 @@
 
     <!-- JavaScript for the page -->
     <script>
-        function filterCertificates() {
-            // Get filter values
-            const eventFilter = document.getElementById('event_filter').value;
-            const templateFilter = document.getElementById('template_filter').value;
-            const dateRange = document.getElementById('date_range').value;
-            
-            // Build query string
-            let queryParams = [];
-            if (eventFilter) {
-                queryParams.push(`event_filter=${eventFilter}`);
-            }
-            if (templateFilter) {
-                queryParams.push(`template_filter=${templateFilter}`);
-            }
-            if (dateRange) {
-                queryParams.push(`date_range=${encodeURIComponent(dateRange)}`);
-            }
-            
-            // Redirect with query parameters
-            const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-            window.location.href = `{{ route('reports.certificates') }}${queryString}`;
-        }
+        // Debounce search input
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
         
-        function resetCertificateFilters() {
-            // Reset form fields
-            document.getElementById('event_filter').value = '';
-            document.getElementById('template_filter').value = '';
-            document.getElementById('date_range').value = '';
-            
-            // Redirect to base URL without query parameters
-            window.location.href = "{{ route('reports.certificates') }}";
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.form.submit();
+                }, 500); // Wait 500ms after user stops typing
+            });
         }
         
         function exportCertificateReport() {
@@ -275,18 +286,5 @@
                 alert('Failed to send email.');
             });
         };
-        
-        // Initialize date range picker if available
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if date range picker library is available
-            if (typeof flatpickr !== 'undefined') {
-                flatpickr('#date_range', {
-                    mode: 'range',
-                    dateFormat: 'Y-m-d',
-                    // Set initial value if exists in URL params
-                    defaultDate: "{{ request('date_range') }}"
-                });
-            }
-        });
     </script>
 </x-app-layout> 

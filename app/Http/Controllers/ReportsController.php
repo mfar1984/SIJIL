@@ -14,18 +14,6 @@ class ReportsController extends Controller
 {
     public function attendanceIndex(Request $request)
     {
-        // Filters
-        $eventId = $request->input('event_filter');
-        $dateRange = $request->input('date_range');
-
-        // Get events based on user role
-        if (auth()->user()->hasRole('Administrator')) {
-            $events = Event::orderBy('start_date')->get();
-        } else {
-            // Organizer only sees their events
-            $events = Event::where('user_id', auth()->id())->orderBy('start_date')->get();
-        }
-
         // Query sessions (AttendanceSession) with event
         $sessionsQuery = AttendanceSession::with(['attendance.event']);
         
@@ -35,27 +23,62 @@ class ReportsController extends Controller
                 $q->where('user_id', auth()->id());
             });
         }
-        
-        if ($eventId) {
-            $sessionsQuery->whereHas('attendance', function($q) use ($eventId) {
-                $q->where('event_id', $eventId);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $sessionsQuery->whereHas('attendance.event', function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('location', 'LIKE', "%{$searchTerm}%");
             });
         }
-        if ($dateRange) {
-            // Expecting format: 'YYYY-MM-DD - YYYY-MM-DD'
-            $dates = explode(' - ', $dateRange);
-            if (count($dates) === 2) {
-                $sessionsQuery->whereBetween('date', [$dates[0], $dates[1]]);
+
+        // Filter by event
+        if ($request->filled('event_filter')) {
+            $sessionsQuery->whereHas('attendance', function($q) use ($request) {
+                $q->where('event_id', $request->event_filter);
+            });
+        }
+
+        // Filter by date range
+        if ($request->filled('date_filter')) {
+            $today = now()->startOfDay();
+            switch ($request->date_filter) {
+                case 'today':
+                    $sessionsQuery->where('date', $today->format('Y-m-d'));
+                    break;
+                case 'week':
+                    $sessionsQuery->whereBetween('date', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
+                    break;
+                case 'month':
+                    $sessionsQuery->whereBetween('date', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
+                    break;
+                case 'past':
+                    $sessionsQuery->where('date', '<', $today->format('Y-m-d'));
+                    break;
             }
+        }
+
+        // Filter by attendance rate
+        if ($request->filled('rate_filter')) {
+            // This will be handled after getting the sessions
         }
         
         // Get total count for summary statistics
         $totalSessionsCount = $sessionsQuery->count();
         $sessionIds = $sessionsQuery->pluck('id');
         
-        // Apply pagination
-        $perPage = 10; // Number of items per page
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
         $sessions = $sessionsQuery->orderBy('date', 'desc')->paginate($perPage);
+
+        // Get events based on user role
+        if (auth()->user()->hasRole('Administrator')) {
+            $events = Event::orderBy('name')->get();
+        } else {
+            // Organizer only sees their events
+            $events = Event::where('user_id', auth()->id())->orderBy('name')->get();
+        }
 
         // Summary
         $totalSessions = $totalSessionsCount;
@@ -68,8 +91,8 @@ class ReportsController extends Controller
             $participantsQuery->whereIn('event_id', $userEventIds);
         }
         
-        if ($eventId) {
-            $participantsQuery->where('event_id', $eventId);
+        if ($request->filled('event_filter')) {
+            $participantsQuery->where('event_id', $request->event_filter);
         }
         
         $totalRegistered = $participantsQuery->count();
@@ -99,8 +122,6 @@ class ReportsController extends Controller
             'totalSessions', 
             'totalAttendees', 
             'averageAttendanceRate', 
-            'eventId', 
-            'dateRange',
             'sessions' // Pass the paginated sessions to the view
         ));
     }

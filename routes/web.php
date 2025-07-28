@@ -258,7 +258,7 @@ Route::get('/debug-template', function() {
 })->name('debug.template');
 
 // Reports Routes
-Route::prefix('reports')->group(function () {
+Route::prefix('reports')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/attendance', [App\Http\Controllers\ReportsController::class, 'attendanceIndex'])
         ->name('reports.attendance.index');
     
@@ -373,15 +373,13 @@ Route::middleware(['auth'])->prefix('helpdesk')->name('helpdesk.')->group(functi
 
 // Settings Routes
 Route::prefix('settings')->group(function () {
-    Route::get('/log-activity', function () {
-        return view('settings.log-activity');
-    })->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
-    ->name('settings.log-activity');
+    Route::get('/log-activity', [App\Http\Controllers\Settings\LogActivityController::class, 'index'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+        ->name('settings.log-activity');
     
-    Route::get('/security-audit', function () {
-        return view('settings.security-audit');
-    })->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
-    ->name('settings.security-audit');
+    Route::get('/security-audit', [App\Http\Controllers\Settings\SecurityAuditController::class, 'index'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+        ->name('settings.security-audit');
     
     Route::get('/global-config', [App\Http\Controllers\GlobalConfigController::class, 'index'])
         ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
@@ -404,10 +402,18 @@ Route::prefix('settings')->group(function () {
         ->name('settings.global-config.api');
 });
 
-Route::get('/reports/attendance', [App\Http\Controllers\ReportsController::class, 'attendanceIndex'])->name('reports.attendance.index');
-Route::get('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceShow'])->name('reports.attendance.show');
-Route::post('/reports/attendance/export', [App\Http\Controllers\ReportsController::class, 'attendanceExport'])->name('reports.attendance.export');
-Route::delete('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceDelete'])->name('reports.attendance.delete');
+Route::get('/reports/attendance', [App\Http\Controllers\ReportsController::class, 'attendanceIndex'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.attendance.index');
+Route::get('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceShow'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.attendance.show');
+Route::post('/reports/attendance/export', [App\Http\Controllers\ReportsController::class, 'attendanceExport'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.attendance.export');
+Route::delete('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceDelete'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.attendance.delete');
 
 // Survey Routes - Admin
 Route::middleware(['auth'])->prefix('survey')->name('survey.')->group(function () {

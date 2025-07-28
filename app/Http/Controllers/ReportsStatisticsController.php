@@ -64,6 +64,16 @@ class ReportsStatisticsController extends Controller
             // Force organizer filter to current user for non-admin users
             $organizerId = auth()->id();
         }
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $eventsQuery->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('location', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+            });
+        }
         
         if ($startDate && $endDate) {
             $eventsQuery->whereBetween('start_date', [$startDate, $endDate]);
@@ -84,9 +94,15 @@ class ReportsStatisticsController extends Controller
         if ($organizerId) {
             $eventsQuery->where('user_id', $organizerId);
         }
+
+        // Filter by status
+        if ($request->filled('status_filter')) {
+            $eventsQuery->where('status', $request->status_filter);
+        }
         
-        // Get all events for the period
-        $events = $eventsQuery->orderBy('start_date', 'desc')->paginate(5);
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 5);
+        $events = $eventsQuery->orderBy('start_date', 'desc')->paginate($perPage);
         
         // Get previous period for comparison
         $prevPeriodStart = (clone $startDate)->subDays($startDate->diffInDays($endDate));

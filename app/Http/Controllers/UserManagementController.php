@@ -16,10 +16,33 @@ class UserManagementController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
         // Get users with their roles from database
         $query = User::with('role');
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('organization', 'LIKE', "%{$search}%")
+                  ->orWhere('phone', 'LIKE', "%{$search}%");
+            });
+        }
+        
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Apply role filter
+        if ($request->filled('role')) {
+            $query->whereHas('role', function($q) use ($request) {
+                $q->where('id', $request->role);
+            });
+        }
         
         // Apply ownership scope for Organizer role
         if (auth()->user()->hasRole('Organizer')) {
@@ -27,10 +50,17 @@ class UserManagementController extends Controller
             $query->where('id', auth()->id());
         }
         
-        $users = $query->get();
+        // Get per_page parameter with default 10
+        $perPage = $request->get('per_page', 10);
+        
+        $users = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        
+        // Get roles for filter dropdown
+        $roles = Role::all();
         
         return view('settings.user-management', [
-            'users' => $users
+            'users' => $users,
+            'roles' => $roles
         ]);
     }
     

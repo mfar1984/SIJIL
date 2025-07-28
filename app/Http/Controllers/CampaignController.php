@@ -18,6 +18,16 @@ class CampaignController extends Controller
     {
         $query = Campaign::query();
         
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('description', 'LIKE', "%{$search}%")
+                  ->orWhere('campaign_type', 'LIKE', "%{$search}%");
+            });
+        }
+        
         // Apply filters
         if ($request->filled('campaign_type')) {
             $query->ofType($request->campaign_type);
@@ -32,9 +42,12 @@ class CampaignController extends Controller
             $query->forCurrentUser();
         }
         
+        // Get per_page parameter with default 10
+        $perPage = $request->get('per_page', 10);
+        
         $campaigns = $query->with(['user', 'event'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate($perPage);
             
         // Get statistics for summary cards
         $totalCampaigns = Campaign::when(!Auth::user()->hasRole('Administrator'), function($q) {

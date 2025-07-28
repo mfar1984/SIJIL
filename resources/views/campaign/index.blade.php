@@ -25,40 +25,6 @@
         </div>
         
         <div class="p-4">
-            <!-- Filters -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="campaign_type" class="block text-xs font-medium text-gray-700 mb-1">Campaign Type</label>
-                    <select id="campaign_type" name="campaign_type" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                        <option value="">All Types</option>
-                        <option value="email">Email Campaign</option>
-                        <option value="sms">SMS Campaign</option>
-                        <option value="whatsapp">WhatsApp Campaign</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="status" class="block text-xs font-medium text-gray-700 mb-1">Status</label>
-                    <select id="status" name="status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                        <option value="">All Status</option>
-                        <option value="draft">Draft</option>
-                        <option value="scheduled">Scheduled</option>
-                        <option value="running">Running</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                </div>
-                
-                <div class="flex items-end">
-                    <button type="button" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">filter_list</span>
-                        Apply Filter
-                    </button>
-                    <button type="button" class="ml-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-xs flex items-center">
-                        <span class="material-icons text-xs mr-1">refresh</span>
-                        Reset
-                    </button>
-                </div>
-            </div>
             
             <!-- Campaign Summary -->
             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -77,6 +43,66 @@
                     <p class="text-2xl font-bold text-amber-800">{{ $averageOpenRate }}%</p>
                 </div>
             </div>
+            
+            <!-- Show Entries & Filter Row -->
+            <div class="mb-4">
+                <form method="GET" action="{{ route('campaign.index') }}" class="flex flex-wrap gap-2 items-center justify-between">
+                    <!-- Show Entries Dropdown -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-600 font-medium">Show</span>
+                        <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
+                            <option value="10" @if(request('per_page', 10) == 10) selected @endif>10</option>
+                            <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
+                            <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
+                            <option value="100" @if(request('per_page') == 100) selected @endif>100</option>
+                        </select>
+                        <span class="text-xs text-gray-600">entries per page</span>
+                    </div>
+                    
+                    <!-- Search & Filter Controls -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search campaign name, description..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
+                        <select name="campaign_type" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[140px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Types</option>
+                            <option value="email" @if(request('campaign_type') == 'email') selected @endif>Email Campaign</option>
+                            <option value="sms" @if(request('campaign_type') == 'sms') selected @endif>SMS Campaign</option>
+                            <option value="whatsapp" @if(request('campaign_type') == 'whatsapp') selected @endif>WhatsApp Campaign</option>
+                        </select>
+                        <select name="status" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                            <option value="">All Status</option>
+                            <option value="draft" @if(request('status') == 'draft') selected @endif>Draft</option>
+                            <option value="scheduled" @if(request('status') == 'scheduled') selected @endif>Scheduled</option>
+                            <option value="running" @if(request('status') == 'running') selected @endif>Running</option>
+                            <option value="completed" @if(request('status') == 'completed') selected @endif>Completed</option>
+                        </select>
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
+                            </svg>
+                        </button>
+                        @if(request('search') || request('campaign_type') || request('status'))
+                            <a href="{{ route('campaign.index') }}?per_page={{ request('per_page', 10) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Search Results Summary -->
+            @if(request('search') || request('campaign_type') || request('status'))
+                <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-xs">
+                    <span class="font-medium">Search Results:</span>
+                    @if(request('search'))
+                        <span class="ml-2">Searching for "{{ request('search') }}"</span>
+                    @endif
+                    @if(request('campaign_type'))
+                        <span class="ml-2">Type: {{ ucfirst(request('campaign_type')) }}</span>
+                    @endif
+                    @if(request('status'))
+                        <span class="ml-2">Status: {{ ucfirst(request('status')) }}</span>
+                    @endif
+                    <span class="ml-2">({{ $campaigns->total() }} results)</span>
+                </div>
+            @endif
             
             <!-- Campaign Table -->
             <div class="overflow-visible border border-gray-200 rounded">
@@ -155,15 +181,30 @@
             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-2 sm:mb-0 text-xs text-gray-500">
                     @if($campaigns->total() > 0)
-                    Showing <span class="font-medium">{{ $campaigns->firstItem() }}</span> to <span class="font-medium">{{ $campaigns->lastItem() }}</span> of <span class="font-medium">{{ $campaigns->total() }}</span> entries
+                        Showing <span class="font-medium">{{ $campaigns->firstItem() }}</span> to <span class="font-medium">{{ $campaigns->lastItem() }}</span> of <span class="font-medium">{{ $campaigns->total() }}</span> entries ({{ request('per_page', 10) }} per page)
                     @else
-                    Showing 0 entries
+                        Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> entries
                     @endif
                 </div>
                 <div class="flex justify-end">
-                    {{ $campaigns->links() }}
+                    {{ $campaigns->appends(request()->query())->links('components.pagination-modern') }}
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- JavaScript for search debounce -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.form.submit();
+                }, 500);
+            });
+        });
+    </script>
 </x-app-layout> 

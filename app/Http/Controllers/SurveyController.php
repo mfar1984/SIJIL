@@ -14,13 +14,43 @@ class SurveyController extends Controller
     /**
      * Display a listing of the surveys.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $surveys = Survey::with(['event', 'questions'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // Start with base query
+        $query = Survey::with(['event', 'questions']);
 
-        return view('survey.index', compact('surveys'));
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by access type
+        if ($request->filled('access_type')) {
+            $query->where('access_type', $request->access_type);
+        }
+
+        // Filter by event
+        if ($request->filled('event_id')) {
+            $query->where('event_id', $request->event_id);
+        }
+
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
+        $surveys = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Get events for filter dropdown
+        $events = Event::orderBy('name')->get();
+
+        return view('survey.index', compact('surveys', 'events'));
     }
 
     /**

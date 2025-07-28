@@ -14,21 +14,54 @@ class ParticipantsController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        // For Administrator, show all participants
-        // For Organizer, show only participants of their events
-        if (auth()->user()->hasRole('Administrator')) {
-            $participants = Participant::with('event')->paginate(10);
-        } else {
-            // Get events created by the current user
+        // Start with base query
+        $query = Participant::with('event');
+
+        // For non-Administrator users, filter by their events
+        if (!auth()->user()->hasRole('Administrator')) {
             $userEvents = Event::where('user_id', auth()->id())->pluck('id');
-            // Get participants for those events
-            $participants = Participant::whereIn('event_id', $userEvents)->with('event')->paginate(10);
+            $query->whereIn('event_id', $userEvents);
+        }
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('email', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('phone', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('identity_card', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('passport_no', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('organization', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by event
+        if ($request->filled('event')) {
+            $query->where('event_id', $request->event);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Get paginated results with per_page parameter
+        $perPage = $request->get('per_page', 10);
+        $participants = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Get events for filter dropdown
+        if (auth()->user()->hasRole('Administrator')) {
+            $events = Event::orderBy('name')->get();
+        } else {
+            $events = Event::where('user_id', auth()->id())->orderBy('name')->get();
         }
 
         return view('participants', [
-            'participants' => $participants
+            'participants' => $participants,
+            'events' => $events
         ]);
     }
 

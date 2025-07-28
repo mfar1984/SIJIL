@@ -40,9 +40,12 @@ class AttendanceController extends Controller
             });
         }
 
-        // Filter by status
+        // Filter by status - exclude archived by default unless specifically requested
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        } else {
+            // By default, exclude archived items from main attendance list
+            $query->where('status', '!=', 'archived');
         }
 
         // Filter by event
@@ -452,5 +455,13 @@ class AttendanceController extends Controller
         $attendance->status = 'archived';
         $attendance->save();
         return redirect()->route('attendance.index')->with('success', 'Attendance archived successfully.');
+    }
+
+    public function unarchiveAction($id)
+    {
+        $attendance = Attendance::findOrFail($id);
+        $attendance->status = 'active';
+        $attendance->save();
+        return redirect()->route('attendance.archive')->with('success', 'Attendance unarchived successfully.');
     }
 }

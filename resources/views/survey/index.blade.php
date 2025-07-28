@@ -73,7 +73,7 @@
             </div>
             
             @if(session('success'))
-                <div class="bg-green-50 text-green-800 p-4 mb-4 rounded-md flex items-start">
+                <div class="bg-green-50 text-green-800 p-4 mb-4 rounded-md flex items-start text-xs">
                     <span class="material-icons mr-2">check_circle</span>
                     <span>{{ session('success') }}</span>
                 </div>

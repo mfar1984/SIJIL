@@ -62,12 +62,12 @@
             
             <!-- Display success/error messages -->
             @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-xs">
                     {{ session('success') }}
                 </div>
             @endif
             @if(session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-xs">
                     {{ session('error') }}
                 </div>
             @endif
@@ -117,6 +117,19 @@
                                     <a href="{{ route('attendance.show', $attendance->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
                                         <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                     </a>
+                                    <form method="POST" action="{{ route('attendance.unarchive-action', $attendance->id) }}" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" onclick="return confirm('Unarchive this attendance?')" title="Unarchive">
+                                            <span class="material-icons text-green-600 text-xs">unarchive</span>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('attendance.destroy', $attendance->id) }}" onsubmit="return confirm('Are you sure you want to delete this attendance session?')" class="inline-block">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
+                                            <span class="material-icons text-red-600 text-xs">delete</span>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

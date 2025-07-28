@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Registration - Financial Management Course</title>
+    <style>
+        /* Mengimport fon dari Google Fonts untuk menyamai reka bentuk asal */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        /* Tetapan asas untuk badan laman */
+        body {
+            background-color: #f0f0f0; /* Latar belakang kelabu untuk menonjolkan helaian A4 */
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Kontena utama yang menyerupai kertas A4 */
+        .a4-container {
+            width: 210mm;
+            height: 297mm;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 25mm; /* Ruang di sekeliling kandungan */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            border: 1px solid #d1d5db; /* [BARU] Menambah garisan sempadan kelabu nipis */
+        }
+
+        /* Tajuk Utama */
+        header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 16px;
+            color: #4b5563;
+            margin-top: 0;
+        }
+
+        /* Butiran Acara */
+        .event-details {
+            margin-top: 30px;
+        }
+
+        .event-details h2 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .event-details .organizer {
+            font-size: 18px;
+            color: #374151;
+            margin-top: 0;
+        }
+        
+        /* Kotak Info Biru */
+        .info-box {
+            background-color: #e0eaff; /* Warna biru muda */
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-around;
+            text-align: left;
+            width: 100%; /* [BARU] Melebarkan kotak info */
+            box-sizing: border-box; /* [BARU] Memastikan padding tidak menambah lebar */
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Jarak antara ikon dan teks */
+        }
+
+        .info-item .icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .info-item .text .label {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .info-item .text .data {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1f2937;
+            margin: 4px 0 0 0;
+        }
+
+        /* Bahagian QR Code */
+        .qr-section {
+            margin-top: 50px;
+            flex-grow: 1; /* Memastikan ia mengambil ruang yang tinggal */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .qr-section h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #3b82f6; /* Warna biru */
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .qr-code-wrapper {
+            border: 4px dotted #3b82f6; /* Sempadan biru putus-putus */
+            border-radius: 16px;
+            padding: 15px;
+            display: inline-block; /* Agar sempadan mengikut saiz kandungan */
+        }
+        
+        .qr-code-image {
+            width: 250px; /* [DIUBAH] Saiz QR Code dibesarkan */
+            height: 250px; /* [DIUBAH] Saiz QR Code dibesarkan */
+            display: block; /* Menghilangkan ruang kosong di bawah imej */
+        }
+
+        /* Tetapan untuk Cetakan (Print) */
+        @media print {
+            body {
+                background-color: white; /* Tiada latar belakang kelabu semasa mencetak */
+            }
+
+            .a4-container {
+                width: 100%;
+                height: 100%;
+                box-shadow: none; /* Tiada bayang-bayang semasa mencetak */
+                margin: 0;
+                padding: 0; /* Pelayar akan menguruskan margin cetakan */
+            }
+        }
+        
+        @page {
+            size: A4;
+            margin: 20mm; /* Margin cetakan */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="a4-container">
+        <header>
+            <h1>Event Registration QR Code</h1>
+            <p>Scan this QR code to register for the event</p>
+        </header>
+
+        <section class="event-details">
+            <h2>Financial Management Course</h2>
+            <p class="organizer">Organizer : Finance Department</p>
+        </section>
+
+        <section class="info-box">
+            <div class="info-item">
+                <!-- Ikon Kalendar (SVG) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3b82f6" class="icon">
+                    <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 2.25a.75.75 0 01.75.75v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H4.5a3 3 0 01-3-3V7.5a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM4.5 9.75a.75.75 0 00-.75.75v7.5c0 .81.66 1.465 1.464 1.498h12.572A1.5 1.5 0 0019.5 18V10.5a.75.75 0 00-.75-.75H4.5z" clip-rule="evenodd" />
+                </svg>
+                <div class="text">
+                    <p class="label">Date:</p>
+                    <p class="data">
+                        Sunday, 05 October 2025<br>to<br>Tuesday, 07 October 2025
+                    </p>
+                </div>
+            </div>
+            <div class="info-item">
+                <!-- Ikon Jam (SVG) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3b82f6" class="icon">
+                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" />
+                </svg>
+                <div class="text">
+                    <p class="label">Time:</p>
+                    <p class="data">09:00 - 16:00</p>
+                </div>
+            </div>
+            <div class="info-item">
+                <!-- Ikon Lokasi (SVG) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3b82f6" class="icon">
+                    <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 005.16-4.252C19.875 15.779 21 13.148 21 10.5 21 5.798 16.702 2 12 2S3 5.798 3 10.5c0 2.648 1.125 5.279 2.76 7.601a16.974 16.974 0 005.159 4.252zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                </svg>
+                <div class="text">
+                    <p class="label">Location:</p>
+                    <p class="data">RISDA Headquarters</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="qr-section">
+            <h3>SCAN HERE</h3>
+            <div class="qr-code-wrapper">
+                <!-- 
+                  PENTING: Gantikan URL di bawah dengan pautan ke imej QR Code sebenar anda.
+                  URL di bawah juga telah dikemaskini untuk menjana QR code 250x250.
+                -->
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.example.com/register-event" 
+                     alt="Event Registration QR Code" 
+                     class="qr-code-image">
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>

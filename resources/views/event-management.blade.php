@@ -69,12 +69,12 @@
             
             <!-- Display success/error messages -->
             @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-xs">
                     {{ session('success') }}
                 </div>
             @endif
             @if(session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-xs">
                     {{ session('error') }}
                 </div>
             @endif
@@ -133,8 +133,8 @@
                                     <div class="flex justify-center space-x-2">
                                         <!-- Registration Options Dropdown -->
                                         <div class="relative" x-data="{ registrationDropdownOpen{{ $event->id }}: false }">
-                                            <button @click="registrationDropdownOpen{{ $event->id }} = !registrationDropdownOpen{{ $event->id }}" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Registration Options">
-                                                <span class="material-icons text-green-600 text-xs">group_add</span>
+                                            <button @click="registrationDropdownOpen{{ $event->id }} = !registrationDropdownOpen{{ $event->id }}" class="p-1 bg-purple-50 rounded hover:bg-purple-100 border border-purple-100" title="Registration Options">
+                                                <span class="material-icons text-purple-600 text-xs">format_list_bulleted</span>
                                             </button>
                                             <div x-show="registrationDropdownOpen{{ $event->id }}" @click.outside="registrationDropdownOpen{{ $event->id }} = false" class="absolute right-0 mt-2 z-50 w-48 bg-white rounded-md shadow-lg">
                                                 <div class="py-1 border border-gray-200 rounded-md">
@@ -142,8 +142,8 @@
                                                         <span class="material-icons text-blue-600 text-xs mr-2">link</span>
                                                         Copy Registration Link
                                                     </button>
-                                                    <a href="{{ route('event.qrcode', $event->id) }}" class="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                                        <span class="material-icons text-purple-600 text-xs mr-2">qr_code</span>
+                                                    <a href="{{ route('event.qrcode-image', $event->id) }}" class="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                        <span class="material-icons text-indigo-600 text-xs mr-2">qr_code</span>
                                                         Download QR Code
                                                     </a>
                                                 </div>
@@ -151,10 +151,10 @@
                                         </div>
                                         
                                         <a href="{{ route('event.show', $event->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons text-blue-600 text-xs">visibility</span>
                                         </a>
                                         <a href="{{ route('event.edit', $event->id) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
-                                            <span class="material-icons text-yellow-600 text-xs">edit</span>
+                                            <span class="material-icons text-yellow-700 text-xs">edit</span>
                                         </a>
                                         <form method="POST" action="{{ route('event.destroy', $event->id) }}" onsubmit="return confirm('Are you sure you want to delete this event?')" class="inline-block">
                                             @csrf

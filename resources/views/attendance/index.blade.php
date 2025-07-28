@@ -15,10 +15,16 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage all attendance sessions for your events</p>
                 </div>
+                <div class="flex space-x-2">
+                    <a href="{{ route('attendance.archive') }}" class="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <span class="material-icons text-xs mr-1">inventory</span>
+                        View Archive
+                    </a>
                 <a href="{{ route('attendance.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                     <span class="material-icons text-xs mr-1">add_circle</span>
                     Create Attendance
                 </a>
+                </div>
             </div>
         </div>
         
@@ -47,6 +53,7 @@
                             <option value="active" @if(request('status') == 'active') selected @endif>Active</option>
                             <option value="expired" @if(request('status') == 'expired') selected @endif>Expired</option>
                             <option value="completed" @if(request('status') == 'completed') selected @endif>Completed</option>
+                            <option value="archived" @if(request('status') == 'archived') selected @endif>Archived</option>
                         </select>
                         <select name="event_id" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right max-w-[200px] truncate" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                             <option value="">All Events</option>
@@ -75,12 +82,12 @@
             
             <!-- Display success/error messages -->
             @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-xs">
                     {{ session('success') }}
                 </div>
             @endif
             @if(session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-xs">
                     {{ session('error') }}
                 </div>
             @endif
@@ -130,6 +137,8 @@
                                     <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Expired</span>
                                 @elseif($attendance->status === 'completed')
                                     <span class="bg-status-completed-bg text-status-completed-text px-2 py-1 rounded-full text-xs">Completed</span>
+                                @elseif($attendance->status === 'archived')
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">Archived</span>
                                 @else
                                     <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">{{ ucfirst($attendance->status) }}</span>
                                 @endif

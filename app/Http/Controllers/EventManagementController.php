@@ -337,48 +337,84 @@ class EventManagementController extends Controller
         // Set font
         $pdf->SetFont('helvetica', '', 12);
         
-        // Create temporary file for SVG
-        $tempSvgFile = tempnam(sys_get_temp_dir(), 'qrcode_') . '.svg';
-        file_put_contents($tempSvgFile, $qrCodeSvg);
-        
-        // Add content
+        // Card size (smaller than A4, centered)
+        $cardWidth = 150; // mm
+        $cardHeight = 210; // mm
+        $pageWidth = $pdf->getPageWidth();
+        $pageHeight = $pdf->getPageHeight();
+        $x = ($pageWidth - $cardWidth) / 2;
+        $y = ($pageHeight - $cardHeight) / 2;
+        $qrWidth = 60; // mm
+        $qrX = $x + ($cardWidth - $qrWidth) / 2;
+        $qrY = $y + 120; // position QR code below info section
+
+        // 1. Render card (without QR code)
         $html = '
-        <h1 style="text-align:center; color:#2563EB;">Event Registration QR Code</h1>
-        <p style="text-align:center;">Scan this QR code to register for the event</p>
-        
-        <div style="margin-top:20px; margin-bottom:20px;">
-            <h2 style="color:#2563EB;">' . $event->name . '</h2>
-            <p><strong>Organizer:</strong> ' . $event->organizer . '</p>
-            <p><strong>Date:</strong> ' . $event->start_date->format('d M Y') . ' to ' . $event->end_date->format('d M Y') . '</p>
-            <p><strong>Location:</strong> ' . $event->location . '</p>
-        </div>
-        
-        <div style="text-align:center; margin-top:20px; margin-bottom:20px;">';
-        
-        // Add QR code as image
-        $pdf->writeHTML($html, true, false, true, false, '');
-        
-        // Add SVG QR code to PDF
-        $pdf->ImageSVG($tempSvgFile, 80, 120, 50, 50);
-        
-        // Continue with rest of HTML
-        $html = '
-        </div>
-        
-        <div style="text-align:center; margin-top:60px; font-size:10px; color:#666;">
-            <p>Registration Link: ' . $registrationLink . '</p>
-            <p>Generated on: ' . date('d M Y - H:i:s') . '</p>
-            <p>This QR code will expire when the event begins.</p>
-        </div>
-        ';
-        
-        $pdf->writeHTML($html, true, false, true, false, '');
-        
-        // Remove temporary file
-        unlink($tempSvgFile);
+        <table style="width: ' . $cardWidth . 'mm; height: ' . $cardHeight . 'mm; margin: 0 auto; border: 2px solid #111827; background: #fff; font-family: Arial, Helvetica, sans-serif;" cellpadding="0" cellspacing="0">
+            <tr><td colspan="3" style="text-align: center; padding-top: 18mm; padding-bottom: 2mm;">
+                <span style="font-size: 26px; font-weight: bold; color: #111827;">Event Registration QR Code</span><br>
+                <span style="font-size: 15px; color: #64748b;">Scan this QR code to register for the event</span>
+            </td></tr>
+            <tr><td colspan="3" style="text-align: center; padding-bottom: 2mm;">
+                <span style="font-size: 22px; font-weight: bold; color: #111827;">' . htmlspecialchars($event->name) . '</span><br>
+                <span style="font-size: 13px; color: #6b7280;">Organizer : ' . htmlspecialchars($event->organizer) . '</span>
+            </td></tr>
+            <tr><td colspan="3" style="padding-bottom: 4mm;">
+                <table cellpadding="0" cellspacing="0" style="width: 100%; background: #e0eaff;">
+                    <tr>
+                        <td style="width: 33.3%; padding: 8px 4px; vertical-align: top; text-align: left;">
+                            <span style="font-size: 13px; color: #6366f1; font-weight: bold;">Date:</span><br>
+                            <span style="font-size: 16px;">📅</span> <span style="font-size: 12px; color: #22223b;">' . $event->start_date->format('l, d F Y') .
+                            ($event->start_date != $event->end_date ? '<br>to<br>' . $event->end_date->format('l, d F Y') : '') . '</span>
+                        </td>
+                        <td style="width: 33.3%; padding: 8px 4px; vertical-align: top; text-align: left;">
+                            <span style="font-size: 13px; color: #6366f1; font-weight: bold;">Time:</span><br>
+                            <span style="font-size: 16px;">⏰</span> <span style="font-size: 12px; color: #22223b;">' . ($event->start_time ? substr($event->start_time,0,5) : '-') . ' - ' . ($event->end_time ? substr($event->end_time,0,5) : '-') . '</span>
+                        </td>
+                        <td style="width: 33.3%; padding: 8px 4px; vertical-align: top; text-align: left;">
+                            <span style="font-size: 13px; color: #6366f1; font-weight: bold;">Location:</span><br>
+                            <span style="font-size: 16px;">📍</span> <span style="font-size: 12px; color: #22223b;">' . htmlspecialchars($event->location) . '</span>
+                        </td>
+                    </tr>
+                </table>
+            </td></tr>
+            <tr><td colspan="3" style="text-align: center; padding-top: 8mm; padding-bottom: 2mm;">
+                <span style="font-size: 20px; font-weight: bold; color: #2563eb; letter-spacing: 1px;">SCAN HERE</span>
+            </td></tr>
+            <tr><td colspan="3" style="text-align: center; height: 70mm; vertical-align: middle;">
+                __QR_CODE_PLACEHOLDER__
+            </td></tr>
+        </table>';
+
+        // 2. Replace placeholder with empty div (so TCPDF keeps cell height)
+        $htmlForWrite = str_replace('__QR_CODE_PLACEHOLDER__', '<div style="height: 60mm;"></div>', $html);
+        $pdf->writeHTMLCell($cardWidth, $cardHeight, $x, $y, $htmlForWrite, 0, 1, 0, true, '', true);
+
+        // 3. Render QR code centered in the card (in the reserved cell)
+        $pdf->ImageSVG('@' . $qrCodeSvg, $qrX, $qrY, $qrWidth, $qrWidth, '', '', '', 0, false);
         
         // Close and output the PDF document
         return $pdf->Output('event-' . $id . '-qrcode.pdf', 'D');
+    }
+    
+    /**
+     * Download QR code as PNG image (only QR code, no extra info)
+     */
+    public function downloadQrCodeImage($id)
+    {
+        $event = Event::findOrFail($id);
+        $registrationLink = route('event.register', ['token' => $event->registration_link]);
+
+        // Generate QR code SVG (BaconQrCode v2.x, set size via RendererStyle)
+        $renderer = new \BaconQrCode\Renderer\Image\SvgImageBackEnd();
+        $style = new \BaconQrCode\Renderer\RendererStyle\RendererStyle(800);
+        $imageRenderer = new \BaconQrCode\Renderer\ImageRenderer($style, $renderer);
+        $writer = new \BaconQrCode\Writer($imageRenderer);
+        $qrSvg = $writer->writeString($registrationLink);
+
+        return response($qrSvg)
+            ->header('Content-Type', 'image/svg+xml')
+            ->header('Content-Disposition', 'attachment; filename="event-' . $id . '-qrcode.svg"');
     }
     
     // Public event registration page

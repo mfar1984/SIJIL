@@ -64,7 +64,7 @@ class ReportsStatisticsController extends Controller
             // Force organizer filter to current user for non-admin users
             $organizerId = auth()->id();
         }
-
+        
         // Search functionality
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -94,7 +94,7 @@ class ReportsStatisticsController extends Controller
         if ($organizerId) {
             $eventsQuery->where('user_id', $organizerId);
         }
-
+        
         // Filter by status
         if ($request->filled('status_filter')) {
             $eventsQuery->where('status', $request->status_filter);

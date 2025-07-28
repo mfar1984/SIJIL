@@ -7,14 +7,19 @@
 
     <x-slot name="title">Attendance List</x-slot>
 
-    <div class="bg-white rounded shadow-md border border-gray-300 mt-6" x-data="attendanceList()" x-init="init()">
-        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-            <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">view_list</span>
-                <h1 class="text-xl font-bold text-gray-800">Attendance List</h1>
+    <div class="bg-white rounded shadow-md border border-gray-300" x-data="attendanceList()" x-init="init()">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="flex items-center">
+                        <span class="material-icons mr-2 text-primary-DEFAULT">view_list</span>
+                        <h1 class="text-xl font-bold text-gray-800">Attendance List</h1>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 ml-8">View and manage attendance records for events</p>
+                </div>
             </div>
         </div>
-        <div class="p-6">
+        <div class="p-4">
             <!-- Search & Filter Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
                 <!-- Show Entries Dropdown -->
@@ -61,6 +66,17 @@
                     <button type="button" @click="resetFilter" class="text-xs text-gray-500 underline ml-2">Reset</button>
                 </form>
             </div>
+            
+            <!-- Search Results Summary -->
+            <div x-show="search || selectedEventId || selectedSessionId || status" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-xs">
+                <span class="font-medium">Search Results:</span>
+                <span x-show="search" class="ml-2">Searching for "<span x-text="search"></span>"</span>
+                <span x-show="selectedEventId" class="ml-2">Event: <span x-text="events.find(e => e.id == selectedEventId)?.name || 'Unknown'"></span></span>
+                <span x-show="selectedSessionId" class="ml-2">Session: <span x-text="sessions.find(s => s.id == selectedSessionId)?.name || 'Unknown'"></span></span>
+                <span x-show="status" class="ml-2">Status: <span x-text="status"></span></span>
+                <span class="ml-2">(<span x-text="meta.total"></span> results)</span>
+            </div>
+            
             <!-- Table Section -->
             <div class="overflow-visible border border-gray-200 rounded">
                 <table class="min-w-full border-collapse">
@@ -95,48 +111,51 @@
                     </tbody>
                 </table>
             </div>
-            <!-- Showing & Pagination -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-4">
-                <div class="text-xs text-gray-500 mb-2 md:mb-0">
+            <!-- Pagination Row -->
+            <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div class="mb-2 sm:mb-0 text-xs text-gray-500">
                     <template x-if="meta.total">
                         <span>
-                            Showing <span x-text="showingFrom"></span> to <span x-text="showingTo"></span> of <span x-text="meta.total"></span> participants
+                            Showing <span x-text="showingFrom"></span> to <span x-text="showingTo"></span> of <span x-text="meta.total"></span> entries
+                            <span x-show="meta.total > 0">(<span x-text="perPage"></span> per page)</span>
                         </span>
                     </template>
                 </div>
-                <nav class="flex items-center justify-center">
-                    <div class="flex items-center space-x-1">
-                        <!-- First Page Link -->
-                        <button @click="goToPage(1)" :disabled="page === 1" :class="page === 1 ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs" aria-label="Go to first page">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-                        </button>
-                        
-                        <!-- Previous Page Link -->
-                        <button @click="goToPage(page-1)" :disabled="page === 1" :class="page === 1 ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs mr-2" aria-label="Previous page">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                        </button>
+                <div class="flex justify-end">
+                    <nav class="flex items-center justify-center">
+                        <div class="flex items-center space-x-1">
+                            <!-- First Page Link -->
+                            <button @click="goToPage(1)" :disabled="page === 1" :class="page === 1 ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs" aria-label="Go to first page">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                            </button>
+                            
+                            <!-- Previous Page Link -->
+                            <button @click="goToPage(page-1)" :disabled="page === 1" :class="page === 1 ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs mr-2" aria-label="Previous page">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                            </button>
 
-                        <!-- Page Numbers -->
-                        <template x-for="n in totalPages" :key="n">
-                            <template x-if="n === page">
-                                <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium" x-text="n"></span>
+                            <!-- Page Numbers -->
+                            <template x-for="n in totalPages" :key="n">
+                                <template x-if="n === page">
+                                    <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium" x-text="n"></span>
+                                </template>
+                                <template x-if="n !== page">
+                                    <button @click="goToPage(n)" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" x-text="n"></button>
+                                </template>
                             </template>
-                            <template x-if="n !== page">
-                                <button @click="goToPage(n)" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" x-text="n"></button>
-                            </template>
-                        </template>
-                        
-                        <!-- Next Page Link -->
-                        <button @click="goToPage(page+1)" :disabled="page === totalPages" :class="page === totalPages ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs ml-2" aria-label="Next page">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                        </button>
+                            
+                            <!-- Next Page Link -->
+                            <button @click="goToPage(page+1)" :disabled="page === totalPages" :class="page === totalPages ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs ml-2" aria-label="Next page">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                            </button>
 
-                        <!-- Last Page Link -->
-                        <button @click="goToPage(totalPages)" :disabled="page === totalPages" :class="page === totalPages ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs" aria-label="Go to last page">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zM10 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                        </button>
-                    </div>
-                </nav>
+                            <!-- Last Page Link -->
+                            <button @click="goToPage(totalPages)" :disabled="page === totalPages" :class="page === totalPages ? 'opacity-50 cursor-not-allowed' : ''" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs" aria-label="Go to last page">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zM10 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </div>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>

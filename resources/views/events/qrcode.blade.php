@@ -1,94 +1,71 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Event Registration QR Code</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            border: 1px solid #ddd;
-            padding: 30px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-            color: #2563EB;
-        }
-        .event-details {
-            margin-bottom: 30px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 20px;
-        }
-        .event-details h2 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #2563EB;
-        }
-        .event-details p {
-            font-size: 14px;
-            margin: 5px 0;
-        }
-        .qr-container {
-            text-align: center;
-        }
-        .qr-container img {
-            max-width: 300px;
-            height: auto;
-        }
-        .registration-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
-            word-break: break-all;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 12px;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Event Registration QR Code</h1>
-            <p>Scan this QR code to register for the event</p>
-        </div>
-        
-        <div class="event-details">
-            <h2>{{ $event['name'] }}</h2>
-            <p><strong>Organizer:</strong> {{ $event['organizer'] }}</p>
-            <p><strong>Date:</strong> {{ $event['start_date'] }} to {{ $event['end_date'] }}</p>
-            <p><strong>Location:</strong> {{ $event['location'] }}</p>
-        </div>
-        
-        <div class="qr-container">
-            {!! $qrCode !!}
-        </div>
-        
-        <div class="registration-link">
-            <p>Registration Link: {{ $registrationLink }}</p>
-        </div>
-        
-        <div class="footer">
-            <p>Generated on: {{ now()->format('d M Y - H:i:s') }}</p>
-            <p>This QR code will expire when the event begins.</p>
+<x-app-layout>
+    <x-slot name="title">Event Registration QR Code</x-slot>
+    <div class="min-h-screen flex flex-col justify-center items-center bg-gray-50 py-8">
+        <div class="relative flex flex-col items-center">
+            <!-- Minimalist Fullscreen Icon -->
+            <button type="button" onclick="toggleFullScreen()" title="Full Screen" class="absolute -top-8 right-0 z-20">
+                <span class="material-icons text-gray-500 text-xl hover:text-gray-700">fullscreen</span>
+            </button>
+            <div id="qrCard" class="bg-white rounded shadow-md border border-gray-300 p-8 flex flex-col items-center transition-all duration-200">
+                <div class="mb-4 text-center">
+                    <h1 class="text-lg font-bold text-gray-800 flex items-center justify-center">
+                        <span class="material-icons text-primary-DEFAULT mr-2">qr_code</span>
+                        Event Registration QR Code
+                    </h1>
+                    <div class="text-xs text-gray-500 mt-1">Scan this QR code to register for the event</div>
+                </div>
+                <div class="mb-6 text-center">
+                    <div class="font-semibold text-base text-gray-700">{{ $event['name'] }}</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        <div class="mb-1"><strong>Organizer:</strong> {{ $event['organizer'] }}</div>
+                        <div class="mb-1">
+                            {{ \Carbon\Carbon::parse($event['start_date'])->format('l, d F Y') }}
+                            @if($event['start_date'] != $event['end_date'])
+                                to {{ \Carbon\Carbon::parse($event['end_date'])->format('l, d F Y') }}
+                            @endif
+                        </div>
+                        <div><strong>Location:</strong> {{ $event['location'] }}</div>
+                    </div>
+                </div>
+                <div class="flex justify-center items-center">
+                    {!! $qrCode !!}
+                </div>
+                <div class="mt-6 text-xs text-gray-400 text-center">
+                    <div class="mb-2">Registration Link:</div>
+                    <div class="font-mono text-xs break-all max-w-xs">{{ $registrationLink }}</div>
+                </div>
+                <div class="mt-4 text-xs text-gray-400 text-center">
+                    Generated on: {{ now()->format('d M Y - H:i:s') }}
+                </div>
+            </div>
         </div>
     </div>
-</body>
-</html> 
+    <style>
+    .fullscreen-center {
+        min-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 0 !important;
+    }
+    </style>
+    <script>
+    function toggleFullScreen() {
+        const card = document.getElementById('qrCard');
+        if (!document.fullscreenElement) {
+            card.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+    document.addEventListener('fullscreenchange', function() {
+        const card = document.getElementById('qrCard');
+        if (document.fullscreenElement === card) {
+            card.classList.add('fullscreen-center');
+        } else {
+            card.classList.remove('fullscreen-center');
+        }
+    });
+    </script>
+</x-app-layout> 

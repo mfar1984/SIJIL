@@ -18,6 +18,38 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">Monitor and manage system security and audit trails</p>
                 </div>
                 <div class="flex space-x-2">
+                    <!-- Clear Security Logs Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <span class="material-icons text-xs mr-1">delete_sweep</span>
+                            Clear Security Logs
+                            <span class="material-icons text-xs ml-1">arrow_drop_down</span>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                            <div class="py-1">
+                                <button onclick="clearSecurityLogs('all')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <span class="material-icons text-xs mr-2">delete_forever</span>
+                                    All Security Logs
+                                </button>
+                                <button onclick="clearSecurityLogs('30')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    30 Days
+                                </button>
+                                <button onclick="clearSecurityLogs('60')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    60 Days
+                                </button>
+                                <button onclick="clearSecurityLogs('90')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    90 Days
+                                </button>
+                                <button onclick="clearSecurityLogs('120')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    120 Days
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <button class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">download</span>
                         Export Report
@@ -31,6 +63,33 @@
         </div>
         
         <div class="p-4">
+            <!-- Security Summary -->
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-blue-50 rounded-md p-4 border border-blue-100">
+                    <p class="text-xs text-blue-700 font-medium">Total Security Events</p>
+                    <p class="text-2xl font-bold text-blue-800">{{ $totalSecurityEvents }}</p>
+                    <p class="text-[10px] text-blue-600 mt-1">All security-related activities</p>
+                </div>
+                
+                <div class="bg-red-50 rounded-md p-4 border border-red-100">
+                    <p class="text-xs text-red-700 font-medium">Failed Logins</p>
+                    <p class="text-2xl font-bold text-red-800">{{ $failedLogins }}</p>
+                    <p class="text-[10px] text-red-600 mt-1">Unsuccessful login attempts</p>
+                </div>
+                
+                <div class="bg-amber-50 rounded-md p-4 border border-amber-100">
+                    <p class="text-xs text-amber-700 font-medium">Suspicious Activities</p>
+                    <p class="text-2xl font-bold text-amber-800">{{ $suspiciousActivities }}</p>
+                    <p class="text-[10px] text-amber-600 mt-1">Potential security concerns</p>
+                </div>
+                
+                <div class="bg-green-50 rounded-md p-4 border border-green-100">
+                    <p class="text-xs text-green-700 font-medium">Password Changes</p>
+                    <p class="text-2xl font-bold text-green-800">{{ $passwordChanges }}</p>
+                    <p class="text-[10px] text-green-600 mt-1">Password update activities</p>
+                </div>
+            </div>
+            
             <!-- Show Entries & Filter Row -->
             <div class="mb-4">
                 <form method="GET" action="{{ route('settings.security-audit') }}" class="flex flex-wrap gap-2 items-center justify-between">
@@ -108,60 +167,33 @@
                     <span class="ml-2">({{ $activities->total() }} results)</span>
                 </div>
             @endif
-            
-            <!-- Security Summary -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-blue-50 rounded-md p-4 border border-blue-100">
-                    <p class="text-xs text-blue-700 font-medium">Total Security Events</p>
-                    <p class="text-2xl font-bold text-blue-800">{{ $totalSecurityEvents }}</p>
-                    <p class="text-[10px] text-blue-600 mt-1">All security-related activities</p>
-                </div>
-                
-                <div class="bg-red-50 rounded-md p-4 border border-red-100">
-                    <p class="text-xs text-red-700 font-medium">Failed Logins</p>
-                    <p class="text-2xl font-bold text-red-800">{{ $failedLogins }}</p>
-                    <p class="text-[10px] text-red-600 mt-1">Unsuccessful login attempts</p>
-                </div>
-                
-                <div class="bg-amber-50 rounded-md p-4 border border-amber-100">
-                    <p class="text-xs text-amber-700 font-medium">Suspicious Activities</p>
-                    <p class="text-2xl font-bold text-amber-800">{{ $suspiciousActivities }}</p>
-                    <p class="text-[10px] text-amber-600 mt-1">Potential security concerns</p>
-                </div>
-                
-                <div class="bg-green-50 rounded-md p-4 border border-green-100">
-                    <p class="text-xs text-green-700 font-medium">Password Changes</p>
-                    <p class="text-2xl font-bold text-green-800">{{ $passwordChanges }}</p>
-                    <p class="text-[10px] text-green-600 mt-1">Password update activities</p>
-                </div>
-            </div>
 
             <!-- Security Tabs -->
-            <div class="mb-4" x-data="{ activeTab: 'security-events' }" x-init="console.log('Alpine.js initialized, activeTab:', activeTab)">
+            <div class="mb-4" id="security-tabs">
                 <div class="border-b border-gray-200">
                     <nav class="-mb-px flex">
                         <button 
-                            @click="activeTab = 'security-events'; console.log('Security Events clicked, activeTab:', activeTab)"
-                            :class="activeTab === 'security-events' ? 'text-primary-DEFAULT border-b-2 border-primary-DEFAULT' : 'text-gray-500 hover:text-primary-DEFAULT'"
-                            class="inline-block py-2 px-4 text-xs font-medium">
-                            Security Events ({{ $activities->count() }})
+                            onclick="switchTab('security-events')"
+                            class="inline-block py-2 px-4 text-xs font-medium text-primary-DEFAULT border-b-2 border-primary-DEFAULT"
+                            data-tab-button="security-events">
+                            Security Events ({{ $allSecurityEvents->count() }})
                         </button>
                         <button 
-                            @click="activeTab = 'user-activity'; console.log('User Activity clicked, activeTab:', activeTab)"
-                            :class="activeTab === 'user-activity' ? 'text-primary-DEFAULT border-b-2 border-primary-DEFAULT' : 'text-gray-500 hover:text-primary-DEFAULT'"
-                            class="inline-block py-2 px-4 text-xs font-medium">
+                            onclick="switchTab('user-activity')"
+                            class="inline-block py-2 px-4 text-xs font-medium text-gray-500 hover:text-primary-DEFAULT"
+                            data-tab-button="user-activity">
                             User Activity ({{ $userActivities->count() }})
                         </button>
                         <button 
-                            @click="activeTab = 'role-changes'; console.log('Role Changes clicked, activeTab:', activeTab)"
-                            :class="activeTab === 'role-changes' ? 'text-primary-DEFAULT border-b-2 border-primary-DEFAULT' : 'text-gray-500 hover:text-primary-DEFAULT'"
-                            class="inline-block py-2 px-4 text-xs font-medium">
+                            onclick="switchTab('role-changes')"
+                            class="inline-block py-2 px-4 text-xs font-medium text-gray-500 hover:text-primary-DEFAULT"
+                            data-tab-button="role-changes">
                             Role Changes ({{ $roleActivities->count() }})
                         </button>
                         <button 
-                            @click="activeTab = 'access-control'; console.log('Access Control clicked, activeTab:', activeTab)"
-                            :class="activeTab === 'access-control' ? 'text-primary-DEFAULT border-b-2 border-primary-DEFAULT' : 'text-gray-500 hover:text-primary-DEFAULT'"
-                            class="inline-block py-2 px-4 text-xs font-medium">
+                            onclick="switchTab('access-control')"
+                            class="inline-block py-2 px-4 text-xs font-medium text-gray-500 hover:text-primary-DEFAULT"
+                            data-tab-button="access-control">
                             Access Control ({{ $authActivities->count() }})
                         </button>
                     </nav>
@@ -171,31 +203,32 @@
             <!-- Security Events Table -->
             <div class="overflow-visible border border-gray-200 rounded">
                 <!-- Security Events Tab -->
-                <div x-show="activeTab === 'security-events'">
-                    <table class="min-w-full border-collapse">
-                        <thead>
-                            <tr class="bg-primary-light text-white text-xs uppercase">
-                                <th class="py-3 px-4 text-left rounded-tl">ID</th>
-                                <th class="py-3 px-4 text-left">Timestamp</th>
-                                <th class="py-3 px-4 text-left">User</th>
-                                <th class="py-3 px-4 text-left">IP Address</th>
-                                <th class="py-3 px-4 text-left">Event</th>
-                                <th class="py-3 px-4 text-left">Category</th>
-                                <th class="py-3 px-4 text-left">Status</th>
-                                <th class="py-3 px-4 text-center rounded-tr">Details</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($activities as $activity)
-                                <tr class="text-xs hover:bg-gray-50">
+                <div id="tab-security-events" class="bg-blue-50 p-2" data-tab="security-events">
+                    <div class="mb-2 text-sm font-bold text-blue-800">Security Events Tab ({{ $allSecurityEvents->count() }} records)</div>
+                <table class="min-w-full border-collapse">
+                    <thead>
+                        <tr class="bg-primary-light text-white text-xs uppercase">
+                            <th class="py-3 px-4 text-left rounded-tl">ID</th>
+                            <th class="py-3 px-4 text-left">Timestamp</th>
+                            <th class="py-3 px-4 text-left">User</th>
+                            <th class="py-3 px-4 text-left">IP Address</th>
+                            <th class="py-3 px-4 text-left">Event</th>
+                            <th class="py-3 px-4 text-left">Category</th>
+                            <th class="py-3 px-4 text-left">Status</th>
+                            <th class="py-3 px-4 text-center rounded-tr">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                            @forelse($allSecurityEvents as $activity)
+                        <tr class="text-xs hover:bg-gray-50">
                                     <td class="py-3 px-4 font-medium">#SEC-{{ $activity->id }}</td>
                                     <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
                                     <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
                                     <td class="py-3 px-4">{{ request()->ip() }}</td>
                                     <td class="py-3 px-4">{{ $activity->description }}</td>
-                                    <td class="py-3 px-4">
+                            <td class="py-3 px-4">
                                         @if($activity->log_name == 'auth')
-                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Authentication</span>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Authentication</span>
                                         @elseif($activity->log_name == 'security')
                                             <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Security Alert</span>
                                         @elseif($activity->log_name == 'user')
@@ -205,22 +238,22 @@
                                         @else
                                             <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{{ $activity->log_name ?: 'General' }}</span>
                                         @endif
-                                    </td>
-                                    <td class="py-3 px-4">
+                            </td>
+                            <td class="py-3 px-4">
                                         @if(str_contains(strtolower($activity->description), 'failed') || str_contains(strtolower($activity->description), 'unauthorized') || str_contains(strtolower($activity->description), 'suspicious'))
                                             <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Failed</span>
                                         @else
-                                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
                                         @endif
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex justify-center">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                                <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                             @empty
                                 <tr class="text-xs">
                                     <td colspan="8" class="py-8 px-4 text-center text-gray-500">
@@ -237,7 +270,8 @@
                 </div>
 
                 <!-- User Activity Tab -->
-                <div x-show="activeTab === 'user-activity'" style="display: none;">
+                <div id="tab-user-activity" class="bg-purple-50 p-2" data-tab="user-activity" style="display: none;">
+                    <div class="mb-2 text-sm font-bold text-purple-800">User Activity Tab ({{ $userActivities->count() }} records)</div>
                     <table class="min-w-full border-collapse">
                         <thead>
                             <tr class="bg-primary-light text-white text-xs uppercase">
@@ -252,25 +286,25 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse($userActivities as $activity)
-                                <tr class="text-xs hover:bg-gray-50">
+                        <tr class="text-xs hover:bg-gray-50">
                                     <td class="py-3 px-4 font-medium">#USER-{{ $activity->id }}</td>
                                     <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
                                     <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
                                     <td class="py-3 px-4">{{ $activity->description }}</td>
-                                    <td class="py-3 px-4">
+                            <td class="py-3 px-4">
                                         <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">User Management</span>
-                                    </td>
-                                    <td class="py-3 px-4">
+                            </td>
+                            <td class="py-3 px-4">
                                         <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex justify-center">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                                <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                             @empty
                                 <tr class="text-xs">
                                     <td colspan="7" class="py-8 px-4 text-center text-gray-500">
@@ -287,7 +321,8 @@
                 </div>
 
                 <!-- Role Changes Tab -->
-                <div x-show="activeTab === 'role-changes'" style="display: none;">
+                <div id="tab-role-changes" class="bg-amber-50 p-2" data-tab="role-changes" style="display: none;">
+                    <div class="mb-2 text-sm font-bold text-amber-800">Role Changes Tab ({{ $roleActivities->count() }} records)</div>
                     <table class="min-w-full border-collapse">
                         <thead>
                             <tr class="bg-primary-light text-white text-xs uppercase">
@@ -302,29 +337,29 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse($roleActivities as $activity)
-                                <tr class="text-xs hover:bg-gray-50">
+                        <tr class="text-xs hover:bg-gray-50">
                                     <td class="py-3 px-4 font-medium">#ROLE-{{ $activity->id }}</td>
                                     <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
                                     <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
                                     <td class="py-3 px-4">{{ $activity->description }}</td>
-                                    <td class="py-3 px-4">
+                            <td class="py-3 px-4">
                                         @if(isset($activity->properties['role_name']))
                                             {{ $activity->properties['role_name'] }}
                                         @else
                                             N/A
                                         @endif
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex justify-center">
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                                <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                             @empty
                                 <tr class="text-xs">
                                     <td colspan="7" class="py-8 px-4 text-center text-gray-500">
@@ -341,7 +376,8 @@
                 </div>
 
                 <!-- Access Control Tab -->
-                <div x-show="activeTab === 'access-control'" style="display: none;">
+                <div id="tab-access-control" class="bg-green-50 p-2" data-tab="access-control" style="display: none;">
+                    <div class="mb-2 text-sm font-bold text-green-800">Access Control Tab ({{ $authActivities->count() }} records)</div>
                     <table class="min-w-full border-collapse">
                         <thead>
                             <tr class="bg-primary-light text-white text-xs uppercase">
@@ -356,12 +392,12 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse($authActivities as $activity)
-                                <tr class="text-xs hover:bg-gray-50">
+                        <tr class="text-xs hover:bg-gray-50">
                                     <td class="py-3 px-4 font-medium">#ACC-{{ $activity->id }}</td>
                                     <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
                                     <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
                                     <td class="py-3 px-4">{{ $activity->description }}</td>
-                                    <td class="py-3 px-4">
+                            <td class="py-3 px-4">
                                         @if($activity->event == 'login')
                                             <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Login</span>
                                         @elseif($activity->event == 'logout')
@@ -371,22 +407,22 @@
                                         @else
                                             <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{{ $activity->event }}</span>
                                         @endif
-                                    </td>
-                                    <td class="py-3 px-4">
+                            </td>
+                            <td class="py-3 px-4">
                                         @if(str_contains(strtolower($activity->description), 'failed'))
                                             <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Denied</span>
                                         @else
                                             <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Allowed</span>
                                         @endif
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex justify-center">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                                <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                             @empty
                                 <tr class="text-xs">
                                     <td colspan="7" class="py-8 px-4 text-center text-gray-500">
@@ -398,8 +434,8 @@
                                     </td>
                                 </tr>
                             @endforelse
-                        </tbody>
-                    </table>
+                    </tbody>
+                </table>
                 </div>
             </div>
             
@@ -492,7 +528,7 @@
                         
                         <div>
                             <p class="text-xs font-medium text-gray-500">Security Data</p>
-                            <pre class="text-xs bg-gray-50 p-3 rounded border border-gray-200 overflow-auto max-h-40" x-text="securityDetails.data || '{\n  \"auth_method\": \"password\",\n  \"browser\": \"Chrome\",\n  \"os\": \"Windows\",\n  \"session_id\": \"sess_abc123\",\n  \"2fa_used\": false\n}'"></pre>
+                            <pre class="text-xs bg-gray-50 p-3 rounded border border-gray-200 overflow-auto max-h-40" x-text="securityDetails.data || JSON.stringify({auth_method: 'password', browser: 'Chrome', os: 'Windows', session_id: 'sess_abc123', '2fa_used': false}, null, 2)"></pre>
                         </div>
                     </div>
                 </div>
@@ -504,28 +540,244 @@
             </div>
         </div>
         
+        <!-- Security Details Modal -->
+        <div id="securityModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+            <div id="modalContent" class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <!-- Modal content will be populated by JavaScript -->
+            </div>
+        </div>
+        
         <script>
-            // Search debounce functionality
-            document.addEventListener('DOMContentLoaded', function() {
-                const searchInput = document.getElementById('searchInput');
-                let searchTimeout;
+                // Search debounce functionality
+                document.addEventListener('DOMContentLoaded', function() {
+                    const searchInput = document.getElementById('searchInput');
+                    let searchTimeout;
 
-                if (searchInput) {
-                    searchInput.addEventListener('input', function() {
-                        clearTimeout(searchTimeout);
-                        searchTimeout = setTimeout(() => {
-                            this.form.submit();
-                        }, 500);
+                    if (searchInput) {
+                        searchInput.addEventListener('input', function() {
+                            clearTimeout(searchTimeout);
+                            searchTimeout = setTimeout(() => {
+                                this.form.submit();
+                            }, 500);
+                        });
+                    }
+
+                    // Security details modal functionality
+                    window.showSecurityDetails = function(activityId) {
+                        // Show loading state
+                        document.getElementById('securityModal').style.display = 'flex';
+                        document.getElementById('modalContent').innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-DEFAULT mx-auto"></div><p class="mt-2 text-sm text-gray-500">Loading security details...</p></div>';
+                        
+                        // Fetch activity details via AJAX
+                        fetch(`/settings/security-audit/${activityId}/details`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                // Populate modal with real data
+                                document.getElementById('modalContent').innerHTML = `
+                                    <div class="px-6 py-4">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900">Security Activity Details</h3>
+                                            <button onclick="closeSecurityModal()" class="text-gray-400 hover:text-gray-600">
+                                                <span class="material-icons text-xl">close</span>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500">Activity ID</p>
+                                                <p class="text-sm font-medium">#SEC-${data.id}</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500">Timestamp</p>
+                                                <p class="text-sm">${data.timestamp}</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500">User</p>
+                                                <p class="text-sm">${data.user}</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500">IP Address</p>
+                                                <p class="text-sm">${data.ip_address}</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500">Category</p>
+                                                <p class="text-sm">
+                                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">${data.category}</span>
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500">Status</p>
+                                                <p class="text-sm">
+                                                    <span class="px-2 py-1 ${data.status === 'Success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} rounded-full text-xs">${data.status}</span>
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-medium text-gray-500">User Agent</p>
+                                                <p class="text-sm text-xs">${data.user_agent}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <p class="text-xs font-medium text-gray-500">Description</p>
+                                            <p class="text-sm">${data.description}</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <p class="text-xs font-medium text-gray-500">Security Data</p>
+                                            <pre class="text-xs bg-gray-50 p-3 rounded border border-gray-200 overflow-auto max-h-40">${JSON.stringify(data.data, null, 2)}</pre>
+                                        </div>
+                                    </div>
+                                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                                        <button onclick="closeSecurityModal()" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs">
+                                            Close
+                                        </button>
+                                    </div>
+                                `;
+                            })
+                            .catch(error => {
+                                console.error('Error fetching security details:', error);
+                                document.getElementById('modalContent').innerHTML = `
+                                    <div class="px-6 py-4">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900">Error</h3>
+                                            <button onclick="closeSecurityModal()" class="text-gray-400 hover:text-gray-600">
+                                                <span class="material-icons text-xl">close</span>
+                                            </button>
+                                        </div>
+                                        <p class="text-sm text-red-600">Failed to load security details. Please try again.</p>
+                                    </div>
+                                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                                        <button onclick="closeSecurityModal()" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md text-xs">
+                                            Close
+                                        </button>
+                                    </div>
+                                `;
+                            });
+                    };
+
+                    // Close modal function
+                    window.closeSecurityModal = function() {
+                        document.getElementById('securityModal').style.display = 'none';
+                    };
+
+                    // Tab switching functionality
+                    function switchTab(tabName) {
+                        // Hide all tab contents
+                        const tabContents = document.querySelectorAll('[data-tab]');
+                        tabContents.forEach(content => {
+                            content.style.display = 'none';
+                        });
+                        
+                        // Show selected tab content
+                        const selectedContent = document.querySelector(`[data-tab="${tabName}"]`);
+                        if (selectedContent) {
+                            selectedContent.style.display = 'block';
+                        }
+                        
+                        // Update tab buttons
+                        const tabButtons = document.querySelectorAll('[data-tab-button]');
+                        tabButtons.forEach(button => {
+                            button.classList.remove('text-primary-DEFAULT', 'border-b-2', 'border-primary-DEFAULT');
+                            button.classList.add('text-gray-500', 'hover:text-primary-DEFAULT');
+                        });
+                        
+                        const selectedButton = document.querySelector(`[data-tab-button="${tabName}"]`);
+                        if (selectedButton) {
+                            selectedButton.classList.remove('text-gray-500', 'hover:text-primary-DEFAULT');
+                            selectedButton.classList.add('text-primary-DEFAULT', 'border-b-2', 'border-primary-DEFAULT');
+                        }
+                    }
+
+                    // Add click handlers to tab buttons
+                    const tabButtons = document.querySelectorAll('[data-tab-button]');
+                    tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                            const tabName = this.getAttribute('data-tab-button');
+                            switchTab(tabName);
+                        });
                     });
-                }
+                    
+                    // Initialize first tab as active
+                    switchTab('security-events');
 
-                // Security details modal functionality
-                window.showSecurityDetails = function(activityId) {
-                    // You can implement AJAX call here to get activity details
-                    console.log('Showing security details for activity:', activityId);
-                    // For now, we'll just show a simple alert
-                    alert('Security details for ID: ' + activityId + '\n\nThis would show detailed security information about the activity in a modal.');
-                };
+                    // Clear security logs function
+                    window.clearSecurityLogs = function(days) {
+                        let message = '';
+                        let confirmMessage = '';
+                        
+                        if (days === 'all') {
+                            message = 'Are you sure you want to clear ALL security audit logs? This action cannot be undone.';
+                            confirmMessage = 'Clear All Security Logs';
+                        } else {
+                            message = `Are you sure you want to clear security audit logs older than ${days} days? This action cannot be undone.`;
+                            confirmMessage = `Clear Security Logs (${days} Days)`;
+                        }
+                        
+                        if (confirm(message)) {
+                            // Show loading state
+                            const button = event.target;
+                            const originalText = button.innerHTML;
+                            button.innerHTML = '<span class="material-icons text-xs mr-2 animate-spin">hourglass_empty</span>Clearing...';
+                            button.disabled = true;
+                            
+                            // Make API call
+                            fetch('/settings/security-audit/clear', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ days: days })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Show success message
+                                    showSecurityNotification(data.message, 'success');
+                                    // Reload page after 2 seconds
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 2000);
+                                } else {
+                                    showSecurityNotification(data.message, 'error');
+                                    // Reset button
+                                    button.innerHTML = originalText;
+                                    button.disabled = false;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error clearing security logs:', error);
+                                showSecurityNotification('Failed to clear security logs. Please try again.', 'error');
+                                // Reset button
+                                button.innerHTML = originalText;
+                                button.disabled = false;
+                            });
+                        }
+                    };
+
+                    // Security notification function
+                    function showSecurityNotification(message, type = 'info') {
+                        const notification = document.createElement('div');
+                        notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-md shadow-lg text-white text-sm font-medium ${
+                            type === 'success' ? 'bg-green-500' : 
+                            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                        }`;
+                        notification.textContent = message;
+                        
+                        document.body.appendChild(notification);
+                        
+                        // Auto remove after 5 seconds
+                        setTimeout(() => {
+                            if (notification.parentNode) {
+                                notification.parentNode.removeChild(notification);
+                            }
+                        }, 5000);
+                    }
             });
         </script>
     </div>

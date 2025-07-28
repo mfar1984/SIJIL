@@ -10,7 +10,7 @@ use App\Http\Middleware\CheckPermission as PermissionMiddleware;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth.login');
 });
 
 // Test route for debugging permissions
@@ -135,6 +135,11 @@ Route::get('/event-management/{event}/qrcode', [App\Http\Controllers\EventManage
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_events'])
     ->name('event.qrcode');
 
+// Download QR code image only (PNG)
+Route::get('/event-management/{event}/qrcode-image', [App\Http\Controllers\EventManagementController::class, 'downloadQrCodeImage'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_events'])
+    ->name('event.qrcode-image');
+
 // Public route for registration (no auth required)
 Route::get('/event/register/{token}', [App\Http\Controllers\EventManagementController::class, 'register'])
     ->name('event.register');
@@ -190,6 +195,10 @@ Route::get('/attendance/archive', [AttendanceController::class, 'archive'])
 Route::post('/attendance/{attendance}/archive', [AttendanceController::class, 'archiveAction'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_attendance'])
     ->name('attendance.archive-action');
+
+Route::post('/attendance/{attendance}/unarchive', [AttendanceController::class, 'unarchiveAction'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_attendance'])
+    ->name('attendance.unarchive-action');
 
 Route::get('/attendance/{attendance}', [AttendanceController::class, 'show'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_attendance'])
@@ -373,13 +382,29 @@ Route::middleware(['auth'])->prefix('helpdesk')->name('helpdesk.')->group(functi
 
 // Settings Routes
 Route::prefix('settings')->group(function () {
-    Route::get('/log-activity', [App\Http\Controllers\Settings\LogActivityController::class, 'index'])
-        ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
-        ->name('settings.log-activity');
+               Route::get('/log-activity', [App\Http\Controllers\Settings\LogActivityController::class, 'index'])
+               ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+               ->name('settings.log-activity');
+           
+           Route::get('/log-activity/{activity}/details', [App\Http\Controllers\Settings\LogActivityController::class, 'showDetails'])
+               ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+               ->name('settings.log-activity.details');
+           
+           Route::delete('/log-activity/clear', [App\Http\Controllers\Settings\LogActivityController::class, 'clearLogs'])
+               ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+               ->name('settings.log-activity.clear');
     
-    Route::get('/security-audit', [App\Http\Controllers\Settings\SecurityAuditController::class, 'index'])
-        ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
-        ->name('settings.security-audit');
+               Route::get('/security-audit', [App\Http\Controllers\Settings\SecurityAuditController::class, 'index'])
+               ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+               ->name('settings.security-audit');
+           
+           Route::get('/security-audit/{activity}/details', [App\Http\Controllers\Settings\SecurityAuditController::class, 'showDetails'])
+               ->middleware(['auth', 'verified', PermissionMiddleware::class.':view_settings'])
+               ->name('settings.security-audit.details');
+           
+           Route::delete('/security-audit/clear', [App\Http\Controllers\Settings\SecurityAuditController::class, 'clearSecurityLogs'])
+               ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])
+               ->name('settings.security-audit.clear');
     
     Route::get('/global-config', [App\Http\Controllers\GlobalConfigController::class, 'index'])
         ->middleware(['auth', 'verified', PermissionMiddleware::class.':manage_settings'])

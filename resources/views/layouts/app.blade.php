@@ -16,6 +16,11 @@
         <!-- Alpine.js -->
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+        <!-- Alpine.js x-cloak CSS -->
+        <style>
+            [x-cloak] { display: none !important; }
+        </style>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
@@ -306,18 +311,22 @@
                     return;
                 }
                 
-                // Check connection status
-                window.Echo.connector.socket.on('connect', () => {
-                    debugLog('Connected to WebSocket server', window.Echo.socketId());
-                });
-                
-                window.Echo.connector.socket.on('disconnect', () => {
-                    debugLog('Disconnected from WebSocket server');
-                });
-                
-                window.Echo.connector.socket.on('connect_error', (error) => {
-                    console.error('[NOTIFICATION] WebSocket connection error:', error);
-                });
+                // Check connection status (for Reverb)
+                if (window.Echo.connector && window.Echo.connector.socket) {
+                    window.Echo.connector.socket.on('connect', () => {
+                        debugLog('Connected to WebSocket server', window.Echo.socketId());
+                    });
+                    
+                    window.Echo.connector.socket.on('disconnect', () => {
+                        debugLog('Disconnected from WebSocket server');
+                    });
+                    
+                    window.Echo.connector.socket.on('connect_error', (error) => {
+                        console.error('[NOTIFICATION] WebSocket connection error:', error);
+                    });
+                } else {
+                    console.warn('[NOTIFICATION] WebSocket connection not available, real-time features disabled');
+                }
                 
                 // Listen for admin channel (if user is admin)
                 @if(Auth::user()->hasRole('Administrator'))

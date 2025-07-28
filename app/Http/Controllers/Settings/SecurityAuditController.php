@@ -131,13 +131,22 @@ class SecurityAuditController extends Controller
         $suspiciousActivities = Activity::where('description', 'LIKE', '%suspicious%')->count();
         $passwordChanges = Activity::where('description', 'LIKE', '%password change%')->count();
 
-        // Get separate collections for each tab
+        // Get separate collections for each tab (without pagination for tab switching)
         $userActivities = Activity::where('log_name', 'user')->orderBy('created_at', 'desc')->get();
         $roleActivities = Activity::where('log_name', 'role')->orderBy('created_at', 'desc')->get();
         $authActivities = Activity::where('log_name', 'auth')->orderBy('created_at', 'desc')->get();
+        
+        // Get all security events for the main tab (without pagination)
+        $allSecurityEvents = Activity::where(function($q) {
+            $q->where('log_name', 'auth')
+              ->orWhere('log_name', 'security')
+              ->orWhere('log_name', 'user')
+              ->orWhere('log_name', 'role');
+        })->orderBy('created_at', 'desc')->get();
 
         return view('settings.security-audit', [
-            'activities' => $activities,
+            'activities' => $activities, // Keep for pagination in main view
+            'allSecurityEvents' => $allSecurityEvents, // For Security Events tab
             'userActivities' => $userActivities,
             'roleActivities' => $roleActivities,
             'authActivities' => $authActivities,
@@ -148,5 +157,115 @@ class SecurityAuditController extends Controller
             'suspiciousActivities' => $suspiciousActivities,
             'passwordChanges' => $passwordChanges
         ]);
+    }
+
+    /**
+     * Show detailed information about a specific security activity.
+     *
+     * @param Activity $activity
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function showDetails(Activity $activity)
+    {
+        // Determine the category based on log_name
+        $category = match($activity->log_name) {
+            'auth' => 'Authentication',
+            'security' => 'Security Alert',
+            'user' => 'User Management',
+            'role' => 'Role Management',
+            default => ucfirst($activity->log_name ?: 'General')
+        };
+
+        // Determine status based on description
+        $status = 'Success';
+        if (str_contains(strtolower($activity->description), 'failed') || 
+            str_contains(strtolower($activity->description), 'unauthorized') || 
+            str_contains(strtolower($activity->description), 'suspicious')) {
+            $status = 'Failed';
+        }
+
+        // Generate security data based on activity
+        $securityData = [
+            'activity_id' => $activity->id,
+            'log_name' => $activity->log_name,
+            'event' => $activity->event,
+            'causer_id' => $activity->causer_id,
+            'subject_type' => $activity->subject_type,
+            'subject_id' => $activity->subject_id,
+            'properties' => $activity->properties,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'timestamp' => $activity->created_at->setTimezone('Asia/Kuala_Lumpur')->format('l - j F Y, h:i:s A') . ' GMT +8',
+            'browser' => 'Chrome', // You can implement browser detection
+            'os' => 'Windows', // You can implement OS detection
+            'session_id' => 'sess_' . uniqid(),
+            'auth_method' => 'password',
+            '2fa_used' => false
+        ];
+
+        return response()->json([
+            'id' => $activity->id,
+            'timestamp' => $activity->created_at->format('Y-m-d H:i:s'),
+            'user' => $activity->causer ? $activity->causer->email : 'System',
+            'ip_address' => request()->ip(),
+            'event' => $activity->description,
+            'category' => $category,
+            'status' => $status,
+            'user_agent' => request()->userAgent(),
+            'description' => $activity->description,
+            'data' => $securityData
+        ]);
+    }
+
+    /**
+     * Clear security audit logs based on specified criteria.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function clearSecurityLogs(Request $request)
+    {
+        try {
+            $days = $request->input('days', 'all');
+            
+            // Focus on security-related activities
+            $query = Activity::where(function($q) {
+                $q->where('log_name', 'auth')
+                  ->orWhere('log_name', 'security')
+                  ->orWhere('log_name', 'user')
+                  ->orWhere('log_name', 'role')
+                  ->orWhere('description', 'LIKE', '%login%')
+                  ->orWhere('description', 'LIKE', '%logout%')
+                  ->orWhere('description', 'LIKE', '%password%')
+                  ->orWhere('description', 'LIKE', '%permission%')
+                  ->orWhere('description', 'LIKE', '%role%')
+                  ->orWhere('description', 'LIKE', '%user%');
+            });
+            
+            if ($days === 'all') {
+                // Clear all security logs
+                $deletedCount = $query->count();
+                $query->delete();
+                $message = "All {$deletedCount} security audit logs have been cleared successfully.";
+            } else {
+                // Clear security logs older than specified days
+                $cutoffDate = now()->subDays((int) $days);
+                $deletedCount = $query->where('created_at', '<', $cutoffDate)->count();
+                $query->where('created_at', '<', $cutoffDate)->delete();
+                $message = "{$deletedCount} security audit logs older than {$days} days have been cleared successfully.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'deleted_count' => $deletedCount
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to clear security logs: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -67,11 +67,8 @@
                                 <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
                                 Phone Number
                             </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">call</span>
-                                </div>
-                                <input type="tel" name="phone" id="phone" class="phone-input w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone', preg_match('/^60/', $participant->phone) ? substr($participant->phone, 2) : $participant->phone) }}">
+                            <div>
+                                <input type="tel" name="phone" id="phone" class="phone-input w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone', preg_match('/^60/', $participant->phone) ? substr($participant->phone, 2) : $participant->phone) }}">
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Select country code and enter phone number</p>
                         </div>

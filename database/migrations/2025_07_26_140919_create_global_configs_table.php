@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('global_configs', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // Table already exists, skip creation to avoid duplicate error
+        // Schema::create('global_configs', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->timestamps();
+        // });
     }
 
     /**
@@ -22,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('global_configs');
+        // Schema::dropIfExists('global_configs');
     }
 };

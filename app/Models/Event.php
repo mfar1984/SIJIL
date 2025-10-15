@@ -97,4 +97,30 @@ class Event extends Model
     {
         return $this->hasMany(Participant::class);
     }
+
+    /**
+     * Relationship with PWA participants through event registrations.
+     */
+    public function pwaParticipants()
+    {
+        return $this->belongsToMany(PwaParticipant::class, 'event_pwa_participant', 'event_id', 'pwa_participant_id')
+                    ->withPivot(['is_registered', 'registered_at', 'checked_in_at', 'checked_out_at', 'notes'])
+                    ->withTimestamps();
+    }
+
+    /**
+     * Relationship with event registrations.
+     */
+    public function eventRegistrations()
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
+
+    /**
+     * Get QR code for this event (for check-in).
+     */
+    public function getQRCode()
+    {
+        return $this->id . '_' . $this->registration_link;
+    }
 } 

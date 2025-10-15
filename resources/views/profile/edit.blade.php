@@ -78,11 +78,11 @@
                                 Phone Number
                             </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">call</span>
+                                <div class="flex items-center">
+                                    <input type="tel" name="phone" id="phone" class="phone-input w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone', preg_replace('/^\\+?60/', '', $user->phone)) }}">
                                 </div>
-                                <input type="tel" name="phone" id="phone" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone', $user->phone) }}" placeholder="+60123456789">
                             </div>
+                            <p class="mt-1 text-[10px] text-gray-500">Select country code and enter phone number</p>
                         </div>
                     </div>
                 </div>
@@ -123,7 +123,13 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">location_city</span>
                                 </div>
-                                <input type="text" name="state" id="state" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('state', $user->state) }}">
+                                <select name="state" id="state" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                    <option value="">Select State</option>
+                                    <!-- States will be populated by JS -->
+                                    @if(old('state', $user->state))
+                                        <option value="{{ old('state', $user->state) }}" selected>{{ old('state', $user->state) }}</option>
+                                    @endif
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -135,7 +141,13 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">apartment</span>
                                 </div>
-                                <input type="text" name="city" id="city" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('city', $user->city) }}">
+                                <select name="city" id="city" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                    <option value="">Select City</option>
+                                    <!-- Cities will be populated by JS -->
+                                    @if(old('city', $user->city))
+                                        <option value="{{ old('city', $user->city) }}" selected>{{ old('city', $user->city) }}</option>
+                                    @endif
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -147,7 +159,13 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">markunread_mailbox</span>
                                 </div>
-                                <input type="text" name="postcode" id="postcode" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('postcode', $user->postcode) }}">
+                                <select name="postcode" id="postcode" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                    <option value="">Select Postcode</option>
+                                    <!-- Postcodes will be populated by JS -->
+                                    @if(old('postcode', $user->postcode))
+                                        <option value="{{ old('postcode', $user->postcode) }}" selected>{{ old('postcode', $user->postcode) }}</option>
+                                    @endif
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -159,7 +177,9 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">flag</span>
                                 </div>
-                                <input type="text" name="country" id="country" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('country', $user->country) ?? 'Malaysia' }}">
+                                <select name="country" id="country" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" data-old-value="{{ old('country', $user->country ?? 'Malaysia') }}">
+                                    <!-- Dropdown will be filled by JavaScript -->
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -225,7 +245,13 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">location_city</span>
                                 </div>
-                                <input type="text" name="org_state" id="org_state" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('org_state', $user->org_state) }}">
+                                <select name="org_state" id="org_state" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                    <option value="">Select State</option>
+                                    <!-- States will be populated by JS -->
+                                    @if(old('org_state', $user->org_state))
+                                        <option value="{{ old('org_state', $user->org_state) }}" selected>{{ old('org_state', $user->org_state) }}</option>
+                                    @endif
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -237,7 +263,13 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">apartment</span>
                                 </div>
-                                <input type="text" name="org_city" id="org_city" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('org_city', $user->org_city) }}">
+                                <select name="org_city" id="org_city" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                    <option value="">Select City</option>
+                                    <!-- Cities will be populated by JS -->
+                                    @if(old('org_city', $user->org_city))
+                                        <option value="{{ old('org_city', $user->org_city) }}" selected>{{ old('org_city', $user->org_city) }}</option>
+                                    @endif
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -249,7 +281,13 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">markunread_mailbox</span>
                                 </div>
-                                <input type="text" name="org_postcode" id="org_postcode" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('org_postcode', $user->org_postcode) }}">
+                                <select name="org_postcode" id="org_postcode" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                    <option value="">Select Postcode</option>
+                                    <!-- Postcodes will be populated by JS -->
+                                    @if(old('org_postcode', $user->org_postcode))
+                                        <option value="{{ old('org_postcode', $user->org_postcode) }}" selected>{{ old('org_postcode', $user->org_postcode) }}</option>
+                                    @endif
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -261,7 +299,9 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">flag</span>
                                 </div>
-                                <input type="text" name="org_country" id="org_country" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('org_country', $user->org_country) ?? 'Malaysia' }}">
+                                <select name="org_country" id="org_country" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" data-old-value="{{ old('org_country', $user->org_country ?? 'Malaysia') }}">
+                                    <!-- Dropdown will be filled by JavaScript -->
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -270,10 +310,9 @@
                                 Organization Telephone
                             </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">call</span>
+                                <div class="flex items-center">
+                                    <input type="tel" name="org_telephone" id="org_telephone" class="phone-input w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('org_telephone', preg_replace('/^\\+?60/', '', $user->org_telephone)) }}">
                                 </div>
-                                <input type="tel" name="org_telephone" id="org_telephone" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('org_telephone', $user->org_telephone) }}">
                             </div>
                         </div>
                         <div>
@@ -366,4 +405,171 @@
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Populate states dropdown
+            populateStates();
+            populateStates('org_state'); // For organization state dropdown
+
+            // If there are old values, try to repopulate the form
+            const oldState = "{{ old('state', $user->state) }}";
+            const oldCity = "{{ old('city', $user->city) }}";
+            const oldPostcode = "{{ old('postcode', $user->postcode) }}";
+
+            if (oldState) {
+                document.getElementById('state').value = oldState;
+                updateCities();
+
+                if (oldCity) {
+                    setTimeout(() => {
+                        document.getElementById('city').value = oldCity;
+                        lookupPostcodesByCity();
+
+                        if (oldPostcode) {
+                            setTimeout(() => {
+                                document.getElementById('postcode').value = oldPostcode;
+                            }, 100);
+                        }
+                    }, 100);
+                }
+            }
+
+            // For organization fields
+            const oldOrgState = "{{ old('org_state', $user->org_state) }}";
+            const oldOrgCity = "{{ old('org_city', $user->org_city) }}";
+            const oldOrgPostcode = "{{ old('org_postcode', $user->org_postcode) }}";
+
+            if (oldOrgState) {
+                setTimeout(() => {
+                    document.getElementById('org_state').value = oldOrgState;
+                    updateOrgCities();
+
+                    if (oldOrgCity) {
+                        setTimeout(() => {
+                            document.getElementById('org_city').value = oldOrgCity;
+                            lookupOrgPostcodesByCity();
+
+                            if (oldOrgPostcode) {
+                                setTimeout(() => {
+                                    document.getElementById('org_postcode').value = oldOrgPostcode;
+                                }, 100);
+                            }
+                        }, 100);
+                    }
+                }, 100);
+            }
+        });
+
+        function populateStates(fieldId = 'state') {
+            try {
+                const stateSelect = document.getElementById(fieldId);
+
+                // Clear existing options except the first one
+                while (stateSelect.options.length > 1) {
+                    stateSelect.remove(1);
+                }
+
+                // Check if malaysiaPostcodes is available
+                if (window.malaysiaPostcodes && window.malaysiaPostcodes.getStates) {
+                    const states = window.malaysiaPostcodes.getStates();
+
+                    states.forEach(state => {
+                        const option = document.createElement('option');
+                        option.value = state;
+                        option.textContent = state;
+                        stateSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error populating states for', fieldId, ':', error);
+            }
+        }
+
+        function updateCities() {
+            updateCitiesGeneric('state', 'city', 'postcode');
+        }
+
+        function updateOrgCities() {
+            updateCitiesGeneric('org_state', 'org_city', 'org_postcode');
+        }
+
+        function updateCitiesGeneric(stateFieldId, cityFieldId, postcodeFieldId) {
+            try {
+                const stateSelect = document.getElementById(stateFieldId);
+                const citySelect = document.getElementById(cityFieldId);
+                const selectedState = stateSelect.value;
+
+                // Clear existing options except the first one
+                while (citySelect.options.length > 1) {
+                    citySelect.remove(1);
+                }
+
+                // Reset postcode dropdown
+                const postcodeSelect = document.getElementById(postcodeFieldId);
+                while (postcodeSelect.options.length > 1) {
+                    postcodeSelect.remove(1);
+                }
+
+                if (!selectedState) return;
+
+                // Check if malaysiaPostcodes is available
+                if (window.malaysiaPostcodes && window.malaysiaPostcodes.getCities) {
+                    const cities = window.malaysiaPostcodes.getCities(selectedState);
+
+                    cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city;
+                        option.textContent = city;
+                        citySelect.appendChild(option);
+                    });
+                } else {
+                    citySelect.innerHTML = '<option value="">Enter City Manually</option>';
+                }
+            } catch (error) {
+                console.error('Error updating cities for', stateFieldId, ':', error);
+            }
+        }
+
+        function lookupPostcodesByCity() {
+            lookupPostcodesByCityGeneric('state', 'city', 'postcode');
+        }
+
+        function lookupOrgPostcodesByCity() {
+            lookupPostcodesByCityGeneric('org_state', 'org_city', 'org_postcode');
+        }
+
+        function lookupPostcodesByCityGeneric(stateFieldId, cityFieldId, postcodeFieldId) {
+            try {
+                const stateSelect = document.getElementById(stateFieldId);
+                const citySelect = document.getElementById(cityFieldId);
+                const postcodeSelect = document.getElementById(postcodeFieldId);
+
+                const selectedState = stateSelect.value;
+                const selectedCity = citySelect.value;
+
+                // Clear existing options except the first one
+                while (postcodeSelect.options.length > 1) {
+                    postcodeSelect.remove(1);
+                }
+
+                if (!selectedState || !selectedCity) return;
+
+                // Check if malaysiaPostcodes is available
+                if (window.malaysiaPostcodes && window.malaysiaPostcodes.getPostcodes) {
+                    const postcodes = window.malaysiaPostcodes.getPostcodes(selectedState, selectedCity);
+
+                    postcodes.forEach(postcode => {
+                        const option = document.createElement('option');
+                        option.value = postcode;
+                        option.textContent = postcode;
+                        postcodeSelect.appendChild(option);
+                    });
+                } else {
+                    postcodeSelect.innerHTML = '<option value="">Enter Postcode Manually</option>';
+                }
+            } catch (error) {
+                console.error('Error looking up postcodes for', cityFieldId, ':', error);
+            }
+        }
+    </script>
 </x-app-layout>

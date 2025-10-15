@@ -8,6 +8,8 @@ use App\Http\Controllers\ParticipantsController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Middleware\CheckPermission as PermissionMiddleware;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 Route::get('/', function () {
     return view('auth.login');
@@ -521,4 +523,71 @@ Route::prefix('s')->name('public.survey.')->group(function () {
     Route::post('/{slug}/submit', [App\Http\Controllers\PublicSurveyController::class, 'submit'])->name('submit');
     Route::get('/{slug}/thankyou', [App\Http\Controllers\PublicSurveyController::class, 'thankYou'])->name('thankyou');
     Route::get('/{slug}/expired', [App\Http\Controllers\PublicSurveyController::class, 'expired'])->name('expired');
+});
+
+// PWA Management Routes (Multi-Tenant)
+Route::middleware(['auth', 'verified'])->prefix('pwa')->name('pwa.')->group(function () {
+    Route::get('/settings', [App\Http\Controllers\Pwa\PwaSettingsController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':manage_ecertificate_settings')
+        ->name('settings');
+    
+    Route::post('/settings', [App\Http\Controllers\Pwa\PwaSettingsController::class, 'update'])
+        ->middleware(PermissionMiddleware::class.':manage_ecertificate_settings')
+        ->name('settings.update');
+    
+    Route::get('/participants', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':view_ecertificate_participants')
+        ->name('participants');
+    
+    Route::get('/participants/create', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'create'])
+        ->middleware(PermissionMiddleware::class.':create_ecertificate_participants')
+        ->name('participants.create');
+    
+    Route::post('/participants', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'store'])
+        ->middleware(PermissionMiddleware::class.':create_ecertificate_participants')
+        ->name('participants.store');
+    
+    Route::get('/participants/{participant}/edit', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'edit'])
+        ->middleware(PermissionMiddleware::class.':edit_ecertificate_participants')
+        ->name('participants.edit');
+    
+    Route::put('/participants/{participant}', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'update'])
+        ->middleware(PermissionMiddleware::class.':edit_ecertificate_participants')
+        ->name('participants.update');
+    
+    Route::delete('/participants/{participant}', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'destroy'])
+        ->middleware(PermissionMiddleware::class.':delete_ecertificate_participants')
+        ->name('participants.destroy');
+    
+    Route::get('/participants/{participant}', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'show'])
+        ->middleware(PermissionMiddleware::class.':view_ecertificate_participants')
+        ->name('participants.show');
+    
+    Route::post('/participants/{participant}/reset-password', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'resetPassword'])
+        ->middleware(PermissionMiddleware::class.':edit_ecertificate_participants')
+        ->name('participants.reset-password');
+    
+    Route::get('/templates', [App\Http\Controllers\Pwa\PwaTemplatesController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':manage_ecertificate_templates')
+        ->name('templates');
+    
+    Route::get('/templates/{template}/edit', [App\Http\Controllers\Pwa\PwaTemplatesController::class, 'edit'])
+        ->middleware(PermissionMiddleware::class.':manage_ecertificate_templates')
+        ->name('templates.edit');
+    
+    Route::put('/templates/{template}', [App\Http\Controllers\Pwa\PwaTemplatesController::class, 'update'])
+        ->middleware(PermissionMiddleware::class.':manage_ecertificate_templates')
+        ->name('templates.update');
+    
+    Route::post('/templates/{template}/preview', [App\Http\Controllers\Pwa\PwaTemplatesController::class, 'preview'])
+        ->middleware(PermissionMiddleware::class.':manage_ecertificate_templates')
+        ->name('templates.preview');
+    
+    Route::get('/analytics', [App\Http\Controllers\Pwa\PwaAnalyticsController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':view_ecertificate_analytics')
+        ->name('analytics');
+    
+    Route::get('/analytics/export', [App\Http\Controllers\Pwa\PwaAnalyticsController::class, 'export'])
+        ->middleware(PermissionMiddleware::class.':export_ecertificate_analytics')
+        ->name('analytics.export');
 });

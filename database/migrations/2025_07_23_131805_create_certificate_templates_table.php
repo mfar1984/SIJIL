@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('certificate_templates', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // Table already exists, skip creation to avoid duplicate error
+        // Schema::create('certificate_templates', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->timestamps();
+        // });
     }
 
     /**
@@ -22,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('certificate_templates');
+        // Schema::dropIfExists('certificate_templates');
     }
 };

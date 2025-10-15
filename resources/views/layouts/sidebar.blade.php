@@ -110,6 +110,42 @@
     </div>
     @endif
     
+    <!-- PWA Management Section -->
+    @if(auth()->user()->can('view_ecertificate_management') || auth()->user()->can('manage_ecertificate_settings') || auth()->user()->can('view_ecertificate_participants'))
+    <div class="mt-4"></div>
+    <div class="category-header relative" onclick="toggleSection('ecertificate-section')">
+        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+            <div class="flex items-center">
+                <span class="material-icons text-base text-indigo-500 mr-3">smartphone</span>
+                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">PWA Management</p>
+            </div>
+            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="ecertificate-section-icon">expand_more</span>
+        </div>
+    </div>
+    <div id="ecertificate-section" class="hierarchical-menu" style="display: none;">
+        @can('view_ecertificate_participants')
+        <x-sidebar-submenu-item href="{{ route('pwa.participants') }}" icon="people" :active="request()->routeIs('pwa.participants')">
+            Participants
+        </x-sidebar-submenu-item>
+        @endcan
+        @can('view_ecertificate_analytics')
+        <x-sidebar-submenu-item href="{{ route('pwa.analytics') }}" icon="analytics" :active="request()->routeIs('pwa.analytics')">
+            Analytics
+        </x-sidebar-submenu-item>
+        @endcan
+        @can('manage_ecertificate_templates')
+        <x-sidebar-submenu-item href="{{ route('pwa.templates') }}" icon="email" :active="request()->routeIs('pwa.templates')">
+            Email Templates
+        </x-sidebar-submenu-item>
+        @endcan
+        @can('manage_ecertificate_settings')
+        <x-sidebar-submenu-item href="{{ route('pwa.settings') }}" icon="settings" :active="request()->routeIs('pwa.settings')">
+            Event Settings
+        </x-sidebar-submenu-item>
+        @endcan
+    </div>
+    @endif
+    
     <!-- Reports Section -->
     @if(auth()->user()->can('view_attendance_reports') || auth()->user()->can('view_event_statistics') || auth()->user()->can('view_certificate_reports'))
     <div class="mt-4"></div>

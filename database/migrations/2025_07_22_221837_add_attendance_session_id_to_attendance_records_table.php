@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('attendance_records', function (Blueprint $table) {
-            $table->unsignedBigInteger('attendance_session_id')->nullable()->after('attendance_id');
-            $table->foreign('attendance_session_id')->references('id')->on('attendance_sessions')->onDelete('set null');
-        });
+        // Column already exists, skip to avoid duplicate error
+        // Schema::table('attendance_records', function (Blueprint $table) {
+        //     $table->unsignedBigInteger('attendance_session_id')->nullable()->after('attendance_id');
+        //     $table->foreign('attendance_session_id')->references('id')->on('attendance_sessions')->onDelete('set null');
+        // });
     }
 
     /**
@@ -22,9 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('attendance_records', function (Blueprint $table) {
-            $table->dropForeign(['attendance_session_id']);
-            $table->dropColumn('attendance_session_id');
-        });
+        // Schema::table('attendance_records', function (Blueprint $table) {
+        //     $table->dropForeign(['attendance_session_id']);
+        //     $table->dropColumn('attendance_session_id');
+        // });
     }
 };

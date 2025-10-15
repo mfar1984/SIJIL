@@ -323,6 +323,19 @@ document.addEventListener('DOMContentLoaded', function() {
             loadPostcodes();
         });
     }
+    // Add for org_state and org_city
+    const orgStateElement = document.getElementById('org_state');
+    if (orgStateElement) {
+        orgStateElement.addEventListener('change', function() {
+            loadCities('org_state');
+        });
+    }
+    const orgCityElement = document.getElementById('org_city');
+    if (orgCityElement) {
+        orgCityElement.addEventListener('change', function() {
+            loadPostcodes('org_state');
+        });
+    }
     
     // Load countries if the country dropdown exists
     const countryElement = document.getElementById('country');
@@ -343,93 +356,70 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadStates() {
     try {
         const states = getStates();
-        const stateSelect = document.getElementById('state');
-        
-        if (!stateSelect) {
-            return;
-        }
-        
-        // Clear existing options except the first one
-        while (stateSelect.options.length > 1) {
-            stateSelect.remove(1);
-        }
-        
-        // Add states to dropdown
-        states.forEach(state => {
-            const option = document.createElement('option');
-            option.value = state;
-            option.textContent = state;
-            stateSelect.appendChild(option);
+        const stateSelects = [
+            document.getElementById('state'),
+            document.getElementById('org_state')
+        ].filter(Boolean);
+        stateSelects.forEach(stateSelect => {
+            if (!stateSelect) return;
+            while (stateSelect.options.length > 1) {
+                stateSelect.remove(1);
+            }
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+            const othersOption = document.createElement('option');
+            othersOption.value = 'others';
+            othersOption.textContent = '-- Others --';
+            stateSelect.appendChild(othersOption);
+            const oldState = stateSelect.getAttribute('data-old-value');
+            if (oldState) {
+                stateSelect.value = oldState;
+                loadCities(stateSelect.id);
+            }
         });
-        
-        // Add "Others" option at the end
-        const othersOption = document.createElement('option');
-        othersOption.value = 'others';
-        othersOption.textContent = '-- Others --';
-        stateSelect.appendChild(othersOption);
-        
-        // If there's a previously selected state (e.g., from old input)
-        const oldState = stateSelect.getAttribute('data-old-value');
-        if (oldState) {
-            stateSelect.value = oldState;
-            loadCities();
-        }
     } catch (error) {
         console.error('Error loading states:', error);
     }
 }
 
 // Load cities based on selected state
-function loadCities() {
+function loadCities(stateId = 'state') {
     try {
-        const stateSelect = document.getElementById('state');
-        const citySelect = document.getElementById('city');
-        const postcodeSelect = document.getElementById('postcode');
-        
-        if (!stateSelect || !citySelect || !postcodeSelect) {
-            return;
-        }
-        
-        // Reset postcode dropdown
+        const stateSelect = document.getElementById(stateId);
+        const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
+        const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
+        if (!stateSelect || !citySelect || !postcodeSelect) return;
         postcodeSelect.disabled = true;
         while (postcodeSelect.options.length > 1) {
             postcodeSelect.remove(1);
         }
-        
         const selectedState = stateSelect.value;
-        
         if (!selectedState) {
-            // If no state selected, disable city dropdown
             citySelect.disabled = true;
             while (citySelect.options.length > 1) {
                 citySelect.remove(1);
             }
             return;
         }
-        
         const cities = getCities(selectedState);
-        
-        // Clear existing options except the first one
         while (citySelect.options.length > 1) {
             citySelect.remove(1);
         }
-        
-        // Add cities to dropdown
         cities.forEach(city => {
             const option = document.createElement('option');
             option.value = city;
             option.textContent = city;
             citySelect.appendChild(option);
         });
-        
-        // Enable the city dropdown
         citySelect.disabled = false;
-        
-        // If there's a previously selected city (e.g., from old input)
         const oldCity = citySelect.getAttribute('data-old-value');
         if (oldCity) {
             citySelect.value = oldCity;
-            loadPostcodes();
+            loadPostcodes(stateId);
         }
     } catch (error) {
         console.error('Error loading cities:', error);
@@ -437,45 +427,32 @@ function loadCities() {
 }
 
 // Load postcodes based on selected state and city
-function loadPostcodes() {
+function loadPostcodes(stateId = 'state') {
     try {
-        const stateSelect = document.getElementById('state');
-        const citySelect = document.getElementById('city');
-        const postcodeSelect = document.getElementById('postcode');
-        
+        const stateSelect = document.getElementById(stateId);
+        const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
+        const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
         if (!stateSelect || !citySelect || !postcodeSelect) return;
-        
         const selectedState = stateSelect.value;
         const selectedCity = citySelect.value;
-        
         if (!selectedState || !selectedCity) {
-            // If no state or city selected, disable postcode dropdown
             postcodeSelect.disabled = true;
             while (postcodeSelect.options.length > 1) {
                 postcodeSelect.remove(1);
             }
             return;
         }
-        
         const postcodes = getPostcodes(selectedState, selectedCity);
-        
-        // Clear existing options except the first one
         while (postcodeSelect.options.length > 1) {
             postcodeSelect.remove(1);
         }
-        
-        // Add postcodes to dropdown
         postcodes.forEach(postcode => {
             const option = document.createElement('option');
             option.value = postcode;
             option.textContent = postcode;
             postcodeSelect.appendChild(option);
         });
-        
-        // Enable the postcode dropdown
         postcodeSelect.disabled = false;
-        
-        // If there's a previously selected postcode (e.g., from old input)
         const oldPostcode = postcodeSelect.getAttribute('data-old-value');
         if (oldPostcode) {
             postcodeSelect.value = oldPostcode;
@@ -488,86 +465,74 @@ function loadPostcodes() {
 // Load countries into dropdown
 function loadCountries() {
     try {
-        // Get element
-        const countrySelect = document.getElementById('country');
+        // Get elements
+        const countrySelects = [
+            document.getElementById('country'),
+            document.getElementById('org_country')
+        ].filter(Boolean);
         
-        if (!countrySelect) {
+        if (!countrySelects.length) {
             return;
         }
         
-        // Save previously selected value if exists (for edit form)
-        const oldValue = countrySelect.getAttribute('data-old-value');
-        
         // Get all country names as an array
         const countryNames = countryListJs.names();
-        
         if (!countryNames || !Array.isArray(countryNames)) {
             return;
         }
         
-        // Clear existing options
-        while (countrySelect.options.length) {
-            countrySelect.remove(0);
-        }
-        
-        // Create default empty option
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = '-- Select Country --';
-        countrySelect.appendChild(emptyOption);
-        
-        // Sort country names alphabetically
-        countryNames.sort();
-        
-        // Find Malaysia index in the sorted array
-        const malaysiaIndex = countryNames.findIndex(name => name === 'Malaysia');
-        
-        // If we have an old value that's not Malaysia, we'll select that instead
-        const shouldSelectMalaysia = !oldValue || oldValue === 'Malaysia';
-        
-        // Add Malaysia as the first option after the empty option if found
-        if (malaysiaIndex >= 0) {
-            const malaysiaOption = document.createElement('option');
-            malaysiaOption.value = 'Malaysia';
-            malaysiaOption.textContent = 'Malaysia';
-            
-            // Only select Malaysia by default if there's no old value or the old value is Malaysia
-            if (shouldSelectMalaysia) {
-                malaysiaOption.selected = true;
+        countrySelects.forEach(countrySelect => {
+            // Save previously selected value if exists (for edit form)
+            const oldValue = countrySelect.getAttribute('data-old-value');
+            // Clear existing options
+            while (countrySelect.options.length) {
+                countrySelect.remove(0);
             }
-            
-            countrySelect.appendChild(malaysiaOption);
-            
-            // Add all countries except Malaysia
-            countryNames.forEach(name => {
-                if (name !== 'Malaysia') {
+            // Create default empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = '-- Select Country --';
+            countrySelect.appendChild(emptyOption);
+            // Sort country names alphabetically
+            countryNames.sort();
+            // Find Malaysia index in the sorted array
+            const malaysiaIndex = countryNames.findIndex(name => name === 'Malaysia');
+            // If we have an old value that's not Malaysia, we'll select that instead
+            const shouldSelectMalaysia = !oldValue || oldValue === 'Malaysia';
+            // Add Malaysia as the first option after the empty option if found
+            if (malaysiaIndex >= 0) {
+                const malaysiaOption = document.createElement('option');
+                malaysiaOption.value = 'Malaysia';
+                malaysiaOption.textContent = 'Malaysia';
+                if (shouldSelectMalaysia) {
+                    malaysiaOption.selected = true;
+                }
+                countrySelect.appendChild(malaysiaOption);
+                // Add all countries except Malaysia
+                countryNames.forEach(name => {
+                    if (name !== 'Malaysia') {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        if (oldValue && oldValue === name) {
+                            option.selected = true;
+                        }
+                        countrySelect.appendChild(option);
+                    }
+                });
+            } else {
+                // If Malaysia not found, just add all countries
+                countryNames.forEach(name => {
                     const option = document.createElement('option');
                     option.value = name;
                     option.textContent = name;
-                    
-                    // Select this option if it matches the old value
                     if (oldValue && oldValue === name) {
                         option.selected = true;
                     }
-                    
                     countrySelect.appendChild(option);
-                }
-            });
-        } else {
-            // If Malaysia not found, just add all countries
-            countryNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                
-                // Select this option if it matches the old value
-                if (oldValue && oldValue === name) {
-                    option.selected = true;
-                }
-                
-                countrySelect.appendChild(option);
-            });
-        }
+                });
+            }
+        });
     } catch (error) {
         console.error('Error loading countries:', error);
     }

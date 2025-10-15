@@ -22,4 +22,9 @@ class AttendanceSession extends Model
     {
         return $this->belongsTo(Attendance::class);
     }
+
+    public function event()
+    {
+        return $this->belongsTo(Event::class, 'attendance_id');
+    }
 } 

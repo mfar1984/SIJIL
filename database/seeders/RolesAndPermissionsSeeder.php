@@ -90,6 +90,13 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view_settings' => 'View Settings',
                 'manage_settings' => 'Manage Settings',
             ],
+            'ecertificate_online' => [
+                'view_ecertificate_management' => 'View E-Certificate Online Management',
+                'manage_ecertificate_settings' => 'Manage E-Certificate Settings',
+                'view_ecertificate_participants' => 'View E-Certificate Participants',
+                'manage_ecertificate_templates' => 'Manage E-Certificate Email Templates',
+                'view_ecertificate_analytics' => 'View E-Certificate Analytics',
+            ],
         ];
 
         // Create all permissions
@@ -194,6 +201,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_surveys',
             'manage_survey_questions',
             'view_survey_responses',
+            
+            // Add E-Certificate Online permissions for organizer
+            'view_ecertificate_management',
+            'manage_ecertificate_settings',
+            'view_ecertificate_participants',
+            'manage_ecertificate_templates',
+            'view_ecertificate_analytics',
         ];
         
         $organizerRole->syncPermissions($organizerPermissions);

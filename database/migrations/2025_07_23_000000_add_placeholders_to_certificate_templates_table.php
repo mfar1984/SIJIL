@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('certificate_templates', function (Blueprint $table) {
-            $table->json('placeholders')->nullable()->after('created_by');
-        });
+        // Column already exists, skip to avoid duplicate error
+        // Schema::table('certificate_templates', function (Blueprint $table) {
+        //     $table->json('placeholders')->nullable()->after('created_by');
+        // });
     }
 
     /**
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('certificate_templates', function (Blueprint $table) {
-            $table->dropColumn('placeholders');
-        });
+        // Schema::table('certificate_templates', function (Blueprint $table) {
+        //     $table->dropColumn('placeholders');
+        // });
     }
 }; 

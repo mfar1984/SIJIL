@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('attendance_records', function (Blueprint $table) {
-            $table->timestamp('checkin_time')->nullable()->after('participant_id');
-            $table->timestamp('checkout_time')->nullable()->after('checkin_time');
-        });
+        // Column already exists, skip to avoid duplicate error
+        // Schema::table('attendance_records', function (Blueprint $table) {
+        //     $table->timestamp('checkin_time')->nullable()->after('participant_id');
+        //     $table->timestamp('checkout_time')->nullable()->after('checkin_time');
+        // });
     }
 
     /**
@@ -22,8 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('attendance_records', function (Blueprint $table) {
-            $table->dropColumn(['checkin_time', 'checkout_time']);
-        });
+        // Schema::table('attendance_records', function (Blueprint $table) {
+        //     $table->dropColumn('checkin_time');
+        //     $table->dropColumn('checkout_time');
+        // });
     }
 };

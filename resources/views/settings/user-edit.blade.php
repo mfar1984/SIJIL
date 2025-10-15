@@ -92,17 +92,9 @@
                                 Phone Number
                             </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">call</span>
+                                <div class="flex items-center">
+                                    <input type="tel" name="phone" id="phone" class="phone-input w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone', $user->phone) }}" placeholder="+60123456789">
                                 </div>
-                                <input 
-                                    type="tel" 
-                                    name="phone" 
-                                    id="phone" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('phone', $user->phone) }}" 
-                                    placeholder="+60123456789"
-                                >
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Include country code (e.g., +60 for Malaysia)</p>
                         </div>
@@ -483,16 +475,9 @@
                                 Organization Telephone
                             </label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">call</span>
+                                <div class="flex items-center">
+                                    <input type="tel" name="org_telephone" id="org_telephone" class="phone-input w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('org_telephone', $user->org_telephone) }}">
                                 </div>
-                                <input 
-                                    type="tel" 
-                                    name="org_telephone" 
-                                    id="org_telephone" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('org_telephone', $user->org_telephone) }}"
-                                >
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Main contact number for the organization</p>
                         </div>

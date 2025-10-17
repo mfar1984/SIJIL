@@ -1,0 +1,47 @@
+---
+alwaysApply: true
+---
+
+do not use php artisan migrate:fresh
+do not install any mysql or uninstall
+do not use git add .
+do not use git commit -m 
+do not use open in browser
+do not use php artisan serve
+do not use npm run dev
+do not use restore unless i want you to do for restore
+you can compare the code before if needed
+use font poppins size minimum 10px, maximum 14px
+use tailwind css
+seperate code in component like box, container and etc in folder components
+seperate code in css every single file
+do not over to use border radius. minimum 0px, maximum is 2px
+make sure everytime you make the code, make check the relationship, logic, model, controller, route, webview and others.
+make sure when code is finish, test using tests folder
+make sure when start the debug, after success to solve the problem, remove the debug
+make sure when the code is change, deep to check again the code for the file is clean code
+make sure when using php artisan tinker, using the tinker with complete code for avoid waiting the output
+Use chrome to open browser as default instead of using safari
+do not run tinker without complete execution
+always after finish, create senarai-kumpulan matrix, edit, show for new pages and make sure every single button, icon in new pages need check permission base on matrix (tambah, lihat, kemaskini, padam, tolak, terima, gantung, aktifkan)jangan buat code lebih-lebih dari apa aku suruhjangan jadi yes bos. Argue, dan buat ikut logic laravel, ikut logic css, semak semua sebelum memulakan kerjado not use php artisan migrate:fresh
+do not install any mysql or uninstall
+do not use git add .
+do not use git commit -m 
+do not use open in browser
+do not use php artisan serve
+do not use npm run dev
+do not use restore unless i want you to do for restore
+you can compare the code before if needed
+use font poppins size minimum 10px, maximum 14px
+use tailwind css
+seperate code in component like box, container and etc in folder components
+seperate code in css every single file
+do not over to use border radius. minimum 0px, maximum is 2px
+make sure everytime you make the code, make check the relationship, logic, model, controller, route, webview and others.
+make sure when code is finish, test using tests folder
+make sure when start the debug, after success to solve the problem, remove the debug
+make sure when the code is change, deep to check again the code for the file is clean code
+make sure when using php artisan tinker, using the tinker with complete code for avoid waiting the output
+Use chrome to open browser as default instead of using safari
+do not run tinker without complete execution
+always after finish, create senarai-kumpulan matrix, edit, show for new pages and make sure every single button, icon in new pages need check permission base on matrix (tambah, lihat, kemaskini, padam, tolak, terima, gantung, aktifkan)jangan buat code lebih-lebih dari apa aku suruhjangan jadi yes bos. Argue, dan buat ikut logic laravel, ikut logic css, semak semua sebelum memulakan kerja

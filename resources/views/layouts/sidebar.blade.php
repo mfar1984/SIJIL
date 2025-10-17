@@ -11,7 +11,7 @@
         </a>
     </div>
     
-    @can('view_events')
+    @can('events.read')
     <div class="mt-2"></div>
     <div class="category-header relative" onclick="toggleSection('event-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
@@ -26,13 +26,15 @@
         <x-sidebar-submenu-item href="{{ route('event.management') }}" icon="calendar_month" :active="request()->routeIs('event.management')">
             Event Management
         </x-sidebar-submenu-item>
+        @can('surveys.read')
         <x-sidebar-submenu-item href="{{ route('survey.index') }}" icon="quiz" :active="request()->routeIs('survey.*')">
             Survey
         </x-sidebar-submenu-item>
+        @endcan
     </div>
     @endcan
     
-    @can('view_participants')
+    @can('participants.read')
     <div class="mt-2"></div>
     <div class="category-header relative">
         <a href="{{ route('participants') }}" class="block relative">
@@ -47,7 +49,7 @@
     @endcan
     
     <!-- Attendance Section -->
-    @if(auth()->user()->can('view_attendance') || auth()->user()->can('manage_attendance') || auth()->user()->can('view_archives'))
+    @if(auth()->user()->can('attendance_management.read') || auth()->user()->can('attendance.read') || auth()->user()->can('archives.read'))
     <div class="mt-2"></div>
     <div class="category-header relative" onclick="toggleSection('attendance-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
@@ -59,17 +61,17 @@
         </div>
     </div>
     <div id="attendance-section" class="hierarchical-menu" style="display: none;">
-        @can('manage_attendance')
+        @can('attendance_management.read')
         <x-sidebar-submenu-item href="{{ route('attendance.index') }}" icon="fact_check" :active="request()->routeIs('attendance.index')">
             Manage Attendance
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_attendance')
+        @can('attendance.read')
         <x-sidebar-submenu-item href="{{ route('attendance.list') }}" icon="view_list">
             Attendance List
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_archives')
+        @can('archives.read')
         <x-sidebar-submenu-item href="{{ route('attendance.archive') }}" icon="inventory">
             Archive
         </x-sidebar-submenu-item>
@@ -78,7 +80,7 @@
     @endif
     
     <!-- Certificate Management -->
-    @if(auth()->user()->can('view_certificates') || auth()->user()->can('generate_certificates') || auth()->user()->can('edit_templates'))
+    @if(auth()->user()->can('certificates.read') || auth()->user()->can('certificates.create') || auth()->user()->can('templates.read'))
     <div class="mt-4"></div>
     <div class="category-header relative" onclick="toggleSection('certificate-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
@@ -90,19 +92,15 @@
         </div>
     </div>
     <div id="certificate-section" class="hierarchical-menu" style="display: none;">
-        @can('view_certificates')
+        @can('certificates.read')
         <x-sidebar-submenu-item href="{{ route('certificates.index') }}" icon="list_alt" :active="request()->routeIs('certificates.index')">
             Manage Certificates
         </x-sidebar-submenu-item>
         @endcan
         
-        @can('generate_certificates')
-        <x-sidebar-submenu-item href="{{ route('certificates.create') }}" icon="add_circle" :active="request()->routeIs('certificates.create')">
-            Generate Certificates
-        </x-sidebar-submenu-item>
-        @endcan
         
-        @can('edit_templates')
+        
+        @can('templates.read')
         <x-sidebar-submenu-item href="{{ route('template.designer') }}" icon="design_services" :active="request()->routeIs('template.*')">
             Template Designer
         </x-sidebar-submenu-item>
@@ -111,7 +109,7 @@
     @endif
     
     <!-- PWA Management Section -->
-    @if(auth()->user()->can('view_ecertificate_management') || auth()->user()->can('manage_ecertificate_settings') || auth()->user()->can('view_ecertificate_participants'))
+    @if(auth()->user()->can('pwa_participants.read') || auth()->user()->can('pwa_analytics.read') || auth()->user()->can('pwa_templates.read') || auth()->user()->can('pwa_settings.read'))
     <div class="mt-4"></div>
     <div class="category-header relative" onclick="toggleSection('ecertificate-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
@@ -123,22 +121,22 @@
         </div>
     </div>
     <div id="ecertificate-section" class="hierarchical-menu" style="display: none;">
-        @can('view_ecertificate_participants')
+        @can('pwa_participants.read')
         <x-sidebar-submenu-item href="{{ route('pwa.participants') }}" icon="people" :active="request()->routeIs('pwa.participants')">
             Participants
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_ecertificate_analytics')
+        @can('pwa_analytics.read')
         <x-sidebar-submenu-item href="{{ route('pwa.analytics') }}" icon="analytics" :active="request()->routeIs('pwa.analytics')">
             Analytics
         </x-sidebar-submenu-item>
         @endcan
-        @can('manage_ecertificate_templates')
+        @can('pwa_templates.read')
         <x-sidebar-submenu-item href="{{ route('pwa.templates') }}" icon="email" :active="request()->routeIs('pwa.templates')">
             Email Templates
         </x-sidebar-submenu-item>
         @endcan
-        @can('manage_ecertificate_settings')
+        @can('pwa_settings.read')
         <x-sidebar-submenu-item href="{{ route('pwa.settings') }}" icon="settings" :active="request()->routeIs('pwa.settings')">
             Event Settings
         </x-sidebar-submenu-item>
@@ -147,7 +145,7 @@
     @endif
     
     <!-- Reports Section -->
-    @if(auth()->user()->can('view_attendance_reports') || auth()->user()->can('view_event_statistics') || auth()->user()->can('view_certificate_reports'))
+    @if(auth()->user()->can('attendance_reports.read') || auth()->user()->can('event_statistics.read') || auth()->user()->can('certificate_reports.read'))
     <div class="mt-4"></div>
     <div class="category-header relative" onclick="toggleSection('reports-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
@@ -159,17 +157,17 @@
         </div>
     </div>
     <div id="reports-section" class="hierarchical-menu" style="display: none;">
-        @can('view_attendance_reports')
+        @can('attendance_reports.read')
         <x-sidebar-submenu-item href="{{ route('reports.attendance.index') }}" icon="summarize" :active="request()->routeIs('reports.attendance.index')">
             Attendance Reports
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_event_statistics')
+        @can('event_statistics.read')
         <x-sidebar-submenu-item href="{{ route('reports.statistics') }}" icon="insights" :active="request()->routeIs('reports.statistics')">
             Event Statistics
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_certificate_reports')
+        @can('certificate_reports.read')
         <x-sidebar-submenu-item href="{{ route('reports.certificates') }}" icon="description" :active="request()->routeIs('reports.certificates')">
             Certificate Reports
         </x-sidebar-submenu-item>
@@ -178,7 +176,7 @@
     @endif
     
     <!-- Campaign Section -->
-    @if(auth()->user()->can('view_campaigns') || auth()->user()->can('view_database_users') || auth()->user()->can('manage_delivery'))
+    @if(auth()->user()->can('campaigns.read') || auth()->user()->can('delivery.read'))
     <div class="mt-4"></div>
     <div class="category-header relative" onclick="toggleSection('campaign-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
@@ -190,14 +188,12 @@
         </div>
     </div>
     <div id="campaign-section" class="hierarchical-menu" style="display: none;">
-        @can('view_campaigns')
+        @can('campaigns.read')
         <x-sidebar-submenu-item href="{{ route('campaign.index') }}" icon="campaign" :active="request()->routeIs('campaign.index')">
             Campaign
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_database_users')
-        @endcan
-        @can('manage_delivery')
+        @can('delivery.read')
         <x-sidebar-submenu-item href="{{ route('config.deliver') }}" icon="settings_applications" :active="request()->routeIs('config.deliver')">
             Config Delivery
         </x-sidebar-submenu-item>
@@ -205,7 +201,7 @@
     </div>
     @endif
     
-    @can('view_helpdesk')
+    @can('helpdesk.read')
     <div class="mt-4"></div>
     <div class="category-header relative">
         <a href="{{ route('helpdesk.index') }}" class="block relative">
@@ -223,7 +219,7 @@
     <div class="sidebar-separator"></div>
     
     <!-- Settings Section -->
-    @if(auth()->user()->can('view_settings') || auth()->user()->can('view_roles') || auth()->user()->can('view_users'))
+    @if(auth()->user()->can('global_config.read') || auth()->user()->can('roles.read') || auth()->user()->can('users.read') || auth()->user()->can('log_activity.read'))
     <div class="category-header relative" onclick="toggleSection('settings-section')">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
@@ -234,25 +230,27 @@
         </div>
     </div>
     <div id="settings-section" class="hierarchical-menu" style="display: none;">
-        @can('manage_settings')
+        @can('global_config.read')
         <x-sidebar-submenu-item href="{{ route('settings.global-config') }}" icon="settings" :active="request()->routeIs('settings.global-config')">
             Global Config
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_roles')
+        @can('roles.read')
         <x-sidebar-submenu-item href="{{ route('role.management') }}" icon="admin_panel_settings" :active="request()->routeIs('role.management')">
             Role Management
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_users')
+        @can('users.read')
         <x-sidebar-submenu-item href="{{ route('user.management') }}" icon="manage_accounts" :active="request()->routeIs('user.management')">
             User Management
         </x-sidebar-submenu-item>
         @endcan
-        @can('view_settings')
+        @can('log_activity.read')
         <x-sidebar-submenu-item href="{{ route('settings.log-activity') }}" icon="event_note" :active="request()->routeIs('settings.log-activity')">
             Log Activity
         </x-sidebar-submenu-item>
+        @endcan
+        @can('security_audit.read')
         <x-sidebar-submenu-item href="{{ route('settings.security-audit') }}" icon="security" :active="request()->routeIs('settings.security-audit')">
             Security & Audit
         </x-sidebar-submenu-item>

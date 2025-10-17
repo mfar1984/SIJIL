@@ -68,8 +68,10 @@
                 </div>
             </div>
             
+            @php $canUpdate = auth()->user()->can('global_config.update'); @endphp
             <form method="POST" action="{{ route('settings.global-config.update') }}" enctype="multipart/form-data">
                 @csrf
+                <fieldset {{ $canUpdate ? '' : 'disabled' }}>
                 <!-- General Settings Tab -->
                 <div x-show="activeTab === 'general'" class="space-y-4">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
@@ -441,7 +443,7 @@
                                     id="registration_message" 
                                     name="registration_message" 
                                     rows="3" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
                                 >{{ old('registration_message', $config->registration_message ?? 'Thank you for registering for this event. Please check your email for confirmation details.') }}</textarea>
@@ -988,7 +990,7 @@
                                     id="custom_css" 
                                     name="custom_css" 
                                     rows="4" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 font-mono"
+                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 font-mono"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
                                 >{{ old('custom_css', $config->custom_css ?? '/* Custom CSS code */
@@ -1471,7 +1473,7 @@
                                     id="cors_domains" 
                                     name="cors_domains" 
                                     rows="2" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
                                 >{{ old('cors_domains', $config->cors_domains ?? 'https://example.com, https://*.sijilevents.com') }}</textarea>
@@ -1647,7 +1649,7 @@
                                     id="webhook_events" 
                                     name="webhook_events" 
                                     rows="3" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                     :class="{'bg-gray-50': !isEditing}"
                                     :disabled="!isEditing"
                                 >{{ old('webhook_events', $config->webhook_events ?? 'event.created, event.updated, registration.completed, certificate.generated, attendance.recorded') }}</textarea>
@@ -1659,6 +1661,7 @@
                 
                 <!-- Form Submit Buttons -->
                 <div class="mt-6 flex justify-end space-x-3">
+                    @can('global_config.update')
                     <button 
                         type="button" 
                         @click="isEditing = !isEditing" 
@@ -1666,7 +1669,7 @@
                         class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
                         x-transition
                     >
-                        <span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1">edit</span>
                             <span>Edit Settings</span>
                         </span>
@@ -1678,12 +1681,14 @@
                         class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
                         x-transition
                     >
-                        <span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1">save</span>
                             <span>Save Changes</span>
                         </span>
                     </button>
+                    @endcan
                 </div>
+                </fieldset>
             </form>
         </div>
     </div>
@@ -1695,22 +1700,18 @@
 
         // Handle form submission
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, looking for form...');
+            // DOM loaded, looking for form
             const form = document.querySelector('form[action*="global-config"]');
             
             if (form) {
-                console.log('Form found:', form.action);
+                // Form found
                 form.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    console.log('Form submitted!');
+                    // Form submitted
                     
                     const formData = new FormData(form);
                     
-                    // Debug: Log form data
-                    console.log('Form data:');
-                    for (let [key, value] of formData.entries()) {
-                        console.log(key + ': ' + value);
-                    }
+                    // Form data prepared
                     
                     const submitButton = document.querySelector('button[type="submit"]');
                     if (!submitButton) {
@@ -1720,7 +1721,7 @@
                     const originalText = submitButton.innerHTML;
                     
                     // Show loading state
-                    submitButton.innerHTML = '<span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out"><span class="material-icons text-xs mr-1">hourglass_empty</span> Saving...</span>';
+                    submitButton.innerHTML = '<span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out"><span class="material-icons text-xs mr-1">hourglass_empty</span> Saving...</span>';
                     submitButton.disabled = true;
                     
                     fetch(form.action, {
@@ -1731,11 +1732,11 @@
                         }
                     })
                     .then(response => {
-                        console.log('Response status:', response.status);
+                        // Response status
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Response data:', data);
+                        // Response data
                         if (data.success) {
                             // Show success message
                             alert('Configuration saved successfully!');

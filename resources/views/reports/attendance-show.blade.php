@@ -25,11 +25,11 @@
                     </p>
                 </div>
                 <div class="flex space-x-2">
-                    <a href="{{ route('reports.attendance.index') }}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    <a href="{{ route('reports.attendance.index') }}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
-                    <button onclick="exportAttendanceDetails()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    <button onclick="exportAttendanceDetails()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">file_download</span>
                         Export Details
                     </button>

@@ -115,7 +115,7 @@ class PwaParticipantsController extends Controller
      */
     private function storeManual(Request $request)
     {
-        \Log::info('PWA Participant Create Request', $request->all());
+        // PWA Participant Create Request
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:pwa_participants,email',
@@ -236,7 +236,7 @@ class PwaParticipantsController extends Controller
      */
     private function storeAutoAssign(Request $request)
     {
-        \Log::info('PWA Participant Auto-Assign Request', $request->all());
+        // PWA Participant Auto-Assign Request
         try {
             // Normalize boolean fields from string to boolean
             foreach (['send_welcome_email', 'is_active', 'force_password_change'] as $field) {
@@ -281,7 +281,7 @@ class PwaParticipantsController extends Controller
 
                 // Create PWA participant
                 $participantId = $regularParticipant->id;
-                \Log::info('Auto-assign: Regular participant ID', ['id' => $participantId, 'email' => $regularParticipant->email]);
+                // Auto-assign: Regular participant ID
                 
                 $pwaParticipant = PwaParticipant::create([
                     'name' => $regularParticipant->name,
@@ -309,7 +309,7 @@ class PwaParticipantsController extends Controller
                     'updated_by' => $user->id,
                     'related_participant_id' => $participantId
                 ]);
-                \Log::info('PWA Participant Created (Auto-Assign)', $pwaParticipant->toArray());
+                // PWA Participant Created (Auto-Assign)
 
                 // Assign to the same event as regular participant
                 if ($regularParticipant->event_id) {
@@ -517,7 +517,7 @@ class PwaParticipantsController extends Controller
         try {
             // You can implement your email sending logic here
             // For now, we'll just log it
-            \Log::info('Welcome email would be sent to: ' . $participant->email . ' with password: ' . $password);
+            // Welcome email would be sent
             
             // Example email sending (uncomment when you have email configured):
             /*
@@ -639,37 +639,46 @@ class PwaParticipantsController extends Controller
             }
         }
         // Load relationships
-        $participant->load(['events', 'certificates', 'creator', 'updater']);
+        $participant->load(['creator', 'updater']);
 
-        // Prepare event info with registration/attendance from pivot and attendance_records (using related_participant_id)
-        $eventDetails = $participant->events->map(function($event) use ($participant) {
-            $pivot = $event->pivot;
-            // Gunakan related_participant_id jika ada, jika tidak guna id PWA participant
-            $participantId = $participant->related_participant_id ?: $participant->id;
-            // Cari semua attendance session untuk event ini
-            $sessions = \App\Models\AttendanceSession::where('attendance_id', $event->id)->get();
-            $sessionDetails = $sessions->map(function($session) use ($participantId) {
-                $attendanceRecord = \App\Models\AttendanceRecord::where('attendance_session_id', $session->id)
-                    ->where('participant_id', $participantId)
-                    ->first();
+        // Get all participant records by IC/email (same as API aggregation logic)
+        $participantIds = collect();
+        if (!empty($participant->identity_card)) {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $participant->identity_card);
+            $participantIds = $participantIds->merge(\App\Models\Participant::whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc])->pluck('id'));
+        }
+        $participantIds = $participantIds->merge(\App\Models\Participant::where('email', $participant->email)->pluck('id'))->unique()->values();
+
+        $participants = \App\Models\Participant::whereIn('id', $participantIds->all())->with('event')->get();
+
+        // Prepare event info with registration/attendance from participants table
+        $eventDetails = $participants->map(function($p) {
+            $event = $p->event;
+            if (!$event) return null;
+
+            // Get attendance records for this participant
+            $attendanceRecords = \App\Models\AttendanceRecord::where('participant_id', $p->id)->get();
+            $sessions = $attendanceRecords->map(function($record) {
                 return [
-                    'session' => $session,
-                    'checkin_time' => $attendanceRecord ? $attendanceRecord->checkin_time : null,
-                    'checkout_time' => $attendanceRecord ? $attendanceRecord->checkout_time : null,
-                    'status' => $attendanceRecord ? $attendanceRecord->status : null,
+                    'session' => $record->attendanceSession,
+                    'checkin_time' => $record->checkin_time,
+                    'checkout_time' => $record->checkout_time,
+                    'status' => $record->status,
                 ];
             });
+
             return [
                 'event' => $event,
-                'is_registered' => $pivot->is_registered ?? null,
-                'registered_at' => $sessionDetails->first()['checkin_time'] ?? ($pivot->registered_at ?? null),
-                'checked_in_at' => $sessionDetails->first()['checkin_time'] ?? ($pivot->checked_in_at ?? null),
-                'checked_out_at' => $sessionDetails->first()['checkout_time'] ?? ($pivot->checked_out_at ?? null),
-                'pivot_notes' => $pivot->notes ?? null,
-                'attendance_status' => $sessionDetails->first()['status'] ?? null,
-                'sessions' => $sessionDetails,
+                'event_name' => $event->name,
+                'is_registered' => true,
+                'registered_at' => $p->created_at,
+                'checked_in_at' => $attendanceRecords->first()?->checkin_time,
+                'checked_out_at' => $attendanceRecords->first()?->checkout_time,
+                'pivot_notes' => $p->notes,
+                'attendance_status' => $attendanceRecords->first()?->status,
+                'sessions' => $sessions,
             ];
-        });
+        })->filter();
 
         // Compute status for display
         $status = $participant->is_active ? 'active' : 'inactive';
@@ -816,17 +825,146 @@ class PwaParticipantsController extends Controller
         }
 
         // Generate new password
-        $newPassword = str_random(8);
+        $newPassword = \Illuminate\Support\Str::random(12);
         
         $participant->update([
-            'password' => bcrypt($newPassword),
+            'password' => \Illuminate\Support\Facades\Hash::make($newPassword),
             'password_changed_at' => now(),
             'updated_by' => $user->id
         ]);
 
-        // TODO: Send email with new password to participant
-        // Mail::to($participant->email)->send(new PasswordResetMail($participant, $newPassword));
+        // Attempt to send email using DeliveryConfig + PWA template
+        $emailSentMsg = '';
+        try {
+            // If participant has no email, skip sending
+            if (!empty($participant->email)) {
+                // Load organizer's active email config
+                $config = \App\Models\DeliveryConfig::getEmailConfig($user->id);
 
-        return redirect()->route('pwa.participants')->with('success', 'Password reset successfully. New password: ' . $newPassword);
+                if ($config) {
+                    $settings = $config->settings ?? [];
+                    $fromName = $settings['from_name'] ?? 'SIJIL System';
+                    $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
+
+                    // Configure mailer dynamically based on provider
+                    switch ($config->provider) {
+                        case 'smtp':
+                            config([
+                                'mail.default' => 'smtp',
+                                'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
+                                'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
+                                'mail.mailers.smtp.encryption' => (($settings['encryption'] ?? null) === 'none') ? null : ($settings['encryption'] ?? null),
+                                'mail.mailers.smtp.username' => $settings['username'] ?? '',
+                                'mail.mailers.smtp.password' => $settings['password'] ?? '',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                        case 'mailgun':
+                            config([
+                                'mail.default' => 'mailgun',
+                                'services.mailgun.domain' => $settings['domain'] ?? '',
+                                'services.mailgun.secret' => $settings['secret'] ?? '',
+                                'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                        case 'ses':
+                            config([
+                                'mail.default' => 'ses',
+                                'services.ses.key' => $settings['key'] ?? '',
+                                'services.ses.secret' => $settings['secret'] ?? '',
+                                'services.ses.region' => $settings['region'] ?? 'us-east-1',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                        case 'sendmail':
+                            config([
+                                'mail.default' => 'sendmail',
+                                'mail.mailers.sendmail.path' => $settings['path'] ?? '/usr/sbin/sendmail -bs',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                    }
+
+                    // Find password reset template (organizer scope → fallback global → fallback default)
+                    $template = \App\Models\PwaEmailTemplate::query()
+                        ->where('type', 'password_reset')
+                        ->where(function($q) use ($user) {
+                            if ($user->hasRole('Administrator')) {
+                                $q->where('scope', 'global');
+                            } else {
+                                $q->where(function($qq) use ($user) {
+                                    $qq->where('scope', 'organizer')->where('user_id', $user->id);
+                                })->orWhere('scope', 'global');
+                            }
+                        })
+                        ->orderByRaw("CASE WHEN scope='organizer' THEN 0 ELSE 1 END")
+                        ->first();
+
+                    $subject = 'Password Reset - E-Certificate Online';
+                    $content = '<p><strong>Dear @{{name}},</strong></p><p>Your password has been reset.</p><div class="bg-gray-50 p-3 rounded my-4"><p class="text-sm"><strong>New Password:</strong> @{{password}}</p></div><p>Please login at @{{login_url}} and change your password.</p>';
+                    if ($template) {
+                        $subject = $template->subject ?: $subject;
+                        $content = $template->content ?: $content;
+                    }
+
+                    // Prepare variables
+                    $dataVars = [
+                        'name' => $participant->name,
+                        'email' => $participant->email,
+                        'password' => $newPassword,
+                        'pwa_link' => url('/pwa'),
+                        'login_url' => url('/pwa/login'),
+                        'support_email' => $fromAddress,
+                        'event_name' => '',
+                        'organization' => $user->name ?? 'Organizer',
+                    ];
+
+                    // Replace variables (follow pattern used in PWA Templates)
+                    foreach ($dataVars as $key => $val) {
+                        $subject = str_replace('@{{' . $key . '}}', $val, $subject);
+                        $content = str_replace('@{{' . $key . '}}', $val, $content);
+                    }
+
+                    // Clean + tracking helpers
+                    $html = \App\Helpers\EmailHelper::cleanHtml($content);
+                    $html = \App\Helpers\EmailHelper::replaceLinksWithTracking($html, $template->id ?? 0, $participant->email);
+                    $html = \App\Helpers\EmailHelper::appendOpenTrackingPixel($html, $template->id ?? 0, $participant->email);
+
+                    // Send the email
+                    \Illuminate\Support\Facades\Mail::html($html, function ($message) use ($participant, $subject, $fromName, $fromAddress) {
+                        $message->to($participant->email)
+                                ->subject($subject)
+                                ->from($fromAddress, $fromName);
+                    });
+
+                    // Log usage if template exists
+                    if ($template) {
+                        $template->incrementUsage();
+                        \App\Models\PwaEmailLog::create([
+                            'template_id' => $template->id,
+                            'action' => 'sent',
+                            'quantity' => 1,
+                            'meta' => ['to' => $participant->email, 'context' => 'password_reset']
+                        ]);
+                    }
+
+                    $emailSentMsg = ' Notification email has been sent to ' . $participant->email . '.';
+                } else {
+                    $emailSentMsg = ' (No active email configuration found; email was not sent)';
+                }
+            } else {
+                $emailSentMsg = ' (Participant does not have an email address)';
+            }
+        } catch (\Throwable $e) {
+            \Log::error('PWA reset password email failed', ['error' => $e->getMessage()]);
+            $emailSentMsg = ' (Email failed to send: ' . $e->getMessage() . ')';
+        }
+
+        return redirect()->route('pwa.participants')->with('success', 'Password has been reset successfully.' . $emailSentMsg);
     }
 } 

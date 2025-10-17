@@ -11,6 +11,8 @@ class AttendanceSession extends Model
 
     protected $fillable = [
         'attendance_id',
+        'unique_code',
+        'session_type',
         'date',
         'checkin_start_time',
         'checkin_end_time',
@@ -25,6 +27,7 @@ class AttendanceSession extends Model
 
     public function event()
     {
-        return $this->belongsTo(Event::class, 'attendance_id');
+        // Correctly resolve the Event via the parent Attendance
+        return $this->attendance()->first()?->event() ?? $this->belongsTo(Event::class); // fallback to satisfy relation chain
     }
 } 

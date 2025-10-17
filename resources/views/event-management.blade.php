@@ -15,10 +15,12 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage all events and activities</p>
                 </div>
-                <a href="{{ route('event.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                @can('events.create')
+                <a href="{{ route('event.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                     <span class="material-icons text-xs mr-1">add_circle</span>
                     Create New Event
                 </a>
+                @endcan
             </div>
         </div>
         
@@ -55,7 +57,7 @@
                             <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
                             <option value="past" @if(request('date_filter') == 'past') selected @endif>Past Events</option>
                         </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                             </svg>
@@ -153,16 +155,20 @@
                                         <a href="{{ route('event.show', $event->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
                                             <span class="material-icons text-blue-600 text-xs">visibility</span>
                                         </a>
+                                        @can('events.update')
                                         <a href="{{ route('event.edit', $event->id) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
                                             <span class="material-icons text-yellow-700 text-xs">edit</span>
                                         </a>
+                                        @endcan
+                                        @can('events.delete')
                                         <form method="POST" action="{{ route('event.destroy', $event->id) }}" onsubmit="return confirm('Are you sure you want to delete this event?')" class="inline-block">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                            <span class="material-icons text-red-600 text-xs">delete</span>
-                                        </button>
+                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                            </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

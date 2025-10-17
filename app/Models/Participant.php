@@ -23,6 +23,7 @@ class Participant extends Model
         'passport_no',
         'gender',
         'date_of_birth',
+        'race',
         'job_title',
         'address1',
         'address2',

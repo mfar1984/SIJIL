@@ -129,10 +129,7 @@ class DashboardController extends Controller
         $eventComparison = $this->calculatePeriodComparison($monthlyEvents);
         
         // Log events data for debugging
-        \Log::info('Monthly Events Data:', $monthlyEvents);
-        \Log::info('Event Trend:', ['trend' => $eventTrend]);
-        \Log::info('Event Cumulative Growth:', $eventCumulativeGrowth);
-        \Log::info('Event Comparison:', $eventComparison);
+        // Dashboard data prepared
         
         // Get monthly participant counts for chart
         $monthlyParticipants = $this->getMonthlyData($participantsQuery, $startDate, $endDate);
@@ -144,7 +141,7 @@ class DashboardController extends Controller
         }
         
         // Log participants data for debugging
-        \Log::info('Monthly Participants Data:', $monthlyParticipants);
+        // Monthly participants data
         
         // Get monthly certificate counts for chart
         $monthlyCertificates = $this->getMonthlyData($certificatesQuery, $startDate, $endDate);
@@ -168,7 +165,7 @@ class DashboardController extends Controller
         }
         
         // Log gender distribution for debugging
-        \Log::info('Gender Distribution Data:', $genderDistribution);
+        // Gender distribution data
         
         // Get event status distribution
         $eventStatusDistribution = $eventsQuery->select('status', DB::raw('count(*) as count'))
@@ -186,7 +183,7 @@ class DashboardController extends Controller
         }
         
         // Log event status distribution for debugging
-        \Log::info('Event Status Distribution Data:', $eventStatusDistribution);
+        // Event status distribution data
         
         // Get campaign performance data (open rates, click rates)
         $campaignPerformance = DB::table('campaigns')
@@ -226,7 +223,7 @@ class DashboardController extends Controller
         }
         
         // Log campaign performance data for debugging
-        \Log::info('Campaign Performance Data:', $campaignPerformance->toArray());
+        // Campaign performance data
         
         // Get attendance rate by event
         $attendanceRateByEvent = DB::table('attendances')
@@ -279,7 +276,7 @@ class DashboardController extends Controller
         }
         
         // Log attendance rate data for debugging
-        \Log::info('Attendance Rate Data:', $attendanceRateByEvent->toArray());
+        // Attendance rate data
         
         return view('dashboard', [
             'isAdmin' => $isAdmin,

@@ -87,7 +87,7 @@ class PermissionMatrixSeeder extends Seeder
             }
         }
         
-        // Add legacy permissions for backward compatibility
+        // Add legacy permissions for backward compatibility (excluding database_* which are deprecated)
         $legacyPermissions = [
             'view_roles' => 'View Roles',
             'create_roles' => 'Create Roles', 
@@ -119,15 +119,15 @@ class PermissionMatrixSeeder extends Seeder
             'create_campaigns' => 'Create Campaigns',
             'edit_campaigns' => 'Edit Campaigns',
             'delete_campaigns' => 'Delete Campaigns',
-            'view_database_users' => 'View Database Users',
+            // 'view_database_users' => 'View Database Users', // deprecated
             'manage_delivery' => 'Manage Delivery',
             'view_helpdesk' => 'View Helpdesk',
             'manage_helpdesk' => 'Manage Helpdesk',
             'view_settings' => 'View Settings',
             'manage_settings' => 'Manage Settings',
-            'create_database_users' => 'Create Database Users',
-            'edit_database_users' => 'Edit Database Users',
-            'delete_database_users' => 'Delete Database Users',
+            // 'create_database_users' => 'Create Database Users',
+            // 'edit_database_users' => 'Edit Database Users',
+            // 'delete_database_users' => 'Delete Database Users',
             'view_surveys' => 'View Surveys',
             'create_surveys' => 'Create Surveys',
             'edit_surveys' => 'Edit Surveys',

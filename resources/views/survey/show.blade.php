@@ -15,11 +15,13 @@
                     <h1 class="text-xl font-bold text-gray-800">Survey Details</h1>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('survey.edit', $survey) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('surveys.update')
+                    <a href="{{ route('survey.edit', $survey) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">edit</span>
                         Edit Survey
                     </a>
-                    <a href="{{ route('survey.index') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @endcan
+                    <a href="{{ route('survey.index') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
@@ -324,15 +326,19 @@
                 
                 <!-- Response Actions -->
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @can('survey_responses.read')
                     <a href="{{ route('survey.responses', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-2 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center justify-center">
                         <span class="material-icons text-xs mr-1">list_alt</span>
                         View All Responses
                     </a>
+                    @endcan
                     
+                    @can('survey_responses.read')
                     <a href="{{ route('survey.analytics', $survey) }}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-2 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center justify-center">
                         <span class="material-icons text-xs mr-1">insights</span>
                         View Analytics
                     </a>
+                    @endcan
                 </div>
             </div>
             
@@ -394,24 +400,27 @@
     
     <!-- Action Buttons (Additional) -->
     <div class="mt-6 flex justify-end space-x-3">
-        @if($survey->status === 'draft')
-            <form action="{{ route('survey.toggle-publish', $survey) }}" method="POST">
-                @csrf
-                <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-2 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                    <span class="material-icons text-xs mr-1">publish</span>
-                    Publish Survey
-                </button>
-            </form>
-        @elseif($survey->status === 'published')
-            <form action="{{ route('survey.toggle-publish', $survey) }}" method="POST">
-                @csrf
-                <button type="submit" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 py-2 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                    <span class="material-icons text-xs mr-1">visibility_off</span>
-                    Unpublish Survey
-                </button>
-            </form>
-        @endif
+        @can('surveys.publish')
+            @if($survey->status === 'draft')
+                <form action="{{ route('survey.toggle-publish', $survey) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-2 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons text-xs mr-1">publish</span>
+                        Publish Survey
+                    </button>
+                </form>
+            @elseif($survey->status === 'published')
+                <form action="{{ route('survey.toggle-publish', $survey) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 py-2 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons text-xs mr-1">visibility_off</span>
+                        Unpublish Survey
+                    </button>
+                </form>
+            @endif
+        @endcan
         
+        @can('surveys.delete')
         <form action="{{ route('survey.destroy', $survey) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this survey? This action cannot be undone.')">
             @csrf
             @method('DELETE')
@@ -420,6 +429,7 @@
                 Delete Survey
             </button>
         </form>
+        @endcan
     </div>
     
     <script>

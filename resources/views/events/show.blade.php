@@ -15,11 +15,13 @@
                     <h1 class="text-xl font-bold text-gray-800">Event Details</h1>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('event.edit', $event->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('events.update')
+                    <a href="{{ route('event.edit', $event->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">edit</span>
                         Edit Event
                     </a>
-                    <a href="{{ route('event.management') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @endcan
+                    <a href="{{ route('event.management') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
@@ -128,6 +130,20 @@
                             </div>
                         </div>
                     </div>
+                    @if($event->poster)
+                    <!-- Event Poster -->
+                    <div class="mt-2">
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">image</span>
+                            Poster
+                        </label>
+                        <div class="relative">
+                            <a href="{{ asset('storage/'.$event->poster) }}" target="_blank" class="inline-block">
+                                <img src="{{ asset('storage/'.$event->poster) }}" alt="Event Poster" class="max-h-96 rounded border border-gray-200">
+                            </a>
+                        </div>
+                    </div>
+                    @endif
                     <!-- Event Terms & Conditions -->
                     <div class="mt-4">
                         <label class="flex items-center text-xs font-medium text-gray-700 mb-1">

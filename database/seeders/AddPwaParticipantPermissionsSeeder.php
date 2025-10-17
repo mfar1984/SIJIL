@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission; // use app model to support extra columns (display_name, group)
 use Spatie\Permission\Models\Role;
 
 class AddPwaParticipantPermissionsSeeder extends Seeder
@@ -15,18 +15,30 @@ class AddPwaParticipantPermissionsSeeder extends Seeder
     {
         // Create missing PWA participant permissions
         $permissions = [
-            'create_ecertificate_participants',
-            'edit_ecertificate_participants', 
-            'delete_ecertificate_participants',
-            'export_ecertificate_analytics'
+            'create_ecertificate_participants' => 'Create E-Certificate Participants',
+            'edit_ecertificate_participants' => 'Edit E-Certificate Participants', 
+            'delete_ecertificate_participants' => 'Delete E-Certificate Participants',
+            'export_ecertificate_analytics' => 'Export E-Certificate Analytics',
         ];
 
-        foreach ($permissions as $permission) {
-            if (!Permission::where('name', $permission)->exists()) {
-                Permission::create(['name' => $permission, 'guard_name' => 'web']);
+        foreach ($permissions as $permission => $display) {
+            $perm = Permission::where('name', $permission)->first();
+            if (!$perm) {
+                Permission::create([
+                    'name' => $permission,
+                    'display_name' => $display,
+                    'guard_name' => 'web',
+                    'group' => 'ecertificate_online',
+                    'description' => 'Permission to ' . strtolower($display),
+                ]);
                 $this->command->info("Created permission: {$permission}");
             } else {
-                $this->command->info("Permission already exists: {$permission}");
+                // ensure proper grouping and labels
+                $perm->update([
+                    'display_name' => $display,
+                    'group' => 'ecertificate_online',
+                ]);
+                $this->command->info("Updated permission: {$permission}");
             }
         }
 

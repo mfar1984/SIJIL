@@ -678,7 +678,7 @@
                         stateSelect.appendChild(option);
                     });
                     
-                    console.log('States loaded for', fieldId, ':', states.length);
+                    // States loaded
                 } else {
                     console.error('malaysiaPostcodes library not available');
                     
@@ -697,7 +697,7 @@
                         stateSelect.appendChild(option);
                     });
                     
-                    console.log('Using fallback states list for', fieldId);
+                    // Using fallback states list
                 }
             } catch (error) {
                 console.error('Error populating states for', fieldId, ':', error);
@@ -742,7 +742,7 @@
                         citySelect.appendChild(option);
                     });
                     
-                    console.log('Cities loaded for', stateFieldId, ':', cities.length);
+                    // Cities loaded
                 } else {
                     console.error('malaysiaPostcodes library not available');
                     
@@ -789,7 +789,7 @@
                         postcodeSelect.appendChild(option);
                     });
                     
-                    console.log('Postcodes loaded for', cityFieldId, ':', postcodes.length);
+                    // Postcodes loaded
                 } else {
                     console.error('malaysiaPostcodes library not available');
                     

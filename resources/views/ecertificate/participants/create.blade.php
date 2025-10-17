@@ -378,16 +378,8 @@
 
                             <!-- Notes -->
                             <div>
-                                <label for="notes" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">notes</span>
-                                    Notes
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">description</span>
-                                    </div>
-                                    <textarea id="notes" name="notes" rows="3" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional information about this participant">{{ old('notes') }}</textarea>
-                                </div>
+                                <label for="notes" class="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+                                <textarea id="notes" name="notes" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional information about this participant">{{ old('notes') }}</textarea>
                                 <p class="mt-1 text-[10px] text-gray-500">Internal notes about this participant (not visible to them)</p>
                             </div>
                         </div>
@@ -632,19 +624,18 @@
     <script>
         // Registration method selection
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, setting up method selection...');
+            // DOM loaded, setting up method selection
             
             const methodCards = document.querySelectorAll('.registration-method-card');
             const forms = document.querySelectorAll('.registration-form');
             const changeMethodBtns = document.querySelectorAll('.change-method-btn');
 
-            console.log('Found method cards:', methodCards.length);
-            console.log('Found forms:', forms.length);
+            // Found method cards and forms
 
             // Method selection
             methodCards.forEach(card => {
                 card.addEventListener('click', function() {
-                    console.log('Method card clicked:', this.dataset.method);
+                    // Method card clicked
                     const method = this.dataset.method;
                     
                     // Update card styles
@@ -654,7 +645,7 @@
                     // Show/hide forms
                     forms.forEach(form => {
                         form.classList.add('hidden');
-                        console.log('Hiding form:', form.id);
+                        // Hiding form
                     });
                     
                     // Map method names to form IDs
@@ -669,7 +660,7 @@
                     
                     if (targetForm) {
                         targetForm.classList.remove('hidden');
-                        console.log('Showing form:', targetForm.id);
+                        // Showing form
                     } else {
                         console.error('Form not found:', targetFormId);
                     }
@@ -685,18 +676,16 @@
             });
 
             // Set default selection to Manual Entry
-            console.log('Setting default selection to Manual Entry...');
+            // Setting default selection to Manual Entry
             const manualCard = document.querySelector('[data-method="manual"]');
             const manualForm = document.getElementById('manual-entry-form');
             
             if (manualCard && manualForm) {
                 manualCard.querySelector('div').classList.add('border-primary-DEFAULT', 'bg-blue-50');
                 manualForm.classList.remove('hidden');
-                console.log('Default selection set successfully');
+                // Default selection set
             } else {
                 console.error('Manual entry card or form not found');
-                console.log('Manual card:', manualCard);
-                console.log('Manual form:', manualForm);
             }
 
             // Auto-load participants when auto-assign form is shown
@@ -730,7 +719,7 @@
                 const searchTerm = participantSearch.value;
                 const eventId = eventFilter.value;
                 
-                console.log('Searching participants:', { searchTerm, eventId });
+                // Searching participants
                 
                 // Show loading
                 document.getElementById('participants-list').innerHTML = `
@@ -749,11 +738,11 @@
                     }
                 })
                     .then(response => {
-                        console.log('Response status:', response.status);
+                        // Response status
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Response data:', data);
+                        // Response data
                         if (data.success) {
                             displayParticipants(data.participants);
                         } else {

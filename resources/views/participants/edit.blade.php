@@ -359,6 +359,88 @@
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Current position or role</p>
                         </div>
+                        <!-- Race (Bangsa) -->
+                        <div>
+                            <label for="race" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">diversity_1</span>
+                                Race (Bangsa)
+                            </label>
+                            <select name="race" id="race" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                <option value="">-- Select Race --</option>
+                                <option value="Melayu (Semenanjung)" {{ old('race', $participant->race) == 'Melayu (Semenanjung)' ? 'selected' : '' }}>Melayu (Semenanjung)</option>
+                                <option value="Melayu (Sarawak)" {{ old('race', $participant->race) == 'Melayu (Sarawak)' ? 'selected' : '' }}>Melayu (Sarawak)</option>
+                                <option value="Melayu (Sabah)" {{ old('race', $participant->race) == 'Melayu (Sabah)' ? 'selected' : '' }}>Melayu (Sabah)</option>
+                                <option value="Cina Hokkien" {{ old('race', $participant->race) == 'Cina Hokkien' ? 'selected' : '' }}>Cina Hokkien</option>
+                                <option value="Cina Kantonis" {{ old('race', $participant->race) == 'Cina Kantonis' ? 'selected' : '' }}>Cina Kantonis</option>
+                                <option value="Cina Hakka" {{ old('race', $participant->race) == 'Cina Hakka' ? 'selected' : '' }}>Cina Hakka</option>
+                                <option value="Cina Teochew" {{ old('race', $participant->race) == 'Cina Teochew' ? 'selected' : '' }}>Cina Teochew</option>
+                                <option value="Cina Foochow" {{ old('race', $participant->race) == 'Cina Foochow' ? 'selected' : '' }}>Cina Foochow</option>
+                                <option value="Cina Hainan" {{ old('race', $participant->race) == 'Cina Hainan' ? 'selected' : '' }}>Cina Hainan</option>
+                                <option value="Cina Kwongsai" {{ old('race', $participant->race) == 'Cina Kwongsai' ? 'selected' : '' }}>Cina Kwongsai</option>
+                                <option value="Cina Henghua" {{ old('race', $participant->race) == 'Cina Henghua' ? 'selected' : '' }}>Cina Henghua</option>
+                                <option value="Cina lain-lain" {{ old('race', $participant->race) == 'Cina lain-lain' ? 'selected' : '' }}>Cina lain-lain</option>
+                                <option value="India Tamil" {{ old('race', $participant->race) == 'India Tamil' ? 'selected' : '' }}>India Tamil</option>
+                                <option value="India Punjabi" {{ old('race', $participant->race) == 'India Punjabi' ? 'selected' : '' }}>India Punjabi</option>
+                                <option value="India Malayalee" {{ old('race', $participant->race) == 'India Malayalee' ? 'selected' : '' }}>India Malayalee</option>
+                                <option value="India Telugu" {{ old('race', $participant->race) == 'India Telugu' ? 'selected' : '' }}>India Telugu</option>
+                                <option value="India Gujerati" {{ old('race', $participant->race) == 'India Gujerati' ? 'selected' : '' }}>India Gujerati</option>
+                                <option value="India Bengali" {{ old('race', $participant->race) == 'India Bengali' ? 'selected' : '' }}>India Bengali</option>
+                                <option value="India lain-lain" {{ old('race', $participant->race) == 'India lain-lain' ? 'selected' : '' }}>India lain-lain</option>
+                                <option value="Iban" {{ old('race', $participant->race) == 'Iban' ? 'selected' : '' }}>Iban</option>
+                                <option value="Kadazan" {{ old('race', $participant->race) == 'Kadazan' ? 'selected' : '' }}>Kadazan</option>
+                                <option value="Dusun" {{ old('race', $participant->race) == 'Dusun' ? 'selected' : '' }}>Dusun</option>
+                                <option value="Bajau" {{ old('race', $participant->race) == 'Bajau' ? 'selected' : '' }}>Bajau</option>
+                                <option value="Sama" {{ old('race', $participant->race) == 'Sama' ? 'selected' : '' }}>Sama</option>
+                                <option value="Bidayuh" {{ old('race', $participant->race) == 'Bidayuh' ? 'selected' : '' }}>Bidayuh</option>
+                                <option value="Melanau" {{ old('race', $participant->race) == 'Melanau' ? 'selected' : '' }}>Melanau</option>
+                                <option value="Murut" {{ old('race', $participant->race) == 'Murut' ? 'selected' : '' }}>Murut</option>
+                                <option value="Orang Ulu Kayan" {{ old('race', $participant->race) == 'Orang Ulu Kayan' ? 'selected' : '' }}>Orang Ulu Kayan</option>
+                                <option value="Orang Ulu Kenyah" {{ old('race', $participant->race) == 'Orang Ulu Kenyah' ? 'selected' : '' }}>Orang Ulu Kenyah</option>
+                                <option value="Orang Ulu Kelabit" {{ old('race', $participant->race) == 'Orang Ulu Kelabit' ? 'selected' : '' }}>Orang Ulu Kelabit</option>
+                                <option value="Orang Ulu Penan" {{ old('race', $participant->race) == 'Orang Ulu Penan' ? 'selected' : '' }}>Orang Ulu Penan</option>
+                                <option value="Orang Ulu Lun Bawang" {{ old('race', $participant->race) == 'Orang Ulu Lun Bawang' ? 'selected' : '' }}>Orang Ulu Lun Bawang</option>
+                                <option value="Orang Ulu (lain-lain)" {{ old('race', $participant->race) == 'Orang Ulu (lain-lain)' ? 'selected' : '' }}>Orang Ulu (lain-lain)</option>
+                                <option value="Orang Asli Temuan" {{ old('race', $participant->race) == 'Orang Asli Temuan' ? 'selected' : '' }}>Orang Asli Temuan</option>
+                                <option value="Orang Asli Semai" {{ old('race', $participant->race) == 'Orang Asli Semai' ? 'selected' : '' }}>Orang Asli Semai</option>
+                                <option value="Orang Asli Jakun" {{ old('race', $participant->race) == 'Orang Asli Jakun' ? 'selected' : '' }}>Orang Asli Jakun</option>
+                                <option value="Orang Asli Mah Meri" {{ old('race', $participant->race) == 'Orang Asli Mah Meri' ? 'selected' : '' }}>Orang Asli Mah Meri</option>
+                                <option value="Orang Asli Negrito (Kensiu)" {{ old('race', $participant->race) == 'Orang Asli Negrito (Kensiu)' ? 'selected' : '' }}>Orang Asli Negrito (Kensiu)</option>
+                                <option value="Orang Asli Negrito (Kintaq)" {{ old('race', $participant->race) == 'Orang Asli Negrito (Kintaq)' ? 'selected' : '' }}>Orang Asli Negrito (Kintaq)</option>
+                                <option value="Orang Asli Negrito (Jahai)" {{ old('race', $participant->race) == 'Orang Asli Negrito (Jahai)' ? 'selected' : '' }}>Orang Asli Negrito (Jahai)</option>
+                                <option value="Orang Asli Negrito (Lanoh)" {{ old('race', $participant->race) == 'Orang Asli Negrito (Lanoh)' ? 'selected' : '' }}>Orang Asli Negrito (Lanoh)</option>
+                                <option value="Orang Asli Negrito (Mendriq)" {{ old('race', $participant->race) == 'Orang Asli Negrito (Mendriq)' ? 'selected' : '' }}>Orang Asli Negrito (Mendriq)</option>
+                                <option value="Orang Asli Negrito (Batek)" {{ old('race', $participant->race) == 'Orang Asli Negrito (Batek)' ? 'selected' : '' }}>Orang Asli Negrito (Batek)</option>
+                                <option value="Orang Asli Senoi (Temiar)" {{ old('race', $participant->race) == 'Orang Asli Senoi (Temiar)' ? 'selected' : '' }}>Orang Asli Senoi (Temiar)</option>
+                                <option value="Orang Asli Senoi (Semaq Beri)" {{ old('race', $participant->race) == 'Orang Asli Senoi (Semaq Beri)' ? 'selected' : '' }}>Orang Asli Senoi (Semaq Beri)</option>
+                                <option value="Orang Asli Senoi (Jah Hut)" {{ old('race', $participant->race) == 'Orang Asli Senoi (Jah Hut)' ? 'selected' : '' }}>Orang Asli Senoi (Jah Hut)</option>
+                                <option value="Orang Asli Senoi (Che Wong)" {{ old('race', $participant->race) == 'Orang Asli Senoi (Che Wong)' ? 'selected' : '' }}>Orang Asli Senoi (Che Wong)</option>
+                                <option value="Orang Asli Proto-Malay (Temuan)" {{ old('race', $participant->race) == 'Orang Asli Proto-Malay (Temuan)' ? 'selected' : '' }}>Orang Asli Proto-Malay (Temuan)</option>
+                                <option value="Orang Asli Proto-Malay (Semelai)" {{ old('race', $participant->race) == 'Orang Asli Proto-Malay (Semelai)' ? 'selected' : '' }}>Orang Asli Proto-Malay (Semelai)</option>
+                                <option value="Orang Asli Proto-Malay (Jakun)" {{ old('race', $participant->race) == 'Orang Asli Proto-Malay (Jakun)' ? 'selected' : '' }}>Orang Asli Proto-Malay (Jakun)</option>
+                                <option value="Orang Asli Proto-Malay (Kanaq)" {{ old('race', $participant->race) == 'Orang Asli Proto-Malay (Kanaq)' ? 'selected' : '' }}>Orang Asli Proto-Malay (Kanaq)</option>
+                                <option value="Orang Asli Proto-Malay (Seletar)" {{ old('race', $participant->race) == 'Orang Asli Proto-Malay (Seletar)' ? 'selected' : '' }}>Orang Asli Proto-Malay (Seletar)</option>
+                                <option value="Orang Asli (lain-lain)" {{ old('race', $participant->race) == 'Orang Asli (lain-lain)' ? 'selected' : '' }}>Orang Asli (lain-lain)</option>
+                                <option value="Sungai" {{ old('race', $participant->race) == 'Sungai' ? 'selected' : '' }}>Sungai</option>
+                                <option value="Rungus" {{ old('race', $participant->race) == 'Rungus' ? 'selected' : '' }}>Rungus</option>
+                                <option value="Lundayeh" {{ old('race', $participant->race) == 'Lundayeh' ? 'selected' : '' }}>Lundayeh</option>
+                                <option value="Kedayan" {{ old('race', $participant->race) == 'Kedayan' ? 'selected' : '' }}>Kedayan</option>
+                                <option value="Bisaya" {{ old('race', $participant->race) == 'Bisaya' ? 'selected' : '' }}>Bisaya</option>
+                                <option value="Brunei" {{ old('race', $participant->race) == 'Brunei' ? 'selected' : '' }}>Brunei</option>
+                                <option value="Bugis" {{ old('race', $participant->race) == 'Bugis' ? 'selected' : '' }}>Bugis</option>
+                                <option value="Jawa" {{ old('race', $participant->race) == 'Jawa' ? 'selected' : '' }}>Jawa</option>
+                                <option value="Banjar" {{ old('race', $participant->race) == 'Banjar' ? 'selected' : '' }}>Banjar</option>
+                                <option value="Kristang/Serani" {{ old('race', $participant->race) == 'Kristang/Serani' ? 'selected' : '' }}>Kristang/Serani</option>
+                                <option value="Sikh" {{ old('race', $participant->race) == 'Sikh' ? 'selected' : '' }}>Sikh</option>
+                                <option value="Thai" {{ old('race', $participant->race) == 'Thai' ? 'selected' : '' }}>Thai</option>
+                                <option value="Peranakan/Baba Nyonya" {{ old('race', $participant->race) == 'Peranakan/Baba Nyonya' ? 'selected' : '' }}>Peranakan/Baba Nyonya</option>
+                                <option value="Chitty" {{ old('race', $participant->race) == 'Chitty' ? 'selected' : '' }}>Chitty</option>
+                                <option value="Lain-lain Warganegara" {{ old('race', $participant->race) == 'Lain-lain Warganegara' ? 'selected' : '' }}>Lain-lain Warganegara</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Status moved below -->
+                    <div class="grid grid-cols-1 gap-4 mt-4">
                         <!-- Status -->
                         <div>
                             <label for="status" class="flex items-center text-xs font-medium text-gray-700 mb-1">
@@ -454,12 +536,7 @@
                 <!-- Notes -->
                 <div>
                     <h2 class="text-sm font-semibold text-gray-700 mb-4">Notes</h2>
-                    <div class="relative">
-                        <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">notes</span>
-                        </div>
-                        <textarea name="notes" id="notes" rows="3" class="w-full text-xs border-gray-300 bg-gray-50 rounded-[1px] pl-12 py-3 border min-h-[60px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional notes...">{{ old('notes', $participant->notes) }}</textarea>
-                    </div>
+                    <textarea name="notes" id="notes" rows="3" class="w-full text-xs border-gray-300 bg-gray-50 rounded border focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional notes...">{{ old('notes', $participant->notes) }}</textarea>
                     <p class="mt-1 text-[10px] text-gray-500">Any additional information or special requirements</p>
                 </div>
                 <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">

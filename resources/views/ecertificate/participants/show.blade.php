@@ -15,18 +15,22 @@
                     <h1 class="text-xl font-bold text-gray-800">PWA Participant Details</h1>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('pwa.participants.edit', $participant->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('pwa_participants.update')
+                    <a href="{{ route('pwa.participants.edit', $participant->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">edit</span>
                         Edit Participant
                     </a>
+                    @endcan
+                    @can('pwa_participants.update')
                     <form method="POST" action="{{ route('pwa.participants.reset-password', $participant->id) }}" onsubmit="return confirm('Are you sure you want to reset the password for {{ $participant->name }}?')" class="inline-block">
                         @csrf
-                        <button type="submit" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <button type="submit" class="bg-purple-500 hover:bg-purple-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1">lock_reset</span>
                             Reset Password
                         </button>
                     </form>
-                    <a href="{{ route('pwa.participants') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @endcan
+                    <a href="{{ route('pwa.participants') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
@@ -277,7 +281,7 @@
                     <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
                         <span class="material-icons text-[#004aad] text-base">notes</span>
                     </div>
-                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-3 border min-h-[60px]">
+                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] border">
                         {{ $participant->notes }}
                     </div>
                 </div>

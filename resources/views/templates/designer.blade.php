@@ -29,7 +29,7 @@ if ($template && $template->template_data) {
     $templateData = ['width' => 297, 'height' => 210, 'elements' => []];
 }
 
-$initialOrientation = $template ? $template->orientation : 'landscape';
+$initialOrientation = $template ? strtolower(trim($template->orientation)) : 'landscape';
 $initialName = $template ? $template->name : '';
 $initialDescription = $template ? $template->description : '';
 $initialIsActive = $template && $template->is_active ? true : false;
@@ -58,7 +58,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                         <p class="text-xs text-gray-500 mt-1 ml-8">{{ $template ? 'Customize the layout and elements of ' . $template->name : 'Create and position elements for your certificate' }}</p>
                     </div>
                     <div class="flex gap-2">
-                        <a href="{{ route('template.designer') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <a href="{{ route('template.designer') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1">arrow_back</span>
                             Back to Templates
                         </a>
@@ -469,7 +469,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                 isActive: {{ $initialIsActive ? 'true' : 'false' }},
                 
                 initialize() {
-                    console.log('Template designer initialized');
+                    // Template designer initialized
                     if (this.step === 2) {
                         this.updateCanvasDimensions();
                     }

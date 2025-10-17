@@ -427,6 +427,110 @@ class ReportsStatisticsController extends Controller
     }
 
     /**
+     * Export statistics (Top Events) as CSV using current filters
+     */
+    public function export(Request $request)
+    {
+        // Reuse filter logic similar to index()
+        $dateFilter = $request->input('date_filter', 'last_30');
+        $eventType = $request->input('event_type');
+        $organizerId = $request->input('organizer');
+
+        $endDate = Carbon::now();
+        switch ($dateFilter) {
+            case 'last_30':
+                $startDate = Carbon::now()->subDays(30); break;
+            case 'last_90':
+                $startDate = Carbon::now()->subDays(90); break;
+            case 'last_6_months':
+                $startDate = Carbon::now()->subMonths(6); break;
+            case 'last_year':
+                $startDate = Carbon::now()->subYear(); break;
+            case 'custom':
+                $startDate = $request->filled('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->subDays(30);
+                $endDate = $request->filled('end_date') ? Carbon::parse($request->input('end_date')) : $endDate;
+                break;
+            default:
+                $startDate = Carbon::now()->subDays(30);
+        }
+
+        $eventsQuery = Event::query();
+        if (!auth()->user()->hasRole('Administrator')) {
+            $eventsQuery->where('user_id', auth()->id());
+            $organizerId = auth()->id();
+        }
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $eventsQuery->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('location', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+        if ($startDate && $endDate) {
+            $eventsQuery->whereBetween('start_date', [$startDate, $endDate]);
+        }
+        if ($eventType) {
+            $keywords = $this->getKeywordsForEventType($eventType);
+            $eventsQuery->where(function($query) use ($keywords) {
+                foreach ($keywords as $keyword) {
+                    $query->orWhere('name', 'like', "%{$keyword}%");
+                }
+            });
+        }
+        if ($organizerId) {
+            $eventsQuery->where('user_id', $organizerId);
+        }
+
+        $events = $eventsQuery->orderBy('start_date', 'desc')->get();
+
+        // Build rows similar to topEvents
+        $rows = [];
+        $rows[] = ['Event Name', 'Date', 'Type', 'Participants', 'Attendance Rate (%)', 'Certificates'];
+        foreach ($events as $event) {
+            $registered = Participant::where('event_id', $event->id)->count();
+            $attended = 0;
+            $certificateCount = Certificate::where('event_id', $event->id)->count();
+            $attendances = Attendance::where('event_id', $event->id)->get();
+            foreach ($attendances as $attendance) {
+                $sessions = AttendanceSession::where('attendance_id', $attendance->id)->get();
+                foreach ($sessions as $session) {
+                    $sessionAttended = AttendanceRecord::where('attendance_session_id', $session->id)
+                        ->where('status', 'present')
+                        ->distinct('participant_id')
+                        ->count('participant_id');
+                    $attended = max($attended, $sessionAttended);
+                }
+            }
+            $attendanceRate = $registered > 0 ? round(($attended / $registered) * 100) : 0;
+            $rows[] = [
+                $event->name,
+                $event->start_date ? Carbon::parse($event->start_date)->format('Y-m-d') : 'N/A',
+                $this->determineEventType($event->name),
+                (string)$registered,
+                (string)$attendanceRate,
+                (string)$certificateCount,
+            ];
+        }
+
+        $filename = 'event_statistics_' . now()->format('Ymd_His') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($rows) {
+            $out = fopen('php://output', 'w');
+            foreach ($rows as $row) {
+                fputcsv($out, $row);
+            }
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Determine the event type based on event name.
      * This method handles multiple languages including English, Malay, and Chinese.
      * 

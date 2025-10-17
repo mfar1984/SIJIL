@@ -69,7 +69,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'create_campaigns' => 'Create Campaigns',
                 'edit_campaigns' => 'Edit Campaigns',
                 'delete_campaigns' => 'Delete Campaigns',
-                'view_database_users' => 'View Database Users',
+                // 'view_database_users' => 'View Database Users', // deleted - not used
                 'manage_delivery' => 'Manage Delivery',
             ],
             'helpdesk' => [
@@ -189,7 +189,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'create_campaigns',
             'edit_campaigns',
             'delete_campaigns',
-            'view_database_users',
+            // 'view_database_users', // deleted - not used
             'manage_delivery',
             
             'view_helpdesk',

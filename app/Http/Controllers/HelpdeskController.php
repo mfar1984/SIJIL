@@ -133,12 +133,21 @@ class HelpdeskController extends Controller
             'attachments' => $attachments,
         ]);
         
-        // Broadcast the new ticket event (admin only)
+        // Notify via FCM: assigned admin only (if any, and not the creator themself)
         try {
-            \Log::info('Broadcasting NewTicketCreated event for ticket ID: ' . $ticket->id);
-            event(new \App\Events\NewTicketCreated($ticket));
-        } catch (\Exception $e) {
-            \Log::error('Broadcasting error for NewTicketCreated: ' . $e->getMessage());
+            if (!empty($ticket->assigned_to) && $ticket->assigned_to != Auth::id()) {
+                $assignedAdminTokens = \App\Models\FcmToken::where('user_id', $ticket->assigned_to)->pluck('token')->all();
+                app(\App\Services\FcmService::class)->sendToTokens($assignedAdminTokens, [
+                    'title' => 'New Support Ticket',
+                    'body' => '#'.$ticket->ticket_id.': '.$ticket->subject,
+                ], [
+                    'url' => route('helpdesk.show', $ticket->id),
+                    'type' => 'helpdesk_ticket',
+                    'ticket_id' => (string)$ticket->id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('FCM error (NewTicketCreated): '.$e->getMessage());
         }
         
         return redirect()->route('helpdesk.show', $ticket->id)
@@ -169,12 +178,7 @@ class HelpdeskController extends Controller
             ->orderBy('created_at')
             ->get();
         
-        // Mark unread messages as read
-        foreach ($messages as $message) {
-            if (!$message->is_read && $message->user_id != $user->id) {
-                $message->markAsRead();
-            }
-        }
+        // Do not auto-mark messages as read here; let the user explicitly mark them
         
         // For admin, get a list of users who can be assigned to tickets
         $assignableUsers = $isAdmin ? User::whereHas('roles', function($q) {
@@ -260,11 +264,32 @@ class HelpdeskController extends Controller
             ]);
         }
         
-        // Broadcast the new message event
+        // Notify via FCM: ticket owner and assigned admin (if not internal)
         try {
-            broadcast(new \App\Events\NewMessageSent($message))->toOthers();
-        } catch (\Exception $e) {
-            \Log::error('Broadcasting error: ' . $e->getMessage());
+            $ownerTokens = \App\Models\FcmToken::where('user_id', $ticket->user_id)->pluck('token')->all();
+            if (!empty($ownerTokens) && !$message->is_internal && $message->user_id !== $ticket->user_id) {
+                app(\App\Services\FcmService::class)->sendToTokens($ownerTokens, [
+                    'title' => 'New Message',
+                    'body' => 'Ticket #'.$ticket->ticket_id.': '.\Illuminate\Support\Str::limit($message->message, 50),
+                ], [
+                    'url' => route('helpdesk.show', $ticket->id),
+                    'type' => 'helpdesk_message',
+                    'ticket_id' => (string)$ticket->id,
+                ]);
+            }
+            if (!$message->is_internal && !empty($ticket->assigned_to) && $ticket->assigned_to != $user->id) {
+                $assignedAdminTokens = \App\Models\FcmToken::where('user_id', $ticket->assigned_to)->pluck('token')->all();
+                app(\App\Services\FcmService::class)->sendToTokens($assignedAdminTokens, [
+                    'title' => 'Helpdesk Update',
+                    'body' => 'Ticket #'.$ticket->ticket_id.' received a reply',
+                ], [
+                    'url' => route('helpdesk.show', $ticket->id),
+                    'type' => 'helpdesk_message',
+                    'ticket_id' => (string)$ticket->id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('FCM error (NewMessageSent): '.$e->getMessage());
         }
         
         return redirect()->route('helpdesk.show', $ticket->id)
@@ -324,11 +349,31 @@ class HelpdeskController extends Controller
             'is_internal' => true,
         ]);
         
-        // Broadcast the status change event
+        // Notify via FCM: ticket owner and assigned admin
         try {
-            broadcast(new \App\Events\TicketStatusUpdated($ticket))->toOthers();
-        } catch (\Exception $e) {
-            \Log::error('Broadcasting error: ' . $e->getMessage());
+            $ownerTokens = \App\Models\FcmToken::where('user_id', $ticket->user_id)->pluck('token')->all();
+            app(\App\Services\FcmService::class)->sendToTokens($ownerTokens, [
+                'title' => 'Ticket Status Update',
+                'body' => 'Ticket #'.$ticket->ticket_id.' status: '.ucfirst(str_replace('_',' ',$request->status)),
+            ], [
+                'url' => route('helpdesk.show', $ticket->id),
+                'type' => 'helpdesk_status',
+                'ticket_id' => (string)$ticket->id,
+            ]);
+            $ticket->refresh();
+            if (!empty($ticket->assigned_to) && $ticket->assigned_to != $user->id) {
+                $assignedAdminTokens = \App\Models\FcmToken::where('user_id', $ticket->assigned_to)->pluck('token')->all();
+                app(\App\Services\FcmService::class)->sendToTokens($assignedAdminTokens, [
+                    'title' => 'Ticket Status Update',
+                    'body' => '#'.$ticket->ticket_id.' → '.ucfirst(str_replace('_',' ',$request->status)),
+                ], [
+                    'url' => route('helpdesk.show', $ticket->id),
+                    'type' => 'helpdesk_status',
+                    'ticket_id' => (string)$ticket->id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('FCM error (TicketStatusUpdated): '.$e->getMessage());
         }
         
         return redirect()->route('helpdesk.show', $ticket->id)
@@ -377,34 +422,26 @@ class HelpdeskController extends Controller
         $notifications = [];
         $unreadCount = 0;
         
-        // For Admin: Get all unassigned tickets, recent messages, and status updates
+        // For Admin: Only show tickets/messages assigned to this admin
         if ($isAdmin) {
-            // Unassigned tickets (or tickets assigned to this admin)
-            $tickets = HelpdeskTicket::where(function($query) use ($user) {
-                $query->whereNull('assigned_to')
-                      ->orWhere('assigned_to', $user->id);
-            })
+            // Tickets assigned to this admin
+            $tickets = HelpdeskTicket::where('assigned_to', $user->id)
             ->where('status', '!=', 'closed')
             ->latest()
             ->take(10)
             ->get();
             
             foreach ($tickets as $ticket) {
-                $notificationRead = $ticket->assigned_to === $user->id;
-                
                 $notifications[] = [
                     'id' => 'ticket_' . $ticket->id,
                     'title' => 'Support Ticket',
                     'message' => "#" . $ticket->ticket_id . ": " . $ticket->subject,
                     'icon' => 'help',
-                    'read_at' => $notificationRead ? now()->toISOString() : null,
+                    // Treat ticket items as informational; unread count is driven by messages
+                    'read_at' => now()->toIso8601String(),
                     'time' => $ticket->created_at->diffForHumans(),
                     'url' => route('helpdesk.show', $ticket->id)
                 ];
-                
-                if (!$notificationRead) {
-                    $unreadCount++;
-                }
             }
             
             // Recent messages from tickets assigned to this admin
@@ -420,19 +457,17 @@ class HelpdeskController extends Controller
             ->get();
             
             foreach ($messages as $message) {
-                $notificationRead = $message->is_read;
-                
                 $notifications[] = [
                     'id' => 'message_' . $message->id,
                     'title' => 'New Message',
                     'message' => "Ticket #" . $message->ticket->ticket_id . ": " . Str::limit($message->message, 50),
                     'icon' => 'forum',
-                    'read_at' => $notificationRead ? now()->toISOString() : null,
+                    'read_at' => $message->is_read ? now()->toIso8601String() : null,
                     'time' => $message->created_at->diffForHumans(),
                     'url' => route('helpdesk.show', $message->ticket_id)
                 ];
                 
-                if (!$notificationRead) {
+                if (!$message->is_read) {
                     $unreadCount++;
                 }
             }
@@ -462,7 +497,7 @@ class HelpdeskController extends Controller
                         'title' => 'New Reply',
                         'message' => "Ticket #" . $ticket->ticket_id . ": " . Str::limit($lastMessage->message, 50),
                         'icon' => 'forum',
-                        'read_at' => $lastMessage->is_read ? now()->toISOString() : null,
+                        'read_at' => $lastMessage->is_read ? now()->toIso8601String() : null,
                         'time' => $lastMessage->created_at->diffForHumans(),
                         'url' => route('helpdesk.show', $ticket->id)
                     ];
@@ -479,7 +514,7 @@ class HelpdeskController extends Controller
                         'title' => 'Ticket Status Update',
                         'message' => "Ticket #" . $ticket->ticket_id . " has been " . $ticket->status,
                         'icon' => 'update',
-                        'read_at' => now()->subDays(1)->toISOString(), // Assume this is read to avoid clutter
+                        'read_at' => now()->subDays(1)->toIso8601String(), // Status items considered read by default
                         'time' => $ticket->updated_at->diffForHumans(),
                         'url' => route('helpdesk.show', $ticket->id)
                     ];
@@ -518,10 +553,7 @@ class HelpdeskController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
             
-            // Mark all unassigned tickets as "seen" by assigning them to this admin
-            HelpdeskTicket::whereNull('assigned_to')
-                ->where('status', 'open')
-                ->update(['assigned_to' => $user->id]);
+            // Do not auto-assign unassigned tickets here; assignment should be explicit
         } else {
             // Mark all messages in user's tickets as read
             HelpdeskMessage::whereHas('ticket', function($query) use ($user) {
@@ -533,5 +565,31 @@ class HelpdeskController extends Controller
         }
         
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Delete a ticket (admin only or owner with permission)
+     */
+    public function destroy($id)
+    {
+        $user = Auth::user();
+        $isAdmin = $user->hasRole('Administrator');
+        $ticket = HelpdeskTicket::findOrFail($id);
+        if (!$isAdmin && $ticket->user_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+        // Delete messages and attachments
+        foreach ($ticket->messages as $message) {
+            if (is_array($message->attachments)) {
+                foreach ($message->attachments as $attachment) {
+                    if (!empty($attachment['path'])) {
+                        \Storage::disk('public')->delete($attachment['path']);
+                    }
+                }
+            }
+            $message->delete();
+        }
+        $ticket->delete();
+        return redirect()->route('helpdesk.index')->with('success', 'Ticket deleted successfully.');
     }
 }

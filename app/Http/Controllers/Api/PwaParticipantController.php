@@ -176,34 +176,64 @@ class PwaParticipantController extends Controller
      */
     public function getEvents(Request $request)
     {
-        $participant = $request->user();
+        $pwa = $request->user();
 
-        $registrations = $participant->eventRegistrations()
-                                    ->with(['event' => function($query) {
-                                        $query->select('id', 'name as title', 'description', 'start_date as date', 'start_time as time', 'location', 'user_id as organizer_id');
-                                    }])
-                                    ->orderBy('registration_date', 'desc')
-                                    ->get();
+        // Normalise IC (remove dashes) and union by email
+        $participantIds = collect();
+        if (!empty($pwa->identity_card)) {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $pwa->identity_card);
+            $byIc = \App\Models\Participant::whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc])->pluck('id');
+            $participantIds = $participantIds->merge($byIc);
+        }
+        $byEmail = \App\Models\Participant::where('email', $pwa->email)->pluck('id');
+        $participantIds = $participantIds->merge($byEmail)->unique()->values();
 
-        $events = $registrations->map(function($registration) {
-            return [
-                'id' => $registration->event->id,
-                'title' => $registration->event->title,
-                'description' => $registration->event->description,
-                'date' => $registration->event->date,
-                'time' => $registration->event->time,
-                'location' => $registration->event->location,
-                'registration_date' => $registration->registration_date,
-                'attendance_date' => $registration->attendance_date,
-                'status' => $registration->status,
+        if ($participantIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => [ 'events' => [] ]
+            ]);
+        }
+
+        $participants = \App\Models\Participant::whereIn('id', $participantIds->all())->get();
+        $eventIds = $participants->pluck('event_id')->filter()->unique()->values()->all();
+        $events = \App\Models\Event::whereIn('id', $eventIds)->get()->keyBy('id');
+
+        // Attendance existence by participant
+        $attendanceByPid = \App\Models\AttendanceRecord::whereIn('participant_id', $participantIds->all())
+            ->orderBy('checkin_time', 'desc')
+            ->get()
+            ->groupBy('participant_id');
+
+        $eventsData = [];
+        foreach ($participants as $p) {
+            $event = $events->get($p->event_id);
+            if (!$event) { continue; }
+            if (isset($eventsData[$event->id])) { continue; } // dedupe per event
+
+            $attendance = $attendanceByPid->get($p->id);
+            $attended = $attendance && $attendance->count() > 0;
+            $attendanceDate = $attended ? ($attendance->first()->checkin_time ?? $attendance->first()->created_at) : null;
+
+            $eventsData[$event->id] = [
+                'id' => $event->id,
+                'title' => $event->name,
+                'description' => $event->description,
+                'date' => $event->start_date,
+                'time' => ($event->start_time ? substr($event->start_time, 0, 5) : '') . ($event->end_time ? ' - ' . substr($event->end_time, 0, 5) : ''),
+                'location' => $event->location,
+                'registration_date' => $p->created_at,
+                'attendance_date' => $attendanceDate,
+                'status' => $attended ? 'attended' : 'registered',
             ];
-        });
+        }
+
+        // Convert associative to indexed array
+        $eventsList = array_values($eventsData);
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'events' => $events
-            ]
+            'data' => [ 'events' => $eventsList ]
         ]);
     }
 
@@ -212,18 +242,85 @@ class PwaParticipantController extends Controller
      */
     public function getCertificates(Request $request)
     {
-        $participant = $request->user();
+        $pwa = $request->user();
+        // Prefer IC (normalised) + union emel
+        $participantIds = collect();
+        if (!empty($pwa->identity_card)) {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $pwa->identity_card);
+            $participantIds = $participantIds->merge(\App\Models\Participant::whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc])->pluck('id'));
+        }
+        $participantIds = $participantIds->merge(\App\Models\Participant::where('email', $pwa->email)->pluck('id'))->unique()->values();
 
-        $certificates = $participant->certificates()
+        $certificates = \App\Models\Certificate::whereIn('participant_id', $participantIds->all())
                                    ->with('event')
-                                   ->orderBy('created_at', 'desc')
+                                   ->orderBy('generated_at', 'desc')
                                    ->get();
+
+        $data = $certificates->map(function($cert) {
+            return [
+                'id' => $cert->id,
+                'title' => 'Certificate of Attendance', // Default title
+                'event_name' => $cert->event->name ?? 'Unknown Event',
+                'certificate_number' => $cert->certificate_number,
+                'issued_date' => $cert->generated_at,
+                'pdf_file' => $cert->pdf_file,
+                'description' => null, // Can add description field to certificates table if needed
+            ];
+        });
 
         return response()->json([
             'success' => true,
             'data' => [
-                'certificates' => $certificates
+                'certificates' => $data
             ]
+        ]);
+    }
+
+    /**
+     * Download certificate PDF
+     */
+    public function downloadCertificate(Request $request, $certificateId)
+    {
+        $participant = $request->user();
+        $participantId = $participant->related_participant_id ?? $participant->id;
+
+        $certificate = \App\Models\Certificate::where('id', $certificateId)
+            ->where('participant_id', $participantId)
+            ->first();
+
+        if (!$certificate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Certificate not found or you do not have permission to access it'
+            ], 404);
+        }
+
+        if (!$certificate->pdf_file) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Certificate PDF has not been generated yet'
+            ], 404);
+        }
+
+        // Check if file exists in storage
+        if (!\Storage::disk('public')->exists($certificate->pdf_file)) {
+            \Log::error('Certificate PDF not found in storage', [
+                'certificate_id' => $certificate->id,
+                'pdf_file' => $certificate->pdf_file,
+                'participant_id' => $participantId
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Certificate PDF file not found in storage. Please contact support.'
+            ], 404);
+        }
+
+        $filePath = storage_path('app/public/' . $certificate->pdf_file);
+        $fileName = ($certificate->certificate_number ?? 'certificate') . '.pdf';
+
+        return response()->download($filePath, $fileName, [
+            'Content-Type' => 'application/pdf',
         ]);
     }
 
@@ -287,6 +384,341 @@ class PwaParticipantController extends Controller
             'data' => [
                 'event_title' => $event->name,
                 'check_in_time' => now(),
+            ]
+        ]);
+    }
+
+    /**
+     * Change password
+     */
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8',
+            'new_password_confirmation' => 'required|string|same:new_password',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $participant = $request->user();
+
+        // Verify current password
+        if (!Hash::check($request->current_password, $participant->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect'
+            ], 401);
+        }
+
+        // Update password
+        $participant->update([
+            'password' => Hash::make($request->new_password),
+            'password_changed_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully'
+        ]);
+    }
+
+    /**
+     * Get attendance history
+     */
+    public function getAttendanceHistory(Request $request)
+    {
+        $pwa = $request->user();
+
+        // Attendance by IC (normalised) + emel
+        $participantIds = collect();
+        if (!empty($pwa->identity_card)) {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $pwa->identity_card);
+            $participantIds = $participantIds->merge(\App\Models\Participant::whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc])->pluck('id'));
+        }
+        $participantIds = $participantIds->merge(\App\Models\Participant::where('email', $pwa->email)->pluck('id'))->unique()->values();
+
+        $records = \App\Models\AttendanceRecord::whereIn('participant_id', $participantIds->all())
+            ->with(['attendance.event', 'attendanceSession'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $history = $records->map(function($record) {
+            $event = $record->attendance->event ?? null;
+            $session = $record->attendanceSession ?? null;
+            
+            return [
+                'id' => $record->id,
+                'event_name' => $event ? $event->name : 'Unknown Event',
+                'event_date' => $session ? $session->date : ($event ? $event->start_date : null),
+                'location' => $event ? $event->location : null,
+                'checkin_time' => $record->checkin_time,
+                'checkout_time' => $record->checkout_time,
+                'checkin_lat' => $record->checkin_lat ?? null,
+                'checkin_lng' => $record->checkin_lng ?? null,
+                'checkout_lat' => $record->checkout_lat ?? null,
+                'checkout_lng' => $record->checkout_lng ?? null,
+                'status' => $record->status,
+                'scanned_by_device' => $record->scanned_by_device,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $history
+        ]);
+    }
+
+    /**
+     * Lookup by Identity Card (IC) or Passport to prefill registration/login flow
+     */
+    public function lookupByIdentity(Request $request)
+    {
+        $request->validate([
+            'ic' => 'nullable|string',
+            'passport' => 'nullable|string',
+            'id_type' => 'nullable|in:ic,passport',
+        ]);
+
+        $ic = $request->get('ic');
+        $passport = $request->get('passport');
+        $idType = $request->get('id_type');
+
+        if (!$ic && !$passport) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please provide IC or Passport'
+            ], 422);
+        }
+
+        $participantsQuery = \App\Models\Participant::query();
+        if ($ic || $idType === 'ic') {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $ic);
+            $participantsQuery->whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc]);
+        } elseif ($passport || $idType === 'passport') {
+            $normalizedPass = strtolower(preg_replace('/\s+/', '', (string) $passport));
+            $participantsQuery->whereRaw("LOWER(REPLACE(passport_no, ' ', '')) = ?", [$normalizedPass]);
+        }
+
+        $participants = $participantsQuery->orderBy('updated_at', 'desc')->get();
+
+        if ($participants->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'exists' => false,
+                    'emails' => [],
+                    'last_participant' => null,
+                ]
+            ]);
+        }
+
+        $last = $participants->first();
+        $emails = $participants->pluck('email')->filter()->unique()->values()->all();
+
+        // Check if a PWA profile exists for any of these emails
+        $pwa = \App\Models\PwaParticipant::whereIn('email', $emails)->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'exists' => true,
+                'emails' => $emails,
+                'has_pwa' => (bool) $pwa,
+                'last_participant' => [
+                    'name' => $last->name,
+                    'email' => $last->email,
+                    'phone' => $last->phone,
+                    'identity_card' => $last->identity_card,
+                    'passport_no' => $last->passport_no,
+                    'organization' => $last->organization,
+                    'address1' => $last->address1,
+                    'address2' => $last->address2,
+                    'state' => $last->state,
+                    'city' => $last->city,
+                    'postcode' => $last->postcode,
+                    'country' => $last->country,
+                    'gender' => $last->gender,
+                    'date_of_birth' => $last->date_of_birth,
+                    'race' => $last->race,
+                    'job_title' => $last->job_title,
+                ],
+            ]
+        ]);
+    }
+
+    /**
+     * Scan attendance QR code (session-based)
+     */
+    public function scanAttendance(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
+            'device' => 'nullable|string',
+        ]);
+
+        $pwa = $request->user();
+        $code = $request->code;
+
+        // Find session by unique_code
+        $session = \App\Models\AttendanceSession::where('unique_code', $code)->first();
+
+        if (!$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid QR code or session not found.'
+            ], 404);
+        }
+
+        $attendance = $session->attendance;
+        if (!$attendance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attendance record not found.'
+            ], 404);
+        }
+
+        // Find participant by IC/email for this event
+        $participantIds = collect();
+        if (!empty($pwa->identity_card)) {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $pwa->identity_card);
+            $participantIds = $participantIds->merge(\App\Models\Participant::whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc])->pluck('id'));
+        }
+        $participantIds = $participantIds->merge(\App\Models\Participant::where('email', $pwa->email)->pluck('id'))->unique()->values();
+
+        $participant = \App\Models\Participant::whereIn('id', $participantIds->all())
+            ->where('event_id', $attendance->event_id)
+            ->first();
+
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not registered for this event.'
+            ], 400);
+        }
+
+        $now = now();
+        $sessionDate = \Carbon\Carbon::parse($session->date);
+        $today = $now->toDateString();
+
+        // Validate session is today
+        if ($sessionDate->toDateString() !== $today) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This session is not active today.'
+            ], 400);
+        }
+
+        // Validate time window
+        $currentTime = $now->format('H:i:s');
+        if ($session->session_type === 'checkin') {
+            $startTime = $session->checkin_start_time;
+            $endTime = $session->checkin_end_time;
+            if ($currentTime < $startTime || $currentTime > $endTime) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Check-in window is ' . substr($startTime, 0, 5) . ' - ' . substr($endTime, 0, 5) . '. Current time is outside this window.'
+                ], 400);
+            }
+        } else {
+            $startTime = $session->checkout_start_time;
+            $endTime = $session->checkout_end_time;
+            if ($currentTime < $startTime || $currentTime > $endTime) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Check-out window is ' . substr($startTime, 0, 5) . ' - ' . substr($endTime, 0, 5) . '. Current time is outside this window.'
+                ], 400);
+            }
+        }
+
+        // Find or create attendance record
+        $record = \App\Models\AttendanceRecord::where('attendance_session_id', $session->id)
+            ->where('participant_id', $participant->id)
+            ->first();
+
+        if ($session->session_type === 'checkin') {
+            if ($record && $record->checkin_time) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have already checked in for this session.'
+                ], 400);
+            }
+            if ($record) {
+                $record->update([
+                    'checkin_time' => $now,
+                    'checkin_lat' => $request->lat,
+                    'checkin_lng' => $request->lng,
+                    'status' => 'present',
+                ]);
+            } else {
+                $record = \App\Models\AttendanceRecord::create([
+                    'attendance_id' => $attendance->id,
+                    'participant_id' => $participant->id,
+                    'attendance_session_id' => $session->id,
+                    'checkin_time' => $now,
+                    'checkin_lat' => $request->lat,
+                    'checkin_lng' => $request->lng,
+                    'timestamp' => $now,
+                    'status' => 'present',
+                    'scanned_by_device' => $request->device ?? 'pwa_web',
+                ]);
+            }
+            $action = 'checkin';
+            $time = $record->checkin_time;
+        } else {
+            // Checkout
+            if ($record && $record->checkout_time) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have already checked out for this session.'
+                ], 400);
+            }
+            
+            if ($record) {
+                // Update existing record with checkout
+                $record->update([
+                    'checkout_time' => $now,
+                    'checkout_lat' => $request->lat,
+                    'checkout_lng' => $request->lng,
+                ]);
+            } else {
+                // Create new record with checkout only (no prior check-in)
+                $record = \App\Models\AttendanceRecord::create([
+                    'attendance_id' => $attendance->id,
+                    'participant_id' => $participant->id,
+                    'attendance_session_id' => $session->id,
+                    'checkin_time' => null,
+                    'checkout_time' => $now,
+                    'checkout_lat' => $request->lat,
+                    'checkout_lng' => $request->lng,
+                    'timestamp' => $now,
+                    'status' => 'present',
+                    'scanned_by_device' => $request->device ?? 'pwa_web',
+                ]);
+            }
+            $action = 'checkout';
+            $time = $record->checkout_time;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => ucfirst($action) . ' successful!',
+            'action' => $action,
+            'time' => $time,
+            'attendance' => [
+                'event_name' => $attendance->event->name ?? 'Event',
+            ],
+            'session' => [
+                'date' => $session->date,
+                'type' => $session->session_type,
             ]
         ]);
     }

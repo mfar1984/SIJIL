@@ -16,10 +16,12 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage your marketing campaigns</p>
                 </div>
                 <div>
-                    <a href="{{ route('campaign.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out ml-2">
+                    @can('campaigns.create')
+                    <a href="{{ route('campaign.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out ml-2">
                         <span class="material-icons text-xs mr-1">add_circle</span>
                         Create New Campaign
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -75,7 +77,7 @@
                             <option value="running" @if(request('status') == 'running') selected @endif>Running</option>
                             <option value="completed" @if(request('status') == 'completed') selected @endif>Completed</option>
                         </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                             </svg>
@@ -155,9 +157,12 @@
                                     <a href="{{ route('campaign.show', ['campaign' => $campaign->id]) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details">
                                         <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                     </a>
+                                    @can('campaigns.update')
                                     <a href="{{ route('campaign.edit', ['campaign' => $campaign->id]) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
                                         <span class="material-icons text-yellow-600 text-xs">edit</span>
                                     </a>
+                                    @endcan
+                                    @can('campaigns.delete')
                                     <form action="{{ route('campaign.destroy', ['campaign' => $campaign->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this campaign?')" class="inline">
                                         @csrf
                                         @method('DELETE')
@@ -165,6 +170,7 @@
                                             <span class="material-icons text-red-600 text-xs">delete</span>
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

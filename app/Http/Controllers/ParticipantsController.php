@@ -100,6 +100,7 @@ class ParticipantsController extends Controller
             'identity_card' => 'nullable|string|max:255',
             'passport_no' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date',
+            'race' => 'nullable|string|max:100',
             'address1' => 'nullable|string|max:255',
             'address2' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:100',
@@ -147,6 +148,7 @@ class ParticipantsController extends Controller
         $participant->passport_no = $request->passport_no;
         
         $participant->date_of_birth = $request->date_of_birth;
+        $participant->race = $request->race;
         
         // Update address fields individually
         $participant->address1 = $request->address1;
@@ -248,6 +250,7 @@ class ParticipantsController extends Controller
             'identity_card' => 'nullable|string|max:255',
             'passport_no' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date',
+            'race' => 'nullable|string|max:100',
             'address1' => 'nullable|string|max:255',
             'address2' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:100',
@@ -304,6 +307,7 @@ class ParticipantsController extends Controller
         $participant->passport_no = $request->passport_no;
         
         $participant->date_of_birth = $request->date_of_birth;
+        $participant->race = $request->race;
         
         // Update address fields individually
         $participant->address1 = $request->address1;

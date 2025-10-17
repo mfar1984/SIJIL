@@ -17,15 +17,6 @@ class CheckPermission
     {
         $user = $request->user();
         
-        // Debug logging
-        \Log::info('CheckPermission middleware', [
-            'permission' => $permission,
-            'user_id' => $user ? $user->id : null,
-            'user_name' => $user ? $user->name : null,
-            'has_permission' => $user ? $user->hasPermissionTo($permission) : false,
-            'all_permissions' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
-        ]);
-        
         if (! $user || ! $user->hasPermissionTo($permission)) {
             abort(403, 'Unauthorized action. You do not have the necessary permissions to access this page.');
         }

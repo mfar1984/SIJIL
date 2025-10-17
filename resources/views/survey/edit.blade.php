@@ -109,7 +109,7 @@
                             <select 
                                 name="access_type" 
                                 id="access_type" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]" 
                                 required
                             >
                                 <option value="public" {{ old('access_type', $survey->access_type) == 'public' ? 'selected' : '' }}>Public - Anyone with the link can access</option>
@@ -158,7 +158,7 @@
                             <select 
                                 name="event_id" 
                                 id="event_id" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]"
                             >
                                 <option value="">-- No event --</option>
                                 @foreach($events as $event)
@@ -244,14 +244,14 @@
                 <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
                     <a 
                         href="{{ route('survey.show', $survey) }}" 
-                        class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                        class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
                         <span class="material-icons text-xs mr-1">cancel</span>
                         Cancel
                     </a>
                     <button 
                         type="submit" 
-                        class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                        class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
                         <span class="material-icons text-xs mr-1">save</span>
                         Update Survey
@@ -714,7 +714,8 @@
             if (questionElement) {
                 const questionText = questionElement.querySelector('p.text-xs.font-medium').textContent;
                 const questionType = questionElement.querySelector('.bg-gray-100').textContent.toLowerCase().replace(/\s+/g, '_');
-                const description = questionElement.querySelector('p.text-\\[10px\\].text-gray-500')?.textContent || '';
+                const descNode = questionElement.querySelector('p.text-\\[10px\\].text-gray-500');
+                const description = descNode ? descNode.textContent : '';
                 const isRequired = questionElement.querySelector('.bg-red-100') !== null;
                 
                 // Populate form fields
@@ -726,9 +727,7 @@
                 // Set form action to the correct route using hardcoded URL for debugging
                 const form = document.getElementById('edit-question-form');
                 form.action = `/survey/{{ $survey->id }}/questions/${questionId}`;
-                console.log('Form action set to:', form.action);
-                console.log('Question ID:', questionId);
-                console.log('Survey ID:', {{ $survey->id }});
+                // Form action set
                 
                 // Handle options if they exist
                 const optionsContainer = questionElement.querySelector('.flex.flex-wrap.gap-2');
@@ -843,10 +842,7 @@
             const editForm = document.getElementById('edit-question-form');
             if (editForm) {
                 editForm.addEventListener('submit', function(e) {
-                    console.log('Form submitted');
-                    console.log('Form action:', this.action);
-                    console.log('Form method:', this.method);
-                    console.log('Form data:', new FormData(this));
+                    // Form submitted
                 });
             }
         });

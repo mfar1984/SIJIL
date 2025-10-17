@@ -171,7 +171,7 @@
                 </div>
                 
                     <div x-show="selectedPlaceholder">
-                        <h3 class="text-md font-medium text-gray-700 mb-2" x-text="selectedPlaceholder?.type"></h3>
+                        <h3 class="text-md font-medium text-gray-700 mb-2" x-text="selectedPlaceholder ? selectedPlaceholder.type : ''"></h3>
                     
                     <!-- Position Inputs -->
                     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -410,13 +410,13 @@
                     this.pdfLoadError = null;
                     
                     // Use PDF as image directly but log the URL for debugging
-                    console.log('Loading PDF from URL:', this.pdfUrl);
+                    // Loading PDF from URL
                     this.backgroundImageUrl = this.pdfUrl;
                     
                     // Log additional information for debugging
                     fetch(this.pdfUrl, {method: 'HEAD'})
                         .then(response => {
-                            console.log('PDF URL check:', response.status, response.ok ? 'OK' : 'Failed');
+                            // PDF URL check
                             if (!response.ok) {
                                 console.error('PDF URL may be invalid or inaccessible');
                                 this.pdfLoadError = `HTTP ${response.status}: Resource not available`;
@@ -431,7 +431,7 @@
                 backgroundLoaded() {
                             this.isLoading = false;
                     this.pdfLoadError = null;
-                    console.log('Background image loaded successfully');
+                    // Background image loaded
                                     this.drawGrid();
                 },
                         
@@ -445,18 +445,18 @@
                     if (this.pdfUrl.includes('/storage/')) {
                         // Try without leading slash
                         const alternativePath = this.pdfUrl.replace('/storage/', 'storage/');
-                        console.log('Trying alternative path:', alternativePath);
+                        // Trying alternative path
                         this.backgroundImageUrl = alternativePath;
                     } else if (this.pdfUrl.includes('storage/')) {
                         // Try with leading slash
                         const alternativePath = '/' + this.pdfUrl;
-                        console.log('Trying alternative path with leading slash:', alternativePath);
+                        // Trying alternative path with leading slash
                         this.backgroundImageUrl = alternativePath;
                     } else {
                         // Try direct public path
                         const filename = this.pdfUrl.split('/').pop();
                         const alternativePath = `/storage/certificate-templates/${filename}`;
-                        console.log('Trying direct public path:', alternativePath);
+                        // Trying direct public path
                         this.backgroundImageUrl = alternativePath;
                     }
                 },
@@ -724,9 +724,7 @@
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     
                     // Log for debugging
-                    console.log('Template ID:', this.templateId);
-                    console.log('Saving placeholders:', this.placeholders);
-                    console.log('CSRF Token:', csrfToken);
+                    // Saving placeholders
                     
                     // Send data to server
                     fetch(`/template-designer/${this.templateId}/editor`, {
@@ -738,7 +736,7 @@
                         body: JSON.stringify({ placeholders: this.placeholders })
                     })
                     .then(response => {
-                        console.log('Response status:', response.status);
+                        // Response status
                         if (!response.ok) {
                             return response.text().then(text => {
                                 console.error('Error response:', text);
@@ -748,7 +746,7 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Response data:', data);
+                        // Response data
                         if (data.success) {
                             this.showMessage('Template saved successfully!', 'success');
                         } else {

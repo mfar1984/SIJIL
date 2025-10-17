@@ -17,9 +17,12 @@
                 <p class="text-xs text-gray-500 mt-1 ml-8">View detailed information about this campaign</p>
             </div>
             <div class="flex space-x-3">
+                @can('campaigns.update')
                 <a href="{{ route('campaign.edit', ['campaign' => $campaign->id]) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
                     <span class="material-icons text-yellow-600 text-xs">edit</span>
                 </a>
+                @endcan
+                @can('campaigns.delete')
                 <form method="POST" action="{{ route('campaign.destroy', ['campaign' => $campaign->id]) }}" onsubmit="return confirm('Are you sure you want to delete this campaign?')" class="inline-block">
                     @csrf
                     @method('DELETE')
@@ -27,6 +30,7 @@
                         <span class="material-icons text-red-600 text-xs">delete</span>
                     </button>
                 </form>
+                @endcan
                 <a href="{{ route('campaign.index') }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="Back">
                     <span class="material-icons text-primary-DEFAULT text-xs">arrow_back</span>
                 </a>

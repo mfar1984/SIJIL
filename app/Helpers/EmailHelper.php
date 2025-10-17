@@ -22,6 +22,41 @@ class EmailHelper
         
         return $content;
     }
+
+    /**
+     * Append 1x1 tracking pixel for opens.
+     */
+    public static function appendOpenTrackingPixel(string $html, int $templateId, string $recipientEmail): string
+    {
+        $recipientData = base64_encode(json_encode(['email' => $recipientEmail]));
+        $pixelUrl = url(route('track.open', ['campaign' => $templateId, 'recipient' => $recipientData]));
+        $pixelTag = '<img src="' . $pixelUrl . '" width="1" height="1" style="display:none;" alt="" />';
+        // Try append before body end; else append at end
+        if (stripos($html, '</body>') !== false) {
+            return str_ireplace('</body>', $pixelTag . '</body>', $html);
+        }
+        return $html . $pixelTag;
+    }
+
+    /**
+     * Convert all links to tracked links for clicks.
+     */
+    public static function replaceLinksWithTracking(string $html, int $templateId, string $recipientEmail): string
+    {
+        $recipientData = base64_encode(json_encode(['email' => $recipientEmail]));
+        $pattern = '/<a\s+[^>]*href=([\'\"])(?!mailto:)([^\'\"]*)\\1[^>]*>(.*?)<\/a>/i';
+        return preg_replace_callback($pattern, function ($matches) use ($templateId, $recipientData) {
+            $href = $matches[2];
+            $text = $matches[3];
+            $encodedUrl = base64_encode($href);
+            $trackingUrl = url(route('track.click', [
+                'campaign' => $templateId,
+                'recipient' => $recipientData,
+                'url' => $encodedUrl,
+            ]));
+            return '<a href="' . $trackingUrl . '">' . $text . '</a>';
+        }, $html);
+    }
     
     /**
      * Clean HTML from unnecessary classes and formatting.

@@ -52,7 +52,7 @@ class RoleManagementController extends Controller
      */
     public function create()
     {
-        // Get all permissions grouped by module
+        // Get all permissions grouped by module (DB-backed)
         $permissions = Permission::getGroupedPermissions();
         
         return view('settings.role-create', [
@@ -172,15 +172,13 @@ class RoleManagementController extends Controller
         // Find the role by ID
         $role = Role::with('permissions')->withCount('users')->findOrFail($id);
         
-        // Get permission matrix
-        $permissionMatrix = $this->getPermissionMatrix();
-        
-        // Get role's current permissions
+        // Use DB-backed permissions
+        $permissions = Permission::getGroupedPermissions();
         $rolePermissions = $role->permissions->pluck('name')->toArray();
         
         return view('settings.role-show', [
             'role' => $role,
-            'permissionMatrix' => $permissionMatrix,
+            'permissions' => $permissions,
             'rolePermissions' => $rolePermissions
         ]);
     }
@@ -196,15 +194,13 @@ class RoleManagementController extends Controller
         // Find the role by ID
         $role = Role::with('permissions')->findOrFail($id);
         
-        // Get permission matrix
-        $permissionMatrix = $this->getPermissionMatrix();
-        
-        // Get role's current permissions
+        // DB-backed permissions and role selections
+        $permissions = Permission::getGroupedPermissions();
         $rolePermissions = $role->permissions->pluck('name')->toArray();
         
         return view('settings.role-edit', [
             'role' => $role,
-            'permissionMatrix' => $permissionMatrix,
+            'permissions' => $permissions,
             'rolePermissions' => $rolePermissions
         ]);
     }
@@ -244,14 +240,13 @@ class RoleManagementController extends Controller
             'modified_by' => Auth::user()->name,
         ]);
         
-        // Update permissions if not a system role
-        if (!in_array($role->name, ['Administrator'])) {
-            // Sync permissions with role (detach all existing and attach new)
-            if ($request->has('permissions')) {
-                $role->permissions()->sync($request->permissions);
-            } else {
-                $role->permissions()->detach();
-            }
+        // Sync permissions with role (detach all existing and attach new)
+        // Note: We allow updating permissions for Administrator as well,
+        // while still preventing renaming the system role above.
+        if ($request->has('permissions')) {
+            $role->permissions()->sync($request->permissions);
+        } else {
+            $role->permissions()->detach();
         }
         
         return redirect()->route('role.show', $role->id)

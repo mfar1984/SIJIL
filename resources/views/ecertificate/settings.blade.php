@@ -17,28 +17,32 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Configure PWA access and participant account settings</p>
                 </div>
-                <button class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                @can('pwa_settings.update')
+                <button form="pwa-settings-form" type="submit" class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                     <span class="material-icons text-xs mr-1">save</span>
                     Save Settings
                 </button>
+                @endcan
             </div>
         </div>
         
-        <div class="p-4">
+        @php $canUpdate = auth()->user()->can('pwa_settings.update'); @endphp
+        <form id="pwa-settings-form" method="POST" action="{{ route('pwa.settings.update') }}" class="p-4" x-data="{ tab: 'general' }" x-cloak>
+            @csrf
+            <fieldset {{ $canUpdate ? '' : 'disabled' }}>
             <!-- Settings Tabs -->
             <div class="border-b border-gray-200 mb-4">
                 <nav class="flex space-x-6">
-                    <button class="border-b-2 border-indigo-500 text-indigo-600 px-1 py-2 text-xs font-medium">General Settings</button>
-                    <button class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 px-1 py-2 text-xs font-medium">Event Access</button>
-                    <button class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 px-1 py-2 text-xs font-medium">Auto-Generation</button>
-                    <button class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 px-1 py-2 text-xs font-medium">Security</button>
+                    <button type="button" @click="tab='general'" :class="tab==='general' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700'" class="px-1 py-2 text-xs font-medium">General Settings</button>
+                    <button type="button" @click="tab='event'" :class="tab==='event' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700'" class="px-1 py-2 text-xs font-medium">Event Access</button>
+                    <button type="button" @click="tab='auto'" :class="tab==='auto' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700'" class="px-1 py-2 text-xs font-medium">Auto-Generation</button>
+                    <button type="button" @click="tab='security'" :class="tab==='security' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700'" class="px-1 py-2 text-xs font-medium">Security</button>
                 </nav>
             </div>
 
-            <!-- General Settings -->
             <div class="space-y-4">
                 <!-- PWA Access Control -->
-                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4" x-show="tab==='general'">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3">PWA Access Control</h3>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
@@ -47,7 +51,7 @@
                                 <p class="text-xs text-gray-500">Allow participants to access the mobile application</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
+                                <input type="checkbox" name="enable_pwa_access" value="1" {{ ($settings->settings['enable_pwa_access'] ?? false) ? 'checked' : '' }} class="sr-only peer">
                                 <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                             </label>
                         </div>
@@ -58,7 +62,7 @@
                                 <p class="text-xs text-gray-500">Automatically create PWA accounts during event registration</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
+                                <input type="checkbox" name="auto_create_accounts" value="1" {{ ($settings->settings['auto_create_accounts'] ?? false) ? 'checked' : '' }} class="sr-only peer">
                                 <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                             </label>
                         </div>
@@ -69,7 +73,7 @@
                                 <p class="text-xs text-gray-500">Require participants to change password on first login</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
+                                <input type="checkbox" name="force_password_change" value="1" {{ ($settings->settings['force_password_change'] ?? false) ? 'checked' : '' }} class="sr-only peer">
                                 <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                             </label>
                         </div>
@@ -77,7 +81,7 @@
                 </div>
 
                 <!-- Event-Specific Settings -->
-                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4" x-show="tab==='event'">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3">Event-Specific Settings</h3>
                     <div class="space-y-3">
                         <div>
@@ -106,7 +110,7 @@
                 </div>
 
                 <!-- Password Settings -->
-                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4" x-show="tab==='security'">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3">Password Settings</h3>
                     <div class="space-y-3">
                         <div>
@@ -151,7 +155,7 @@
                 </div>
 
                 <!-- Email Settings -->
-                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4" x-show="tab==='auto'">
                     <h3 class="text-sm font-semibold text-gray-700 mb-3">Email Settings</h3>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
@@ -191,7 +195,7 @@
                 </div>
 
                 <!-- Data Synchronization -->
-                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4" x-show="tab==='auto'">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3">Data Synchronization</h3>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
@@ -234,7 +238,7 @@
                 </div>
 
                 <!-- Advanced Settings -->
-                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4" x-show="tab==='security'">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3">Advanced Settings</h3>
                     <div class="space-y-3">
                         <div>
@@ -272,12 +276,20 @@
 
             <!-- Action Buttons -->
             <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-                <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-xs font-medium">Reset to Defaults</button>
-                <div class="flex gap-2">
-                    <button class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-xs font-medium">Cancel</button>
-                    <button class="bg-indigo-500 text-white px-3 py-1 rounded text-xs font-medium">Save Settings</button>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('pwa.settings') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 h-[36px] rounded text-xs font-medium flex items-center">Cancel</a>
+                    @can('pwa_settings.update')
+                    <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 h-[36px] rounded text-xs font-medium flex items-center">Save Settings</button>
+                    @endcan
                 </div>
+                @can('pwa_settings.update')
+                <form method="POST" action="{{ route('pwa.settings.reset') }}" onsubmit="return confirm('Reset to defaults?')">
+                    @csrf
+                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 h-[36px] rounded text-xs font-medium flex items-center">Reset to Defaults</button>
+                </form>
+                @endcan
             </div>
-        </div>
+            </fieldset>
+        </form>
     </div>
 </x-app-layout> 

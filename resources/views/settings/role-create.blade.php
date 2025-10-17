@@ -111,31 +111,7 @@
                     </h2>
                     <p class="text-xs text-gray-500 mb-4">Select the permissions this role will have in the system</p>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @foreach($permissions as $group => $permission)
-                            <div class="border border-gray-200 rounded p-4">
-                                <h3 class="text-sm font-medium text-gray-700 mb-2">{{ $permission['title'] }}</h3>
-                                <div class="space-y-2">
-                                    @foreach($permission['items'] as $key => $label)
-                                        @php
-                                            $permissionId = App\Models\Permission::where('name', $key)->value('id');
-                                        @endphp
-                                        <div class="flex items-center">
-                                            <input 
-                                                type="checkbox" 
-                                                name="permissions[]" 
-                                                id="permission_{{ $key }}" 
-                                                value="{{ $permissionId }}"
-                                                class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light h-4 w-4"
-                                                {{ old("permissions") && in_array($permissionId, old("permissions")) ? 'checked' : '' }}
-                                            >
-                                            <label for="permission_{{ $key }}" class="ml-2 text-xs text-gray-700">{{ $label }}</label>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+                    <x-settings.partials.permissions-matrix :permissions="$permissions" :checkedPermissionNames="[]" mode="edit" />
                     
                     <div class="mt-6 bg-blue-50 border border-blue-100 rounded p-4">
                         <div class="flex items-center">

@@ -90,26 +90,26 @@
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
                                 <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
-                                <input type="date" name="sessions[0][date]" class="w-full text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.start_date" required>
+                                <input type="date" name="sessions[0][date]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.start_date" required>
                             </div>
                             <div>
                                 <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
-                                <input type="time" name="sessions[0][checkin_start_time]" class="w-full text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.start_time" required>
+                                <input type="time" name="sessions[0][checkin_start_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.start_time" required>
                             </div>
                             <div>
                                 <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
-                                <input type="time" name="sessions[0][checkin_end_time]" class="w-full text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.end_time" required>
+                                <input type="time" name="sessions[0][checkin_end_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.end_time" required>
                             </div>
                             <template x-if="enableCheckout">
                                 <div>
                                     <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
-                                    <input type="time" name="sessions[0][checkout_start_time]" class="w-full text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.start_time">
+                                    <input type="time" name="sessions[0][checkout_start_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.start_time">
                                 </div>
                             </template>
                             <template x-if="enableCheckout">
                                 <div>
                                     <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
-                                    <input type="time" name="sessions[0][checkout_end_time]" class="w-full text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.end_time">
+                                    <input type="time" name="sessions[0][checkout_end_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" :value="selectedEvent.end_time">
                                 </div>
                             </template>
                         </div>
@@ -121,26 +121,26 @@
                                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                                     <div>
                                         <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
-                                        <input type="date" :name="`sessions[${idx}][date]`" class="w-full text-xs border-gray-300 rounded-[1px]" :value="day.date" readonly>
+                                        <input type="date" :name="`sessions[${idx}][date]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" :value="day.date" readonly>
                                     </div>
                                     <div>
                                         <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
-                                        <input type="time" :name="`sessions[${idx}][checkin_start_time]`" class="w-full text-xs border-gray-300 rounded-[1px]" required>
+                                        <input type="time" :name="`sessions[${idx}][checkin_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" required>
                                     </div>
                                     <div>
                                         <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
-                                        <input type="time" :name="`sessions[${idx}][checkin_end_time]`" class="w-full text-xs border-gray-300 rounded-[1px]" required>
+                                        <input type="time" :name="`sessions[${idx}][checkin_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" required>
                                     </div>
                                     <template x-if="enableCheckout">
                                         <div>
                                             <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
-                                            <input type="time" :name="`sessions[${idx}][checkout_start_time]`" class="w-full text-xs border-gray-300 rounded-[1px]">
+                                            <input type="time" :name="`sessions[${idx}][checkout_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]">
                                         </div>
                                     </template>
                                     <template x-if="enableCheckout">
                                         <div>
                                             <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
-                                            <input type="time" :name="`sessions[${idx}][checkout_end_time]`" class="w-full text-xs border-gray-300 rounded-[1px]">
+                                            <input type="time" :name="`sessions[${idx}][checkout_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]">
                                         </div>
                                     </template>
                                 </div>
@@ -154,27 +154,27 @@
                                 <div class="grid grid-cols-1 gap-4" :class="enableCheckout ? 'md:grid-cols-5' : 'md:grid-cols-3'">
                                     <div>
                                         <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
-                                        <input type="date" :name="`sessions[${idx}][date]`" class="w-full text-xs border-gray-300 rounded-[1px]" x-model="session.date" required>
+                                        <input type="date" :name="`sessions[${idx}][date]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.date" required>
                                     </div>
                                     <div>
                                         <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
-                                        <input type="time" :name="`sessions[${idx}][checkin_start_time]`" class="w-full text-xs border-gray-300 rounded-[1px]" x-model="session.checkin_start_time" required>
+                                        <input type="time" :name="`sessions[${idx}][checkin_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkin_start_time" required>
                                     </div>
                                     <div>
                                         <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
-                                        <input type="time" :name="`sessions[${idx}][checkin_end_time]`" class="w-full text-xs border-gray-300 rounded-[1px]" x-model="session.checkin_end_time" required>
+                                        <input type="time" :name="`sessions[${idx}][checkin_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkin_end_time" required>
                                     </div>
                                     <template x-if="enableCheckout">
                                         <div>
                                             <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
-                                            <input type="time" :name="`sessions[${idx}][checkout_start_time]`" class="w-full text-xs border-gray-300 rounded-[1px]" x-model="session.checkout_start_time">
+                                            <input type="time" :name="`sessions[${idx}][checkout_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkout_start_time">
                                         </div>
                                     </template>
                                     <template x-if="enableCheckout">
                                         <div class="flex items-center w-full gap-2">
                                             <div class="flex-1">
                                                 <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
-                                                <input type="time" :name="`sessions[${idx}][checkout_end_time]`" class="w-full text-xs border-gray-300 rounded-[1px]" x-model="session.checkout_end_time">
+                                                <input type="time" :name="`sessions[${idx}][checkout_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkout_end_time">
                                             </div>
                                             <button type="button" @click="removeCustomSession(idx)" class="ml-2 mt-6">
                                                 <span class="material-icons text-red-600 text-xl">delete</span>

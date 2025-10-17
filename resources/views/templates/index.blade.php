@@ -18,10 +18,12 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">Design and manage certificate templates</p>
                 </div>
                 <div class="flex gap-2">
-                    <a href="{{ route('template.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('templates.create')
+                    <a href="{{ route('template.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">add_circle</span>
                         Create Template
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -58,7 +60,7 @@
                             <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
                             <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
                         </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                             </svg>
@@ -128,9 +130,12 @@
                                         <a href="{{ route('template.show', $template->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
                                             <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
+                                        @can('templates.update')
                                         <a href="{{ route('template.edit', $template->id) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
                                             <span class="material-icons text-yellow-600 text-xs">edit</span>
                                         </a>
+                                        @endcan
+                                        @can('templates.create')
                                         <a href="{{ route('template.designer.create', ['id' => $template->id]) }}" class="p-1 bg-purple-50 rounded hover:bg-purple-100 border border-purple-100" title="Design">
                                             <span class="material-icons text-purple-600 text-xs">design_services</span>
                                         </a>
@@ -140,6 +145,8 @@
                                                 <span class="material-icons text-indigo-600 text-xs">content_copy</span>
                                             </button>
                                         </form>
+                                        @endcan
+                                        @can('templates.delete')
                                         <form action="{{ route('template.destroy', $template->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this template?');">
                                             @csrf
                                             @method('DELETE')
@@ -147,13 +154,17 @@
                                                 <span class="material-icons text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr class="text-xs">
                                 <td colspan="5" class="py-8 text-center text-gray-500">
-                                    No templates found. <a href="{{ route('template.create') }}" class="text-primary-DEFAULT hover:underline">Create your first template</a>
+                                    No templates found.
+                                    @can('templates.create')
+                                        <a href="{{ route('template.create') }}" class="text-primary-DEFAULT hover:underline">Create your first template</a>
+                                    @endcan
                                 </td>
                             </tr>
                         @endforelse

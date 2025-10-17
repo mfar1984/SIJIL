@@ -19,6 +19,11 @@ class SurveyController extends Controller
         // Start with base query
         $query = Survey::with(['event', 'questions']);
 
+        // Non-admin users only see their own surveys
+        if (!auth()->user()->hasRole('Administrator')) {
+            $query->where('user_id', auth()->id());
+        }
+
         // Search functionality
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -47,8 +52,12 @@ class SurveyController extends Controller
         $perPage = $request->get('per_page', 10);
         $surveys = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        // Get events for filter dropdown
-        $events = Event::orderBy('name')->get();
+        // Get events for filter dropdown (respect role scoping)
+        $eventsQuery = Event::orderBy('name');
+        if (!auth()->user()->hasRole('Administrator')) {
+            $eventsQuery->where('user_id', auth()->id());
+        }
+        $events = $eventsQuery->get();
 
         return view('survey.index', compact('surveys', 'events'));
     }
@@ -58,7 +67,11 @@ class SurveyController extends Controller
      */
     public function create()
     {
-        $events = Event::orderBy('name')->get();
+        $eventsQuery = Event::orderBy('name');
+        if (!auth()->user()->hasRole('Administrator')) {
+            $eventsQuery->where('user_id', auth()->id());
+        }
+        $events = $eventsQuery->get();
         return view('survey.create', compact('events'));
     }
 
@@ -104,7 +117,11 @@ class SurveyController extends Controller
      */
     public function edit(Survey $survey)
     {
-        $events = Event::orderBy('name')->get();
+        $eventsQuery = Event::orderBy('name');
+        if (!auth()->user()->hasRole('Administrator')) {
+            $eventsQuery->where('user_id', auth()->id());
+        }
+        $events = $eventsQuery->get();
         return view('survey.edit', compact('survey', 'events'));
     }
 

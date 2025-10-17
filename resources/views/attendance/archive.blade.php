@@ -48,7 +48,7 @@
                             <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
                             <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
                         </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                             </svg>
@@ -117,19 +117,23 @@
                                     <a href="{{ route('attendance.show', $attendance->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
                                         <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                     </a>
+                                    @can('archives.archive')
                                     <form method="POST" action="{{ route('attendance.unarchive-action', $attendance->id) }}" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" onclick="return confirm('Unarchive this attendance?')" title="Unarchive">
                                             <span class="material-icons text-green-600 text-xs">unarchive</span>
                                         </button>
                                     </form>
-                                    <form method="POST" action="{{ route('attendance.destroy', $attendance->id) }}" onsubmit="return confirm('Are you sure you want to delete this attendance session?')" class="inline-block">
+                                    @endcan
+                                    @can('archives.delete')
+                                    <form method="POST" action="{{ route('attendance.archive.destroy', $attendance->id) }}" onsubmit="return confirm('Are you sure you want to delete this attendance session?')" class="inline-block">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
                                             <span class="material-icons text-red-600 text-xs">delete</span>
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

@@ -22,14 +22,18 @@
                     </p>
                 </div>
                 <div class="flex space-x-3">
+                    @can('survey_responses.read')
                     <a href="{{ route('survey.analytics', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
                         <span class="material-icons text-xs mr-1">insights</span>
                         View Analytics
                     </a>
+                    @endcan
+                    @can('survey_responses.export')
                     <button onclick="exportToCsv()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
                         <span class="material-icons text-xs mr-1">file_download</span>
                         Export to CSV
                     </button>
+                    @endcan
                     <a href="{{ route('survey.show', $survey) }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to Survey
@@ -76,7 +80,7 @@
                                 <option value="participant" @if(request('source') == 'participant') selected @endif>Participant</option>
                                 <option value="public" @if(request('source') == 'public') selected @endif>Public</option>
                             </select>
-                            <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                            <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                                 </svg>

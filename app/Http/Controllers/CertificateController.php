@@ -164,12 +164,7 @@ class CertificateController extends Controller
         $templateId = $request->input('template_id');
         $participantIds = $request->input('participants');
         
-        \Log::debug("Certificate generation started", [
-            'event_id' => $eventId,
-            'template_id' => $templateId,
-            'participant_count' => count($participantIds),
-            'participants' => $participantIds
-        ]);
+        // Certificate generation started
         
         // Check if user has access to this event
         if (!auth()->user()->hasRole('Administrator')) {
@@ -185,12 +180,7 @@ class CertificateController extends Controller
         $event = Event::findOrFail($eventId);
         $template = CertificateTemplate::findOrFail($templateId);
         
-        \Log::debug("Found event and template", [
-            'event' => $event->name,
-            'template' => $template->name,
-            'template_pdf' => $template->pdf_file,
-            'template_placeholders' => $template->placeholders
-        ]);
+        // Found event and template
         
         $generatedCount = 0;
         $errors = [];
@@ -199,10 +189,7 @@ class CertificateController extends Controller
             try {
                 $participant = Participant::findOrFail($participantId);
                 
-                \Log::debug("Processing participant", [
-                    'participant_id' => $participantId,
-                    'participant_name' => $participant->name
-                ]);
+                // Processing participant
                 
                 // Check if certificate already exists
                 $existingCertificate = Certificate::where('event_id', $eventId)
@@ -212,20 +199,14 @@ class CertificateController extends Controller
                 
                 if ($existingCertificate) {
                     $errors[] = "Certificate for {$participant->name} already exists";
-                    \Log::debug("Certificate already exists", [
-                        'participant_name' => $participant->name,
-                        'certificate_id' => $existingCertificate->id
-                    ]);
+                    // Certificate already exists
                     continue;
                 }
                 
                 // Generate PDF certificate
                 $pdfPath = $this->generateCertificatePDF($event, $participant, $template);
                 
-                \Log::debug("PDF generated", [
-                    'participant_name' => $participant->name,
-                    'pdf_path' => $pdfPath
-                ]);
+                // PDF generated
                 
                 // Create certificate record
                 $certificate = Certificate::create([
@@ -238,10 +219,7 @@ class CertificateController extends Controller
                     'generated_by' => Auth::id(),
                 ]);
                 
-                \Log::debug("Certificate record created", [
-                    'certificate_id' => $certificate->id,
-                    'certificate_number' => $certificate->certificate_number
-                ]);
+                // Certificate record created
                 
                 $generatedCount++;
             } catch (\Exception $e) {
@@ -254,10 +232,7 @@ class CertificateController extends Controller
             }
         }
         
-        \Log::debug("Certificate generation completed", [
-            'generated_count' => $generatedCount,
-            'error_count' => count($errors)
-        ]);
+        // Certificate generation completed
         
         if ($generatedCount > 0) {
             $message = "{$generatedCount} certificate(s) generated successfully.";
@@ -381,7 +356,7 @@ class CertificateController extends Controller
          */
         if ($template->template_data && isset($template->template_data['elements']) && is_array($template->template_data['elements'])) {
             // Using new template_data format
-            \Log::debug("Processing template_data elements", ['count' => count($template->template_data['elements'])]);
+            // Processing template_data elements
             
             // Scale factor to convert mm to points (1 mm = 2.83465 points in TCPDF)
             $mmToPointFactor = 2.83465;
@@ -425,16 +400,7 @@ class CertificateController extends Controller
                     // Set text color
                     $pdf->SetTextColor($color['r'], $color['g'], $color['b']);
                     
-                    \Log::debug("Adding text element to PDF", [
-                        'content' => $content,
-                        'x' => $x,
-                        'y' => $y,
-                        'xPt' => $xPt,
-                        'yPt' => $yPt,
-                        'fontSize' => $fontSize,
-                        'fontFamily' => $fontFamily,
-                        'style' => $style
-                    ]);
+                    // Adding text element to PDF
                     
                     // Make sure text is visible by ensuring it's on top of all content
                     $pdf->SetAlpha(1);
@@ -479,10 +445,10 @@ class CertificateController extends Controller
             $placeholders = $template->placeholders;
             if (is_string($placeholders)) {
                 $placeholders = json_decode($placeholders, true);
-                \Log::debug("Decoded placeholders from JSON string", ['count' => count($placeholders)]);
+                // Decoded placeholders from JSON string
             }
             
-            \Log::debug("Processing legacy placeholders", ['count' => count($placeholders)]);
+            // Processing legacy placeholders
             
             // Scale factor to convert mm to points (1 mm = 2.83465 points in TCPDF)
             $mmToPointFactor = 2.83465;
@@ -529,17 +495,7 @@ class CertificateController extends Controller
                 
                 $text = $this->getPlaceholderText($placeholderType, $event, $participant);
                 
-                \Log::debug("Adding placeholder to PDF", [
-                    'type' => $placeholderType,
-                    'text' => $text,
-                    'x' => $x,
-                    'y' => $y,
-                    'xPt' => $xPt,
-                    'yPt' => $yPt,
-                    'fontSize' => $fontSize,
-                    'fontFamily' => $fontFamily,
-                    'style' => $style
-                ]);
+                // Adding placeholder to PDF
                 
                 // Make sure text is visible by ensuring it's on top of all content
                 $pdf->SetAlpha(1);
@@ -636,7 +592,7 @@ class CertificateController extends Controller
      */
     private function getPlaceholderText($type, Event $event, Participant $participant)
     {
-        \Log::debug("Getting placeholder text", ['type' => $type]);
+        // Getting placeholder text
         
         switch (strtolower(trim($type))) {
             case 'name':

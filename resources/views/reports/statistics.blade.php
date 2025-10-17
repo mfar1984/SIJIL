@@ -18,10 +18,21 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">Analyze event performance and trends</p>
                 </div>
                 <div>
-                    <a href="#" onclick="exportStatistics()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out ml-2">
-                        <span class="material-icons text-xs mr-1">file_download</span>
-                        Export Statistics
-                    </a>
+                    @can('event_statistics.export')
+                    <form id="statsExportForm" method="POST" action="{{ route('reports.statistics.export') }}" class="ml-2">
+                        @csrf
+                        <input type="hidden" name="date_filter" value="{{ request('date_filter', 'last_30') }}">
+                        <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                        <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                        <input type="hidden" name="search" value="{{ request('search') }}">
+                        <input type="hidden" name="event_type" value="{{ request('event_type') }}">
+                        <input type="hidden" name="status_filter" value="{{ request('status_filter') }}">
+                        <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <span class="material-icons text-xs mr-1">file_download</span>
+                            Export Statistics
+                        </button>
+                    </form>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -145,6 +156,15 @@
                         
                         <!-- Search & Filter Controls (Right) -->
                         <div class="flex flex-wrap gap-2 items-center">
+                            <select name="date_filter" id="dateFilter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[150px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
+                                <option value="last_30" @if(request('date_filter','last_30')=='last_30') selected @endif>Last 30 days</option>
+                                <option value="last_90" @if(request('date_filter')=='last_90') selected @endif>Last 90 days</option>
+                                <option value="last_6_months" @if(request('date_filter')=='last_6_months') selected @endif>Last 6 months</option>
+                                <option value="last_year" @if(request('date_filter')=='last_year') selected @endif>Last year</option>
+                                <option value="custom" @if(request('date_filter')=='custom') selected @endif>Custom range</option>
+                            </select>
+                            <input type="date" name="start_date" id="startDate" value="{{ request('start_date') }}" class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light @if(request('date_filter')!='custom') hidden @endif" />
+                            <input type="date" name="end_date" id="endDate" value="{{ request('end_date') }}" class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light @if(request('date_filter')!='custom') hidden @endif" />
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="Search event name, location..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
                             <select name="event_type" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                                 <option value="">All Types</option>
@@ -160,7 +180,7 @@
                                 <option value="completed" @if(request('status_filter') == 'completed') selected @endif>Completed</option>
                                 <option value="cancelled" @if(request('status_filter') == 'cancelled') selected @endif>Cancelled</option>
                             </select>
-                            <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                            <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                                 </svg>
@@ -309,10 +329,14 @@
             });
         }
         
-        function exportStatistics() {
-            // Logic for exporting statistics would go here
-            // For now, just show an alert
-            alert('Export functionality will be implemented soon.');
+        // Toggle custom date inputs visibility based on selection
+        const dateFilterSelect = document.getElementById('dateFilter');
+        if (dateFilterSelect) {
+            dateFilterSelect.addEventListener('change', function(){
+                const isCustom = this.value === 'custom';
+                document.getElementById('startDate').classList.toggle('hidden', !isCustom);
+                document.getElementById('endDate').classList.toggle('hidden', !isCustom);
+            });
         }
     </script>
 </x-app-layout> 

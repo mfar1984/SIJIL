@@ -48,7 +48,7 @@
                 <!-- Filter Form -->
                 <form action="{{ route('dashboard') }}" method="GET" class="flex items-center space-x-3">
                     <div>
-                        <select name="period" id="period" class="text-xs rounded-md border-gray-300 shadow-sm">
+                        <select name="period" id="period" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[150px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                             <option value="this_month" {{ $period == 'this_month' ? 'selected' : '' }}>This Month</option>
                             <option value="last_month" {{ $period == 'last_month' ? 'selected' : '' }}>Last Month</option>
                             <option value="last_3_months" {{ $period == 'last_3_months' ? 'selected' : '' }}>Last 3 Months</option>
@@ -67,7 +67,7 @@
                             <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" class="text-xs rounded-md border-gray-300 shadow-sm">
                         </div>
                     </div>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow-sm text-xs">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium flex items-center">
                         <span class="material-icons text-xs mr-1">filter_alt</span>
                         Apply Filter
                     </button>
@@ -84,8 +84,8 @@
                             <p class="text-gray-500 text-xs font-medium">Total Events</p>
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalEvents) }}</h3>
                         </div>
-                        <div class="p-3 bg-blue-100 rounded-full">
-                            <span class="material-icons text-blue-600">event</span>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-blue-600 text-2xl">event</span>
                         </div>
                     </div>
                 </div>
@@ -96,8 +96,8 @@
                             <p class="text-gray-500 text-xs font-medium">Total Participants</p>
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalParticipants) }}</h3>
                         </div>
-                        <div class="p-3 bg-green-100 rounded-full">
-                            <span class="material-icons text-green-600">groups</span>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-green-600 text-2xl">groups</span>
                         </div>
             </div>
             </div>
@@ -108,8 +108,8 @@
                             <p class="text-gray-500 text-xs font-medium">Certificates Issued</p>
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalCertificates) }}</h3>
                         </div>
-                        <div class="p-3 bg-amber-100 rounded-full">
-                            <span class="material-icons text-amber-600">card_membership</span>
+                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-amber-600 text-2xl">card_membership</span>
                         </div>
                     </div>
                 </div>
@@ -120,8 +120,8 @@
                             <p class="text-gray-500 text-xs font-medium">Total Attendance</p>
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalAttendance) }}</h3>
                         </div>
-                        <div class="p-3 bg-purple-100 rounded-full">
-                            <span class="material-icons text-purple-600">how_to_reg</span>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-purple-600 text-2xl">how_to_reg</span>
                         </div>
             </div>
             </div>
@@ -132,8 +132,8 @@
                             <p class="text-gray-500 text-xs font-medium">Total Campaigns</p>
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($activeCampaigns) }}</h3>
                         </div>
-                        <div class="p-3 bg-indigo-100 rounded-full">
-                            <span class="material-icons text-indigo-600">campaign</span>
+                        <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-indigo-600 text-2xl">campaign</span>
                         </div>
                     </div>
                 </div>
@@ -344,7 +344,7 @@
             }
             
             // Initialize all charts
-            console.log('DOM loaded, initializing charts with Chart.js 2.9.4');
+            // DOM loaded, initializing charts
             
             // Helper function to create gradient background
             function createGradient(ctx, startColor, endColor) {
@@ -429,7 +429,7 @@
                     }
                 }
             });
-            console.log('Events chart initialized');
+            // Events chart initialized
             @endif
             
             // Participants Chart
@@ -493,7 +493,7 @@
                     }
                 }
             });
-            console.log('Participants chart initialized');
+            // Participants chart initialized
             @endif
             
             // Gender Distribution Chart
@@ -531,7 +531,7 @@
                     }
                 }
             });
-            console.log('Gender chart initialized');
+            // Gender chart initialized
             @endif
             
             // Event Status Chart
@@ -569,7 +569,7 @@
                     }
                 }
             });
-            console.log('Status chart initialized');
+            // Status chart initialized
             @endif
             
             // Campaign Performance Chart
@@ -678,7 +678,7 @@
                     }
                 }
             });
-            console.log('Campaign chart initialized');
+            // Campaign chart initialized
             @endif
             
             // Attendance Rate Chart
@@ -743,7 +743,7 @@
                     }
                 }
             });
-            console.log('Attendance chart initialized');
+            // Attendance chart initialized
             @endif
             
             // Growth Chart - enhanced line chart
@@ -818,7 +818,7 @@
                     }
                 }
             });
-            console.log('Growth chart initialized');
+            // Growth chart initialized
             @endif
         });
     </script>

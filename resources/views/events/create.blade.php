@@ -27,7 +27,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('event.store') }}" class="space-y-6">
+            <form method="POST" action="{{ route('event.store') }}" class="space-y-6" enctype="multipart/form-data">
                 @csrf
                 
                 <!-- Basic Information -->
@@ -80,26 +80,24 @@
                     
                     <!-- Description -->
                     <div class="mb-4">
-                        <label for="description" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">description</span>
-                            Description
-                        </label>
-                        <div class="relative">
-                            <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">notes</span>
-                            </div>
-                            <textarea 
-                                name="description" 
-                                id="description" 
-                                rows="2" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            >{{ old('description') }}</textarea>
-                        </div>
+                        <label for="description" class="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                        <textarea 
+                            name="description" 
+                            id="description" 
+                            rows="3" 
+                            class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                        >{{ old('description') }}</textarea>
                         <p class="mt-1 text-[10px] text-gray-500">Provide a detailed description of the event</p>
+                    </div>
+                    <!-- Poster Attachment -->
+                    <div class="mb-4">
+                        <label for="poster" class="block text-xs font-medium text-gray-700 mb-1">Poster (Attachment)</label>
+                        <input type="file" name="poster" id="poster" accept="image/png,image/jpeg,image/webp" class="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                        <p class="mt-1 text-[10px] text-gray-500">Recommended: JPG/PNG/WebP, max 2 MB, portrait 1200×1600 (3:4)</p>
                     </div>
                     <div class="mb-4">
                         <label for="condition" class="block text-xs font-medium text-gray-700 mb-1">Event Terms & Conditions</label>
-                        <textarea name="condition" id="condition" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">{{ old('condition') }}</textarea>
+                        <textarea name="condition" id="condition" rows="12" class="w-full text-sm" placeholder="Write event terms & conditions here...">{{ old('condition') }}</textarea>
                         <p class="text-[10px] text-gray-500 mt-1">Example: Only participants aged 18 and above, must bring IC, etc.</p>
                     </div>
                 </div>
@@ -123,7 +121,7 @@
                                     type="date" 
                                     name="start_date" 
                                     id="start_date" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                     value="{{ old('start_date') }}" 
                                     required
                                 >
@@ -144,7 +142,7 @@
                                     type="time" 
                                     name="start_time" 
                                     id="start_time" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                     value="{{ old('start_time') }}" 
                                     required
                                 >
@@ -165,7 +163,7 @@
                                     type="date" 
                                     name="end_date" 
                                     id="end_date" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                     value="{{ old('end_date') }}" 
                                     required
                                 >
@@ -186,7 +184,7 @@
                                     type="time" 
                                     name="end_time" 
                                     id="end_time" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                     value="{{ old('end_time') }}" 
                                     required
                                 >
@@ -223,21 +221,13 @@
                     
                     <!-- Address -->
                     <div class="mb-4">
-                        <label for="address" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">home</span>
-                            Complete Address
-                        </label>
-                        <div class="relative">
-                            <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">place</span>
-                            </div>
-                            <textarea 
-                                name="address" 
-                                id="address" 
-                                rows="2" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            >{{ old('address') }}</textarea>
-                        </div>
+                        <label for="address" class="block text-xs font-medium text-gray-700 mb-1">Complete Address</label>
+                        <textarea 
+                            name="address" 
+                            id="address" 
+                            rows="3" 
+                            class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                        >{{ old('address') }}</textarea>
                         <p class="mt-1 text-[10px] text-gray-500">Full address of the venue including city and postcode</p>
                     </div>
                 </div>
@@ -354,7 +344,7 @@
                             <select 
                                 name="status" 
                                 id="status" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]" 
                                 required
                             >
                                 <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -369,14 +359,14 @@
                 <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
                     <a 
                         href="{{ route('event.management') }}" 
-                        class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                        class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
                         <span class="material-icons text-xs mr-1">cancel</span>
                         Cancel
                     </a>
                     <button 
                         type="submit" 
-                        class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                        class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
                         <span class="material-icons text-xs mr-1">save</span>
                         Create Event
@@ -385,4 +375,67 @@
             </form>
         </div>
     </div>
-</x-app-layout> 
+
+    <!-- TinyMCE for Event T&C -->
+    <script src="{{ asset('js/tinymce/js/tinymce/tinymce.min.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.tinymce) {
+                tinymce.init({
+                    selector: '#condition',
+                    plugins: 'autolink link image lists table code help wordcount preview fontsize fontfamily textcolor lineheight placeholder',
+                    toolbar: [
+                        'fontfamily fontsize | forecolor backcolor | bold italic underline | alignleft aligncenter alignright alignjustify | lineheight',
+                        'bullist numlist | link image | table | code'
+                    ],
+                    menubar: false,
+                    statusbar: false,
+                    height: 380,
+                    promotion: false,
+                    branding: false,
+                    convert_urls: false,
+                    relative_urls: false,
+                    remove_script_host: false,
+                    entity_encoding: 'raw',
+                    resize: false,
+                    skin: 'oxide',
+                    fontsize_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 28pt 36pt 48pt',
+                    font_family_formats: 'Arial=arial,helvetica,sans-serif; Courier New=courier new,courier,monospace; Georgia=georgia,palatino; Helvetica=helvetica; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva',
+                    lineheight_formats: '1 1.1 1.2 1.3 1.4 1.5 1.6 1.8 2',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14pt; } .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before { font-size: 12px; color: #6b7280; }',
+                    placeholder: 'Write event terms & conditions here...',
+                    images_upload_handler: function (blobInfo, progress) {
+                        return new Promise(function(resolve, reject) {
+                            const xhr = new XMLHttpRequest();
+                            xhr.withCredentials = true;
+                            xhr.open('POST', '{{ route('upload.tinymce.image') }}');
+                            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                            xhr.upload.onprogress = function (e) { progress(e.loaded / e.total * 100); };
+                            xhr.onload = function() {
+                                if (xhr.status < 200 || xhr.status >= 300) {
+                                    reject('HTTP Error: ' + xhr.status);
+                                    return;
+                                }
+                                try {
+                                    const json = JSON.parse(xhr.responseText);
+                                    if (!json || typeof json.location != 'string') {
+                                        reject('Invalid JSON: ' + xhr.responseText);
+                                        return;
+                                    }
+                                    resolve(json.location);
+                                } catch (err) { reject('Invalid response'); }
+                            };
+                            xhr.onerror = function() { reject('Image upload failed'); };
+                            const formData = new FormData();
+                            formData.append('file', blobInfo.blob(), blobInfo.filename());
+                            xhr.send(formData);
+                        });
+                    },
+                    setup: function (editor) {
+                        editor.on('change', function () { editor.save(); });
+                    }
+                });
+            }
+        });
+    </script>
+</x-app-layout>

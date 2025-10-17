@@ -20,10 +20,9 @@
     },
     "dependencies": {
         "country-list-js": "^3.1.8",
+        "firebase": "^10.14.1",
         "flowbite": "^3.1.2",
         "intl-tel-input": "^25.3.1",
-        "laravel-echo": "^2.1.7",
-        "malaysia-postcodes": "^2.7.3",
-        "pusher-js": "^8.4.0"
+        "malaysia-postcodes": "^2.7.3"
     }
 }

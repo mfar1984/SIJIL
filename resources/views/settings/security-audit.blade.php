@@ -19,8 +19,9 @@
                 </div>
                 <div class="flex space-x-2">
                     <!-- Clear Security Logs Dropdown -->
+                    @can('security_audit.delete')
                     <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <button @click="open = !open" class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1">delete_sweep</span>
                             Clear Security Logs
                             <span class="material-icons text-xs ml-1">arrow_drop_down</span>
@@ -50,11 +51,14 @@
                             </div>
                         </div>
                     </div>
-                    <button class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @endcan
+                    @can('security_audit.export')
+                    <button class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">download</span>
                         Export Report
                     </button>
-                    <button class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @endcan
+                    <button class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">refresh</span>
                         Refresh Data
                     </button>
@@ -133,7 +137,7 @@
                             <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
                             <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
                         </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                             </svg>

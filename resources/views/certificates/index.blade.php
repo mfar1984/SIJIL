@@ -17,10 +17,12 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">View and generate certificates for participants</p>
                 </div>
-                <a href="{{ route('certificates.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                @can('certificates.create')
+                <a href="{{ route('certificates.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                     <span class="material-icons text-xs mr-1">add_circle</span>
                     Generate Certificates
                 </a>
+                @endcan
             </div>
         </div>
         <div class="p-4">
@@ -62,7 +64,7 @@
                             <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
                             <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
                         </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                             </svg>
@@ -135,6 +137,7 @@
                                         <a href="{{ asset('storage/' . $certificate->pdf_file) }}" download class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Download">
                                             <span class="material-icons text-green-600 text-xs">download</span>
                                         </a>
+                                        @can('certificates.delete')
                                         <form method="POST" action="{{ route('certificates.destroy', $certificate->id) }}" onsubmit="return confirm('Are you sure you want to delete this certificate?')" class="inline-block">
                                             @csrf
                                             @method('DELETE')
@@ -142,13 +145,17 @@
                                                 <span class="material-icons text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr class="text-xs">
                                 <td colspan="5" class="py-8 text-center text-gray-500">
-                                    No certificates found. <a href="{{ route('certificates.create') }}" class="text-primary-DEFAULT hover:underline">Generate certificates</a>
+                                    No certificates found.
+                                    @can('certificates.create')
+                                        <a href="{{ route('certificates.create') }}" class="text-primary-DEFAULT hover:underline">Generate certificates</a>
+                                    @endcan
                                 </td>
                             </tr>
                         @endforelse

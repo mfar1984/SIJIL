@@ -52,18 +52,22 @@
                         </template>
                     </select>
                     
-                    <input type="text" x-model="search" placeholder="Search name, IC..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" />
+                    <input type="text" x-model="search" placeholder="Search name, IC/passport..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" />
                     <select x-model="status" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]">
                         <option value="">All Status</option>
                         <option value="present">Present</option>
                         <option value="absent">Absent</option>
                     </select>
-                    <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                    <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                         </svg>
                     </button>
-                    <button type="button" @click="resetFilter" class="text-xs text-gray-500 underline ml-2">Reset</button>
+                    <button type="button" @click="resetFilter" class="bg-gray-100 text-gray-700 px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center ml-2 hover:bg-gray-200" title="Reset">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </form>
             </div>
             
@@ -71,8 +75,8 @@
             <div x-show="search || selectedEventId || selectedSessionId || status" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-xs">
                 <span class="font-medium">Search Results:</span>
                 <span x-show="search" class="ml-2">Searching for "<span x-text="search"></span>"</span>
-                <span x-show="selectedEventId" class="ml-2">Event: <span x-text="events.find(e => e.id == selectedEventId)?.name || 'Unknown'"></span></span>
-                <span x-show="selectedSessionId" class="ml-2">Session: <span x-text="sessions.find(s => s.id == selectedSessionId)?.name || 'Unknown'"></span></span>
+                <span x-show="selectedEventId" class="ml-2">Event: <span x-text="(events.find(e => e.id == selectedEventId) ? events.find(e => e.id == selectedEventId).name : 'Unknown')"></span></span>
+                <span x-show="selectedSessionId" class="ml-2">Session: <span x-text="(sessions.find(s => s.id == selectedSessionId) ? sessions.find(s => s.id == selectedSessionId).name : 'Unknown')"></span></span>
                 <span x-show="status" class="ml-2">Status: <span x-text="status"></span></span>
                 <span class="ml-2">(<span x-text="meta.total"></span> results)</span>
             </div>
@@ -83,7 +87,7 @@
                     <thead>
                         <tr class="bg-primary-light text-white text-xs uppercase">
                             <th class="py-3 px-4 text-left rounded-tl">Name</th>
-                            <th class="py-3 px-4 text-left">IC / Passport</th>
+                            <th class="py-3 px-4 text-left">&nbsp;</th>
                             <th class="py-3 px-4 text-left">Check-in Time</th>
                             <th class="py-3 px-4 text-left">Check-out Time</th>
                             <th class="py-3 px-4 text-left rounded-tr">Status</th>
@@ -93,8 +97,10 @@
                         <template x-if="participants.length">
                             <template x-for="p in participants" :key="p.record_id">
                                 <tr class="text-xs hover:bg-gray-50">
-                                    <td class="py-3 px-4 font-medium" x-text="p.name"></td>
-                                    <td class="py-3 px-4" x-text="p.ic"></td>
+                                    <td class="py-3 px-4 font-medium">
+                                        <a :href="`/participants/${p.participant_id}`" class="text-primary-DEFAULT hover:underline" x-text="p.name"></a>
+                                    </td>
+                                    <td class="py-3 px-4"></td>
                                     <td class="py-3 px-4" x-text="formatDateTime(p.time)"></td>
                                     <td class="py-3 px-4" x-text="p.checkout_time ? formatDateTime(p.checkout_time) : '-'"></td>
                                     <td class="py-3 px-4">
@@ -241,9 +247,13 @@
                 this.fetchParticipants();
             },
             resetFilter() {
+                // Reset all filters to initial state (first event/session if available)
                 this.search = '';
                 this.status = '';
-                this.goToPage(1);
+                this.page = 1;
+                this.perPage = 10;
+                this.selectedEventId = this.events.length ? this.events[0].id : '';
+                this.fetchSessions();
             }
         }
     }

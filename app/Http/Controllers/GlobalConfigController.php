@@ -24,7 +24,7 @@ class GlobalConfigController extends Controller
      */
     public function update(Request $request)
     {
-        \Log::info('GlobalConfig update called', ['request_data' => $request->all()]);
+        // GlobalConfig update called
         
         $config = GlobalConfig::getConfig();
         
@@ -121,7 +121,7 @@ class GlobalConfigController extends Controller
         }
 
         try {
-            \Log::info('GlobalConfig validation passed', ['data' => $request->all()]);
+            // GlobalConfig validation passed
             
             // Handle file uploads
             $data = $request->except(['org_logo', 'favicon', 'login_background']);

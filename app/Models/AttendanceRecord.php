@@ -11,7 +11,14 @@ class AttendanceRecord extends Model
 
     protected $fillable = [
         'attendance_id',
+        'attendance_session_id',
         'participant_id',
+        'checkin_time',
+        'checkout_time',
+        'checkin_lat',
+        'checkin_lng',
+        'checkout_lat',
+        'checkout_lng',
         'timestamp',
         'status',
         'scanned_by_device',

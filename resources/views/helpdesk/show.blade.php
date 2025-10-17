@@ -20,7 +20,7 @@
                 <div class="flex space-x-2">
                     @if($isAdmin)
                         <div class="flex space-x-2">
-                            <button @click="document.querySelector('[x-data=\"{ showModal: false }\"]').__x.$data.showModal = true" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <button @click="document.querySelector('[x-data=\"{ showModal: false }\"]').__x.$data.showModal = true" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                 <span class="material-icons text-xs mr-1">update</span>
                                 Update Status
                             </button>
@@ -31,7 +31,7 @@
                                 @csrf
                                 <input type="hidden" name="status" value="in_progress">
                                 <input type="hidden" name="assigned_to" value="{{ Auth::id() }}">
-                                <button type="submit" class="bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                <button type="submit" class="bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                     <span class="material-icons text-xs mr-1">engineering</span>
                                     Mark In Progress
                                 </button>
@@ -42,7 +42,7 @@
                             <form action="{{ route('helpdesk.status', $ticket->id) }}" method="POST" class="inline">
                                 @csrf
                                 <input type="hidden" name="status" value="resolved">
-                                <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                     <span class="material-icons text-xs mr-1">check_circle</span>
                                     Mark Resolved
                                 </button>
@@ -53,7 +53,7 @@
                             <form action="{{ route('helpdesk.status', $ticket->id) }}" method="POST" class="inline">
                                 @csrf
                                 <input type="hidden" name="status" value="closed">
-                                <button type="submit" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                <button type="submit" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                     <span class="material-icons text-xs mr-1">lock</span>
                                     Close Ticket
                                 </button>
@@ -61,13 +61,15 @@
                             @endif
                         </div>
                     @else
+                        @can('helpdesk.update')
                         <!-- For Organizer: Reply button that scrolls to reply form -->
-                        <a href="#reply-form" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <a href="#reply-form" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1">reply</span>
                             Reply
                         </a>
+                        @endcan
                     @endif
-                    <a href="{{ route('helpdesk.index') }}" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    <a href="{{ route('helpdesk.index') }}" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
@@ -82,7 +84,7 @@
                     <span class="material-icons text-primary-DEFAULT text-base mr-2">info</span>
                     Ticket Information
                 </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-{{ $isAdmin ? '6' : '5' }} gap-4">
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
                             <span class="material-icons text-gray-400 text-xs mr-1">label</span>
@@ -128,15 +130,13 @@
                             <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{{ ucfirst($ticket->category) }}</span>
                         </div>
                     </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
                             <span class="material-icons text-gray-400 text-xs mr-1">person</span>
                             Submitted By
                         </p>
-                        <p class="text-sm mt-1">{{ $ticket->user->name }}</p>
+                        <p class="text-xs mt-1">{{ $ticket->user->name }}</p>
                     </div>
                     
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
@@ -144,19 +144,19 @@
                             <span class="material-icons text-gray-400 text-xs mr-1">calendar_today</span>
                             Date Submitted
                         </p>
-                        <p class="text-sm mt-1">{{ $ticket->created_at->format('d M Y H:i') }}</p>
+                        <p class="text-xs mt-1">{{ $ticket->created_at->format('d M Y H:i') }}</p>
                     </div>
+                    
+                    @if($isAdmin)
+                    <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
+                        <p class="text-xs text-gray-500 font-medium flex items-center">
+                            <span class="material-icons text-gray-400 text-xs mr-1">assignment_ind</span>
+                            Assigned To
+                        </p>
+                        <p class="text-xs mt-1">{{ $ticket->assignedUser ? $ticket->assignedUser->name : 'Not assigned' }}</p>
+                    </div>
+                    @endif
                 </div>
-                
-                @if($isAdmin)
-                <div class="bg-gray-50 rounded-md p-4 border border-gray-200 mt-4">
-                    <p class="text-xs text-gray-500 font-medium flex items-center">
-                        <span class="material-icons text-gray-400 text-xs mr-1">assignment_ind</span>
-                        Assigned To
-                    </p>
-                    <p class="text-sm mt-1">{{ $ticket->assignedUser ? $ticket->assignedUser->name : 'Not assigned' }}</p>
-                </div>
-                @endif
             </div>
             
             <!-- Conversation -->
@@ -181,7 +181,7 @@
                             </div>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Initial Request</span>
                         </div>
-                        <div class="mt-3 text-sm">
+                        <div class="mt-3 text-xs">
                             {!! nl2br(e($ticket->description)) !!}
                         </div>
                     </div>
@@ -203,7 +203,7 @@
                                     </div>
                                     <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">Internal Note</span>
                                 </div>
-                                <div class="mt-3 text-sm">
+                                <div class="mt-3 text-xs">
                                     {!! nl2br(e($message->message)) !!}
                                 </div>
                             </div>
@@ -224,7 +224,7 @@
                                         {{ $message->user_id === $ticket->user_id ? 'Requester' : 'Support' }}
                                     </span>
                                 </div>
-                                <div class="mt-3 text-sm">
+                                <div class="mt-3 text-xs">
                                     {!! nl2br(e($message->message)) !!}
                                 </div>
                                 
@@ -248,6 +248,7 @@
             </div>
             
             <!-- Reply Form -->
+            @can('helpdesk.update')
             <div id="reply-form">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                     <span class="material-icons text-primary-DEFAULT text-base mr-2">reply</span>
@@ -289,7 +290,7 @@
                             @endif
                             
                             <div>
-                                <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                     <span class="material-icons text-xs mr-1">send</span>
                                     Send Reply
                                 </button>
@@ -318,7 +319,7 @@
                             @endif
                             
                             <div>
-                                <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                     <span class="material-icons text-xs mr-1">send</span>
                                     Send Reply
                                 </button>
@@ -327,6 +328,7 @@
                     </form>
                 @endif
             </div>
+            @endcan
         </div>
     </div>
     
@@ -390,30 +392,14 @@
     </div>
     @endif
     
-    <!-- Realtime Updates with Reverb -->
+    <!-- Realtime handled by Firebase Messaging in resources/js/fcm.js -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Connect to Reverb
             const userId = {{ Auth::id() }};
             const ticketId = {{ $ticket->id }};
-            
-            // Listen for new messages
-            window.Echo.private(`helpdesk.ticket.${ticketId}`)
-                .listen('NewMessageSent', (e) => {
-                    if (e.message.user.id !== userId) {
-                        // Reload the page to show the new message
-                        location.reload();
-                        
-                        // Or use a more sophisticated approach to append the message without reloading
-                        // appendNewMessage(e.message);
-                    }
-                })
-                .listen('TicketStatusUpdated', (e) => {
-                    if (e.ticket.id === ticketId) {
-                        // Reload the page to show the updated status
-                        location.reload();
-                    }
-                });
+            // No inline Echo listener here. Foreground updates arrive via FCM onMessage
+            // in resources/js/fcm.js and will reload this page when a new message for
+            // this ticket arrives.
         });
     </script>
 </x-app-layout> 

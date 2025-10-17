@@ -96,7 +96,7 @@
                             <select 
                                 name="access_type" 
                                 id="access_type" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]" 
                                 required
                             >
                                 <option value="public" {{ old('access_type') == 'public' ? 'selected' : '' }}>Public - Anyone with the link can access</option>
@@ -145,7 +145,7 @@
                             <select 
                                 name="event_id" 
                                 id="event_id" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]"
                             >
                                 <option value="">-- No event --</option>
                                 @foreach($events as $event)
@@ -174,17 +174,17 @@
                     </div>
                 </div>
                 
-                <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
+            <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
                     <a 
                         href="{{ route('survey.index') }}" 
-                        class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                    class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
                         <span class="material-icons text-xs mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button 
+                <button 
                         type="submit" 
-                        class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
+                    class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
                         <span class="material-icons text-xs mr-1">save</span>
                         Create Survey

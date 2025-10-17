@@ -105,6 +105,7 @@ class EventManagementController extends Controller
             'location' => 'required|string|max:255',
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:active,pending,completed',
+            'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
         ]);
         
         // Create a new event
@@ -125,6 +126,12 @@ class EventManagementController extends Controller
         $event->contact_person = $request->contact_person;
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
+        
+        // Handle poster upload
+        if ($request->hasFile('poster')) {
+            $path = $request->file('poster')->store('events/posters', 'public');
+            $event->poster = $path;
+        }
         
         // Save first to get ID
         $event->save();
@@ -221,6 +228,7 @@ class EventManagementController extends Controller
             'location' => 'required|string|max:255',
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:active,pending,completed',
+            'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
         ]);
         
         // Find the event
@@ -254,6 +262,12 @@ class EventManagementController extends Controller
         $event->contact_person = $request->contact_person;
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
+        
+        // Handle poster upload (replace existing)
+        if ($request->hasFile('poster')) {
+            $path = $request->file('poster')->store('events/posters', 'public');
+            $event->poster = $path;
+        }
         
         // Save the event
         $event->save();
@@ -448,6 +462,7 @@ class EventManagementController extends Controller
             'passport_no' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female,other',
             'date_of_birth' => 'nullable|date',
+            'race' => 'nullable|string|max:100',
             'job_title' => 'nullable|string|max:255',
             'address1' => 'nullable|string|max:255',
             'address2' => 'nullable|string|max:255',
@@ -459,6 +474,27 @@ class EventManagementController extends Controller
             'manual_city' => 'nullable|string|max:100',
             'manual_postcode' => 'nullable|string|max:10',
         ]);
+        // Server-side guard: prevent changing locked email/identity after verification
+        $lockedEmail = $request->input('locked_email');
+        $lockedIdType = $request->input('locked_id_type');
+        $lockedIdentity = $request->input('locked_identity'); // ic digits or passport
+
+        if ($lockedEmail && strtolower($lockedEmail) !== strtolower($request->email)) {
+            return redirect()->back()->with('error', 'Email tidak boleh diubah selepas pengesahan.');
+        }
+        if ($lockedIdType === 'ic' && $lockedIdentity) {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $request->identity_card);
+            if ($normalizedIc !== $lockedIdentity) {
+                return redirect()->back()->with('error', 'IC tidak boleh diubah selepas pengesahan.');
+            }
+        }
+        if ($lockedIdType === 'passport' && $lockedIdentity) {
+            $normalizedPass = strtolower(preg_replace('/\s+/', '', (string) $request->passport_no));
+            if ($normalizedPass !== strtolower($lockedIdentity)) {
+                return redirect()->back()->with('error', 'Passport tidak boleh diubah selepas pengesahan.');
+            }
+        }
+
         
         $event = Event::where('registration_link', $token)->first();
         if (!$event) {
@@ -504,6 +540,7 @@ class EventManagementController extends Controller
             'passport_no' => $request->passport_no,
             'gender' => $request->gender,
             'date_of_birth' => $request->date_of_birth,
+            'race' => $request->race,
             'job_title' => $request->job_title,
             'address1' => $request->address1,
             'address2' => $request->address2,
@@ -516,7 +553,19 @@ class EventManagementController extends Controller
             'event_id' => $event->id,
         ]);
         $participant->save();
-        return redirect()->back()->with('success', 'Thank you for registering! You will receive a confirmation email shortly.');
+        return redirect()->route('event.register.thankyou', $event->registration_link);
+    }
+
+    // Thank you page after successful public registration
+    public function registerThankYou($token)
+    {
+        $event = Event::where('registration_link', $token)->first();
+        if (!$event) {
+            abort(404, 'Event not found');
+        }
+        return view('events.register-thankyou', [
+            'event' => $event
+        ]);
     }
     
     /**

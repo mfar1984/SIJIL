@@ -68,7 +68,7 @@
                                 Phone Number
                             </label>
                             <div class="relative">
-                                <input type="tel" name="phone" id="phone" class="phone-input w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone') }}">
+                                <input type="tel" name="phone" id="phone" class="phone-input w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 py-1.5 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone') }}">
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Select country code and enter phone number</p>
                         </div>
@@ -79,7 +79,7 @@
                                 Identity Card / Passport No.
                             </label>
                             <div class="mb-2">
-                                <select name="id_type" id="id_type" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" onchange="toggleIdFields()">
+                                <select name="id_type" id="id_type" class="w-full h-9 text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" onchange="toggleIdFields()">
                                     <option value="">-- Select IC / Passport --</option>
                                     <option value="ic" {{ old('id_type') == 'ic' ? 'selected' : '' }}>Identity Card</option>
                                     <option value="passport" {{ old('id_type') == 'passport' ? 'selected' : '' }}>Passport</option>
@@ -150,7 +150,7 @@
                                 <div>
                                     <label for="state" class="block text-xs font-medium text-gray-700 mb-1">State</label>
                                     <select name="state" id="state" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full h-9 text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]"
                                         onchange="handleStateChange()">
                                         <option value="">-- Select State --</option>
                                     </select>
@@ -160,7 +160,7 @@
                                 <div>
                                     <label for="city" class="block text-xs font-medium text-gray-700 mb-1">City</label>
                                     <select name="city" id="city" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" disabled>
+                                        class="w-full h-9 text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" disabled>
                                         <option value="">-- Select City --</option>
                                     </select>
                                 </div>
@@ -169,7 +169,7 @@
                                 <div>
                                     <label for="postcode" class="block text-xs font-medium text-gray-700 mb-1">Postcode</label>
                                     <select name="postcode" id="postcode" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" disabled>
+                                        class="w-full h-9 text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" disabled>
                                         <option value="">-- Select Postcode --</option>
                                     </select>
                                 </div>
@@ -178,7 +178,7 @@
                                 <div>
                                     <label for="country" class="block text-xs font-medium text-gray-700 mb-1">Country</label>
                                     <select name="country" id="country" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                        class="w-full h-9 text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]">
                                         <!-- Dropdown will be filled by JavaScript -->
                                     </select>
                                 </div>
@@ -255,7 +255,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">person</span>
                                 </div>
-                                <select name="gender" id="gender" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                <select name="gender" id="gender" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]">
                                     <option value="">-- Select Gender --</option>
                                     <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
                                     <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
@@ -294,6 +294,84 @@
                             </div>
                             <p class="mt-1 text-[10px] text-gray-500">Current position or role</p>
                         </div>
+                        <!-- Race (Bangsa) -->
+                        <div>
+                            <label for="race" class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">diversity_1</span>
+                                Race (Bangsa)
+                            </label>
+                            <select name="race" id="race" class="w-full h-9 text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]">
+                                <option value="">-- Select Race --</option>
+                                <option value="Melayu (Semenanjung)">Melayu (Semenanjung)</option>
+                                <option value="Melayu (Sarawak)">Melayu (Sarawak)</option>
+                                <option value="Melayu (Sabah)">Melayu (Sabah)</option>
+                                <option value="Cina Hokkien">Cina Hokkien</option>
+                                <option value="Cina Kantonis">Cina Kantonis</option>
+                                <option value="Cina Hakka">Cina Hakka</option>
+                                <option value="Cina Teochew">Cina Teochew</option>
+                                <option value="Cina Foochow">Cina Foochow</option>
+                                <option value="Cina Hainan">Cina Hainan</option>
+                                <option value="Cina Kwongsai">Cina Kwongsai</option>
+                                <option value="Cina Henghua">Cina Henghua</option>
+                                <option value="Cina lain-lain">Cina lain-lain</option>
+                                <option value="India Tamil">India Tamil</option>
+                                <option value="India Punjabi">India Punjabi</option>
+                                <option value="India Malayalee">India Malayalee</option>
+                                <option value="India Telugu">India Telugu</option>
+                                <option value="India Gujerati">India Gujerati</option>
+                                <option value="India Bengali">India Bengali</option>
+                                <option value="India lain-lain">India lain-lain</option>
+                                <option value="Iban">Iban</option>
+                                <option value="Kadazan">Kadazan</option>
+                                <option value="Dusun">Dusun</option>
+                                <option value="Bajau">Bajau</option>
+                                <option value="Sama">Sama</option>
+                                <option value="Bidayuh">Bidayuh</option>
+                                <option value="Melanau">Melanau</option>
+                                <option value="Murut">Murut</option>
+                                <option value="Orang Ulu Kayan">Orang Ulu Kayan</option>
+                                <option value="Orang Ulu Kenyah">Orang Ulu Kenyah</option>
+                                <option value="Orang Ulu Kelabit">Orang Ulu Kelabit</option>
+                                <option value="Orang Ulu Penan">Orang Ulu Penan</option>
+                                <option value="Orang Ulu Lun Bawang">Orang Ulu Lun Bawang</option>
+                                <option value="Orang Ulu (lain-lain)">Orang Ulu (lain-lain)</option>
+                                <option value="Orang Asli Temuan">Orang Asli Temuan</option>
+                                <option value="Orang Asli Semai">Orang Asli Semai</option>
+                                <option value="Orang Asli Jakun">Orang Asli Jakun</option>
+                                <option value="Orang Asli Mah Meri">Orang Asli Mah Meri</option>
+                                <option value="Orang Asli Negrito (Kensiu)">Orang Asli Negrito (Kensiu)</option>
+                                <option value="Orang Asli Negrito (Kintaq)">Orang Asli Negrito (Kintaq)</option>
+                                <option value="Orang Asli Negrito (Jahai)">Orang Asli Negrito (Jahai)</option>
+                                <option value="Orang Asli Negrito (Lanoh)">Orang Asli Negrito (Lanoh)</option>
+                                <option value="Orang Asli Negrito (Mendriq)">Orang Asli Negrito (Mendriq)</option>
+                                <option value="Orang Asli Negrito (Batek)">Orang Asli Negrito (Batek)</option>
+                                <option value="Orang Asli Senoi (Temiar)">Orang Asli Senoi (Temiar)</option>
+                                <option value="Orang Asli Senoi (Semaq Beri)">Orang Asli Senoi (Semaq Beri)</option>
+                                <option value="Orang Asli Senoi (Jah Hut)">Orang Asli Senoi (Jah Hut)</option>
+                                <option value="Orang Asli Senoi (Che Wong)">Orang Asli Senoi (Che Wong)</option>
+                                <option value="Orang Asli Proto-Malay (Temuan)">Orang Asli Proto-Malay (Temuan)</option>
+                                <option value="Orang Asli Proto-Malay (Semelai)">Orang Asli Proto-Malay (Semelai)</option>
+                                <option value="Orang Asli Proto-Malay (Jakun)">Orang Asli Proto-Malay (Jakun)</option>
+                                <option value="Orang Asli Proto-Malay (Kanaq)">Orang Asli Proto-Malay (Kanaq)</option>
+                                <option value="Orang Asli Proto-Malay (Seletar)">Orang Asli Proto-Malay (Seletar)</option>
+                                <option value="Orang Asli (lain-lain)">Orang Asli (lain-lain)</option>
+                                <option value="Sungai">Sungai</option>
+                                <option value="Rungus">Rungus</option>
+                                <option value="Lundayeh">Lundayeh</option>
+                                <option value="Kedayan">Kedayan</option>
+                                <option value="Bisaya">Bisaya</option>
+                                <option value="Brunei">Brunei</option>
+                                <option value="Bugis">Bugis</option>
+                                <option value="Jawa">Jawa</option>
+                                <option value="Banjar">Banjar</option>
+                                <option value="Kristang/Serani">Kristang/Serani</option>
+                                <option value="Sikh">Sikh</option>
+                                <option value="Thai">Thai</option>
+                                <option value="Peranakan/Baba Nyonya">Peranakan/Baba Nyonya</option>
+                                <option value="Chitty">Chitty</option>
+                                <option value="Lain-lain Warganegara">Lain-lain Warganegara</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
@@ -311,7 +389,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="material-icons text-[#004aad] text-base">event_note</span>
                                 </div>
-                                <select name="event_id" id="event_id" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
+                                <select name="event_id" id="event_id" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" required>
                                     <option value="">-- Select Event --</option>
                                     @foreach($events as $event)
                                         <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
@@ -339,16 +417,8 @@
                 
                 <!-- Notes -->
                 <div>
-                    <label for="notes" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                        <span class="material-icons text-sm mr-1 text-primary-DEFAULT">notes</span>
-                        Notes
-                    </label>
-                    <div class="relative">
-                        <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">description</span>
-                        </div>
-                        <textarea id="notes" name="notes" rows="3" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional information about this participant">{{ old('notes') }}</textarea>
-                    </div>
+                    <label for="notes" class="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea id="notes" name="notes" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional information about this participant">{{ old('notes') }}</textarea>
                     <p class="mt-1 text-[10px] text-gray-500">Internal notes about this participant (not visible to them)</p>
                 </div>
                 

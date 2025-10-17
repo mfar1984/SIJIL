@@ -3,14 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Sanctum\HasApiTokens;
 
-class PwaParticipant extends Model
+class PwaParticipant extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, HasApiTokens;
 
     protected $fillable = [
         'name',
@@ -78,7 +79,8 @@ class PwaParticipant extends Model
      */
     public function attendances(): HasMany
     {
-        return $this->hasMany(Attendance::class, 'participant_id');
+        // Use attendance records to reflect actual session check-ins
+        return $this->hasMany(AttendanceRecord::class, 'participant_id');
     }
 
     /**
@@ -127,7 +129,7 @@ class PwaParticipant extends Model
     public function scopeByOrganizer($query, $organizerId)
     {
         return $query->whereHas('events', function($q) use ($organizerId) {
-            $q->where('organizer_id', $organizerId);
+            $q->where('events.user_id', $organizerId);
         });
     }
 }

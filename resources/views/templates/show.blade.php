@@ -24,14 +24,16 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">{{ $template->name }}</p>
                 </div>
                 <div class="flex gap-2">
-                    <a href="{{ route('template.designer') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    <a href="{{ route('template.designer') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to Templates
                     </a>
-                    <a href="{{ route('template.edit', $template->id) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('templates.update')
+                    <a href="{{ route('template.edit', $template->id) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">edit</span>
                         Edit Template
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -89,17 +91,19 @@
                     
                     <div class="border-t border-gray-200 pt-4 mt-6">
                         <div class="flex gap-2">
-                            <a href="{{ route('template.designer.create', ['id' => $template->id]) }}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            @can('templates.create')
+                            <a href="{{ route('template.designer.create', ['id' => $template->id]) }}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                 <span class="material-icons text-xs mr-1">design_services</span>
                                 Edit Design
                             </a>
                             <form action="{{ route('template.duplicate', $template->id) }}" method="POST" class="inline">
                                 @csrf
-                                <button type="submit" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                <button type="submit" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                     <span class="material-icons text-xs mr-1">content_copy</span>
                                     Duplicate
                                 </button>
                             </form>
+                            @endcan
                         </div>
                     </div>
                 </div>
@@ -112,7 +116,7 @@
                         </h2>
                         
                         @php
-                            $isLandscape = $template->orientation == 'landscape';
+                            $isLandscape = strtolower(trim($template->orientation)) === 'landscape';
                             $width = $isLandscape ? '600px' : '420px';
                             $height = $isLandscape ? '420px' : '594px';
                             $templateWidth = $isLandscape ? 297 : 210;

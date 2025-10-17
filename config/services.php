@@ -18,6 +18,11 @@ return [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID', 'e-certificate-com-my'),
+        'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_KEY'),
     ],

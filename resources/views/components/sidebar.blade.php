@@ -1,7 +1,8 @@
 @props(['active' => false])
 
-<aside class="w-64 bg-white shadow-lg relative">
-    <div class="absolute inset-y-0.1 right-0 w-1 bg-gradient-to-r from-transparent to-gray-200"></div>
+<aside class="w-64 bg-white shadow-lg relative border-r border-gray-200">
+    <!-- Vertical separator line on the right -->
+    <div class="absolute inset-y-0 right-0 w-px bg-gray-10"></div>
     <div class="p-4 border-b border-gray-100 relative">
         <div class="flex items-center justify-center">
             <div>

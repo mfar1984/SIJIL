@@ -81,8 +81,11 @@ class PwaAnalyticsController extends Controller
                     $q->where('events.id', $selectedEventId);
                 })->count();
                 
-                // Get attendance for specific event through attendance_sessions
-                $eventSessions = AttendanceSession::where('attendance_id', $selectedEventId)->pluck('id');
+                // Get attendance for specific event through attendance_sessions -> attendance -> event
+                $eventSessions = AttendanceSession::whereHas('attendance', function($q) use ($selectedEventId) {
+                        $q->where('event_id', $selectedEventId);
+                    })
+                    ->pluck('id');
                 $attendance = AttendanceRecord::whereIn('attendance_session_id', $eventSessions)->count();
                 
                 $certificates = Certificate::where('event_id', $selectedEventId)->count();
@@ -108,8 +111,11 @@ class PwaAnalyticsController extends Controller
             
             $totalEvents = Event::where('user_id', $user->id)->count();
             
-            // Get attendance for organizer's events through attendance_sessions
-            $organizerSessions = AttendanceSession::whereIn('attendance_id', $organizerEvents)->pluck('id');
+            // Get attendance for organizer's events through attendance_sessions -> attendance -> event
+            $organizerSessions = AttendanceSession::whereHas('attendance', function($q) use ($organizerEvents) {
+                    $q->whereIn('event_id', $organizerEvents);
+                })
+                ->pluck('id');
             $totalAttendance = AttendanceRecord::whereIn('attendance_session_id', $organizerSessions)->count();
             
             $totalCertificates = Certificate::whereIn('event_id', $organizerEvents)->count();
@@ -124,7 +130,10 @@ class PwaAnalyticsController extends Controller
                 })->count();
                 
                 // Get attendance for specific event
-                $eventSessions = AttendanceSession::where('attendance_id', $selectedEventId)->pluck('id');
+                $eventSessions = AttendanceSession::whereHas('attendance', function($q) use ($selectedEventId) {
+                        $q->where('event_id', $selectedEventId);
+                    })
+                    ->pluck('id');
                 $attendance = AttendanceRecord::whereIn('attendance_session_id', $eventSessions)->count();
                 
                 $certificates = Certificate::where('event_id', $selectedEventId)->count();
@@ -221,8 +230,8 @@ class PwaAnalyticsController extends Controller
      */
     private function getMonthlyStats($eventIds = null)
     {
-        $query = DB::table('pwa_participants')
-            ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as count')
+        $query = DB::table('pwa_participants as pp')
+            ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(*) as count')
             ->groupBy('year', 'month')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
@@ -230,7 +239,7 @@ class PwaAnalyticsController extends Controller
             
         if ($eventIds) {
             // For organizer view, we need to join with events
-            $query->join('event_pwa_participant as ep', 'pwa_participants.id', '=', 'ep.pwa_participant_id')
+            $query->join('event_pwa_participant as ep', 'pp.id', '=', 'ep.pwa_participant_id')
                   ->whereIn('ep.event_id', $eventIds);
         }
         
@@ -289,16 +298,28 @@ class PwaAnalyticsController extends Controller
             ]);
         }
 
-        // Get registrations for date range
-        $registrations = PwaParticipant::selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->whereBetween('created_at', [$start, $end])
+        // Get registrations for date range (scope by organizer if needed)
+        $registrationsQuery = PwaParticipant::selectRaw('DATE(pwa_participants.created_at) as date, COUNT(DISTINCT pwa_participants.id) as count')
+            ->whereBetween('pwa_participants.created_at', [$start, $end]);
+        if (!$user->hasRole('Administrator')) {
+            $registrationsQuery->whereHas('events', function($q) use ($user) {
+                $q->where('events.user_id', $user->id);
+            });
+        }
+        $registrations = $registrationsQuery
             ->groupBy('date')
             ->get()
             ->keyBy('date');
 
-        // Get check-ins for date range
-        $checkins = AttendanceRecord::selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->whereBetween('created_at', [$start, $end])
+        // Get check-ins for date range (scope by organizer if needed)
+        $checkinsQuery = AttendanceRecord::selectRaw('DATE(attendance_records.created_at) as date, COUNT(*) as count')
+            ->whereBetween('attendance_records.created_at', [$start, $end]);
+        if (!$user->hasRole('Administrator')) {
+            $checkinsQuery->whereHas('attendanceSession.attendance.event', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+        $checkins = $checkinsQuery
             ->groupBy('date')
             ->get()
             ->keyBy('date');
@@ -337,14 +358,14 @@ class PwaAnalyticsController extends Controller
         $activities = $activities->merge($recentParticipants);
         
         // Recent attendance records
-        $recentAttendance = AttendanceRecord::with(['attendanceSession.event', 'participant'])
+        $recentAttendance = AttendanceRecord::with(['attendanceSession.attendance.event', 'participant'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get()
             ->map(function($record) {
                 return [
                     'type' => 'attendance',
-                    'description' => 'Check-in recorded for ' . ($record->participant->name ?? 'Unknown') . ' at ' . ($record->attendanceSession->event->name ?? 'Unknown Event'),
+                    'description' => 'Check-in recorded for ' . ($record->participant->name ?? 'Unknown') . ' at ' . ($record->attendanceSession->attendance->event->name ?? 'Unknown Event'),
                     'date' => $record->created_at,
                     'user' => 'QR Scanner'
                 ];

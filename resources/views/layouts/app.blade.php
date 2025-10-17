@@ -4,6 +4,18 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <script>
+            // Expose Firebase public config to SW if needed
+            window.FIREBASE_PUBLIC_CONFIG = {
+                apiKey: '{{ env('VITE_FIREBASE_API_KEY') }}',
+                authDomain: '{{ env('VITE_FIREBASE_AUTH_DOMAIN') }}',
+                projectId: '{{ env('VITE_FIREBASE_PROJECT_ID') }}',
+                storageBucket: '{{ env('VITE_FIREBASE_STORAGE_BUCKET') }}',
+                messagingSenderId: '{{ env('VITE_FIREBASE_MESSAGING_SENDER_ID') }}',
+                appId: '{{ env('VITE_FIREBASE_APP_ID') }}',
+                measurementId: '{{ env('VITE_FIREBASE_MEASUREMENT_ID') }}',
+            };
+        </script>
 
         <title>{{ isset($title) ? $title . ' - ' . config('app.name', 'SIJIL') : config('app.name', 'SIJIL') }}</title>
 
@@ -46,10 +58,10 @@
                         <!-- Notifications & User Menu -->
                         <div class="flex items-center space-x-4">
                             <!-- Notifications -->
-                            <div class="flex items-center justify-center h-8" x-data="{ showNotifications: false, notifications: [], unreadCount: 0 }" id="notification-container">
+                            <div class="flex items-center justify-center h-8" x-data="{ showNotifications: false, notifications: [], unreadCount: 0 }" id="notification-container" x-on:add-notification.window="notifications.unshift($event.detail); unreadCount++; if (notifications.length > 20) { notifications.pop() }" x-on:set-notifications.window="notifications = $event.detail.notifications || []; unreadCount = $event.detail.unreadCount || 0" x-on:mark-all-read.window="notifications.forEach(n => n.read_at = (new Date()).toISOString()); unreadCount = 0">
                                 <button @click="showNotifications = !showNotifications" class="text-gray-500 hover:text-gray-700 flex items-center justify-center relative">
                                     <span class="material-icons text-xl">notifications</span>
-                                    <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"></span>
+                                    <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center"></span>
                                 </button>
                                 
                                 <!-- Notifications Dropdown -->
@@ -199,20 +211,21 @@
         
         <!-- Notifications System -->
         <script>
-            // Debug function
+            // Debug disabled for production
             function debugLog(message, data = null) {
-                const debug = true; // Set to false in production
-                if (debug) {
-                    if (data) {
-                        console.log(`[NOTIFICATION] ${message}:`, data);
-                    } else {
-                        console.log(`[NOTIFICATION] ${message}`);
-                    }
-                }
+                // Debug logs removed
             }
         
             document.addEventListener('DOMContentLoaded', function() {
-                debugLog('Notification system initializing...');
+                // Prepare notification sound and unlock on first user gesture
+                try { window.__notifAudio = new Audio('/sounds/notification.mp3'); window.__notifAudio.preload = 'auto'; } catch(_) {}
+                window.__audioUnlocked = false;
+                document.addEventListener('click', function onFirstClick() {
+                    window.__audioUnlocked = true;
+                    try { if (window.__notifAudio) { window.__notifAudio.play().then(()=>{ window.__notifAudio.pause(); window.__notifAudio.currentTime = 0; }).catch(()=>{}); } } catch(_) {}
+                    document.removeEventListener('click', onFirstClick);
+                }, { once: true });
+                // Notification system initializing
                 
                 // Check if Alpine.js is loaded
                 if (typeof Alpine === 'undefined') {
@@ -228,7 +241,7 @@
                 
                 // Function to add notification
                 function addNotification(notification) {
-                    debugLog('Adding notification', notification);
+                    // Adding notification
                     
                     try {
                         if (notificationContainer.__x) {
@@ -243,7 +256,8 @@
                                 data.notifications.pop();
                             }
                             
-                            debugLog('Notification added, unread count', data.unreadCount);
+                            // Notification added
+                            try { if (window.__audioUnlocked && window.__notifAudio) { window.__notifAudio.currentTime = 0; window.__notifAudio.play().catch(() => {}); } } catch(_) {}
                         } else {
                             console.error('[NOTIFICATION] Alpine.js component not initialized on notification container');
                         }
@@ -254,7 +268,7 @@
                 
                 // Function to mark all as read
                 window.markAllAsRead = function() {
-                    debugLog('Marking all as read');
+                    // Marking all as read
                     
                     fetch('/helpdesk/notifications/mark-read', {
                         method: 'POST',
@@ -272,18 +286,30 @@
                     .then(() => {
                         if (notificationContainer.__x) {
                             const data = notificationContainer.__x.$data;
-                            data.notifications.forEach(notification => {
-                                notification.read_at = new Date().toISOString();
-                            });
+                            const nowIso = new Date().toISOString();
+                            // Reassign array to ensure Alpine reactivity updates
+                            data.notifications = (data.notifications || []).map(n => Object.assign({}, n, { read_at: nowIso }));
                             data.unreadCount = 0;
-                            debugLog('All notifications marked as read');
+                            window.__lastUnreadCount = 0;
+                            // All notifications marked as read
+                        }
+                        // Force a fresh pull from server to keep UI consistent with backend
+                        return fetch('/helpdesk/notifications');
+                    })
+                    .then(r => r && r.ok ? r.json() : null)
+                    .then(fresh => {
+                        if (fresh && notificationContainer.__x) {
+                            const cd = notificationContainer.__x.$data;
+                            cd.notifications = fresh.notifications || [];
+                            cd.unreadCount = fresh.unreadCount || 0;
+                            window.__lastUnreadCount = cd.unreadCount;
                         }
                     })
                     .catch(error => console.error('[NOTIFICATION] Error marking all as read:', error));
                 };
                 
                 // Fetch initial notifications
-                debugLog('Fetching initial notifications');
+                // Fetching initial notifications
                 fetch('/helpdesk/notifications')
                     .then(response => {
                         if (!response.ok) {
@@ -292,102 +318,53 @@
                         return response.json();
                     })
                     .then(data => {
-                        debugLog('Initial notifications received', data);
+                        // Initial notifications received
                         
+                        // Update Alpine component directly if ready
                         if (notificationContainer.__x) {
                             const componentData = notificationContainer.__x.$data;
                             componentData.notifications = data.notifications || [];
                             componentData.unreadCount = data.unreadCount || 0;
+                            window.__lastUnreadCount = componentData.unreadCount;
                         }
+                        // Always dispatch event so Alpine can react even if not initialized yet
+                        try {
+                            window.dispatchEvent(new CustomEvent('set-notifications', { detail: {
+                                notifications: data.notifications || [],
+                                unreadCount: data.unreadCount || 0
+                            }}));
+                        } catch(_) {}
                     })
                     .catch(error => console.error('[NOTIFICATION] Error fetching notifications:', error));
                 
-                // Set up real-time listeners
-                debugLog('Setting up real-time listeners');
+                // Real-time handled by Firebase Messaging (onMessage in resources/js/fcm.js)
+                // Fallback polling: refresh bell every 30s, play sound on increase
+                setInterval(() => {
+                    fetch('/helpdesk/notifications')
+                        .then(r => r.json())
+                        .then(data => {
+                            if (notificationContainer.__x) {
+                                const cd = notificationContainer.__x.$data;
+                                const prev = typeof window.__lastUnreadCount === 'number' ? window.__lastUnreadCount : cd.unreadCount;
+                                cd.notifications = data.notifications || [];
+                                cd.unreadCount = data.unreadCount || 0;
+                                if ((data.unreadCount || 0) > prev) {
+                                    try { if (window.__audioUnlocked && window.__notifAudio) { window.__notifAudio.currentTime = 0; window.__notifAudio.play().catch(() => {}); } } catch(_) {}
+                                }
+                                window.__lastUnreadCount = cd.unreadCount;
+                            }
+                            // Dispatch update event as a fallback to ensure UI updates
+                            try {
+                                window.dispatchEvent(new CustomEvent('set-notifications', { detail: {
+                                    notifications: data.notifications || [],
+                                    unreadCount: data.unreadCount || 0
+                                }}));
+                            } catch(_) {}
+                        })
+                        .catch(() => {});
+                }, 10000);
                 
-                // Check if Echo is properly configured
-                if (!window.Echo) {
-                    console.error('[NOTIFICATION] Laravel Echo is not initialized! Real-time notifications will not work.');
-                    return;
-                }
-                
-                // Check connection status (for Reverb)
-                if (window.Echo.connector && window.Echo.connector.socket) {
-                    window.Echo.connector.socket.on('connect', () => {
-                        debugLog('Connected to WebSocket server', window.Echo.socketId());
-                    });
-                    
-                    window.Echo.connector.socket.on('disconnect', () => {
-                        debugLog('Disconnected from WebSocket server');
-                    });
-                    
-                    window.Echo.connector.socket.on('connect_error', (error) => {
-                        console.error('[NOTIFICATION] WebSocket connection error:', error);
-                    });
-                } else {
-                    console.warn('[NOTIFICATION] WebSocket connection not available, real-time features disabled');
-                }
-                
-                // Listen for admin channel (if user is admin)
-                @if(Auth::user()->hasRole('Administrator'))
-                debugLog('Subscribing to admin channel: helpdesk.admin');
-                window.Echo.private('helpdesk.admin')
-                    .listen('NewTicketCreated', (e) => {
-                        debugLog('Admin channel received NewTicketCreated event', e);
-                        
-                        addNotification({
-                            id: 'new_' + e.id,
-                            title: 'New Support Ticket',
-                            message: `#${e.ticket_id}: ${e.subject}`,
-                            icon: 'help',
-                            read_at: null,
-                            time: 'Just now',
-                            url: '/helpdesk/' + e.id
-                        });
-                    })
-                    .error((error) => {
-                        console.error('[NOTIFICATION] Error on admin channel:', error);
-                    });
-                @endif
-                
-                // Listen for user channel
-                const userChannel = `helpdesk.user.{{ Auth::id() }}`;
-                debugLog('Subscribing to user channel:', userChannel);
-                
-                window.Echo.private(userChannel)
-                    .listen('NewMessageSent', (e) => {
-                        debugLog('User channel received NewMessageSent event', e);
-                        
-                        if (e.message.user.id !== {{ Auth::id() }}) {
-                            addNotification({
-                                id: 'msg_' + e.message.id,
-                                title: 'New Message',
-                                message: `New reply to ticket #${e.message.ticket.ticket_id}: ${e.message.message.substring(0, 30)}...`,
-                                icon: 'forum',
-                                read_at: null,
-                                time: 'Just now',
-                                url: '/helpdesk/' + e.message.ticket_id
-                            });
-                        }
-                    })
-                    .listen('TicketStatusUpdated', (e) => {
-                        debugLog('User channel received TicketStatusUpdated event', e);
-                        
-                        addNotification({
-                            id: 'status_' + e.ticket.id + '_' + Date.now(),
-                            title: 'Ticket Status Update',
-                            message: `Ticket #${e.ticket.ticket_id} status changed to ${e.ticket.status}`,
-                            icon: 'update',
-                            read_at: null,
-                            time: 'Just now',
-                            url: '/helpdesk/' + e.ticket.id
-                        });
-                    })
-                    .error((error) => {
-                        console.error('[NOTIFICATION] Error on user channel:', error);
-                    });
-                
-                debugLog('Notification system initialization complete');
+                // Notification system initialization complete
             });
         </script>
     </body>

@@ -227,10 +227,7 @@ class CampaignController extends Controller
             
             // Get the output for logging
             $output = \Illuminate\Support\Facades\Artisan::output();
-            \Illuminate\Support\Facades\Log::info('Campaign processing output:', [
-                'campaign_id' => $campaign->id,
-                'output' => $output
-            ]);
+            // Campaign processing output
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error processing campaign:', [
                 'campaign_id' => $campaign->id,
@@ -476,13 +473,21 @@ class CampaignController extends Controller
             
             // Increment opened count
             $campaign->increment('opened_count');
+
+            // Also log into PWA email logs if the campaign id is a template id
+            try {
+                \App\Models\PwaEmailLog::create([
+                    'template_id' => $campaignId,
+                    'action' => 'open',
+                    'quantity' => 1,
+                    'meta' => ['recipient' => $recipientData['email'] ?? 'unknown']
+                ]);
+            } catch (\Throwable $e) {
+                // ignore
+            }
             
             // Log the open event for detailed analytics if needed
-            \Illuminate\Support\Facades\Log::info('Email opened', [
-                'campaign_id' => $campaignId,
-                'recipient' => $recipientData['email'] ?? 'unknown',
-                'timestamp' => now(),
-            ]);
+            // Email opened
             
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error tracking email open: ' . $e->getMessage());
@@ -512,14 +517,21 @@ class CampaignController extends Controller
             
             // Increment clicked count
             $campaign->increment('clicked_count');
+
+            // Also log into PWA email logs if the campaign id is a template id
+            try {
+                \App\Models\PwaEmailLog::create([
+                    'template_id' => $campaignId,
+                    'action' => 'click',
+                    'quantity' => 1,
+                    'meta' => ['recipient' => $recipientData['email'] ?? 'unknown', 'url' => $targetUrl]
+                ]);
+            } catch (\Throwable $e) {
+                // ignore
+            }
             
             // Log the click event for detailed analytics if needed
-            \Illuminate\Support\Facades\Log::info('Email link clicked', [
-                'campaign_id' => $campaignId,
-                'recipient' => $recipientData['email'] ?? 'unknown',
-                'url' => $targetUrl,
-                'timestamp' => now(),
-            ]);
+            // Email link clicked
             
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error tracking email click: ' . $e->getMessage());

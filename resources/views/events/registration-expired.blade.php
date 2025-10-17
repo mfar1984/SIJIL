@@ -25,29 +25,50 @@
                     <p class="text-gray-600 mb-6">
                         The registration period for this event has ended. The event has already started or is completed.
                     </p>
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                        <div class="flex items-center mb-2">
-                            <span class="material-icons text-gray-500 mr-2">calendar_today</span>
-                            <span class="text-gray-700 font-medium">Event Date:</span>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 text-center">
+                        <div class="flex justify-center mb-3">
+                            <span class="material-icons text-gray-500 text-4xl">calendar_today</span>
                         </div>
-                        <p class="text-gray-600">
+                        <div class="text-gray-700 text-base font-semibold">
                             {{ \Carbon\Carbon::parse($event->start_date)->format('d M Y') }}
-                            {{ $event->start_time ? '- ' . substr($event->start_time, 0, 5) : '' }}
-                        </p>
+                            {{ $event->start_time ? ' - ' . substr($event->start_time, 0, 5) : '' }}
+                        </div>
+                        @if($event->end_date || $event->end_time)
+                        <div class="text-gray-500 text-sm mt-1">
+                            @if($event->end_date)
+                                {{ \Carbon\Carbon::parse($event->end_date)->format('d M Y') }}
+                            @endif
+                            @if($event->end_time)
+                                {{ $event->end_time ? ' - ' . substr($event->end_time, 0, 5) : '' }}
+                            @endif
+                        </div>
+                        @endif
                     </div>
-                    <p class="text-gray-600">
-                        For more information about this event, please contact:
-                    </p>
-                    <div class="mt-4 text-gray-800">
-                        @if($event->contact_person)
-                            <p><span class="font-medium">Contact:</span> {{ $event->contact_person }}</p>
-                        @endif
-                        @if($event->contact_email)
-                            <p><span class="font-medium">Email:</span> {{ $event->contact_email }}</p>
-                        @endif
-                        @if($event->contact_phone)
-                            <p><span class="font-medium">Phone:</span> {{ $event->contact_phone }}</p>
-                        @endif
+                    <p class="text-gray-600">For more information about this event, please contact:</p>
+                    <div class="mt-4 text-gray-800 max-w-md mx-auto bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div class="space-y-1">
+                            @if($event->contact_person)
+                            <div class="flex items-start text-sm">
+                                <span class="font-medium inline-block w-24">Contact</span>
+                                <span class="mx-1">:</span>
+                                <span class="text-gray-800">{{ $event->contact_person }}</span>
+                            </div>
+                            @endif
+                            @if($event->contact_email)
+                            <div class="flex items-start text-sm">
+                                <span class="font-medium inline-block w-24">Email</span>
+                                <span class="mx-1">:</span>
+                                <span class="text-gray-800">{{ $event->contact_email }}</span>
+                            </div>
+                            @endif
+                            @if($event->contact_phone)
+                            <div class="flex items-start text-sm">
+                                <span class="font-medium inline-block w-24">Phone</span>
+                                <span class="mx-1">:</span>
+                                <span class="text-gray-800">{{ $event->contact_phone }}</span>
+                            </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>

@@ -12,7 +12,7 @@
 @php
     $inputId = $id ?: $name;
 @endphp
-<div class="mb-4">
+<div class="mb-3">
     @if($label)
         <label for="{{ $inputId }}" class="block mb-1 text-xs font-semibold text-blue-700">
             {{ $label }}@if($required)*@endif

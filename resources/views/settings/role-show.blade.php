@@ -17,19 +17,19 @@
                     <h1 class="text-xl font-bold text-gray-800">Role Details</h1>
                 </div>
                 <div class="flex space-x-3">
-                    @can('edit_roles')
-                    <a href="{{ route('role.edit', $role->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('roles.update')
+                    <a href="{{ route('role.edit', $role->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">edit</span>
                         Edit Role
                     </a>
                     @endcan
                     
-                    @can('delete_roles')
+                    @can('roles.delete')
                         @if(!in_array($role->name, ['Administrator', 'Organizer']))
                         <form method="POST" action="{{ route('role.destroy', $role->id) }}" onsubmit="return confirm('Are you sure you want to delete this role?');" class="inline-block">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="bg-gradient-to-r from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                            <button type="submit" class="bg-gradient-to-r from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                 <span class="material-icons text-xs mr-1">delete</span>
                                 Delete Role
                             </button>
@@ -37,7 +37,7 @@
                         @endif
                     @endcan
                     
-                    <a href="{{ route('role.management') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    <a href="{{ route('role.management') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
@@ -146,72 +146,7 @@
                     Role Permissions
                 </h2>
                 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
-                        <thead class="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Create</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Read</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Update</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach($permissionMatrix as $main => $sub)
-                                @if(is_array($sub) && isset($sub[0]) && is_string($sub[0]))
-                                    <!-- Direct permissions (like Dashboard) -->
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-3 text-xs font-medium text-gray-900">
-                                            {{ $main }}
-                                        </td>
-                                        @foreach(['create', 'read', 'update', 'delete'] as $action)
-                                            <td class="px-4 py-3 text-center">
-                                                @if(in_array($action, $sub))
-                                                    @if(in_array(Str::slug($main) . '.' . $action, $rolePermissions))
-                                                        <span class="material-icons text-green-600 text-base">check_circle</span>
-                                                    @else
-                                                        <span class="material-icons text-red-600 text-base">cancel</span>
-                                                    @endif
-                                                @else
-                                                    <span class="text-gray-300 text-xs">-</span>
-                                                @endif
-                                            </td>
-                                        @endforeach
-                                    </tr>
-                                @else
-                                    <!-- Main category header -->
-                                    <tr class="bg-gray-100">
-                                        <td colspan="5" class="px-4 py-2 text-xs font-bold text-gray-700">
-                                            {{ $main }}
-                                        </td>
-                                    </tr>
-                                    <!-- Sub-menu permissions -->
-                                    @foreach($sub as $subName => $actions)
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-xs text-gray-900 pl-8">
-                                                {{ $subName }}
-                                            </td>
-                                            @foreach(['create', 'read', 'update', 'delete'] as $action)
-                                                <td class="px-4 py-3 text-center">
-                                                    @if(in_array($action, $actions))
-                                                        @if(in_array(Str::slug($subName) . '.' . $action, $rolePermissions))
-                                                            <span class="material-icons text-green-600 text-base">check_circle</span>
-                                                        @else
-                                                            <span class="material-icons text-red-600 text-base">cancel</span>
-                                                        @endif
-                                                    @else
-                                                        <span class="text-gray-300 text-xs">-</span>
-                                                    @endif
-                                                </td>
-                                            @endforeach
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                <x-settings.partials.permissions-matrix :permissions="$permissions" :checkedPermissionNames="$rolePermissions" mode="show" />
             </div>
             
             <!-- Users with this role -->

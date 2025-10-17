@@ -1,8 +1,4 @@
 import './bootstrap';
-import * as malaysiaPostcodes from 'malaysia-postcodes';
-
-// Make malaysiaPostcodes available globally
-window.malaysiaPostcodes = malaysiaPostcodes;
 
 import Alpine from 'alpinejs';
 
@@ -15,7 +11,13 @@ import 'flowbite';
 
 // Import intl-tel-input
 import 'intl-tel-input/build/css/intlTelInput.css';
-import intlTelInput from 'intl-tel-input';
+
+// Initialize Firebase Cloud Messaging registration lazily to enable code-splitting
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('notification-container')) {
+        import('./fcm').catch(() => {});
+    }
+});
 
 // Initialize intl-tel-input on document ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -294,15 +296,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Import library secara langsung
-import {
-  getStates,
-  getCities,
-  getPostcodes,
-} from 'malaysia-postcodes';
-
-// Import country-list-js
-import * as countryListJs from 'country-list-js';
+// Lazy modules cache for dynamic imports (reduces initial bundle size)
+const __lazyModules = { malaysia: null, countryList: null };
+async function ensureMalaysiaModule() {
+    if (!__lazyModules.malaysia) {
+        __lazyModules.malaysia = import('malaysia-postcodes');
+    }
+    return __lazyModules.malaysia;
+}
+async function ensureCountryListModule() {
+    if (!__lazyModules.countryList) {
+        __lazyModules.countryList = import('country-list-js');
+    }
+    return __lazyModules.countryList;
+}
 
 // Malaysia Postcodes Integration
 document.addEventListener('DOMContentLoaded', function() {
@@ -353,8 +360,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Load states into dropdown
-function loadStates() {
+async function loadStates() {
     try {
+        const { getStates } = await ensureMalaysiaModule();
         const states = getStates();
         const stateSelects = [
             document.getElementById('state'),
@@ -387,7 +395,7 @@ function loadStates() {
 }
 
 // Load cities based on selected state
-function loadCities(stateId = 'state') {
+async function loadCities(stateId = 'state') {
     try {
         const stateSelect = document.getElementById(stateId);
         const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
@@ -405,6 +413,7 @@ function loadCities(stateId = 'state') {
             }
             return;
         }
+        const { getCities } = await ensureMalaysiaModule();
         const cities = getCities(selectedState);
         while (citySelect.options.length > 1) {
             citySelect.remove(1);
@@ -427,7 +436,7 @@ function loadCities(stateId = 'state') {
 }
 
 // Load postcodes based on selected state and city
-function loadPostcodes(stateId = 'state') {
+async function loadPostcodes(stateId = 'state') {
     try {
         const stateSelect = document.getElementById(stateId);
         const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
@@ -442,6 +451,7 @@ function loadPostcodes(stateId = 'state') {
             }
             return;
         }
+        const { getPostcodes } = await ensureMalaysiaModule();
         const postcodes = getPostcodes(selectedState, selectedCity);
         while (postcodeSelect.options.length > 1) {
             postcodeSelect.remove(1);
@@ -463,7 +473,7 @@ function loadPostcodes(stateId = 'state') {
 }
 
 // Load countries into dropdown
-function loadCountries() {
+async function loadCountries() {
     try {
         // Get elements
         const countrySelects = [
@@ -476,6 +486,7 @@ function loadCountries() {
         }
         
         // Get all country names as an array
+        const countryListJs = await ensureCountryListModule();
         const countryNames = countryListJs.names();
         if (!countryNames || !Array.isArray(countryNames)) {
             return;

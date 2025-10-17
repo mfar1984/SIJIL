@@ -18,18 +18,20 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">Configure email and SMS delivery settings</p>
                 </div>
                 <div>
+                    @can('delivery.update')
                     <button 
                         type="button" 
-                        @click="isEditing = !isEditing; if(!isEditing && document.getElementById('emailTab').style.display !== 'none') document.getElementById('emailForm').submit(); else if(!isEditing) document.getElementById('smsForm').submit();" 
+                        @click="if(isEditing){ if(document.getElementById('emailTab').style.display !== 'none'){ window.enableAndSubmit('emailForm'); } else { window.enableAndSubmit('smsForm'); } } else { isEditing = true }" 
                         class="bg-gradient-to-r" 
                         :class="isEditing ? 'from-green-600 to-green-500 hover:from-green-700 hover:to-green-600' : 'from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'"
                         x-transition
                     >
-                        <span class="text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1" x-text="isEditing ? 'save' : 'edit'"></span>
                             <span x-text="isEditing ? 'Save Changes' : 'Edit Settings'"></span>
                         </span>
                     </button>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -482,17 +484,7 @@
                     </div>
                 </div>
                 
-                    <div class="mt-4 flex justify-end">
-                        <button 
-                            type="submit" 
-                            id="saveEmailBtn"
-                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-xs flex items-center"
-                            :class="{'hidden': isEditing}"
-                        >
-                            <span class="material-icons text-xs mr-1">save</span>
-                            Save Email Configuration
-                        </button>
-                    </div>
+                    
                 </form>
                 </div>
                 <!-- SMS Configuration Tab -->
@@ -850,7 +842,7 @@
                                 id="sms_template" 
                                 name="sms_template" 
                                 rows="3" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 min-h-[60px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                class="w-full text-xs border-gray-300 rounded min-h-[60px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                 :disabled="!isEditing"
                             >{{ isset($smsConfig) && $smsConfig->default_template ? $smsConfig->default_template : 'Hello {name}, your event {event_name} is starting soon. Please don\'t forget to bring your ID. Thank you!' }}</textarea>
                         </div>
@@ -878,23 +870,22 @@
                     </div>
                 </div>
                     
-                    <div class="mt-4 flex justify-end">
-                        <button 
-                            type="submit" 
-                            id="saveSmsBtn"
-                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-xs flex items-center"
-                            :class="{'hidden': isEditing}"
-                        >
-                            <span class="material-icons text-xs mr-1">save</span>
-                            Save SMS Configuration
-                        </button>
-                    </div>
+                    
             </form>
             </div>
         </div>
     </div>
     
     <script>
+        // Enable disabled fields and submit a form by id
+        window.enableAndSubmit = function(formId) {
+            var form = document.getElementById(formId);
+            if (!form) return;
+            // Enable all disabled inputs temporarily so their values are submitted
+            var disabled = form.querySelectorAll('input:disabled, select:disabled, textarea:disabled');
+            disabled.forEach(function(el){ el.disabled = false; });
+            form.submit();
+        };
         // Switch between tabs
         function switchTab(tab) {
             if (tab === 'email') {

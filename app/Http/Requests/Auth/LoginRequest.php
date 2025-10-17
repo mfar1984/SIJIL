@@ -49,8 +49,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        // Update last login timestamp
+        // Check user status after successful credential match
         $user = Auth::user();
+        if (isset($user->status) && in_array(strtolower($user->status), ['inactive', 'banned'])) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+            $message = $user->status === 'banned' ? 'Your account is banned. Please contact support.' : 'Your account is inactive. Please contact support.';
+            throw ValidationException::withMessages([
+                'email' => $message,
+            ]);
+        }
+
+        // Update last login timestamp
         $user->last_login_at = now();
         $user->save();
 

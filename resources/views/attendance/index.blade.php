@@ -16,14 +16,18 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage all attendance sessions for your events</p>
                 </div>
                 <div class="flex space-x-2">
-                    <a href="{{ route('attendance.archive') }}" class="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('archives.read')
+                    <a href="{{ route('attendance.archive') }}" class="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">inventory</span>
                         View Archive
                     </a>
-                <a href="{{ route('attendance.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                    <span class="material-icons text-xs mr-1">add_circle</span>
-                    Create Attendance
-                </a>
+                    @endcan
+                    @can('attendance.create')
+                    <a href="{{ route('attendance.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <span class="material-icons text-xs mr-1">add_circle</span>
+                        Create Attendance
+                    </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -68,7 +72,7 @@
                             <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
                             <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
                         </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                             </svg>
@@ -151,19 +155,24 @@
                                     <a href="{{ route('attendance.show', $attendance->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="Show Details">
                                         <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                     </a>
+                                    @can('attendance.update')
                                     <a href="{{ route('attendance.edit', $attendance->id) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
                                         <span class="material-icons text-yellow-600 text-xs">edit</span>
                                     </a>
+                                    @endcan
                                     @if($attendance->status !== 'archived')
+                                        @can('attendance.archive')
                                         <form method="POST" action="{{ route('attendance.archive-action', $attendance->id) }}" style="display:inline;">
                                             @csrf
                                             <button type="submit" class="p-1 bg-warning-50 rounded hover:bg-warning-100 border border-warning-100" onclick="return confirm('Archive this attendance?')" title="Archive">
                                                 <span class="material-icons text-warning-600 text-xs">archive</span>
                                             </button>
                                         </form>
+                                        @endcan
                                     @else
                                         <span class="p-1 bg-secondary-50 rounded text-secondary-600 text-xs">Archived</span>
                                     @endif
+                                    @can('attendance.delete')
                                     <form method="POST" action="{{ route('attendance.destroy', $attendance->id) }}" onsubmit="return confirm('Are you sure you want to delete this attendance session?')" class="inline-block">
                                         @csrf
                                         @method('DELETE')
@@ -171,6 +180,7 @@
                                             <span class="material-icons text-red-600 text-xs">delete</span>
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

@@ -34,6 +34,7 @@ class Event extends Model
         'contact_phone',
         'registration_link', // Unique registration link
         'registration_expires_at',
+        'poster',
     ];
 
     /**

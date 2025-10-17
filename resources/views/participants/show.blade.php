@@ -15,19 +15,23 @@
                     <h1 class="text-xl font-bold text-gray-800">Participant Details</h1>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('participants.edit', $participant->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('participants.update')
+                    <a href="{{ route('participants.edit', $participant->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">edit</span>
                         Edit Participant
                     </a>
+                    @endcan
+                    @can('participants.delete')
                     <form method="POST" action="{{ route('participants.destroy', $participant->id) }}" onsubmit="return confirm('Are you sure you want to delete this participant?')" class="inline-block">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="bg-gradient-to-r from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <button type="submit" class="bg-gradient-to-r from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                             <span class="material-icons text-xs mr-1">delete</span>
                             Delete Participant
                         </button>
                     </form>
-                    <a href="{{ route('participants') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @endcan
+                    <a href="{{ route('participants') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
@@ -220,6 +224,21 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Race (Bangsa) -->
+                    <div>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">diversity_1</span>
+                            Race (Bangsa)
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="material-icons text-[#004aad] text-base">groups</span>
+                            </div>
+                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                {{ $participant->race ?? 'Not specified' }}
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Status -->
                     <div>
@@ -370,7 +389,7 @@
                     <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
                         <span class="material-icons text-[#004aad] text-base">notes</span>
                     </div>
-                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-3 border min-h-[60px]">
+                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] border">
                         {{ $participant->notes }}
                     </div>
                 </div>

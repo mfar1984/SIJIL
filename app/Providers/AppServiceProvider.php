@@ -38,5 +38,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Enable Tailwind pagination
         Paginator::useTailwind();
+
+        // Make sure Google credentials env is set for FCM HTTP v1
+        $credPath = config('services.firebase.credentials');
+        if ($credPath) {
+            $full = base_path($credPath);
+            if (file_exists($full)) {
+                putenv('GOOGLE_APPLICATION_CREDENTIALS='.$full);
+            }
+        }
     }
 }

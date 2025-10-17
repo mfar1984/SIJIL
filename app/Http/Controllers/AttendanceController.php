@@ -139,15 +139,33 @@ class AttendanceController extends Controller
             'end_time' => $firstSession['checkin_end_time'],
         ]);
 
-        // Create sessions
+        // Create sessions with unique codes
         foreach ($request->sessions as $session) {
+            $hasCheckout = !empty($session['checkout_start_time']);
+            
+            // Check-in session
             $attendance->sessions()->create([
+                'unique_code' => \Illuminate\Support\Str::random(32),
+                'session_type' => 'checkin',
                 'date' => $session['date'],
                 'checkin_start_time' => $session['checkin_start_time'],
                 'checkin_end_time' => $session['checkin_end_time'],
-                'checkout_start_time' => $session['checkout_start_time'] ?? null,
-                'checkout_end_time' => $session['checkout_end_time'] ?? null,
+                'checkout_start_time' => null,
+                'checkout_end_time' => null,
             ]);
+            
+            // If has checkout, create separate checkout session
+            if ($hasCheckout) {
+                $attendance->sessions()->create([
+                    'unique_code' => \Illuminate\Support\Str::random(32),
+                    'session_type' => 'checkout',
+                    'date' => $session['date'],
+                    'checkin_start_time' => null,
+                    'checkin_end_time' => null,
+                    'checkout_start_time' => $session['checkout_start_time'],
+                    'checkout_end_time' => $session['checkout_end_time'],
+                ]);
+            }
         }
 
         return redirect()->route('attendance.index')->with('success', 'Attendance session(s) created successfully.');
@@ -208,15 +226,33 @@ class AttendanceController extends Controller
         // Remove old sessions
         $attendance->sessions()->delete();
 
-        // Create new sessions
+        // Create new sessions with unique codes
         foreach ($request->sessions as $session) {
+            $hasCheckout = !empty($session['checkout_start_time']);
+            
+            // Check-in session
             $attendance->sessions()->create([
+                'unique_code' => \Illuminate\Support\Str::random(32),
+                'session_type' => 'checkin',
                 'date' => $session['date'],
                 'checkin_start_time' => $session['checkin_start_time'],
                 'checkin_end_time' => $session['checkin_end_time'],
-                'checkout_start_time' => $session['checkout_start_time'] ?? null,
-                'checkout_end_time' => $session['checkout_end_time'] ?? null,
+                'checkout_start_time' => null,
+                'checkout_end_time' => null,
             ]);
+            
+            // If has checkout, create separate checkout session
+            if ($hasCheckout) {
+                $attendance->sessions()->create([
+                    'unique_code' => \Illuminate\Support\Str::random(32),
+                    'session_type' => 'checkout',
+                    'date' => $session['date'],
+                    'checkin_start_time' => null,
+                    'checkin_end_time' => null,
+                    'checkout_start_time' => $session['checkout_start_time'],
+                    'checkout_end_time' => $session['checkout_end_time'],
+                ]);
+            }
         }
 
         return redirect()->route('attendance.index')->with('success', 'Attendance session updated.');
@@ -235,14 +271,357 @@ class AttendanceController extends Controller
 
     public function qrcode(Attendance $attendance)
     {
-        // Generate QR code SVG for the unique_code
-        $renderer = new ImageRenderer(
-            new RendererStyle(400),
-            new SvgImageBackEnd()
-        );
-        $writer = new Writer($renderer);
-        $qrSvg = $writer->writeString($attendance->unique_code);
-        return view('attendance.qrcode', compact('attendance', 'qrSvg'));
+        $now = now();
+        $today = $now->toDateString();
+        $currentTime = $now->format('H:i:s');
+        
+        // Priority 1: Find session for today that is currently active (within time window)
+        $activeSession = $attendance->sessions()
+            ->where('date', $today)
+            ->where(function($q) use ($currentTime) {
+                // Check-in window active now
+                $q->where(function($q2) use ($currentTime) {
+                    $q2->where('session_type', 'checkin')
+                       ->whereNotNull('checkin_start_time')
+                       ->whereRaw("TIME(?) BETWEEN TIME(checkin_start_time) AND TIME(checkin_end_time)", [$currentTime]);
+                })
+                // Checkout window active now
+                ->orWhere(function($q2) use ($currentTime) {
+                    $q2->where('session_type', 'checkout')
+                       ->whereNotNull('checkout_start_time')
+                       ->whereRaw("TIME(?) BETWEEN TIME(checkout_start_time) AND TIME(checkout_end_time)", [$currentTime]);
+                });
+            })
+            ->orderBy('session_type') // checkin before checkout if both active
+            ->first();
+        
+        // Priority 2: If no active session now, find next upcoming session (today future or future date)
+        if (!$activeSession) {
+            $activeSession = $attendance->sessions()
+                ->where(function($q) use ($today, $currentTime) {
+                    // Future sessions today
+                    $q->where(function($q2) use ($today, $currentTime) {
+                        $q2->where('date', $today)
+                           ->where(function($q3) use ($currentTime) {
+                               $q3->where(function($q4) use ($currentTime) {
+                                   $q4->where('session_type', 'checkin')
+                                      ->whereNotNull('checkin_start_time')
+                                      ->whereRaw("TIME(checkin_start_time) > ?", [$currentTime]);
+                               })
+                               ->orWhere(function($q4) use ($currentTime) {
+                                   $q4->where('session_type', 'checkout')
+                                      ->whereNotNull('checkout_start_time')
+                                      ->whereRaw("TIME(checkout_start_time) > ?", [$currentTime]);
+                               });
+                           });
+                    })
+                    // Future dates
+                    ->orWhere('date', '>', $today);
+                })
+                ->orderBy('date')
+                ->orderBy('session_type')
+                ->first();
+        }
+        
+        // Generate QR for the selected session
+        $sessionsWithQR = collect();
+        if ($activeSession && $activeSession->unique_code) {
+            $renderer = new ImageRenderer(
+                new RendererStyle(400),
+                new SvgImageBackEnd()
+            );
+            $writer = new Writer($renderer);
+            $qrSvg = $writer->writeString($activeSession->unique_code);
+            
+            $sessionsWithQR->push([
+                'id' => $activeSession->id,
+                'date' => $activeSession->date,
+                'session_type' => $activeSession->session_type,
+                'checkin_start_time' => $activeSession->checkin_start_time,
+                'checkin_end_time' => $activeSession->checkin_end_time,
+                'checkout_start_time' => $activeSession->checkout_start_time,
+                'checkout_end_time' => $activeSession->checkout_end_time,
+                'unique_code' => $activeSession->unique_code,
+                'qr_svg' => $qrSvg,
+                'is_active_now' => $attendance->sessions()
+                    ->where('id', $activeSession->id)
+                    ->where('date', $today)
+                    ->where(function($q) use ($currentTime) {
+                        $q->where(function($q2) use ($currentTime) {
+                            $q2->where('session_type', 'checkin')
+                               ->whereRaw("TIME(?) BETWEEN TIME(checkin_start_time) AND TIME(checkin_end_time)", [$currentTime]);
+                        })
+                        ->orWhere(function($q2) use ($currentTime) {
+                            $q2->where('session_type', 'checkout')
+                               ->whereRaw("TIME(?) BETWEEN TIME(checkout_start_time) AND TIME(checkout_end_time)", [$currentTime]);
+                        });
+                    })
+                    ->exists(),
+            ]);
+        }
+        
+        return view('attendance.qrcode', compact('attendance', 'sessionsWithQR'));
+    }
+
+    public function searchParticipant(Request $request, Attendance $attendance)
+    {
+        $request->validate([
+            'ic' => 'nullable|string',
+            'passport' => 'nullable|string',
+            'id_type' => 'required|in:ic,passport',
+        ]);
+
+        $idType = $request->id_type;
+        $query = \App\Models\Participant::where('event_id', $attendance->event_id);
+
+        if ($idType === 'ic') {
+            $normalizedIc = preg_replace('/\D+/', '', $request->ic);
+            $query->whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc]);
+        } else {
+            $normalizedPass = strtolower(preg_replace('/\s+/', '', $request->passport));
+            $query->whereRaw("LOWER(REPLACE(passport_no, ' ', '')) = ?", [$normalizedPass]);
+        }
+
+        $participant = $query->first();
+
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Peserta tidak dijumpai untuk event ini.'
+            ], 404);
+        }
+
+        // Get attendance history for this participant & attendance
+        // Group sessions by date to get unique dates
+        $allSessions = $attendance->sessions()->orderBy('date')->get();
+        $dateGroups = $allSessions->groupBy('date');
+        $history = [];
+
+        foreach ($dateGroups as $date => $sessionsForDate) {
+            $checkinSession = $sessionsForDate->where('session_type', 'checkin')->first();
+            $checkoutSession = $sessionsForDate->where('session_type', 'checkout')->first();
+
+            $checkinRecord = null;
+            $checkoutRecord = null;
+
+            if ($checkinSession) {
+                $checkinRecord = \App\Models\AttendanceRecord::where('attendance_session_id', $checkinSession->id)
+                    ->where('participant_id', $participant->id)
+                    ->first();
+            }
+            if ($checkoutSession) {
+                $checkoutRecord = \App\Models\AttendanceRecord::where('attendance_session_id', $checkoutSession->id)
+                    ->where('participant_id', $participant->id)
+                    ->first();
+            }
+
+            $sessionDateObj = \Carbon\Carbon::parse($date);
+            $isPast = $sessionDateObj->lt(now()->startOfDay());
+            $isToday = $sessionDateObj->isToday();
+
+            // Determine check-in status
+            $checkinTime = $checkinRecord ? $checkinRecord->checkin_time : null;
+            $checkoutTime = $checkoutRecord ? $checkoutRecord->checkout_time : null;
+            
+            $checkinStatus = 'Pending';
+            if ($isPast && !$checkinTime) {
+                // If has checkout but no checkin, mark as Late
+                if ($checkoutTime) {
+                    $checkinStatus = 'Late';
+                } else {
+                    $checkinStatus = 'Absent';
+                }
+            } elseif ($checkinTime && $checkinSession) {
+                $checkinTimeObj = \Carbon\Carbon::parse($checkinTime);
+                $checkinEnd = \Carbon\Carbon::parse($checkinSession->date . ' ' . $checkinSession->checkin_end_time);
+                $checkinStatus = $checkinTimeObj->lte($checkinEnd) ? 'On Time' : 'Late';
+            } elseif ($isToday && $checkinSession) {
+                // Check if check-in window has passed
+                $checkinEndTime = \Carbon\Carbon::parse($checkinSession->date . ' ' . $checkinSession->checkin_end_time);
+                if (now()->gt($checkinEndTime)) {
+                    // Window passed, check if has checkout
+                    if ($checkoutTime) {
+                        $checkinStatus = 'Late';
+                    } else {
+                        $checkinStatus = 'Absent';
+                    }
+                } else {
+                    $checkinStatus = 'Pending';
+                }
+            }
+
+            // Determine check-out status
+            $checkoutTime = $checkoutRecord ? $checkoutRecord->checkout_time : null;
+            $checkoutStatus = 'Pending';
+            $hasCheckout = (bool) $checkoutSession;
+            if ($isPast && !$checkoutTime && $hasCheckout) {
+                $checkoutStatus = 'Absent';
+            } elseif ($checkoutTime && $checkoutSession) {
+                $checkoutTimeObj = \Carbon\Carbon::parse($checkoutTime);
+                $checkoutStart = \Carbon\Carbon::parse($checkoutSession->date . ' ' . $checkoutSession->checkout_start_time);
+                $checkoutStatus = $checkoutTimeObj->gte($checkoutStart) ? 'On Time' : 'Early';
+            } elseif ($isToday && $checkoutSession) {
+                // Check if checkout window has passed
+                $checkoutEndTime = \Carbon\Carbon::parse($checkoutSession->date . ' ' . $checkoutSession->checkout_end_time);
+                if (now()->gt($checkoutEndTime)) {
+                    $checkoutStatus = 'Absent';
+                } else {
+                    $checkoutStatus = 'Pending';
+                }
+            }
+
+            $history[] = [
+                'date' => \Carbon\Carbon::parse($date)->format('d F Y'),
+                'checkin_time' => $checkinTime ? \Carbon\Carbon::parse($checkinTime)->format('h:i:s a') : null,
+                'checkin_status' => $checkinStatus,
+                'checkout_time' => $checkoutTime ? \Carbon\Carbon::parse($checkoutTime)->format('h:i:s a') : null,
+                'checkout_status' => $checkoutStatus,
+                'has_checkout' => $hasCheckout,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'participant' => [
+                    'id' => $participant->id,
+                    'name' => $participant->name,
+                    'identity_card' => $participant->identity_card,
+                    'passport_no' => $participant->passport_no,
+                    'email' => $participant->email,
+                    'phone' => $participant->phone,
+                    'organization' => $participant->organization,
+                ],
+                'history' => $history,
+            ]
+        ]);
+    }
+
+    public function checkinManual(Request $request, Attendance $attendance)
+    {
+        try {
+            $request->validate(['participant_id' => 'required|exists:participants,id']);
+            $participantId = $request->participant_id;
+
+        // Verify participant belongs to this event
+        $participant = \App\Models\Participant::where('id', $participantId)
+            ->where('event_id', $attendance->event_id)
+            ->first();
+
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Participant not valid for this event.'
+            ], 400);
+        }
+
+        $now = now();
+        $today = $now->toDateString();
+        $currentTime = $now->format('H:i:s');
+
+        // Find active session for today and current time
+        $session = $attendance->sessions()
+            ->where('date', $today)
+            ->where(function($q) use ($currentTime) {
+                // Check-in window
+                $q->where(function($q2) use ($currentTime) {
+                    $q2->where('session_type', 'checkin')
+                       ->whereNotNull('checkin_start_time')
+                       ->whereRaw("TIME(?) BETWEEN TIME(checkin_start_time) AND TIME(checkin_end_time)", [$currentTime]);
+                })
+                // Checkout window
+                ->orWhere(function($q2) use ($currentTime) {
+                    $q2->where('session_type', 'checkout')
+                       ->whereNotNull('checkout_start_time')
+                       ->whereRaw("TIME(?) BETWEEN TIME(checkout_start_time) AND TIME(checkout_end_time)", [$currentTime]);
+                });
+            })
+            ->first();
+
+        if (!$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active check-in/check-out window for today at this time.'
+            ], 400);
+        }
+
+        // Check if already checked in/out for this session
+        $existingRecord = \App\Models\AttendanceRecord::where('attendance_session_id', $session->id)
+            ->where('participant_id', $participantId)
+            ->first();
+
+        if ($session->session_type === 'checkin') {
+            if ($existingRecord && $existingRecord->checkin_time) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Participant already checked in for this session.'
+                ], 400);
+            }
+            // Create or update check-in
+            if ($existingRecord) {
+                $existingRecord->update(['checkin_time' => $now, 'status' => 'present']);
+                $record = $existingRecord;
+            } else {
+                $record = \App\Models\AttendanceRecord::create([
+                    'attendance_id' => $attendance->id,
+                    'participant_id' => $participantId,
+                    'attendance_session_id' => $session->id,
+                    'checkin_time' => $now,
+                    'timestamp' => $now,
+                    'status' => 'present',
+                    'scanned_by_device' => 'manual_web',
+                ]);
+            }
+            $actionType = 'Check-in';
+        } else {
+            // Checkout
+            if ($existingRecord && $existingRecord->checkout_time) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Participant already checked out for this session.'
+                ], 400);
+            }
+            
+            if ($existingRecord) {
+                // Update existing record with checkout
+                $existingRecord->update(['checkout_time' => $now]);
+                $record = $existingRecord;
+            } else {
+                // Create new record with checkout only (checkin akan late/absent)
+                $record = \App\Models\AttendanceRecord::create([
+                    'attendance_id' => $attendance->id,
+                    'participant_id' => $participantId,
+                    'attendance_session_id' => $session->id,
+                    'checkin_time' => null,
+                    'checkout_time' => $now,
+                    'timestamp' => $now,
+                    'status' => 'present', // Present but late for checkin (display logic will show Late)
+                    'scanned_by_device' => 'manual_web',
+                ]);
+            }
+            $actionType = 'Check-out';
+        }
+
+            return response()->json([
+                'success' => true,
+                'message' => $actionType . ' successful for ' . $participant->name . '!',
+                'data' => [
+                    'record_id' => $record->id,
+                    'checkin_time' => $record->checkin_time,
+                    'checkout_time' => $record->checkout_time,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Manual check-in error: ' . $e->getMessage(), [
+                'attendance_id' => $attendance->id,
+                'participant_id' => $request->participant_id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during check-in: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function list(Request $request)
@@ -275,13 +654,12 @@ class AttendanceController extends Controller
             if ($selectedSessionId) {
                 $query = \DB::table('attendance_records')
                     ->join('participants', 'attendance_records.participant_id', '=', 'participants.id')
-                    ->join('attendance_sessions', 'attendance_records.attendance_id', '=', 'attendance_sessions.attendance_id')
+                    ->join('attendance_sessions', 'attendance_sessions.id', '=', 'attendance_records.attendance_session_id')
                     ->where('attendance_sessions.id', $selectedSessionId)
                     ->select(
                         'attendance_records.id as record_id',
                         'participants.id as participant_id',
                         'participants.name',
-                        'participants.organization as ic',
                         'attendance_records.status'
                     );
                 
@@ -346,7 +724,6 @@ class AttendanceController extends Controller
                     'attendance_records.id as record_id',
                     'participants.id as participant_id',
                     'participants.name',
-                    'participants.organization as ic',
                     'attendance_records.checkin_time',
                     'attendance_records.checkout_time',
                     'attendance_records.status'
@@ -357,8 +734,9 @@ class AttendanceController extends Controller
             if ($search) {
                 $query->where(function($q) use ($search) {
                     $q->where('participants.name', 'like', "%$search%")
-                      ->orWhere('participants.organization', 'like', "%$search%")
-                      ->orWhere('participants.id', 'like', "%$search%")
+                      ->orWhere('participants.identity_card', 'like', "%$search%")
+                      ->orWhere('participants.passport_no', 'like', "%$search%")
+                      ->orWhere('participants.id_passport', 'like', "%$search%")
                       ;
                 });
             }
@@ -374,7 +752,6 @@ class AttendanceController extends Controller
                     'record_id' => $p->record_id,
                     'participant_id' => $p->participant_id,
                     'name' => $p->name,
-                    'ic' => $p->ic,
                     'time' => $p->checkin_time,
                     'checkout_time' => $p->checkout_time,
                     'status' => $p->status,

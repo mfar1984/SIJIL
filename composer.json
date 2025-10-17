@@ -9,6 +9,7 @@
         "php": "^8.1",
         "bacon/bacon-qr-code": "^3.0",
         "doctrine/dbal": "^4.3",
+        "google/auth": "^1.38",
         "guzzlehttp/guzzle": "^7.2",
         "infobip/infobip-api-php-client": "6.2.1",
         "laravel/framework": "^12.0",

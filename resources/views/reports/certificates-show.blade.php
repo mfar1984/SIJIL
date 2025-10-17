@@ -22,18 +22,20 @@
                     </p>
                 </div>
                 <div class="flex space-x-2">
-                    <a href="{{ route('reports.certificates') }}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    <a href="{{ route('reports.certificates') }}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
-                    <button onclick="printCertificate()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    <button onclick="printCertificate()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">print</span>
                         Print
                     </button>
-                    <a href="{{ route('reports.certificates.download', ['id' => $certificate->certificate_number]) }}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('certificate_reports.export')
+                    <a href="{{ route('reports.certificates.download', ['id' => $certificate->certificate_number]) }}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">file_download</span>
                         Download PDF
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -274,6 +276,7 @@
                 
                 <!-- Actions -->
                 <div class="mt-4 flex space-x-2">
+                    @can('certificate_reports.delete')
                     <form method="POST" action="{{ route('reports.certificates.delete', ['id' => $certificate->certificate_number]) }}" onsubmit="return confirm('Are you sure you want to delete this certificate?')" class="inline-block">
                         @csrf
                         @method('DELETE')
@@ -282,6 +285,7 @@
                             Delete Certificate
                         </button>
                     </form>
+                    @endcan
                 </div>
             </div>
         </div>

@@ -64,16 +64,18 @@
                     <p class="text-xs text-gray-500 mt-1 ml-8">View PWA usage statistics and user engagement metrics</p>
                 </div>
                 <div class="flex gap-2">
-                    <select class="appearance-none px-3 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-indigo-200 focus:border-indigo-300 bg-white">
+                    <select class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[150px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                         <option>Last 7 Days</option>
                         <option>Last 30 Days</option>
                         <option>Last 3 Months</option>
                         <option>Last Year</option>
                     </select>
-                    <a href="{{ route('pwa.analytics.export') }}" class="bg-indigo-500 text-white px-3 py-1 rounded text-xs font-medium flex items-center">
+                    @can('pwa_analytics.export')
+                    <a href="{{ route('pwa.analytics.export') }}" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 h-[36px] rounded text-xs font-medium flex items-center">
                         <span class="material-icons text-xs mr-1">download</span>
                         Export
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -136,7 +138,7 @@
                     <form method="GET" class="flex gap-2 items-center justify-between">
                         <div class="flex gap-2 items-center">
                             @if(isset($events) && $events->count() > 0)
-                            <select name="event_id" class="px-3 py-2 text-sm border border-gray-300 rounded focus:ring focus:ring-indigo-200 focus:border-indigo-300 bg-white">
+                            <select name="event_id" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[200px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                                 <option value="">All Events</option>
                                 @foreach($events as $event)
                                     <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>
@@ -148,7 +150,7 @@
                         </div>
                         
                         <div class="flex gap-2 items-center">
-                            <select name="date_range" id="dateRange" class="px-3 py-2 text-sm border border-gray-300 rounded focus:ring focus:ring-indigo-200 focus:border-indigo-300 bg-white">
+                            <select name="date_range" id="dateRange" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[150px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
                                 <option value="7" {{ $dateRange == '7' ? 'selected' : '' }}>Last 7 Days</option>
                                 <option value="30" {{ $dateRange == '30' ? 'selected' : '' }}>Last 30 Days</option>
                                 <option value="60" {{ $dateRange == '60' ? 'selected' : '' }}>Last 60 Days</option>
@@ -157,12 +159,12 @@
                             </select>
                             
                             <div id="customDateContainer" class="flex gap-2 items-center {{ $dateRange == 'custom' ? '' : 'hidden' }}">
-                                <input type="date" name="start_date" value="{{ $startDate }}" class="px-3 py-2 text-sm border border-gray-300 rounded focus:ring focus:ring-indigo-200 focus:border-indigo-300 bg-white">
-                                <span class="text-gray-500">to</span>
-                                <input type="date" name="end_date" value="{{ $endDate }}" class="px-3 py-2 text-sm border border-gray-300 rounded focus:ring focus:ring-indigo-200 focus:border-indigo-300 bg-white">
+                                <input type="date" name="start_date" value="{{ $startDate }}" class="px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light">
+                                <span class="text-xs text-gray-500">to</span>
+                                <input type="date" name="end_date" value="{{ $endDate }}" class="px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light">
                             </div>
                             
-                            <button type="submit" class="bg-indigo-500 text-white px-3 py-2 rounded text-sm font-medium flex items-center">
+                            <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 h-[36px] rounded text-xs font-medium flex items-center">
                                 <span class="material-icons text-xs mr-1">filter_alt</span>
                                 Apply Filter
                             </button>

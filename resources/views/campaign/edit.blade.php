@@ -17,9 +17,11 @@
         </div>
         
         <div class="p-6">
+            @php $canUpdate = auth()->user()->can('campaigns.update'); @endphp
             <form action="{{ route('campaign.update', ['campaign' => $campaign->id]) }}" method="POST" class="space-y-6" id="campaignForm">
                 @csrf
                 @method('PUT')
+                <fieldset {{ $canUpdate ? '' : 'disabled' }}>
                 
                 <!-- Campaign Details -->
                 <div class="mb-6">
@@ -199,16 +201,10 @@
                         </div>
                         
                         <div id="custom_emails_input" class="{{ $campaign->audience_type == 'custom_emails' ? '' : 'hidden' }}">
-                            <label for="custom_emails" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">email</span>
+                            <label for="custom_emails" class="block text-xs font-medium text-gray-700 mb-1">
                                 Custom Email Addresses <span class="text-red-500">*</span>
                             </label>
-                            <div class="relative">
-                                <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">alternate_email</span>
-                                </div>
-                                <textarea id="custom_emails" name="custom_emails" rows="4" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter email addresses separated by commas, e.g. test@example.com, user@domain.com">{{ $campaign->custom_emails ?? '' }}</textarea>
-                            </div>
+                            <textarea id="custom_emails" name="custom_emails" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter email addresses separated by commas, e.g. test@example.com, user@domain.com">{{ $campaign->custom_emails ?? '' }}</textarea>
                             <p class="mt-1 text-[10px] text-gray-500">Enter custom email addresses separated by commas for testing purposes</p>
                         </div>
                     </div>
@@ -276,16 +272,10 @@
                     <h2 class="text-sm font-semibold text-gray-700 mb-4">SMS Content</h2>
                     <div class="space-y-4">
                         <div>
-                            <label for="sms_message" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">sms</span>
+                            <label for="sms_message" class="block text-xs font-medium text-gray-700 mb-1">
                                 Message Content <span class="text-red-500">*</span>
                             </label>
-                            <div class="relative">
-                                <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">message</span>
-                                </div>
-                                <textarea id="sms_message" name="sms_message" rows="4" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter SMS message (160 characters max)">{{ isset($campaign->content['message']) ? $campaign->content['message'] : '' }}</textarea>
-                            </div>
+                            <textarea id="sms_message" name="sms_message" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter SMS message (160 characters max)">{{ isset($campaign->content['message']) ? $campaign->content['message'] : '' }}</textarea>
                             <p class="mt-1 text-xs text-gray-500">Characters: <span id="sms_char_count">0</span>/160</p>
                         </div>
                         
@@ -324,12 +314,12 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="scheduled_date" class="block text-xs font-medium text-gray-700 mb-1">Date</label>
-                                    <input type="date" id="scheduled_date" name="scheduled_date" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" value="{{ $campaign->scheduled_at ? $campaign->scheduled_at->format('Y-m-d') : '' }}">
+                                    <input type="date" id="scheduled_date" name="scheduled_date" class="w-full h-9 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" value="{{ $campaign->scheduled_at ? $campaign->scheduled_at->format('Y-m-d') : '' }}">
                                 </div>
                                 
                                 <div>
                                     <label for="scheduled_time" class="block text-xs font-medium text-gray-700 mb-1">Time</label>
-                                    <input type="time" id="scheduled_time" name="scheduled_time" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" value="{{ $campaign->scheduled_at ? $campaign->scheduled_at->format('H:i') : '' }}">
+                                    <input type="time" id="scheduled_time" name="scheduled_time" class="w-full h-9 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" value="{{ $campaign->scheduled_at ? $campaign->scheduled_at->format('H:i') : '' }}">
                                 </div>
                             </div>
                         </div>
@@ -338,15 +328,18 @@
                 
                 <!-- Form Actions -->
                 <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
-                    <a href="{{ route('campaign.index') }}" class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                    <a href="{{ route('campaign.index') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
                         <span class="material-icons text-xs mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button type="submit" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                    @can('campaigns.update')
+                    <button type="submit" class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
                         <span class="material-icons text-xs mr-1">save</span>
                         Update Campaign
                     </button>
+                    @endcan
                 </div>
+                </fieldset>
             </form>
         </div>
     </div>
@@ -389,7 +382,7 @@
                 init_instance_callback: function(editor) {
                     // Set the content directly from our JavaScript variable
                     editor.setContent(emailBodyContent);
-                    console.log('Email content from database:', emailBodyContent);
+                    // Email content from database
                 }
             });
             

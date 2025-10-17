@@ -16,50 +16,19 @@ class DatabaseParticipantsPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create new database participants permissions
-        $permissionGroup = 'database';
-        $permissions = [
-            'create_database_users' => 'Create Database Users',
-            'edit_database_users' => 'Edit Database Users',
-            'delete_database_users' => 'Delete Database Users',
-            'view_database_users' => 'View Database Users',
-        ];
+        // This seeder is deprecated. Database Users permissions are legacy and not used.
+        // Keeping it no-op to avoid re-introducing legacy permissions.
+        $permissions = [];
 
         // Create permissions
-        foreach ($permissions as $permission => $display_name) {
-            $permissionExists = Permission::where('name', $permission)->first();
-            
-            if (!$permissionExists) {
-                Permission::create([
-                    'name' => $permission, 
-                    'display_name' => $display_name,
-                    'guard_name' => 'web',
-                    'group' => $permissionGroup,
-                    'description' => 'Permission to ' . strtolower($display_name)
-                ]);
-            }
-        }
+        foreach ($permissions as $permission => $display_name) {/* no-op */}
 
         // Assign permissions to Administrator role
         $adminRole = Role::where('name', 'Administrator')->first();
-        if ($adminRole) {
-            $adminRole->givePermissionTo([
-                'create_database_users',
-                'edit_database_users',
-                'delete_database_users',
-                'view_database_users',
-            ]);
-        }
+        if ($adminRole) {/* no-op */}
 
         // Assign permissions to Organizer role
         $organizerRole = Role::where('name', 'Organizer')->first();
-        if ($organizerRole) {
-            $organizerRole->givePermissionTo([
-                'create_database_users',
-                'edit_database_users',
-                'delete_database_users',
-                'view_database_users',
-            ]);
-        }
+        if ($organizerRole) {/* no-op */}
     }
 } 

@@ -16,7 +16,7 @@
                 </div>
                 <p class="text-xs text-gray-500 mt-1 ml-8">Manage all certificate templates</p>
             </div>
-            <a href="{{ route('template.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+            <a href="{{ route('template.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                 <span class="material-icons text-xs mr-1">add_circle</span>
                 Create Template
             </a>

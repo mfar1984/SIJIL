@@ -20,10 +20,12 @@
                 </div>
                 <div x-data="{ showModal: false }">
                     <!-- Trigger button -->
-                    <button @click="showModal = true" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                    @can('helpdesk.create')
+                    <button @click="showModal = true" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                         <span class="material-icons text-xs mr-1">add_circle</span>
                         Create New Ticket
                     </button>
+                    @endcan
                     
                     <div
                         x-show="showModal"
@@ -43,6 +45,7 @@
                                     <span class="material-icons">close</span>
                                 </button>
                             </div>
+                            @can('helpdesk.create')
                             <form action="{{ route('helpdesk.store') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <div class="p-6">
@@ -95,6 +98,7 @@
                                     </button>
                                 </div>
                             </form>
+                            @endcan
                         </div>
                     </div>
                 </div>
@@ -182,7 +186,7 @@
                         <option value="resolved" @if(request('status') == 'resolved') selected @endif>Resolved</option>
                         <option value="closed" @if(request('status') == 'closed') selected @endif>Closed</option>
                     </select>
-                    <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[38px] rounded text-xs font-medium flex items-center justify-center" title="Search">
+                    <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
                         </svg>
@@ -262,10 +266,23 @@
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
                                             <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
+                                        @can('helpdesk.delete')
+                                        @if($isAdmin)
+                                        <form action="{{ route('helpdesk.delete', $ticket->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete this ticket?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
+                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                            </button>
+                                        </form>
+                                        @endif
+                                        @endcan
                                         @if($ticket->status != 'closed')
+                                        @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
                                             <span class="material-icons text-green-600 text-xs">reply</span>
                                         </a>
+                                        @endcan
                                         @endif
                                     </div>
                                 </td>
@@ -316,10 +333,23 @@
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
                                             <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
+                                        @can('helpdesk.delete')
+                                        @if($isAdmin)
+                                        <form action="{{ route('helpdesk.delete', $ticket->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete this ticket?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
+                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                            </button>
+                                        </form>
+                                        @endif
+                                        @endcan
                                         @if($ticket->status != 'closed')
+                                        @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
                                             <span class="material-icons text-green-600 text-xs">reply</span>
                                         </a>
+                                        @endcan
                                         @endif
                                     </div>
                                 </td>
@@ -384,10 +414,23 @@
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
                                             <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
+                                        @can('helpdesk.delete')
+                                        @if($isAdmin)
+                                        <form action="{{ route('helpdesk.delete', $ticket->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete this ticket?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
+                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                            </button>
+                                        </form>
+                                        @endif
+                                        @endcan
                                         @if($ticket->status != 'closed')
+                                        @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
                                             <span class="material-icons text-green-600 text-xs">reply</span>
                                         </a>
+                                        @endcan
                                         @endif
                                     </div>
                                 </td>
@@ -452,10 +495,23 @@
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
                                             <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
+                                        @can('helpdesk.delete')
+                                        @if($isAdmin)
+                                        <form action="{{ route('helpdesk.delete', $ticket->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete this ticket?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
+                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                            </button>
+                                        </form>
+                                        @endif
+                                        @endcan
                                         @if($ticket->status != 'closed')
+                                        @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
                                             <span class="material-icons text-green-600 text-xs">reply</span>
                                         </a>
+                                        @endcan
                                         @endif
                                     </div>
                                 </td>
@@ -497,80 +553,5 @@
         </div>
     </div>
     
-    <!-- Realtime Updates -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if Echo is loaded
-            if (window.Echo) {
-                try {
-                    // Connect to Pusher
-                    const userId = {{ Auth::id() }};
-                    
-                    // Listen for new tickets (admin only)
-                    @if($isAdmin)
-                    window.Echo.private('helpdesk.admin')
-                        .listen('NewTicketCreated', (e) => {
-                            console.log('New ticket created:', e);
-                            
-                            // Show notification
-                            const notification = document.createElement('div');
-                            notification.className = 'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50';
-                            notification.innerHTML = `
-                                <div class="flex items-center">
-                                    <span class="material-icons text-green-500 mr-2">notifications</span>
-                                    <div>
-                                        <p class="font-bold">New Ticket Created</p>
-                                        <p class="text-sm">${e.ticket.ticket_id}: ${e.ticket.subject}</p>
-                                    </div>
-                                </div>
-                            `;
-                            document.body.appendChild(notification);
-                            
-                            // Remove notification after 5 seconds
-                            setTimeout(() => {
-                                notification.remove();
-                            }, 5000);
-                            
-                            // Reload the page after a short delay
-                            setTimeout(() => {
-                                location.reload();
-                            }, 2000);
-                        });
-                    @endif
-                    
-                    // Listen for status updates on user's tickets
-                    window.Echo.private(`helpdesk.user.${userId}`)
-                        .listen('TicketStatusUpdated', (e) => {
-                            console.log('Ticket status updated:', e);
-                            
-                            // Show notification
-                            const notification = document.createElement('div');
-                            notification.className = 'fixed top-4 right-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded shadow-md z-50';
-                            notification.innerHTML = `
-                                <div class="flex items-center">
-                                    <span class="material-icons text-blue-500 mr-2">update</span>
-                                    <div>
-                                        <p class="font-bold">Ticket Status Updated</p>
-                                        <p class="text-sm">${e.ticket.ticket_id}: Status changed to ${e.ticket.status}</p>
-                                    </div>
-                                </div>
-                            `;
-                            document.body.appendChild(notification);
-                            
-                            // Remove notification after 5 seconds
-                            setTimeout(() => {
-                                notification.remove();
-                            }, 5000);
-                            
-                            // Reload the page after a short delay
-                            setTimeout(() => {
-                                location.reload();
-                            }, 2000);
-                        });
-                } catch (error) {
-                    console.error('Error setting up Echo listeners:', error);
-                }
-            }
-        });
-    </script>
+    <!-- Realtime Updates handled by FCM in resources/js/fcm.js -->
 </x-app-layout> 

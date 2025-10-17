@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema; // Added this import for Schema
+use Illuminate\Support\Facades\Auth;
 
 class TemplateDesignerController extends Controller
 {
@@ -16,6 +17,11 @@ class TemplateDesignerController extends Controller
     public function index(Request $request)
     {
         $query = CertificateTemplate::query();
+
+        // Non-admin users see only their own templates
+        if (!auth()->user()->hasRole('Administrator')) {
+            $query->where('created_by', auth()->id());
+        }
 
         // Search functionality
         if ($request->filled('search')) {
@@ -76,6 +82,9 @@ class TemplateDesignerController extends Controller
         
         if ($id) {
             $template = CertificateTemplate::findOrFail($id);
+            if (!auth()->user()->hasRole('Administrator') && $template->created_by !== auth()->id()) {
+                abort(403, 'You can only access your own templates.');
+            }
         }
         
         return view('templates.designer', compact('template', 'templateLibraries', 'categories'));
@@ -96,20 +105,14 @@ class TemplateDesignerController extends Controller
         ]);
 
         // Log request data untuk debugging
-        \Log::info('Template store request data:', [
-            'has_template_data' => $request->has('template_data'),
-            'template_data_length' => $request->has('template_data') ? strlen($request->template_data) : 0,
-        ]);
+        // Template store request data
 
         $templateData = $request->template_data;
         if (is_string($templateData)) {
             $templateData = json_decode($templateData, true);
             
             // Log decoded template data
-            \Log::info('Template data decoded:', [
-                'elements_count' => isset($templateData['elements']) ? count($templateData['elements']) : 0,
-                'template_data' => $templateData
-            ]);
+            // Template data decoded
         }
 
         $pdfPath = null;
@@ -159,6 +162,9 @@ class TemplateDesignerController extends Controller
     public function show($id)
     {
         $template = CertificateTemplate::findOrFail($id);
+        if (!auth()->user()->hasRole('Administrator') && $template->created_by !== auth()->id()) {
+            abort(403, 'You can only view your own templates.');
+        }
         return view('templates.show', compact('template'));
     }
 
@@ -168,6 +174,9 @@ class TemplateDesignerController extends Controller
     public function edit($id)
     {
         $template = CertificateTemplate::findOrFail($id);
+        if (!auth()->user()->hasRole('Administrator') && $template->created_by !== auth()->id()) {
+            abort(403, 'You can only edit your own templates.');
+        }
         return view('templates.edit', compact('template'));
     }
 
@@ -186,23 +195,19 @@ class TemplateDesignerController extends Controller
         ]);
 
         // Log request data untuk debugging
-        \Log::info('Template update request data:', [
-            'template_id' => $id,
-            'has_template_data' => $request->has('template_data'),
-            'template_data_length' => $request->has('template_data') ? strlen($request->template_data) : 0,
-        ]);
+        // Template update request data
 
         $template = CertificateTemplate::findOrFail($id);
+        if (!auth()->user()->hasRole('Administrator') && $template->created_by !== auth()->id()) {
+            abort(403, 'You can only update your own templates.');
+        }
 
         $templateData = $request->template_data;
         if (is_string($templateData)) {
             $templateData = json_decode($templateData, true);
             
             // Log decoded template data
-            \Log::info('Template data decoded for update:', [
-                'elements_count' => isset($templateData['elements']) ? count($templateData['elements']) : 0,
-                'template_data' => $templateData
-            ]);
+            // Template data decoded for update
         }
 
         // Update PDF file if provided
@@ -251,6 +256,9 @@ class TemplateDesignerController extends Controller
     public function destroy($id)
     {
         $template = CertificateTemplate::findOrFail($id);
+        if (!auth()->user()->hasRole('Administrator') && $template->created_by !== auth()->id()) {
+            abort(403, 'You can only delete your own templates.');
+        }
         
         // Delete PDF file
         if ($template->pdf_file) {
@@ -269,9 +277,13 @@ class TemplateDesignerController extends Controller
     public function duplicate($id)
     {
         $template = CertificateTemplate::findOrFail($id);
+        if (!auth()->user()->hasRole('Administrator') && $template->created_by !== auth()->id()) {
+            abort(403, 'You can only duplicate your own templates.');
+        }
         
         $newTemplate = $template->replicate();
         $newTemplate->name = $template->name . ' (Copy)';
+        $newTemplate->created_by = auth()->id();
         $newTemplate->save();
         
         return redirect()->route('template.designer')

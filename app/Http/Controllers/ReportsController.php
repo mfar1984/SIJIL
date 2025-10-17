@@ -140,9 +140,26 @@ class ReportsController extends Controller
             }
         }
         
-        $records = AttendanceRecord::with('participant')
-            ->where('attendance_session_id', $id)
-            ->get();
+        // Get all registered participants for this event with their attendance records (if any)
+        $eventId = $session->attendance->event_id ?? 0;
+        $participants = \App\Models\Participant::where('event_id', $eventId)->get();
+        
+        $records = $participants->map(function($participant) use ($id) {
+            $attendanceRecord = AttendanceRecord::where('attendance_session_id', $id)
+                ->where('participant_id', $participant->id)
+                ->first();
+            
+            // Create a unified record object
+            return (object) [
+                'id' => $attendanceRecord->id ?? null,
+                'participant_id' => $participant->id,
+                'participant' => $participant,
+                'checkin_time' => $attendanceRecord->checkin_time ?? null,
+                'checkout_time' => $attendanceRecord->checkout_time ?? null,
+                'status' => $attendanceRecord ? $attendanceRecord->status : 'absent',
+                'scanned_by_device' => $attendanceRecord->scanned_by_device ?? null,
+            ];
+        });
         
         // Calculate real analytics data
         $analytics = [
@@ -174,7 +191,11 @@ class ReportsController extends Controller
                 'male' => 0,
                 'female' => 0,
                 'other' => 0,
-                'unknown' => 0
+                'unknown' => 0,
+                'male_percent' => 0,
+                'female_percent' => 0,
+                'other_percent' => 0,
+                'unknown_percent' => 0,
             ],
             'age_groups' => [
                 'under_18' => 0,
@@ -183,11 +204,18 @@ class ReportsController extends Controller
                 '35_44' => 0,
                 '45_54' => 0,
                 '55_plus' => 0,
-                'unknown' => 0
+                'unknown' => 0,
+                'under_18_percent' => 0,
+                '18_24_percent' => 0,
+                '25_34_percent' => 0,
+                '35_44_percent' => 0,
+                '45_54_percent' => 0,
+                '55_plus_percent' => 0,
             ],
             'total_attendees' => 0,
             'avg_age' => 0,
-            'first_time' => 0
+            'first_time' => 0,
+            'first_time_percent' => 0,
         ];
 
         if ($records->count() > 0) {

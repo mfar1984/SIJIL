@@ -1,0 +1,14 @@
+/* ===== SIJIL PWA - Main Stylesheet ===== */
+
+/* Import all modular stylesheets */
+@import './styles/variables.css';
+@import './styles/layout.css';
+@import './styles/components.css';
+@import './styles/login.css';
+@import './styles/home.css';
+@import './styles/events.css';
+@import './styles/certificates.css';
+@import './styles/settings.css';
+@import './styles/forms.css';
+@import './styles/scan.css';
+

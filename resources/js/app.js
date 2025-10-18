@@ -296,20 +296,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Lazy modules cache for dynamic imports (reduces initial bundle size)
-const __lazyModules = { malaysia: null, countryList: null };
-async function ensureMalaysiaModule() {
-    if (!__lazyModules.malaysia) {
-        __lazyModules.malaysia = import('malaysia-postcodes');
+// Static fallback data (no dynamic imports)
+const MALAYSIA_DATA = {
+    states: [
+        'Johor','Kedah','Kelantan','Melaka','Negeri Sembilan','Pahang','Perak','Perlis','Pulau Pinang','Sabah','Sarawak','Selangor','Terengganu','Wilayah Persekutuan Kuala Lumpur','Wilayah Persekutuan Labuan','Wilayah Persekutuan Putrajaya'
+    ],
+    cities: {
+        'Sarawak': ['Kuching','Sibu','Miri','Bintulu','Sarikei','Kapit','Limbang','Lawas','Sri Aman','Betong','Mukah'],
+        'Sabah': ['Kota Kinabalu','Sandakan','Tawau','Lahad Datu','Keningau','Kudat','Ranau','Beaufort','Semporna'],
+        'Johor': ['Johor Bahru','Batu Pahat','Muar','Kluang','Segamat','Pontian','Kulai','Kota Tinggi'],
+        'Kedah': ['Alor Setar','Sungai Petani','Kulim','Langkawi','Jitra'],
+        'Kelantan': ['Kota Bharu','Kuala Krai','Machang','Tanah Merah','Pasir Mas','Tumpat'],
+        'Melaka': ['Melaka Tengah','Alor Gajah','Jasin'],
+        'Negeri Sembilan': ['Seremban','Port Dickson','Nilai','Jempol','Tampin','Rembau','Kuala Pilah'],
+        'Pahang': ['Kuantan','Temerloh','Bentong','Jerantut','Raub','Pekan'],
+        'Perak': ['Ipoh','Taiping','Sitiawan','Teluk Intan','Kuala Kangsar','Lumut','Kampar'],
+        'Perlis': ['Kangar','Arau','Padang Besar'],
+        'Pulau Pinang': ['George Town','Seberang Jaya','Bukit Mertajam','Butterworth','Nibong Tebal','Bayan Lepas'],
+        'Selangor': ['Shah Alam','Petaling Jaya','Klang','Subang Jaya','Gombak','Hulu Langat','Sepang','Kuala Selangor','Sabak Bernam','Hulu Selangor'],
+        'Terengganu': ['Kuala Terengganu','Dungun','Kemaman','Besut','Setiu','Marang','Hulu Terengganu'],
+        'Wilayah Persekutuan Kuala Lumpur': ['Kuala Lumpur'],
+        'Wilayah Persekutuan Labuan': ['Labuan'],
+        'Wilayah Persekutuan Putrajaya': ['Putrajaya']
+    },
+    postcodes: {
+        'Kuching': ['93000','93100','93200','93300','93400','93500'],
+        'Miri': ['98000','98100','98700','98800'],
+        'Sibu': ['96000','96100','96200','96300'],
+        'Bintulu': ['97000','97100','97200'],
+        'Kota Kinabalu': ['88000','88100','88200','88300','88400','88500'],
+        'Shah Alam': ['40000','40100','40150','40160','40170','40200','40300','40400','40450','40460','40470','40500','40520','40550','40560','40570','40590','40592','40594','40596','40598','40600','40604','40700','40800','40900','41000','41050','41200','41300'],
+        'Petaling Jaya': ['46000','46050','46100','46150','46200','46300','46350','46400','46506','46547','46549','46551','46564','46582','46598','46662','46667','46668','46672','46675','46700','46710','46720','46730','46740','46750','46760','46770','46780','46781','46782','46783','46784','46785','46786','46787','46788','46789','46790','46791','46792','46793','46794','46795','46796','46797','46798','46799','46800','46801','46802','46803','46804','46805','46806','46860','46870']
     }
-    return __lazyModules.malaysia;
-}
-async function ensureCountryListModule() {
-    if (!__lazyModules.countryList) {
-        __lazyModules.countryList = import('country-list-js');
-    }
-    return __lazyModules.countryList;
-}
+};
+
+const COUNTRIES = ['Malaysia','Singapore','Thailand','Indonesia','Brunei','Philippines','Vietnam','Myanmar','Cambodia','Laos','China','Japan','South Korea','Taiwan','Hong Kong','India','Pakistan','Bangladesh','United States','United Kingdom','Australia','New Zealand','Canada','Germany','France','Italy','Spain','Netherlands','Others'];
 
 // Malaysia Postcodes Integration
 document.addEventListener('DOMContentLoaded', function() {
@@ -360,193 +381,137 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Load states into dropdown
-async function loadStates() {
-    try {
-        const { getStates } = await ensureMalaysiaModule();
-        const states = getStates();
-        const stateSelects = [
-            document.getElementById('state'),
-            document.getElementById('org_state')
-        ].filter(Boolean);
-        stateSelects.forEach(stateSelect => {
-            if (!stateSelect) return;
-            while (stateSelect.options.length > 1) {
-                stateSelect.remove(1);
-            }
-            states.forEach(state => {
-                const option = document.createElement('option');
-                option.value = state;
-                option.textContent = state;
-                stateSelect.appendChild(option);
-            });
-            const othersOption = document.createElement('option');
-            othersOption.value = 'others';
-            othersOption.textContent = '-- Others --';
-            stateSelect.appendChild(othersOption);
-            const oldState = stateSelect.getAttribute('data-old-value');
-            if (oldState) {
-                stateSelect.value = oldState;
-                loadCities(stateSelect.id);
-            }
+function loadStates() {
+    const states = MALAYSIA_DATA.states;
+    const stateSelects = [
+        document.getElementById('state'),
+        document.getElementById('org_state')
+    ].filter(Boolean);
+    stateSelects.forEach(stateSelect => {
+        if (!stateSelect) return;
+        while (stateSelect.options.length > 1) {
+            stateSelect.remove(1);
+        }
+        states.forEach(state => {
+            const option = document.createElement('option');
+            option.value = state;
+            option.textContent = state;
+            stateSelect.appendChild(option);
         });
-    } catch (error) {
-        console.error('Error loading states:', error);
-    }
+        const othersOption = document.createElement('option');
+        othersOption.value = 'others';
+        othersOption.textContent = '-- Others --';
+        stateSelect.appendChild(othersOption);
+        const oldState = stateSelect.getAttribute('data-old-value');
+        if (oldState) {
+            stateSelect.value = oldState;
+            loadCities(stateSelect.id);
+        }
+    });
 }
 
 // Load cities based on selected state
-async function loadCities(stateId = 'state') {
-    try {
-        const stateSelect = document.getElementById(stateId);
-        const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
-        const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
-        if (!stateSelect || !citySelect || !postcodeSelect) return;
-        postcodeSelect.disabled = true;
-        while (postcodeSelect.options.length > 1) {
-            postcodeSelect.remove(1);
-        }
-        const selectedState = stateSelect.value;
-        if (!selectedState) {
-            citySelect.disabled = true;
-            while (citySelect.options.length > 1) {
-                citySelect.remove(1);
-            }
-            return;
-        }
-        const { getCities } = await ensureMalaysiaModule();
-        const cities = getCities(selectedState);
+function loadCities(stateId = 'state') {
+    const stateSelect = document.getElementById(stateId);
+    const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
+    const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
+    if (!stateSelect || !citySelect || !postcodeSelect) return;
+    postcodeSelect.disabled = true;
+    while (postcodeSelect.options.length > 1) {
+        postcodeSelect.remove(1);
+    }
+    const selectedState = stateSelect.value;
+    if (!selectedState) {
+        citySelect.disabled = true;
         while (citySelect.options.length > 1) {
             citySelect.remove(1);
         }
-        cities.forEach(city => {
-            const option = document.createElement('option');
-            option.value = city;
-            option.textContent = city;
-            citySelect.appendChild(option);
-        });
-        citySelect.disabled = false;
-        const oldCity = citySelect.getAttribute('data-old-value');
-        if (oldCity) {
-            citySelect.value = oldCity;
-            loadPostcodes(stateId);
-        }
-    } catch (error) {
-        console.error('Error loading cities:', error);
+        return;
+    }
+    const cities = MALAYSIA_DATA.cities[selectedState] || [];
+    while (citySelect.options.length > 1) {
+        citySelect.remove(1);
+    }
+    cities.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city;
+        citySelect.appendChild(option);
+    });
+    citySelect.disabled = false;
+    const oldCity = citySelect.getAttribute('data-old-value');
+    if (oldCity) {
+        citySelect.value = oldCity;
+        loadPostcodes(stateId);
     }
 }
 
 // Load postcodes based on selected state and city
-async function loadPostcodes(stateId = 'state') {
-    try {
-        const stateSelect = document.getElementById(stateId);
-        const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
-        const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
-        if (!stateSelect || !citySelect || !postcodeSelect) return;
-        const selectedState = stateSelect.value;
-        const selectedCity = citySelect.value;
-        if (!selectedState || !selectedCity) {
-            postcodeSelect.disabled = true;
-            while (postcodeSelect.options.length > 1) {
-                postcodeSelect.remove(1);
-            }
-            return;
-        }
-        const { getPostcodes } = await ensureMalaysiaModule();
-        const postcodes = getPostcodes(selectedState, selectedCity);
+function loadPostcodes(stateId = 'state') {
+    const stateSelect = document.getElementById(stateId);
+    const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
+    const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
+    if (!stateSelect || !citySelect || !postcodeSelect) return;
+    const selectedState = stateSelect.value;
+    const selectedCity = citySelect.value;
+    if (!selectedState || !selectedCity) {
+        postcodeSelect.disabled = true;
         while (postcodeSelect.options.length > 1) {
             postcodeSelect.remove(1);
         }
-        postcodes.forEach(postcode => {
-            const option = document.createElement('option');
-            option.value = postcode;
-            option.textContent = postcode;
-            postcodeSelect.appendChild(option);
-        });
-        postcodeSelect.disabled = false;
-        const oldPostcode = postcodeSelect.getAttribute('data-old-value');
-        if (oldPostcode) {
-            postcodeSelect.value = oldPostcode;
-        }
-    } catch (error) {
-        console.error('Error loading postcodes:', error);
+        return;
+    }
+    const postcodes = MALAYSIA_DATA.postcodes[selectedCity] || [];
+    while (postcodeSelect.options.length > 1) {
+        postcodeSelect.remove(1);
+    }
+    postcodes.forEach(postcode => {
+        const option = document.createElement('option');
+        option.value = postcode;
+        option.textContent = postcode;
+        postcodeSelect.appendChild(option);
+    });
+    postcodeSelect.disabled = false;
+    const oldPostcode = postcodeSelect.getAttribute('data-old-value');
+    if (oldPostcode) {
+        postcodeSelect.value = oldPostcode;
     }
 }
 
 // Load countries into dropdown
-async function loadCountries() {
-    try {
-        // Get elements
-        const countrySelects = [
-            document.getElementById('country'),
-            document.getElementById('org_country')
-        ].filter(Boolean);
-        
-        if (!countrySelects.length) {
-            return;
-        }
-        
-        // Get all country names as an array
-        const countryListJs = await ensureCountryListModule();
-        const countryNames = countryListJs.names();
-        if (!countryNames || !Array.isArray(countryNames)) {
-            return;
-        }
-        
-        countrySelects.forEach(countrySelect => {
-            // Save previously selected value if exists (for edit form)
-            const oldValue = countrySelect.getAttribute('data-old-value');
-            // Clear existing options
-            while (countrySelect.options.length) {
-                countrySelect.remove(0);
-            }
-            // Create default empty option
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = '-- Select Country --';
-            countrySelect.appendChild(emptyOption);
-            // Sort country names alphabetically
-            countryNames.sort();
-            // Find Malaysia index in the sorted array
-            const malaysiaIndex = countryNames.findIndex(name => name === 'Malaysia');
-            // If we have an old value that's not Malaysia, we'll select that instead
-            const shouldSelectMalaysia = !oldValue || oldValue === 'Malaysia';
-            // Add Malaysia as the first option after the empty option if found
-            if (malaysiaIndex >= 0) {
-                const malaysiaOption = document.createElement('option');
-                malaysiaOption.value = 'Malaysia';
-                malaysiaOption.textContent = 'Malaysia';
-                if (shouldSelectMalaysia) {
-                    malaysiaOption.selected = true;
-                }
-                countrySelect.appendChild(malaysiaOption);
-                // Add all countries except Malaysia
-                countryNames.forEach(name => {
-                    if (name !== 'Malaysia') {
-                        const option = document.createElement('option');
-                        option.value = name;
-                        option.textContent = name;
-                        if (oldValue && oldValue === name) {
-                            option.selected = true;
-                        }
-                        countrySelect.appendChild(option);
-                    }
-                });
-            } else {
-                // If Malaysia not found, just add all countries
-                countryNames.forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    if (oldValue && oldValue === name) {
-                        option.selected = true;
-                    }
-                    countrySelect.appendChild(option);
-                });
-            }
-        });
-    } catch (error) {
-        console.error('Error loading countries:', error);
+function loadCountries() {
+    const countrySelects = [
+        document.getElementById('country'),
+        document.getElementById('org_country')
+    ].filter(Boolean);
+    
+    if (!countrySelects.length) {
+        return;
     }
+    
+    countrySelects.forEach(countrySelect => {
+        const oldValue = countrySelect.getAttribute('data-old-value');
+        while (countrySelect.options.length) {
+            countrySelect.remove(0);
+        }
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = '-- Select Country --';
+        countrySelect.appendChild(emptyOption);
+        
+        COUNTRIES.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            if (name === 'Malaysia' && (!oldValue || oldValue === 'Malaysia')) {
+                option.selected = true;
+            }
+            if (oldValue && oldValue === name) {
+                option.selected = true;
+            }
+            countrySelect.appendChild(option);
+        });
+    });
 }
 
 // Function to toggle manual address fields visibility

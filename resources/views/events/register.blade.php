@@ -1,7 +1,7 @@
 @extends('layouts.event-registration')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-6 px-3 sm:px-4" x-data="{
+<div class="reg-ui min-h-screen bg-gray-50 py-6 px-3 sm:px-4" x-data="{
     step: 1,
     form: {
         name: '',
@@ -184,23 +184,54 @@
         try {
             const res = await fetch('/api/participant/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: this.auth.register.name, email: this.auth.register.email, password: this.auth.register.password })});
             const data = await res.json();
-            if (!data.success) { this.auth.message = data.message || 'Pendaftaran gagal.'; return; }
+            if (!data.success) {
+                // Map validation errors nicely
+                const firstError = (errs) => {
+                    if (!errs) return '';
+                    for (const k in errs) { if (errs[k] && errs[k][0]) return errs[k][0]; }
+                    return '';
+                };
+                const msg = firstError(data.errors) || data.message || 'Registration failed.';
+                // If email already registered, guide user to Login step
+                if ((data.errors && data.errors.email) || /already been taken/i.test(msg)) {
+                    this.auth.message = 'This email is already registered. Please login.';
+                    this.auth.login.email = this.auth.register.email;
+                    this.auth.step = 'login';
+                } else {
+                    this.auth.message = msg;
+                }
+                return;
+            }
             // Prefill daripada input daftar
             this.form.name = this.auth.register.name;
             this.form.email = this.auth.register.email;
+            // Also carry over ID type and value from lookup input
+            if (this.auth.idType === 'ic') {
+                this.form.id_type = 'ic';
+                const digits = (this.auth.ic || '').replace(/\D/g,'');
+                if (digits.length === 12) {
+                    this.form.identity_card = digits.substring(0,6) + '-' + digits.substring(6,8) + '-' + digits.substring(8,12);
+                } else {
+                    this.form.identity_card = digits;
+                }
+                this.form.passport_no = '';
+            } else if (this.auth.idType === 'passport') {
+                this.form.id_type = 'passport';
+                const pass = (this.auth.passport || '').trim();
+                this.form.passport_no = pass;
+                this.form.identity_card = '';
+            }
             this.auth.open = false; this.step = 3;
             setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 50);
             // Lock based on registration inputs and current lookup idType
-            this.locked.email = this.auth.register.email;
-            if (this.auth.idType === 'ic') {
-                this.locked.id_type = 'ic';
-                this.locked.identity = (this.auth.ic || '').replace(/\D/g,'');
-            } else {
-                this.locked.id_type = 'passport';
-                this.locked.identity = (this.auth.passport || '').trim();
-            }
+            this.locked.email = this.auth.register.email; // keep email read-only after register
+            // Do NOT lock identity for new registration so user can edit the IC/Passport
+            this.locked.id_type = '';
+            this.locked.identity = '';
+            // Ensure default country is set and options exist
+            if (!this.form.country) { this.form.country = 'Malaysia'; this.ensureSelectOption('country', 'Malaysia'); }
         } catch (e) {
-            this.auth.message = 'Ralat rangkaian semasa daftar.';
+            this.auth.message = 'Network error during registration.';
         } finally { this.auth.loading = false; }
     },
     async doResetPassword() {
@@ -258,8 +289,31 @@
         }
         input.value = formatted;
     },
-    // Populate state/city/postcode/country (gunakan JS yang sama seperti participants/create)
-    // ... existing code ...
+    // Populate state/city/postcode/country (fallback without dynamic imports)
+    loadStates() {
+        const states = [
+            'Johor','Kedah','Kelantan','Melaka','Negeri Sembilan','Pahang','Perak','Perlis','Pulau Pinang','Sabah','Sarawak','Selangor','Terengganu','Wilayah Persekutuan Kuala Lumpur','Wilayah Persekutuan Labuan','Wilayah Persekutuan Putrajaya','others'
+        ];
+        const stateEl = document.getElementById('state');
+        if (!stateEl) return;
+        // clear existing
+        stateEl.innerHTML = '';
+        // placeholder
+        const ph = document.createElement('option'); ph.value = ''; ph.textContent = '-- Select State --'; stateEl.appendChild(ph);
+        states.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; stateEl.appendChild(o); });
+        // keep value if already set
+        if (this.form.state) stateEl.value = this.form.state;
+    },
+    loadCountries() {
+        const countries = ['Malaysia','Singapore','Thailand','Indonesia','Brunei','Others'];
+        const countryEl = document.getElementById('country');
+        if (!countryEl) return;
+        countryEl.innerHTML = '';
+        countries.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; countryEl.appendChild(o); });
+        // default to Malaysia if empty
+        if (!this.form.country) { this.form.country = 'Malaysia'; }
+        countryEl.value = this.form.country;
+    },
 
     // Helpers for preview formatting
     formatGender(g) {
@@ -313,9 +367,32 @@
         }
         return age;
     },
-}" x-init="fillOld()">
+}" x-init="fillOld(); loadStates(); loadCountries()">
     <div class="max-w-6xl mx-auto">
         <style>
+            /* ===== Registration UI polish (scoped) ===== */
+            .reg-ui { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            .reg-ui label { font-size: 12.5px; font-weight: 600; color: #374151; }
+            .reg-ui input[type="text"],
+            .reg-ui input[type="email"],
+            .reg-ui input[type="password"],
+            .reg-ui input[type="tel"],
+            .reg-ui input[type="date"],
+            .reg-ui select,
+            .reg-ui textarea { font-size: 13px; height: 36px; border-radius: 2px; }
+            .reg-ui textarea { min-height: 92px; height: auto; }
+            .reg-ui .btn { height: 32px; border-radius: 20px; font-size: 12.5px; font-weight: 700; padding: 0 12px; }
+            .reg-ui .btn-primary { background: #2563eb; color: #fff; }
+            .reg-ui .btn-primary:hover { background: #1d4ed8; }
+            .reg-ui .btn-secondary { background: #e5e7eb; color: #374151; }
+            .reg-ui .btn-secondary:hover { background: #d1d5db; }
+            .reg-ui .btn-success { background: #16a34a; color: #fff; }
+            .reg-ui .btn-success:hover { background: #15803d; }
+            .reg-ui .btn-danger { background: #dc2626; color: #fff; }
+            .reg-ui .btn-danger:hover { background: #b91c1c; }
+            .reg-ui .modal-card { border-radius: 8px; }
+            .reg-ui .hint { font-size: 11px; color: #6b7280; }
+            /* Existing rich content formatting */
             .rich-content ol { list-style: decimal; padding-left: 1.25rem; }
             .rich-content ul { list-style: disc; padding-left: 1.25rem; }
             .rich-content p { margin: 0.5rem 0; }
@@ -417,7 +494,10 @@
                 <div class="rich-content text-xs leading-5">{!! $event->condition ?? '-' !!}</div>
             </div>
             <div class="p-4 flex justify-end">
-                <button type="button" @click="next()" class="px-4 py-1 bg-blue-600 text-white rounded text-xs">Next</button>
+                <button type="button" @click="next()" class="btn btn-primary flex items-center gap-2">
+                    <span class="material-icons text-[16px]">arrow_forward</span>
+                    <span>Next</span>
+                </button>
             </div>
         </div>
 
@@ -507,8 +587,11 @@
                 </div>
             </div>
             <div class="p-4 flex justify-between">
-                <button type="button" @click="prev()" class="px-4 py-1 bg-gray-300 text-gray-700 rounded text-xs">Back</button>
-                <button type="submit" class="px-4 py-1 bg-blue-600 text-white rounded text-xs">Next</button>
+                <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
+                <button type="submit" class="btn btn-primary flex items-center gap-2">
+                    <span class="material-icons text-[16px]">arrow_forward</span>
+                    <span>Next</span>
+                </button>
             </div>
         </form>
 
@@ -626,8 +709,11 @@
                 </div>
             </div>
             <div class="p-4 flex justify-between">
-                <button type="button" @click="prev()" class="px-4 py-1 bg-gray-300 text-gray-700 rounded text-xs">Back</button>
-                <button type="submit" class="px-4 py-1 bg-blue-600 text-white rounded text-xs">Next</button>
+                <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
+                <button type="submit" class="btn btn-primary flex items-center gap-2">
+                    <span class="material-icons text-[16px]">arrow_forward</span>
+                    <span>Next</span>
+                </button>
             </div>
         </form>
 
@@ -671,8 +757,11 @@
             <input type="hidden" name="locked_id_type" :value="locked.id_type">
             <input type="hidden" name="locked_identity" :value="locked.identity">
             <div class="p-4 flex justify-between">
-                <button type="button" @click="prev()" class="px-4 py-1 bg-gray-300 text-gray-700 rounded text-xs">Back</button>
-                <button type="submit" class="px-4 py-1 bg-green-600 text-white rounded text-xs">Submit</button>
+                <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
+                <button type="submit" class="btn btn-success flex items-center gap-2">
+                    <span class="material-icons text-[16px]">check_circle</span>
+                    <span>Submit</span>
+                </button>
             </div>
         </form>
 
@@ -701,30 +790,30 @@
         <!-- Auth Gate Modal (IC Lookup + Login/Register) -->
         <div x-show="auth.open" style="display:none" class="fixed inset-0 z-50">
             <div class="absolute inset-0 bg-black bg-opacity-40" @click="auth.open=false"></div>
-            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow w-full max-w-md text-xs">
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white modal-card shadow w-full max-w-md text-xs">
                 <div class="px-4 py-3 border-b flex items-center justify-between">
-                    <h3 class="font-semibold">Pengesahan Akaun (IC)</h3>
+                    <h3 class="font-semibold">Account Verification (IC/Passport)</h3>
                     <button class="text-gray-500" @click="auth.open=false"><span class="material-icons text-sm">close</span></button>
                 </div>
                 <div class="p-4 space-y-3">
                     <!-- Step: Lookup -->
                     <template x-if="auth.step==='lookup'">
                         <div>
-                            <label class="block mb-1">Masukkan IC untuk semakan</label>
+                            <label class="block mb-1">Enter IC/Passport for verification</label>
                             <div class="flex gap-2">
-                                <select x-model="auth.idType" class="border border-gray-300 rounded px-2 py-1">
+                                <select x-model="auth.idType" class="border border-gray-300 rounded-sm px-2 py-1" style="min-width: 110px;">
                                     <option value="ic">IC</option>
                                     <option value="passport">Passport</option>
                                 </select>
-                                <input type="text" x-model="auth.ic" x-show="auth.idType==='ic'" class="w-full border border-gray-300 rounded px-2 py-1" placeholder="000000-00-0000" @input="formatIC($event)">
-                                <input type="text" x-model="auth.passport" x-show="auth.idType==='passport'" class="w-full border border-gray-300 rounded px-2 py-1" placeholder="A12345678">
+                                <input type="text" x-model="auth.ic" x-show="auth.idType==='ic'" class="w-full border border-gray-300 rounded-sm px-2 py-1" placeholder="000000-00-0000" @input="formatIC($event)">
+                                <input type="text" x-model="auth.passport" x-show="auth.idType==='passport'" class="w-full border border-gray-300 rounded-sm px-2 py-1" placeholder="A12345678">
                             </div>
                             <div class="flex items-center justify-between mt-3">
-                                <div class="text-[10px] text-gray-500">Format: 000000-00-0000</div>
-                                <button type="button" @click="submitLookup()" class="px-3 py-1 bg-blue-600 text-white rounded flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[14px]" x-show="!auth.loading">search</span>
+                                <div class="hint">Format: 000000-00-0000</div>
+                                <button type="button" @click="submitLookup()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
+                                    <span class="material-icons text-[16px]" x-show="!auth.loading">search</span>
                                     <span x-show="auth.loading" class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                    <span>Semak</span>
+                                    <span>Check</span>
                                 </button>
                             </div>
                         </div>
@@ -734,39 +823,39 @@
                     <template x-if="auth.step==='login'">
                         <div class="space-y-2">
                             <div class="bg-gray-50 border rounded p-2" x-show="auth.result?.last_participant">
-                                <div><span class="font-semibold">Nama:</span> <span x-text="auth.result.last_participant?.name"></span></div>
+                                <div><span class="font-semibold">Name:</span> <span x-text="auth.result.last_participant?.name"></span></div>
                                 <div class="mt-1">
-                                    <span class="font-semibold">Emel:</span>
+                                    <span class="font-semibold">Email:</span>
                                     <template x-for="em in auth.result.emails" :key="em">
                                         <label class="ml-2 inline-flex items-center gap-1"><input type="radio" x-model="auth.emailChoice" :value="em"> <span x-text="em"></span></label>
                                     </template>
                                 </div>
                             </div>
                             <div x-show="auth.result?.emails?.length > 1">
-                                <label class="block mb-1">Emel</label>
-                                <input type="email" x-model="auth.login.email" class="w-full border border-gray-300 rounded px-2 py-1">
+                                <label class="block mb-1">Email</label>
+                                <input type="email" x-model="auth.login.email" class="w-full border border-gray-300 rounded-sm px-2 py-1">
                             </div>
                             <div x-show="!auth.result?.emails || auth.result?.emails?.length <= 1">
-                                <label class="block mb-1">Emel</label>
-                                <input type="email" x-model="auth.login.email" class="w-full border border-gray-300 rounded px-2 py-1" :readonly="auth.result?.emails?.length === 1">
+                                <label class="block mb-1">Email</label>
+                                <input type="email" x-model="auth.login.email" class="w-full border border-gray-300 rounded-sm px-2 py-1" :readonly="auth.result?.emails?.length === 1">
                             </div>
                             <div>
-                                <label class="block mb-1">Kata Laluan</label>
-                                <input type="password" x-model="auth.login.password" class="w-full border border-gray-300 rounded px-2 py-1">
+                                <label class="block mb-1">Password</label>
+                                <input type="password" x-model="auth.login.password" class="w-full border border-gray-300 rounded-sm px-2 py-1">
                             </div>
                             <div class="flex items-center justify-between mt-2">
-                                <button type="button" @click="doLogin()" class="px-3 py-1 bg-blue-600 text-white rounded flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[14px]">login</span>
-                                    <span>Log Masuk</span>
+                                <button type="button" @click="doLogin()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
+                                    <span class="material-icons text-[16px]">login</span>
+                                    <span>Login</span>
                                 </button>
-                                <button type="button" @click="doResetPassword()" class="px-3 py-1 bg-gray-200 text-gray-700 rounded flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[14px]">lock_reset</span>
-                                    <span>Reset Kata Laluan</span>
+                                <button type="button" @click="doResetPassword()" class="btn btn-danger flex items-center gap-1" :disabled="auth.loading">
+                                    <span class="material-icons text-[16px]">lock_reset</span>
+                                    <span>Reset Password</span>
                                 </button>
                             </div>
-                            <div class="text-[10px] text-gray-500">Jika ini bukan akaun anda, anda boleh daftar akaun baharu.</div>
+                            <div class="text-[10px] text-gray-500">If this is not your account, you can register a new account.</div>
                             <div class="flex justify-end">
-                                <button type="button" @click="auth.step='register'" class="px-3 py-1 text-blue-600">Daftar akaun baharu</button>
+                                <button type="button" @click="auth.step='register'" class="px-3 py-1 text-blue-600">Register new account</button>
                             </div>
                         </div>
                     </template>
@@ -776,19 +865,19 @@
                         <div class="space-y-2">
                             <div>
                                 <label class="block mb-1">Nama Penuh</label>
-                                <input type="text" x-model="auth.register.name" class="w-full border border-gray-300 rounded px-2 py-1">
+                                <input type="text" x-model="auth.register.name" class="w-full border border-gray-300 rounded-sm px-2 py-1">
                             </div>
                             <div>
                                 <label class="block mb-1">Emel</label>
-                                <input type="email" x-model="auth.register.email" class="w-full border border-gray-300 rounded px-2 py-1">
+                                <input type="email" x-model="auth.register.email" class="w-full border border-gray-300 rounded-sm px-2 py-1">
                             </div>
                             <div>
                                 <label class="block mb-1">Kata Laluan</label>
-                                <input type="password" x-model="auth.register.password" class="w-full border border-gray-300 rounded px-2 py-1">
+                                <input type="password" x-model="auth.register.password" class="w-full border border-gray-300 rounded-sm px-2 py-1">
                             </div>
                             <div class="flex justify-end">
-                                <button type="button" @click="doRegister()" class="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[14px]">person_add</span>
+                                <button type="button" @click="doRegister()" class="btn btn-success flex items-center gap-1" :disabled="auth.loading">
+                                    <span class="material-icons text-[16px]">person_add</span>
                                     <span>Daftar & Teruskan</span>
                                 </button>
                             </div>

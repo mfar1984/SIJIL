@@ -1,7 +1,6 @@
 ---
 alwaysApply: true
 ---
-
 do not use php artisan migrate:fresh
 do not install any mysql or uninstall
 do not use git add .

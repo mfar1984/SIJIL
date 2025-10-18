@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class PwaParticipantController extends Controller
 {
@@ -70,6 +71,7 @@ class PwaParticipantController extends Controller
             'password' => 'required|string|min:6',
             'phone' => 'nullable|string|max:20',
             'organization' => 'nullable|string|max:255',
+            'username' => 'sometimes|string|max:255|unique:pwa_participants,username',
         ]);
 
         if ($validator->fails()) {
@@ -80,9 +82,36 @@ class PwaParticipantController extends Controller
             ], 422);
         }
 
+        // Ensure username is provided to satisfy NOT NULL schema
+        $username = $request->input('username');
+        if (!$username) {
+            $emailPrefix = strstr($request->email, '@', true) ?: '';
+            $base = strtolower(preg_replace('/[^a-z0-9]/', '', $emailPrefix));
+            if (!$base) {
+                $base = strtolower(preg_replace('/[^a-z0-9]/', '', Str::slug($request->name)));
+            }
+            if (!$base) {
+                $base = 'user';
+            }
+
+            $candidate = $base;
+            $suffix = 1;
+            while (PwaParticipant::where('username', $candidate)->exists()) {
+                // avoid infinite loops in case of heavy collisions
+                if ($suffix > 50) {
+                    $candidate = $base . Str::lower(Str::random(4));
+                    break;
+                }
+                $candidate = $base . $suffix;
+                $suffix++;
+            }
+            $username = $candidate;
+        }
+
         $participant = PwaParticipant::create([
             'name' => $request->name,
             'email' => $request->email,
+            'username' => $username,
             'password' => Hash::make($request->password),
             'phone' => $request->phone,
             'organization' => $request->organization,
@@ -99,6 +128,7 @@ class PwaParticipantController extends Controller
                 'id' => $participant->id,
                 'name' => $participant->name,
                 'email' => $participant->email,
+                'username' => $participant->username,
                 'phone' => $participant->phone,
                 'organization' => $participant->organization,
             ]
@@ -178,15 +208,21 @@ class PwaParticipantController extends Controller
     {
         $pwa = $request->user();
 
-        // Normalise IC (remove dashes) and union by email
+        // Get ALL participants with same email (across all organizers)
         $participantIds = collect();
+        
+        // Search by email - THIS IS CRITICAL for multi-organizer support
+        $byEmail = \App\Models\Participant::where('email', $pwa->email)->pluck('id');
+        $participantIds = $participantIds->merge($byEmail);
+        
+        // Also search by IC if available
         if (!empty($pwa->identity_card)) {
             $normalizedIc = preg_replace('/\D+/', '', (string) $pwa->identity_card);
             $byIc = \App\Models\Participant::whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc])->pluck('id');
             $participantIds = $participantIds->merge($byIc);
         }
-        $byEmail = \App\Models\Participant::where('email', $pwa->email)->pluck('id');
-        $participantIds = $participantIds->merge($byEmail)->unique()->values();
+        
+        $participantIds = $participantIds->unique()->values();
 
         if ($participantIds->isEmpty()) {
             return response()->json([
@@ -195,45 +231,71 @@ class PwaParticipantController extends Controller
             ]);
         }
 
-        $participants = \App\Models\Participant::whereIn('id', $participantIds->all())->get();
-        $eventIds = $participants->pluck('event_id')->filter()->unique()->values()->all();
-        $events = \App\Models\Event::whereIn('id', $eventIds)->get()->keyBy('id');
+        // Get all participants (one per event, potentially from different organizers)
+        $participants = \App\Models\Participant::whereIn('id', $participantIds->all())
+            ->with(['event', 'event.user']) // eager load event and organizer
+            ->get();
 
-        // Attendance existence by participant
-        $attendanceByPid = \App\Models\AttendanceRecord::whereIn('participant_id', $participantIds->all())
-            ->orderBy('checkin_time', 'desc')
+        // Get attendance records for all participants
+        $attendanceRecords = \App\Models\AttendanceRecord::whereIn('participant_id', $participantIds->all())
+            ->with('attendanceSession')
             ->get()
             ->groupBy('participant_id');
 
         $eventsData = [];
-        foreach ($participants as $p) {
-            $event = $events->get($p->event_id);
-            if (!$event) { continue; }
-            if (isset($eventsData[$event->id])) { continue; } // dedupe per event
+        
+        foreach ($participants as $participant) {
+            $event = $participant->event;
+            
+            if (!$event) {
+                continue;
+            }
 
-            $attendance = $attendanceByPid->get($p->id);
-            $attended = $attendance && $attendance->count() > 0;
-            $attendanceDate = $attended ? ($attendance->first()->checkin_time ?? $attendance->first()->created_at) : null;
+            // Dedupe by event ID (in case same email registered multiple times for same event)
+            if (isset($eventsData[$event->id])) {
+                continue;
+            }
+
+            // Check attendance from attendance_records via sessions
+            $attendance = $attendanceRecords->get($participant->id);
+            $hasAttended = false;
+            $attendanceDate = null;
+            
+            if ($attendance) {
+                foreach ($attendance as $attRecord) {
+                    if ($attRecord->attendanceSession && $attRecord->attendanceSession->event_id == $event->id) {
+                        $hasAttended = true;
+                        $attendanceDate = $attRecord->checked_in_at ?? $attRecord->created_at;
+                        break;
+                    }
+                }
+            }
 
             $eventsData[$event->id] = [
                 'id' => $event->id,
-                'title' => $event->name,
+                'title' => $event->name, // Column is 'name' not 'title'
                 'description' => $event->description,
-                'date' => $event->start_date,
-                'time' => ($event->start_time ? substr($event->start_time, 0, 5) : '') . ($event->end_time ? ' - ' . substr($event->end_time, 0, 5) : ''),
+                'date' => $event->start_date, // Column is 'start_date' not 'date'
+                'end_date' => $event->end_date,
+                'start_time' => $event->start_time ? substr($event->start_time, 0, 5) : null,
+                'end_time' => $event->end_time ? substr($event->end_time, 0, 5) : null,
                 'location' => $event->location,
-                'registration_date' => $p->created_at,
-                'attendance_date' => $attendanceDate,
-                'status' => $attended ? 'attended' : 'registered',
+                'organizer' => $event->organizer ?? ($event->user ? $event->user->name : null),
+                'registration_date' => $participant->created_at->toISOString(),
+                'attendance_date' => $attendanceDate ? $attendanceDate->toISOString() : null,
+                'status' => $hasAttended ? 'attended' : 'registered',
             ];
         }
 
-        // Convert associative to indexed array
-        $eventsList = array_values($eventsData);
+        // Sort by date (newest first)
+        $eventsList = collect($eventsData)->sortByDesc('date')->values()->all();
 
         return response()->json([
             'success' => true,
-            'data' => [ 'events' => $eventsList ]
+            'data' => [ 
+                'events' => $eventsList,
+                'total' => count($eventsList)
+            ]
         ]);
     }
 

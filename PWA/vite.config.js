@@ -37,6 +37,18 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor libraries
+          react: ['react', 'react-dom', 'react-router-dom'],
+          qr: ['html5-qrcode']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 900
+  },
   server: {
     port: 3000,
     host: true

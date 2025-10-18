@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { Html5QrcodeScanner } from 'html5-qrcode'
 import { participantAPI } from '../services/api'
 
 const Scan = () => {
@@ -54,7 +53,8 @@ const Scan = () => {
     }
   }
 
-  const initScanner = () => {
+  const initScanner = async () => {
+    const { Html5QrcodeScanner } = await import('html5-qrcode')
     const scanner = new Html5QrcodeScanner(
       "qr-reader",
       { 

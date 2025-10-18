@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/participant/login', [PwaParticipantController::class, 'login']);
 Route::post('/participant/register', [PwaParticipantController::class, 'register']);
 Route::get('/participant/lookup', [PwaParticipantController::class, 'lookupByIdentity']);
+Route::post('/participant/reset-password', [PwaParticipantController::class, 'resetPassword']);
 
 // PWA Participant Routes (Protected)
 Route::middleware('auth:sanctum')->group(function () {

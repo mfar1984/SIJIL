@@ -238,7 +238,8 @@
         if (!this.auth.emailChoice) { this.auth.message = 'Sila pilih emel untuk reset kata laluan.'; return; }
         this.auth.loading = true; this.auth.message = '';
         try {
-            const res = await fetch('/api/participant/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: this.auth.emailChoice })});
+            const eventToken = '{{ $event->registration_link }}';
+            const res = await fetch('/api/participant/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: this.auth.emailChoice, event_token: eventToken })});
             const data = await res.json();
             this.auth.message = data.message || 'Permintaan reset dihantar (jika emel wujud).';
         } catch (e) {

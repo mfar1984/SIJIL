@@ -14,7 +14,7 @@ const Header = ({ user, onLogout }) => {
       // Call backend API to delete token from database
       await authAPI.logout()
     } catch (error) {
-      console.error('Logout error:', error)
+      // Silent error handling
     } finally {
       // Always clear local storage and redirect
       localStorage.removeItem('token')
@@ -34,8 +34,7 @@ const Header = ({ user, onLogout }) => {
       <div className="header-content">
         {/* Left - Logo */}
         <div className="header-left" onClick={() => navigate('/home')}>
-          <img src="/logo.png" alt="SIJIL" className="app-logo" />
-          <h1 className="app-title">SIJIL</h1>
+          <img src="/logo.png" alt="Logo" className="app-logo" />
         </div>
 
         {/* Right - Notification & User */}

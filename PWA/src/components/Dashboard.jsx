@@ -19,7 +19,7 @@ const Dashboard = ({ user }) => {
       setCertificates(certificatesResponse.data.certificates || [])
 
     } catch (error) {
-      console.error('Error fetching user data:', error)
+      // Silent error handling
     } finally {
       setLoading(false)
     }
@@ -40,7 +40,6 @@ const Dashboard = ({ user }) => {
       link.click()
       link.remove()
     } catch (error) {
-      console.error('Error downloading certificate:', error)
       alert('Failed to download certificate. Please try again.')
     }
   }

@@ -275,8 +275,8 @@ class PwaParticipantController extends Controller
                 'id' => $event->id,
                 'title' => $event->name, // Column is 'name' not 'title'
                 'description' => $event->description,
-                'date' => $event->start_date, // Column is 'start_date' not 'date'
-                'end_date' => $event->end_date,
+                'date' => $event->start_date ? $event->start_date->format('Y-m-d') : null, // Return date string only
+                'end_date' => $event->end_date ? $event->end_date->format('Y-m-d') : null, // Return date string only
                 'start_time' => $event->start_time ? substr($event->start_time, 0, 5) : null,
                 'end_time' => $event->end_time ? substr($event->end_time, 0, 5) : null,
                 'location' => $event->location,
@@ -366,12 +366,6 @@ class PwaParticipantController extends Controller
 
         // Check if file exists in storage
         if (!\Storage::disk('public')->exists($certificate->pdf_file)) {
-            \Log::error('Certificate PDF not found in storage', [
-                'certificate_id' => $certificate->id,
-                'pdf_file' => $certificate->pdf_file,
-                'participant_id' => $participantId
-            ]);
-            
             return response()->json([
                 'success' => false,
                 'message' => 'Certificate PDF file not found in storage. Please contact support.'
@@ -770,13 +764,27 @@ class PwaParticipantController extends Controller
             $time = $record->checkout_time;
         }
 
+        // Determine status (on time or late)
+        $status = 'On Time';
+        if ($action === 'checkin') {
+            $checkinTime = \Carbon\Carbon::parse($time);
+            $startTime = \Carbon\Carbon::parse($session->date . ' ' . $session->checkin_start_time);
+            if ($checkinTime->greaterThan($startTime)) {
+                $minutesLate = $checkinTime->diffInMinutes($startTime);
+                $status = $minutesLate > 0 ? 'Late' : 'On Time';
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => ucfirst($action) . ' successful!',
             'action' => $action,
             'time' => $time,
-            'attendance' => [
-                'event_name' => $attendance->event->name ?? 'Event',
+            'event_name' => $attendance->event->name ?? 'Event',
+            'status' => $status,
+            'location' => [
+                'latitude' => $action === 'checkin' ? $record->checkin_lat : $record->checkout_lat,
+                'longitude' => $action === 'checkin' ? $record->checkin_lng : $record->checkout_lng,
             ],
             'session' => [
                 'date' => $session->date,
@@ -795,6 +803,175 @@ class PwaParticipantController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully'
+        ]);
+    }
+
+    /**
+     * Reset password for PWA participant (from event registration)
+     * Uses event organizer's SMTP configuration
+     */
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'event_token' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email is required.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Find PWA participant by email
+        $participant = PwaParticipant::where('email', $request->email)->first();
+
+        if (!$participant) {
+            // Return success even if not found (security best practice)
+            return response()->json([
+                'success' => true,
+                'message' => 'If the email exists, a password reset has been sent.'
+            ]);
+        }
+
+        // Generate new password
+        $newPassword = \Illuminate\Support\Str::random(12);
+        
+        $participant->update([
+            'password' => Hash::make($newPassword),
+            'password_changed_at' => now()
+        ]);
+
+        // Find event organizer from event token (registration link) or from participant's registrations
+        $organizerUser = null;
+        $eventName = '';
+        
+        if ($request->event_token) {
+            // Get event from registration link token
+            $event = \App\Models\Event::where('registration_link', $request->event_token)->first();
+            if ($event) {
+                $organizerUser = $event->user;
+                $eventName = $event->name;
+            }
+        }
+        
+        // Fallback: Get the most recent event registration if no token provided
+        if (!$organizerUser) {
+            $registration = \App\Models\EventRegistration::where('pwa_participant_id', $participant->id)
+                ->with('event.user')
+                ->orderBy('created_at', 'desc')
+                ->first();
+            $organizerUser = $registration?->event?->user;
+            $eventName = $registration?->event?->name ?? '';
+        }
+
+        // Attempt to send email using organizer's DeliveryConfig
+        try {
+            if (!empty($participant->email) && $organizerUser) {
+                // Load organizer's active email config
+                $config = \App\Models\DeliveryConfig::getEmailConfig($organizerUser->id);
+
+                if ($config) {
+                    $settings = $config->settings ?? [];
+                    $fromName = $settings['from_name'] ?? 'SIJIL System';
+                    $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
+
+                    // Configure mailer dynamically based on provider
+                    switch ($config->provider) {
+                        case 'smtp':
+                            config([
+                                'mail.default' => 'smtp',
+                                'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
+                                'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
+                                'mail.mailers.smtp.encryption' => (($settings['encryption'] ?? null) === 'none') ? null : ($settings['encryption'] ?? null),
+                                'mail.mailers.smtp.username' => $settings['username'] ?? '',
+                                'mail.mailers.smtp.password' => $settings['password'] ?? '',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                        case 'mailgun':
+                            config([
+                                'mail.default' => 'mailgun',
+                                'services.mailgun.domain' => $settings['domain'] ?? '',
+                                'services.mailgun.secret' => $settings['secret'] ?? '',
+                                'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                        case 'ses':
+                            config([
+                                'mail.default' => 'ses',
+                                'services.ses.key' => $settings['key'] ?? '',
+                                'services.ses.secret' => $settings['secret'] ?? '',
+                                'services.ses.region' => $settings['region'] ?? 'us-east-1',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                        case 'sendmail':
+                            config([
+                                'mail.default' => 'sendmail',
+                                'mail.mailers.sendmail.path' => $settings['path'] ?? '/usr/sbin/sendmail -bs',
+                                'mail.from.address' => $fromAddress,
+                                'mail.from.name' => $fromName,
+                            ]);
+                            break;
+                    }
+
+                    // Find password reset template
+                    $template = \App\Models\PwaEmailTemplate::query()
+                        ->where('type', 'password_reset')
+                        ->where(function($q) use ($organizerUser) {
+                            $q->where('scope', 'organizer')->where('user_id', $organizerUser->id);
+                            $q->orWhere('scope', 'global');
+                        })
+                        ->orderByRaw("CASE WHEN scope='organizer' THEN 0 ELSE 1 END")
+                        ->first();
+
+                    $subject = 'Password Reset - E-Certificate Online';
+                    $content = '<p><strong>Dear @{{name}},</strong></p><p>Your password has been reset.</p><div style="background-color: #f9fafb; padding: 12px; border-radius: 4px; margin: 16px 0;"><p style="font-size: 14px;"><strong>New Password:</strong> @{{password}}</p></div><p>Please login and change your password immediately.</p>';
+                    
+                    if ($template) {
+                        $subject = $template->subject ?: $subject;
+                        $content = $template->content ?: $content;
+                    }
+
+                    // Prepare variables
+                    $dataVars = [
+                        'name' => $participant->name,
+                        'email' => $participant->email,
+                        'password' => $newPassword,
+                        'pwa_link' => url('/pwa'),
+                        'login_url' => url('/pwa/login'),
+                        'support_email' => $fromAddress,
+                        'event_name' => $eventName,
+                        'organization' => $organizerUser->name ?? 'Organizer',
+                    ];
+
+                    // Replace variables
+                    foreach ($dataVars as $key => $val) {
+                        $subject = str_replace('@{{' . $key . '}}', $val, $subject);
+                        $content = str_replace('@{{' . $key . '}}', $val, $content);
+                    }
+
+                    // Send email
+                    \Illuminate\Support\Facades\Mail::html($content, function($message) use ($participant, $subject) {
+                        $message->to($participant->email, $participant->name)
+                                ->subject($subject);
+                    });
+                }
+            }
+        } catch (\Exception $e) {
+            // Silent fail for security
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'If the email exists, a password reset has been sent.'
         ]);
     }
 }

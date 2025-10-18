@@ -18,7 +18,7 @@ const AttendanceHistory = () => {
       const response = await participantAPI.getAttendanceHistory()
       setAttendance(response.data.data || [])
     } catch (error) {
-      console.error('Error fetching attendance history:', error)
+      // Silent error handling
     } finally {
       setLoading(false)
     }

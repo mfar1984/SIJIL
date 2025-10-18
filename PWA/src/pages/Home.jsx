@@ -60,13 +60,11 @@ const Home = ({ user }) => {
       const eventsList = eventsRes?.data?.data?.events || []
       const certsList = certsRes?.data?.data?.certificates || []
       const attendanceList = attendanceRes?.data?.data || []
-      // eslint-disable-next-line no-console
-      console.log('Dashboard fetched:', { events: eventsList.length, certificates: certsList.length, attendance: attendanceList.length })
       setEvents(eventsList)
       setCertificates(certsList)
       setAttendanceHistory(attendanceList)
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+    } catch {
+      // Silent error handling
     } finally {
       setLoading(false)
     }
@@ -105,7 +103,8 @@ const Home = ({ user }) => {
     // Sort by start time ascending
     .sort((a, b) => getEventRange(a).start - getEventRange(b).start)
   const nextEvent = upcomingEvents[currentSlide]
-  const attendedEvents = events.filter(e => e.status === 'attended').length
+  // Count attended from attendance history (more reliable than event.status)
+  const attendedEvents = attendanceHistory.filter(a => a.checked_in_at || a.checkin_time).length
   const upcomingCount = upcomingEvents.length
 
   const getCountdown = (date, startTime) => {
@@ -159,9 +158,8 @@ const Home = ({ user }) => {
               const { start, end } = getEventRange(nextEvent)
               const isLive = now >= start && now <= end
               return isLive ? (
-                <div className="live-badge">
-                  <span className="pulse-dot" />
-                  LIVE NOW
+                <div className="live-badge-dot">
+                  <span className="pulse-dot-red" />
                 </div>
               ) : (
                 <div className="countdown-badge">{getCountdown(nextEvent.date, nextEvent.start_time)}</div>

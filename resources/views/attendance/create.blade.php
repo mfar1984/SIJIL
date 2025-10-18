@@ -121,7 +121,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                                     <div>
                                         <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
-                                        <input type="date" :name="`sessions[${idx}][date]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" :value="day.date" readonly>
+                                        <input type="date" :name="`sessions[${idx}][date]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="day.date">
                                     </div>
                                     <div>
                                         <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>

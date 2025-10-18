@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     
     <!-- PWA Meta Tags -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -15,17 +15,17 @@
     <meta name="author" content="E-Certificate Team" />
     
     <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="E-Certificate PWA" />
+    <meta property="og:title" content="E-Certificate" />
     <meta property="og:description" content="Event Certificate Management System - Access your events and certificates with ease" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://login.e-certificate.com.my" />
-    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:image" content="/logo.png" />
     
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="E-Certificate PWA" />
+    <meta name="twitter:title" content="E-Certificate" />
     <meta name="twitter:description" content="Event Certificate Management System - Access your events and certificates with ease" />
-    <meta name="twitter:image" content="/pwa-512x512.png" />
+    <meta name="twitter:image" content="/logo.png" />
     
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -43,9 +43,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     
-    <title>E-Certificate PWA</title>
+    <title>E-Certificate</title>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -63,19 +63,37 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker Registration & Auto Install Prompt -->
     <script>
+      let deferredPrompt;
+      
+      // Service Worker Registration
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
         });
       }
+
+      // Auto Install PWA Prompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Auto show install prompt after 2 seconds
+        setTimeout(() => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+              deferredPrompt = null;
+            });
+          }
+        }, 2000);
+      });
+
+      // Track if installed
+      window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+      });
     </script>
   </body>
 </html>

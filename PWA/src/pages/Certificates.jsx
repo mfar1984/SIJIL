@@ -16,12 +16,9 @@ const Certificates = () => {
       const response = await participantAPI.getCertificates()
       // Backend returns { success, data: { certificates: [...] } }
       const list = response?.data?.data?.certificates || []
-      // Debug to verify data shape in dev tools
-      // eslint-disable-next-line no-console
-      console.log('Certificates fetched:', Array.isArray(list) ? list.length : 0)
       setCertificates(list)
     } catch (error) {
-      console.error('Error fetching certificates:', error)
+      // Silent error handling
     } finally {
       setLoading(false)
     }
@@ -40,7 +37,6 @@ const Certificates = () => {
       link.remove()
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Error downloading certificate:', error)
       alert('Failed to download certificate. Please try again.')
     } finally {
       setDownloading(prev => ({ ...prev, [certificate.id]: false }))
@@ -56,7 +52,7 @@ const Certificates = () => {
           url: window.location.href
         })
       } catch (error) {
-        console.log('Share cancelled')
+        // Share cancelled or failed
       }
     } else {
       alert('Sharing not supported on this device')

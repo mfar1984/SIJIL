@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Html5QrcodeScanner } from 'html5-qrcode'
 import { participantAPI } from '../services/api'
 
 const Scan = () => {
@@ -7,9 +8,19 @@ const Scan = () => {
   const [result, setResult] = useState(null)
   const [location, setLocation] = useState({ lat: null, lng: null, error: null })
   const [gettingLocation, setGettingLocation] = useState(true)
+  const [scannerActive, setScannerActive] = useState(false)
+  const scannerRef = useRef(null)
 
   useEffect(() => {
     getLocation()
+    initScanner()
+    
+    return () => {
+      // Cleanup scanner on unmount
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(console.error)
+      }
+    }
   }, [])
 
   const getLocation = () => {
@@ -41,6 +52,37 @@ const Scan = () => {
       })
       setGettingLocation(false)
     }
+  }
+
+  const initScanner = () => {
+    const scanner = new Html5QrcodeScanner(
+      "qr-reader",
+      { 
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        rememberLastUsedCamera: true
+      },
+      false
+    )
+
+    scanner.render(onScanSuccess, onScanFailure)
+    scannerRef.current = scanner
+    setScannerActive(true)
+  }
+
+  const onScanSuccess = (decodedText, decodedResult) => {
+    // Stop scanner
+    if (scannerRef.current) {
+      scannerRef.current.clear().catch(console.error)
+      setScannerActive(false)
+    }
+    // Process the scanned code
+    processAttendance(decodedText)
+  }
+
+  const onScanFailure = (error) => {
+    // Silently ignore scan failures (common during scanning)
   }
 
   const handleManualSubmit = async (e) => {
@@ -80,6 +122,10 @@ const Scan = () => {
   const handleScanAnother = () => {
     setResult(null)
     setManualCode('')
+    // Restart scanner
+    if (!scannerActive) {
+      initScanner()
+    }
   }
 
   if (result) {
@@ -97,21 +143,32 @@ const Scan = () => {
               <div className="result-details">
                 <div className="detail-item">
                   <span className="detail-label">Event</span>
-                  <span className="detail-value">{result.data.event_name}</span>
+                  <span className="detail-value">{result.data.event_name || 'N/A'}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Time</span>
                   <span className="detail-value">
-                    {new Date().toLocaleTimeString('en-MY', { 
+                    {result.data.time ? new Date(result.data.time).toLocaleTimeString('en-MY', { 
                       hour: '2-digit', 
                       minute: '2-digit' 
-                    })}
+                    }) : 'N/A'}
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Status</span>
-                  <span className="detail-value">{result.data.status}</span>
+                  <span className="detail-value" style={{
+                    color: result.data.status === 'Late' ? '#ef4444' : '#22c55e',
+                    fontWeight: '600'
+                  }}>{result.data.status || 'N/A'}</span>
                 </div>
+                {result.data.location && (result.data.location.latitude || result.data.location.longitude) && (
+                  <div className="detail-item">
+                    <span className="detail-label">Location (GPS)</span>
+                    <span className="detail-value" style={{ fontSize: '11px' }}>
+                      {result.data.location.latitude?.toFixed(6)}, {result.data.location.longitude?.toFixed(6)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <button className="action-btn primary" onClick={handleScanAnother}>
@@ -176,63 +233,11 @@ const Scan = () => {
       {/* Scanner Area */}
       <div className="scanner-wrapper">
         <div className="qr-scanner-container">
-          <div style={{
-            background: '#000',
+          <div id="qr-reader" style={{
             borderRadius: '12px',
-            padding: '40px',
-            textAlign: 'center',
-            color: 'white',
-            position: 'relative',
-            minHeight: '300px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            {/* Scanner Frame Corners */}
-            <div style={{
-              position: 'absolute',
-              top: '20px',
-              left: '20px',
-              width: '40px',
-              height: '40px',
-              borderTop: '3px solid #3b82f6',
-              borderLeft: '3px solid #3b82f6'
-            }} />
-            <div style={{
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              width: '40px',
-              height: '40px',
-              borderTop: '3px solid #3b82f6',
-              borderRight: '3px solid #3b82f6'
-            }} />
-            <div style={{
-              position: 'absolute',
-              bottom: '20px',
-              left: '20px',
-              width: '40px',
-              height: '40px',
-              borderBottom: '3px solid #3b82f6',
-              borderLeft: '3px solid #3b82f6'
-            }} />
-            <div style={{
-              position: 'absolute',
-              bottom: '20px',
-              right: '20px',
-              width: '40px',
-              height: '40px',
-              borderBottom: '3px solid #3b82f6',
-              borderRight: '3px solid #3b82f6'
-            }} />
-            
-            <span className="material-icons" style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>
-              qr_code_scanner
-            </span>
-            <h3 style={{ marginBottom: '8px' }}>Camera scanner coming soon</h3>
-            <p style={{ fontSize: '14px', opacity: 0.7 }}>Use manual code entry below</p>
-          </div>
+            overflow: 'hidden',
+            border: '2px solid var(--gray-200)'
+          }}></div>
         </div>
       </div>
 

@@ -44,7 +44,6 @@ const PersonalInformation = () => {
         country: data.country || 'Malaysia',
       })
     } catch (error) {
-      console.error('Error fetching profile:', error)
       setMessage({ type: 'error', text: 'Failed to load profile data' })
     } finally {
       setLoading(false)
@@ -84,7 +83,6 @@ const PersonalInformation = () => {
         }, 1500)
       }
     } catch (error) {
-      console.error('Error updating profile:', error)
       setMessage({ 
         type: 'error', 
         text: error.response?.data?.message || 'Failed to update profile. Please try again.' 

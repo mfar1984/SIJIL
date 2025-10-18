@@ -49,6 +49,36 @@ class Event extends Model
     ];
 
     /**
+     * Prepare dates for JSON serialization (return as date strings, not timestamps)
+     *
+     * @param  \DateTimeInterface  $date
+     * @return string
+     */
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        // Return date in Y-m-d format for date fields, ISO timestamp for datetime fields
+        return $date->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * Get the attributes that should be cast to native types (override for API responses)
+     */
+    public function toArray()
+    {
+        $array = parent::toArray();
+        
+        // Override date serialization for API responses - return date string without timezone conversion
+        if (isset($array['start_date']) && $this->start_date) {
+            $array['start_date'] = $this->start_date->format('Y-m-d');
+        }
+        if (isset($array['end_date']) && $this->end_date) {
+            $array['end_date'] = $this->end_date->format('Y-m-d');
+        }
+        
+        return $array;
+    }
+
+    /**
      * Generate a unique registration link for the event.
      *
      * @return string

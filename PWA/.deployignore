@@ -1,0 +1,31 @@
+# Files to exclude when uploading to server
+
+# Source files (not needed in production)
+src/
+public/
+
+# Development files
+.env
+.env.local
+.env.development
+vite.config.js
+.eslintrc.cjs
+.gitignore
+
+# Dependencies (will be installed on server)
+node_modules/
+
+# Build artifacts (only upload dist/)
+*.log
+npm-debug.log*
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation (optional)
+README.md
+

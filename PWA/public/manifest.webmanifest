@@ -1,7 +1,7 @@
 {
-  "name": "SIJIL - E-Certificate System",
-  "short_name": "SIJIL",
-  "description": "SIJIL PWA - Manage your events, certificates, and attendance",
+  "name": "E-Certificate",
+  "short_name": "E-Certificate",
+  "description": "E-Certificate - Manage your events, certificates, and attendance",
   "theme_color": "#004aad",
   "background_color": "#ffffff",
   "display": "standalone",

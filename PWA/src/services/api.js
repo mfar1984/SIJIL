@@ -3,24 +3,23 @@ import axios from 'axios'
 // Automatically detect the correct API base URL
 const getApiBaseURL = () => {
   const hostname = window.location.hostname
-  const port = '8000'
   
-  // If accessing from localhost, use localhost for API
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    const apiUrl = `http://localhost:${port}`
-    console.log('🌐 API Base URL (localhost):', apiUrl)
-    return apiUrl
+  // Production domain - PWA at apps.e-certificate.com.my, API at login.e-certificate.com.my
+  if (hostname === 'apps.e-certificate.com.my') {
+    return 'https://login.e-certificate.com.my'
   }
   
-  // If accessing from network IP, use the same network IP for API
-  const apiUrl = `http://${hostname}:${port}`
-  console.log('🌐 API Base URL (network):', apiUrl)
-  return apiUrl
+  // Development - localhost
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8000'
+  }
+  
+  // Network IP for testing (e.g., 192.168.x.x)
+  return `http://${hostname}:8000`
 }
 
 // Get the API base URL
 const API_BASE_URL = getApiBaseURL()
-console.log('✅ API configured:', API_BASE_URL)
 
 const api = axios.create({
   baseURL: API_BASE_URL,

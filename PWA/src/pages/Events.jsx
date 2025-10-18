@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { participantAPI, eventsAPI } from '../services/api'
+import { participantAPI } from '../services/api'
 import LoadingScreen from '../components/LoadingScreen'
 import EventDrawer from '../components/EventDrawer'
 
 const Events = () => {
-  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [events, setEvents] = useState([])
@@ -13,21 +11,30 @@ const Events = () => {
   const [activeTab, setActiveTab] = useState('all') // all, upcoming, attended
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [attendanceHistory, setAttendanceHistory] = useState([])
 
   useEffect(() => {
     fetchEvents()
+    fetchAttendanceHistory()
   }, [])
+
+  const fetchAttendanceHistory = async () => {
+    try {
+      const response = await participantAPI.getAttendanceHistory()
+      setAttendanceHistory(response.data.data || [])
+    } catch {
+      // Silent error handling
+    }
+  }
 
   const fetchEvents = async () => {
     try {
       const response = await participantAPI.getEvents()
       // Backend returns { success, data: { events: [...] } }
       const list = response?.data?.data?.events || []
-      // eslint-disable-next-line no-console
-      console.log('Events fetched:', Array.isArray(list) ? list.length : 0)
       setEvents(list)
-    } catch (error) {
-      console.error('Error fetching events:', error)
+    } catch {
+      // Silent error handling
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -37,6 +44,7 @@ const Events = () => {
   const handleRefresh = () => {
     setRefreshing(true)
     fetchEvents()
+    fetchAttendanceHistory()
   }
 
   const handleEventClick = (event) => {
@@ -45,13 +53,28 @@ const Events = () => {
   }
 
   const getEventStatus = (event) => {
-    const now = new Date()
-    const eventDate = new Date(event.date)
-    const eventEndTime = new Date(`${event.date} ${event.end_time}`)
-    
+    // If backend already marked as attended, respect that
     if (event.status === 'attended') return 'attended'
-    if (now >= eventDate && now <= eventEndTime) return 'live'
+    
+    const now = new Date()
+    
+    // Backend now returns dates as YYYY-MM-DD strings (no timezone conversion)
+    const startDateStr = event.date // "2025-10-19"
+    const endDateStr = event.end_date || event.date // "2025-10-20"
+    const startTimeStr = event.start_time || '00:00' // "10:00"
+    const endTimeStr = event.end_time || '23:59' // "16:30"
+    
+    // Construct full datetime for start and end
+    const eventStartTime = new Date(`${startDateStr}T${startTimeStr}:00`)
+    const eventEndTime = new Date(`${endDateStr}T${endTimeStr}:00`)
+    
+    // Check if event is currently happening (LIVE)
+    if (now >= eventStartTime && now <= eventEndTime) return 'live'
+    
+    // Check if event has ended (COMPLETED)
     if (now > eventEndTime) return 'completed'
+    
+    // Otherwise it's upcoming (REGISTERED)
     return 'registered'
   }
 
@@ -81,6 +104,14 @@ const Events = () => {
     return null
   }
 
+  // Get attended event names from attendance history
+  const attendedEventNames = new Set(
+    attendanceHistory
+      .filter(a => a.checked_in_at || a.checkin_time || a.checkout_time)
+      .map(a => a.event_name)
+      .filter(Boolean)
+  )
+
   // Filter events
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,7 +123,8 @@ const Events = () => {
     if (activeTab === 'upcoming') {
       return matchesSearch && eventDate > now
     } else if (activeTab === 'attended') {
-      return matchesSearch && event.status === 'attended'
+      // Check if event name exists in attendance history (match by name)
+      return matchesSearch && (event.status === 'attended' || attendedEventNames.has(event.title))
     }
     
     return matchesSearch
@@ -208,12 +240,21 @@ const Events = () => {
                 </div>
 
                 <div className="event-card-footer">
-                  <span className={`status-badge ${status === 'live' ? 'status-live' : status === 'attended' ? 'attended' : status === 'completed' ? 'status-completed' : 'registered'}`}>
-                    {status === 'live' && '🔴 LIVE NOW'}
-                    {status === 'attended' && 'ATTENDED'}
-                    {status === 'registered' && 'REGISTERED'}
-                    {status === 'completed' && 'COMPLETED'}
-                  </span>
+                  {status === 'live' && (
+                    <span className="status-badge status-live">
+                      <span className="live-dot-mini"></span>
+                      LIVE NOW
+                    </span>
+                  )}
+                  {status === 'attended' && (
+                    <span className="status-badge attended">ATTENDED</span>
+                  )}
+                  {status === 'registered' && (
+                    <span className="status-badge registered">REGISTERED</span>
+                  )}
+                  {status === 'completed' && (
+                    <span className="status-badge status-completed">COMPLETED</span>
+                  )}
                   {countdown && status !== 'live' && status !== 'attended' && status !== 'completed' && (
                     <div className="countdown-text">
                       <span className="material-icons">schedule</span>

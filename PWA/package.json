@@ -1,16 +1,20 @@
 {
-  "name": "package.json",
+  "name": "e-certificate-pwa",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node --no-warnings server.js",
+    "serve": "npm run build && npm start"
   },
   "dependencies": {
     "axios": "^1.11.0",
+    "compression": "^1.7.4",
+    "express": "^4.18.2",
     "html5-qrcode": "^2.3.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

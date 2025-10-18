@@ -11,7 +11,7 @@ const Settings = ({ user, onLogout }) => {
       // Call backend API to delete token from database
       await authAPI.logout()
     } catch (error) {
-      console.error('Logout error:', error)
+      // Silent error handling
     } finally {
       // Always clear local storage and redirect
       localStorage.removeItem('token')

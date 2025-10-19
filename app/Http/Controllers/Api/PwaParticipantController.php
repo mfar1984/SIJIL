@@ -344,10 +344,23 @@ class PwaParticipantController extends Controller
     public function downloadCertificate(Request $request, $certificateId)
     {
         $participant = $request->user();
-        $participantId = $participant->related_participant_id ?? $participant->id;
+
+        // Build list of participant IDs associated to this PWA user (IC + email),
+        // same logic as getCertificates so download works for aggregated participants
+        $participantIds = collect();
+        if (!empty($participant->identity_card)) {
+            $normalizedIc = preg_replace('/\D+/', '', (string) $participant->identity_card);
+            $participantIds = $participantIds->merge(\App\Models\Participant::whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc])->pluck('id'));
+        }
+        $participantIds = $participantIds->merge(\App\Models\Participant::where('email', $participant->email)->pluck('id'))->unique()->values();
+
+        // Fallback to related_participant_id if available
+        if ($participant->related_participant_id) {
+            $participantIds = $participantIds->merge([$participant->related_participant_id])->unique()->values();
+        }
 
         $certificate = \App\Models\Certificate::where('id', $certificateId)
-            ->where('participant_id', $participantId)
+            ->whereIn('participant_id', $participantIds->all())
             ->first();
 
         if (!$certificate) {
@@ -364,15 +377,29 @@ class PwaParticipantController extends Controller
             ], 404);
         }
 
-        // Check if file exists in storage
-        if (!\Storage::disk('public')->exists($certificate->pdf_file)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Certificate PDF file not found in storage. Please contact support.'
-            ], 404);
+        // Resolve file path with fallbacks
+        $rel = ltrim($certificate->pdf_file, '/');
+        if ($rel && substr($rel, -4) === '.pdf' && strpos($rel, 'certificates/') !== 0 && strpos($rel, 'certificate-') === 0) {
+            $rel = 'certificates/' . basename($rel);
         }
 
-        $filePath = storage_path('app/public/' . $certificate->pdf_file);
+        $candidatePaths = [
+            storage_path('app/public/' . $rel),
+            public_path('storage/' . $rel),
+            public_path($rel),
+        ];
+
+        $filePath = null;
+        foreach ($candidatePaths as $p) {
+            if ($p && file_exists($p)) { $filePath = $p; break; }
+        }
+
+        if (!$filePath) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Certificate PDF file not found. Please contact support.'
+            ], 404);
+        }
         $fileName = ($certificate->certificate_number ?? 'certificate') . '.pdf';
 
         return response()->download($filePath, $fileName, [
@@ -829,11 +856,11 @@ class PwaParticipantController extends Controller
         $participant = PwaParticipant::where('email', $request->email)->first();
 
         if (!$participant) {
-            // Return success even if not found (security best practice)
+            // Email not found - return error (user-friendly feedback)
             return response()->json([
-                'success' => true,
-                'message' => 'If the email exists, a password reset has been sent.'
-            ]);
+                'success' => false,
+                'message' => 'Email address not found in our system. Please check and try again.'
+            ], 404);
         }
 
         // Generate new password
@@ -844,34 +871,17 @@ class PwaParticipantController extends Controller
             'password_changed_at' => now()
         ]);
 
-        // Find event organizer from event token (registration link) or from participant's registrations
-        $organizerUser = null;
-        $eventName = '';
-        
-        if ($request->event_token) {
-            // Get event from registration link token
-            $event = \App\Models\Event::where('registration_link', $request->event_token)->first();
-            if ($event) {
-                $organizerUser = $event->user;
-                $eventName = $event->name;
-            }
-        }
-        
-        // Fallback: Get the most recent event registration if no token provided
-        if (!$organizerUser) {
-            $registration = \App\Models\EventRegistration::where('pwa_participant_id', $participant->id)
-                ->with('event.user')
-                ->orderBy('created_at', 'desc')
-                ->first();
-            $organizerUser = $registration?->event?->user;
-            $eventName = $registration?->event?->name ?? '';
-        }
+        // For PWA reset password (login page), use Administrator config
+        // For event registration reset, use organizer config
+        $adminUser = \App\Models\User::whereHas('roles', function($q) {
+            $q->where('name', 'Administrator');
+        })->first();
 
-        // Attempt to send email using organizer's DeliveryConfig
+        // Attempt to send email using Administrator's DeliveryConfig
         try {
-            if (!empty($participant->email) && $organizerUser) {
-                // Load organizer's active email config
-                $config = \App\Models\DeliveryConfig::getEmailConfig($organizerUser->id);
+            if (!empty($participant->email) && $adminUser) {
+                // Load Administrator's active email config
+                $config = \App\Models\DeliveryConfig::getEmailConfig($adminUser->id);
 
                 if ($config) {
                     $settings = $config->settings ?? [];
@@ -922,18 +932,14 @@ class PwaParticipantController extends Controller
                             break;
                     }
 
-                    // Find password reset template
+                    // Find password reset template (global or admin scope)
                     $template = \App\Models\PwaEmailTemplate::query()
                         ->where('type', 'password_reset')
-                        ->where(function($q) use ($organizerUser) {
-                            $q->where('scope', 'organizer')->where('user_id', $organizerUser->id);
-                            $q->orWhere('scope', 'global');
-                        })
-                        ->orderByRaw("CASE WHEN scope='organizer' THEN 0 ELSE 1 END")
+                        ->where('scope', 'global')
                         ->first();
 
-                    $subject = 'Password Reset - E-Certificate Online';
-                    $content = '<p><strong>Dear @{{name}},</strong></p><p>Your password has been reset.</p><div style="background-color: #f9fafb; padding: 12px; border-radius: 4px; margin: 16px 0;"><p style="font-size: 14px;"><strong>New Password:</strong> @{{password}}</p></div><p>Please login and change your password immediately.</p>';
+                    $subject = 'Password Reset - E-Certificate';
+                    $content = '<p><strong>Dear @{{name}},</strong></p><p>Your password has been reset for your PWA account.</p><div style="background-color: #f9fafb; padding: 12px; border-radius: 4px; margin: 16px 0;"><p style="font-size: 14px;"><strong>New Password:</strong> @{{password}}</p></div><p>Please login at @{{login_url}} and change your password immediately for security.</p><p style="margin-top: 16px; font-size: 12px; color: #6b7280;">If you did not request this reset, please contact us at @{{support_email}}</p>';
                     
                     if ($template) {
                         $subject = $template->subject ?: $subject;
@@ -948,8 +954,7 @@ class PwaParticipantController extends Controller
                         'pwa_link' => url('/pwa'),
                         'login_url' => url('/pwa/login'),
                         'support_email' => $fromAddress,
-                        'event_name' => $eventName,
-                        'organization' => $organizerUser->name ?? 'Organizer',
+                        'organization' => 'E-Certificate System',
                     ];
 
                     // Replace variables

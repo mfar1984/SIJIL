@@ -21,18 +21,27 @@
                 <!-- Animated gradient background -->
                 <div class="absolute inset-0 bg-gradient-animated-layer"></div>
                 
-                <!-- Floating shapes for visual interest -->
+                <!-- Floating shapes for visual interest (multiple layers) -->
                 <div class="absolute top-20 left-20 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl animate-float-slow"></div>
                 <div class="absolute bottom-20 right-20 w-80 h-80 bg-blue-300 opacity-20 rounded-full blur-3xl animate-float-medium"></div>
                 <div class="absolute top-1/2 left-1/3 w-48 h-48 bg-blue-200 opacity-15 rounded-full blur-2xl animate-float-fast"></div>
+                
+                <!-- Additional animated elements -->
+                <div class="absolute top-1/4 right-1/4 w-56 h-56 bg-blue-100 opacity-12 rounded-full blur-3xl animate-float-reverse"></div>
+                <div class="absolute bottom-1/3 left-1/4 w-72 h-72 bg-white opacity-8 rounded-full blur-3xl animate-float-diagonal"></div>
+                <div class="absolute top-2/3 right-1/3 w-40 h-40 bg-blue-400 opacity-18 rounded-full blur-2xl animate-float-spin"></div>
+                
+                <!-- Geometric shapes -->
+                <div class="absolute top-10 right-40 w-32 h-32 bg-white opacity-5 rotate-45 animate-rotate-slow"></div>
+                <div class="absolute bottom-10 left-40 w-24 h-24 bg-blue-200 opacity-10 rotate-12 animate-rotate-reverse"></div>
                 
                 <!-- Logo/Branding -->
                 <div class="relative z-10 text-center text-white px-8">
                     <div class="w-40 h-40 mx-auto mb-6 bg-white rounded-2xl shadow-2xl flex items-center justify-center p-4">
                         <img src="/images/logo.png" alt="Logo" class="w-full h-full object-contain" />
                     </div>
-                    <h1 class="text-5xl font-bold mb-4 drop-shadow-lg">SIJIL</h1>
-                    <p class="text-xl opacity-90">E-Certificate Management System</p>
+                    <h1 class="text-5xl font-bold mb-4 drop-shadow-lg">E-Certificate</h1>
+                    <p class="text-xl opacity-90">Management System</p>
                     <div class="mt-8 text-sm opacity-75">Secure • Efficient • Professional</div>
                 </div>
                 
@@ -116,6 +125,57 @@
             
             .animate-float-fast {
                 animation: float-fast 10s ease-in-out infinite;
+            }
+            
+            /* New animations for additional elements */
+            @keyframes float-reverse {
+                0%, 100% { transform: translate(0, 0) scale(1); }
+                50% { transform: translate(35px, 35px) scale(1.15); }
+            }
+            
+            @keyframes float-diagonal {
+                0%, 100% { transform: translate(0, 0); }
+                25% { transform: translate(-25px, 25px); }
+                50% { transform: translate(-40px, -20px); }
+                75% { transform: translate(15px, -35px); }
+            }
+            
+            @keyframes float-spin {
+                0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+                33% { transform: translate(20px, -30px) rotate(120deg) scale(1.1); }
+                66% { transform: translate(-25px, 25px) rotate(240deg) scale(0.95); }
+                100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+            }
+            
+            @keyframes rotate-slow {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            @keyframes rotate-reverse {
+                0% { transform: rotate(0deg) scale(1); }
+                50% { transform: rotate(-180deg) scale(1.2); }
+                100% { transform: rotate(-360deg) scale(1); }
+            }
+            
+            .animate-float-reverse {
+                animation: float-reverse 18s ease-in-out infinite;
+            }
+            
+            .animate-float-diagonal {
+                animation: float-diagonal 22s ease-in-out infinite;
+            }
+            
+            .animate-float-spin {
+                animation: float-spin 16s ease-in-out infinite;
+            }
+            
+            .animate-rotate-slow {
+                animation: rotate-slow 30s linear infinite;
+            }
+            
+            .animate-rotate-reverse {
+                animation: rotate-reverse 25s ease-in-out infinite;
             }
         </style>
     </body>

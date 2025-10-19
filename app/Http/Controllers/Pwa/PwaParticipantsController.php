@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class PwaParticipantsController extends Controller
 {
@@ -28,10 +29,21 @@ class PwaParticipantsController extends Controller
         if ($user->hasRole('Administrator')) {
             // Administrator can see ALL participants from ALL organizers
         } else {
-            // Organizer can only see participants from their own events
+            // Organizer: show participants created by this user OR attached to their events
             $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $query->whereHas('events', function($q) use ($organizerEvents) {
-                $q->whereIn('events.id', $organizerEvents);
+            $query->where(function($q) use ($user, $organizerEvents) {
+                $q->where('created_by', $user->id)
+                  ->orWhereHas('events', function($qq) use ($organizerEvents) {
+                      $qq->whereIn('events.id', $organizerEvents);
+                  })
+                  // Fallback: match via regular participants by email under this organizer's events
+                  ->orWhereExists(function($sub) use ($user) {
+                      $sub->select(DB::raw(1))
+                          ->from('participants as rp')
+                          ->join('events as ev', 'rp.event_id', '=', 'ev.id')
+                          ->whereColumn('rp.email', 'pwa_participants.email')
+                          ->where('ev.user_id', $user->id);
+                  });
             });
         }
 
@@ -59,15 +71,47 @@ class PwaParticipantsController extends Controller
         $perPage = $request->get('per_page', 15);
         $participants = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
+        // Enrich listing with fallback data from regular participants (for phone/organization)
+        $participants->getCollection()->transform(function($pp) use ($user) {
+            if (empty($pp->phone) || empty($pp->organization)) {
+                $regularQuery = Participant::where('email', $pp->email);
+                if (!$user->hasRole('Administrator')) {
+                    $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
+                    $regularQuery->whereIn('event_id', $organizerEvents);
+                }
+                if ($regular = $regularQuery->latest()->first()) {
+                    if (empty($pp->phone) && !empty($regular->phone)) {
+                        $pp->setAttribute('phone', $regular->phone);
+                    }
+                    if (empty($pp->organization) && !empty($regular->organization)) {
+                        $pp->setAttribute('organization', $regular->organization);
+                    }
+                }
+            }
+            return $pp;
+        });
+
         // Get counts for display
         if ($user->hasRole('Administrator')) {
             $totalParticipants = PwaParticipant::count();
             $totalEvents = Event::count();
         } else {
             $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $totalParticipants = PwaParticipant::whereHas('events', function($q) use ($organizerEvents) {
-                $q->whereIn('events.id', $organizerEvents);
-            })->count();
+            $totalParticipants = PwaParticipant::where(function($q) use ($user, $organizerEvents) {
+                    $q->where('created_by', $user->id)
+                      ->orWhereHas('events', function($qq) use ($organizerEvents) {
+                          $qq->whereIn('events.id', $organizerEvents);
+                      })
+                      ->orWhereExists(function($sub) use ($user) {
+                          $sub->select(DB::raw(1))
+                              ->from('participants as rp')
+                              ->join('events as ev', 'rp.event_id', '=', 'ev.id')
+                              ->whereColumn('rp.email', 'pwa_participants.email')
+                              ->where('ev.user_id', $user->id);
+                      });
+                })
+                ->distinct('pwa_participants.id')
+                ->count('pwa_participants.id');
             $totalEvents = Event::where('user_id', $user->id)->count();
         }
 
@@ -630,11 +674,29 @@ class PwaParticipantsController extends Controller
     public function show(PwaParticipant $participant)
     {
         $user = Auth::user();
-        // Check if user can view this participant
+        // Check if user can view this participant (read-only):
+        // Allow if: Admin OR (created_by == user.id) OR (attached to user's events)
+        // OR (regular Participants with same email/IC exist under user's events)
         if (!$user->hasRole('Administrator')) {
             $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
             $participantEvents = $participant->events->pluck('id');
-            if ($participantEvents->intersect($organizerEvents)->isEmpty()) {
+
+            $attachedToOrganizer = $participantEvents->intersect($organizerEvents)->isNotEmpty();
+            $createdByOrganizer = (int) $participant->created_by === (int) $user->id;
+
+            $fallbackMatch = DB::table('participants as rp')
+                ->join('events as ev', 'rp.event_id', '=', 'ev.id')
+                ->where(function($q) use ($participant) {
+                    $ic = preg_replace('/\D+/', '', (string) ($participant->identity_card ?? ''));
+                    $q->where('rp.email', $participant->email);
+                    if (!empty($ic)) {
+                        $q->orWhereRaw("REPLACE(rp.identity_card, '-', '') = ?", [$ic]);
+                    }
+                })
+                ->where('ev.user_id', $user->id)
+                ->exists();
+
+            if (!($attachedToOrganizer || $createdByOrganizer || $fallbackMatch)) {
                 abort(403, 'You can only view participants from your own events.');
             }
         }
@@ -679,6 +741,34 @@ class PwaParticipantsController extends Controller
                 'sessions' => $sessions,
             ];
         })->filter();
+
+        // Enrich PWA profile details for view using latest data from regular participants when empty
+        if ($participants->isNotEmpty()) {
+            $source = $participants->first();
+            $fallbackFields = [
+                'phone', 'identity_card', 'passport_no', 'gender', 'date_of_birth', 'job_title',
+                'organization', 'address', 'address1', 'address2', 'city', 'state', 'postcode', 'country'
+            ];
+            foreach ($fallbackFields as $field) {
+                if (empty($participant->{$field}) && !empty($source->{$field})) {
+                    $participant->setAttribute($field, $source->{$field});
+                }
+            }
+            // If address still empty, compose from granular fields
+            if (empty($participant->address)) {
+                $addrParts = array_filter([
+                    $participant->address1,
+                    $participant->address2,
+                    $participant->city,
+                    $participant->state,
+                    $participant->postcode,
+                    $participant->country,
+                ]);
+                if (!empty($addrParts)) {
+                    $participant->setAttribute('address', implode("\n", $addrParts));
+                }
+            }
+        }
 
         // Compute status for display
         $status = $participant->is_active ? 'active' : 'inactive';

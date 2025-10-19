@@ -104,10 +104,57 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: var(--space-8) var(--space-4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background elements */
+.login-top::before {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent);
+  border-radius: 50%;
+  top: -50px;
+  left: -50px;
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.login-top::after {
+  content: '';
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+  border-radius: 50%;
+  bottom: -30px;
+  right: -30px;
+  animation: float-medium 6s ease-in-out infinite;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, 20px) scale(1.1);
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-15px, -15px) scale(1.05);
+  }
 }
 
 .login-logo-section {
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .login-logo {
@@ -212,6 +259,9 @@ html, body {
   transition: all var(--transition);
   background: var(--gray-50);
   height: 50px;
+  color: var(--gray-900);
+  caret-color: var(--gray-900);
+  -webkit-text-fill-color: var(--gray-900);
 }
 
 .input-modern:focus {
@@ -219,10 +269,26 @@ html, body {
   border-color: var(--primary-DEFAULT);
   background: white;
   box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.1);
+  color: var(--gray-900);
 }
 
 .input-modern::placeholder {
   color: var(--gray-400);
+}
+
+/* Ensure Safari/Chrome autofill text color is visible */
+input.input-modern:-webkit-autofill,
+input.input-modern:-webkit-autofill:hover,
+input.input-modern:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--gray-900);
+  box-shadow: 0 0 0px 1000px white inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Force visible text color on WebKit while typing (not only autofill) */
+input.input-modern,
+input.input-modern:focus {
+  -webkit-text-fill-color: var(--gray-900);
 }
 
 .password-toggle-modern {
@@ -323,6 +389,172 @@ html, body {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.8);
   margin: 0;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: var(--space-4);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: var(--space-6);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.modal-icon {
+  font-size: 48px;
+  color: var(--primary-DEFAULT);
+  margin-bottom: var(--space-3);
+}
+
+.modal-icon.success {
+  color: var(--success);
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+.modal-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  animation: shake 0.3s ease-in-out;
+}
+
+.modal-error .material-icons {
+  font-size: 18px;
+  color: #ef4444;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.modal-form {
+  margin-bottom: var(--space-4);
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.modal-btn {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: all var(--transition);
+  height: 44px;
+}
+
+.modal-btn.primary {
+  background: var(--primary-DEFAULT);
+  color: white;
+}
+
+.modal-btn.primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.modal-btn.primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.modal-btn.primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.modal-btn.secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+.modal-btn.secondary:hover:not(:disabled) {
+  background: var(--gray-200);
+}
+
+.modal-btn.secondary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.modal-btn.full {
+  flex: auto;
+  width: 100%;
+}
+
+.modal-btn .material-icons {
+  font-size: 18px;
 }
 
 /* ===== MOBILE LAYOUT ===== */

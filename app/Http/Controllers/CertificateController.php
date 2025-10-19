@@ -220,6 +220,85 @@ class CertificateController extends Controller
                 ]);
                 
                 // Certificate record created
+
+                // Send notification email (no attachment) using organizer DeliveryConfig
+                try {
+                    if (\App\Models\GlobalConfig::get('email_certificate_generated', true)) {
+                        $participantEmail = $participant->email ?? null;
+                        if ($participantEmail) {
+                            // Load organizer delivery config (event->user)
+                            $organizerUser = $event->user;
+                            $config = \App\Models\DeliveryConfig::getEmailConfig($organizerUser?->id);
+                            $fromName = $config->settings['from_name'] ?? ($organizerUser->name ?? 'E‑Certificate');
+                            $fromAddress = $config->settings['from_address'] ?? 'no-reply@e-certificate.com.my';
+
+                            // Configure mailer dynamically
+                            if ($config) {
+                                switch ($config->provider) {
+                                    case 'smtp':
+                                        config([
+                                            'mail.default' => 'smtp',
+                                            'mail.mailers.smtp.host' => $config->settings['host'] ?? 'smtp.mailtrap.io',
+                                            'mail.mailers.smtp.port' => $config->settings['port'] ?? '2525',
+                                            'mail.mailers.smtp.encryption' => (($config->settings['encryption'] ?? null) === 'none') ? null : ($config->settings['encryption'] ?? null),
+                                            'mail.mailers.smtp.username' => $config->settings['username'] ?? '',
+                                            'mail.mailers.smtp.password' => $config->settings['password'] ?? '',
+                                            'mail.from.address' => $fromAddress,
+                                            'mail.from.name' => $fromName,
+                                        ]);
+                                        break;
+                                    case 'mailgun':
+                                        config([
+                                            'mail.default' => 'mailgun',
+                                            'services.mailgun.domain' => $config->settings['domain'] ?? '',
+                                            'services.mailgun.secret' => $config->settings['secret'] ?? '',
+                                            'services.mailgun.endpoint' => $config->settings['endpoint'] ?? 'api.mailgun.net',
+                                            'mail.from.address' => $fromAddress,
+                                            'mail.from.name' => $fromName,
+                                        ]);
+                                        break;
+                                    case 'ses':
+                                        config([
+                                            'mail.default' => 'ses',
+                                            'services.ses.key' => $config->settings['key'] ?? '',
+                                            'services.ses.secret' => $config->settings['secret'] ?? '',
+                                            'services.ses.region' => $config->settings['region'] ?? 'us-east-1',
+                                            'mail.from.address' => $fromAddress,
+                                            'mail.from.name' => $fromName,
+                                        ]);
+                                        break;
+                                    case 'sendmail':
+                                        config([
+                                            'mail.default' => 'sendmail',
+                                            'mail.mailers.sendmail.path' => $config->settings['path'] ?? '/usr/sbin/sendmail -bs',
+                                            'mail.from.address' => $fromAddress,
+                                            'mail.from.name' => $fromName,
+                                        ]);
+                                        break;
+                                }
+                            }
+
+                            $subject = 'Your certificate is ready';
+                            $body = "Dear {$participant->name},<br><br>" .
+                                    "Your certificate is now available.<br>" .
+                                    "Certificate No: <strong>" . e($certificate->certificate_number) . "</strong><br>" .
+                                    "Event: <strong>" . e($event->name) . "</strong><br>" .
+                                    "Issued on: " . now()->format('d F Y') . "<br><br>" .
+                                    "You can view/download it from your https://user.e-certificate.com.my account (Certificates tab).<br><br>" .
+                                    "Regards,<br>" . e($fromName);
+
+                            \Mail::html($body, function($message) use ($participantEmail, $subject, $fromName, $fromAddress) {
+                                $message->to($participantEmail)->subject($subject)->from($fromAddress, $fromName);
+                            });
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Certificate email notification failed', [
+                        'participant_id' => $participantId,
+                        'certificate_id' => $certificate->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
                 
                 $generatedCount++;
             } catch (\Exception $e) {
@@ -317,11 +396,78 @@ class CertificateController extends Controller
      */
     private function generateCertificatePDF(Event $event, Participant $participant, CertificateTemplate $template, bool $isPreview = false)
     {
-        // Get the template PDF path
-        $templatePath = storage_path('app/public/' . $template->pdf_file);
+        // Get/normalise template PDF relative path
+        // Start from pdf_file if available; normalise various formats
+        $pdfRelPath = $template->pdf_file;
+        if (!empty($pdfRelPath)) {
+            $orig = $pdfRelPath;
+            // If full URL, extract path
+            if (preg_match('#https?://[^/]+(/.*)$#i', $pdfRelPath, $m)) {
+                $pdfRelPath = $m[1];
+            }
+            // Remove leading "/" for consistency
+            $pdfRelPath = ltrim($pdfRelPath, '/');
+            // If points to public/storage, convert to storage relative
+            if (strpos($pdfRelPath, 'storage/') === 0) {
+                $pdfRelPath = substr($pdfRelPath, strlen('storage/'));
+            }
+            if (strpos('/'.$pdfRelPath, '/storage/') !== false) {
+                $pdfRelPath = ltrim(str_replace('storage/', '', $pdfRelPath), '/');
+            }
+            // If contains certificate-templates path deeper, keep from there
+            if (strpos($pdfRelPath, 'certificate-templates/') !== false) {
+                $pdfRelPath = substr($pdfRelPath, strpos($pdfRelPath, 'certificate-templates/'));
+            }
+        }
+        if (empty($pdfRelPath)) {
+            // Try to derive from background_pdf (URL)
+            $bg = $template->background_pdf;
+            if ($bg) {
+                // If full URL, extract path part
+                if (preg_match('#https?://[^/]+(/.*)$#i', $bg, $m)) {
+                    $bg = $m[1];
+                }
+                if (strpos($bg, '/storage/') !== false) {
+                    $pdfRelPath = ltrim(str_replace('/storage/', '', $bg), '/');
+                } elseif (strpos($bg, 'storage/') === 0) {
+                    $pdfRelPath = substr($bg, strlen('storage/'));
+                } elseif (strpos($bg, 'certificate-templates/') !== false) {
+                    // Already relative under public
+                    $pdfRelPath = ltrim(substr($bg, strpos($bg, 'certificate-templates/')), '/');
+                }
+            }
+        }
+
+        // Build initial storage path (ensure certificate-templates prefix if only filename was stored)
+        if ($pdfRelPath && strpos($pdfRelPath, 'certificate-templates/') !== 0 && substr($pdfRelPath, -4) === '.pdf') {
+            // Assume file is inside certificate-templates when only filename is present
+            $pdfRelPath = 'certificate-templates/' . basename($pdfRelPath);
+        }
+        $templatePath = $pdfRelPath ? storage_path('app/public/' . $pdfRelPath) : '';
         
-        if (!file_exists($templatePath)) {
-            \Log::error("Template PDF file not found", ['path' => $templatePath]);
+        // Fallbacks in case storage path is missing (different hosting setups)
+        if (!$templatePath || !file_exists($templatePath)) {
+            $altPaths = [
+                $pdfRelPath ? public_path('storage/' . $pdfRelPath) : null, // via storage symlink
+                $pdfRelPath ? public_path($pdfRelPath) : null,               // directly under public
+            ];
+            foreach ($altPaths as $alt) {
+                if ($alt && is_string($alt) && file_exists($alt)) {
+                    $templatePath = $alt;
+                    break;
+                }
+            }
+        }
+        
+        if (!$templatePath || !file_exists($templatePath)) {
+            \Log::error("Template PDF file not found", [
+                'storage_path' => $pdfRelPath ? storage_path('app/public/' . $pdfRelPath) : null,
+                'public_storage' => $pdfRelPath ? public_path('storage/' . $pdfRelPath) : null,
+                'public_path' => $pdfRelPath ? public_path($pdfRelPath) : null,
+                'template_id' => $template->id,
+                'template_pdf_file' => $template->pdf_file,
+                'background_pdf' => $template->background_pdf,
+            ]);
             throw new \Exception("Template PDF file not found");
         }
         

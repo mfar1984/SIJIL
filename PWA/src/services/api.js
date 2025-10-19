@@ -4,10 +4,9 @@ import axios from 'axios'
 const getApiBaseURL = () => {
   const hostname = window.location.hostname
   
-  // Production domains - PWA at apps.e-certificate.com.my OR user.e-certificate.com.my
-  // API always at login.e-certificate.com.my
+  // Production domains - API served by apps.e-certificate.com.my (Laravel)
   if (hostname === 'apps.e-certificate.com.my' || hostname === 'user.e-certificate.com.my') {
-    return 'https://login.e-certificate.com.my'
+    return 'https://apps.e-certificate.com.my'
   }
   
   // Development - localhost

@@ -9,6 +9,11 @@ const Login = ({ onLogin }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showForgotModal, setShowForgotModal] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSuccess, setForgotSuccess] = useState(false)
+  const [forgotError, setForgotError] = useState('')
 
   const handleChange = (e) => {
     setFormData({
@@ -40,7 +45,45 @@ const Login = ({ onLogin }) => {
 
   const handleForgotPassword = (e) => {
     e.preventDefault()
-    alert('Forgot password feature will be implemented soon.')
+    setForgotEmail(formData.email || '')
+    setShowForgotModal(true)
+    setForgotSuccess(false)
+    setForgotError('')
+  }
+
+  const handleSubmitForgot = async (e) => {
+    e.preventDefault()
+    const email = forgotEmail.trim()
+    
+    if (!email || !email.includes('@')) {
+      setForgotError('Please enter a valid email address.')
+      return
+    }
+
+    try {
+      setForgotLoading(true)
+      setForgotError('')
+      const response = await authAPI.resetPassword({ email })
+      
+      if (response.data.success) {
+        setForgotSuccess(true)
+        setForgotError('')
+      } else {
+        setForgotError(response.data.message || 'Failed to send password reset.')
+        setForgotLoading(false)
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Failed to send password reset. Please try again.'
+      setForgotError(errorMsg)
+      setForgotLoading(false)
+    }
+  }
+
+  const closeForgotModal = () => {
+    setShowForgotModal(false)
+    setForgotEmail('')
+    setForgotSuccess(false)
+    setForgotError('')
   }
 
   return (
@@ -48,9 +91,9 @@ const Login = ({ onLogin }) => {
       {/* Top Section - Logo & Branding */}
       <div className="login-top">
         <div className="login-logo-section">
-          <img src="/logo.png" alt="SIJIL" className="login-logo" />
-          <h1 className="login-brand">SIJIL</h1>
-          <p className="login-tagline">E-Certificate Mobile</p>
+          <img src="/logo.png" alt="E-Certificate" className="login-logo" />
+          <h1 className="login-brand">E-Certificate</h1>
+          <p className="login-tagline">Certiicate Generator</p>
         </div>
       </div>
 
@@ -157,8 +200,105 @@ const Login = ({ onLogin }) => {
 
       {/* Bottom Branding */}
       <div className="login-footer-brand">
-        <p>Powered by SIJIL © 2025</p>
+        <p>E-Certificate © {new Date().getFullYear()}</p>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="modal-overlay" onClick={closeForgotModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            {!forgotSuccess ? (
+              <>
+                <div className="modal-header">
+                  <span className="material-icons modal-icon">lock_reset</span>
+                  <h3 className="modal-title">Reset Password</h3>
+                  <p className="modal-subtitle">Enter your email to receive a new password</p>
+                </div>
+
+                {forgotError && (
+                  <div className="modal-error">
+                    <span className="material-icons">error</span>
+                    <span>{forgotError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmitForgot} className="modal-form">
+                  <div className="form-field">
+                    <label htmlFor="forgot-email" className="field-label">Email Address</label>
+                    <div className="input-wrapper">
+                      <span className="material-icons input-icon-left">email</span>
+                      <input
+                        type="email"
+                        id="forgot-email"
+                        value={forgotEmail}
+                        onChange={(e) => {
+                          setForgotEmail(e.target.value)
+                          if (forgotError) setForgotError('')
+                        }}
+                        required
+                        placeholder="your@email.com"
+                        autoComplete="email"
+                        autoFocus
+                        className="input-modern"
+                      />
+                    </div>
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      type="button"
+                      onClick={closeForgotModal}
+                      className="modal-btn secondary"
+                      disabled={forgotLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="modal-btn primary"
+                      disabled={forgotLoading || !forgotEmail}
+                    >
+                      {forgotLoading ? (
+                        <>
+                          <span className="loading-spinner"></span>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-icons">send</span>
+                          Send Reset
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="modal-header">
+                  <span className="material-icons modal-icon success">check_circle</span>
+                  <h3 className="modal-title">Email Sent!</h3>
+                  <p className="modal-subtitle">
+                    If your email exists, a password reset has been sent to <strong>{forgotEmail}</strong>
+                  </p>
+                  <p className="modal-subtitle" style={{ marginTop: '12px', fontSize: '12px', color: 'var(--gray-600)' }}>
+                    Please check your inbox and login with the new password.
+                  </p>
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    onClick={closeForgotModal}
+                    className="modal-btn primary full"
+                  >
+                    <span className="material-icons">arrow_back</span>
+                    Back to Login
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

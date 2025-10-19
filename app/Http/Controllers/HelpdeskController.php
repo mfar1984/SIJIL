@@ -413,8 +413,15 @@ class HelpdeskController extends Controller
     /**
      * Get notifications for the authenticated user.
      */
-    public function getNotifications()
+    public function getNotifications(Request $request)
     {
+        // If endpoint is accessed directly in the browser (expects HTML),
+        // redirect to Helpdesk UI instead of dumping JSON.
+        $acceptsJson = $request->wantsJson() || $request->ajax() || str_contains((string) $request->header('Accept'), 'application/json');
+        if (!$acceptsJson) {
+            return redirect()->route('helpdesk.index');
+        }
+
         $user = Auth::user();
         $isAdmin = $user->hasRole('Administrator');
         

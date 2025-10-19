@@ -256,11 +256,22 @@ class PwaAnalyticsController extends Controller
      */
     private function getTopPerformingEvents($user)
     {
-        $query = Event::select('events.*')
+        // Select only the columns we need to avoid ONLY_FULL_GROUP_BY issues
+        $query = Event::query()
+            ->select([
+                'events.id',
+                'events.name',
+                'events.start_date',
+                'events.end_date',
+                'events.location',
+                'events.user_id',
+                'events.created_at',
+                'events.updated_at',
+            ])
             ->selectRaw('COUNT(DISTINCT ep.pwa_participant_id) as participant_count')
             ->leftJoin('event_pwa_participant as ep', 'events.id', '=', 'ep.event_id')
             ->groupBy('events.id', 'events.name', 'events.start_date', 'events.end_date', 'events.location', 'events.user_id', 'events.created_at', 'events.updated_at')
-            ->orderBy('participant_count', 'desc')
+            ->orderByDesc('participant_count')
             ->limit(5);
             
         if (!$user->hasRole('Administrator')) {

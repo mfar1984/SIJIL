@@ -16,6 +16,19 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
+// Legal Pages (Public)
+Route::get('/disclaimer', function () {
+    return view('legal.disclaimer');
+})->name('legal.disclaimer');
+
+Route::get('/privacy-policy', function () {
+    return view('legal.privacy');
+})->name('legal.privacy');
+
+Route::get('/terms-and-conditions', function () {
+    return view('legal.terms');
+})->name('legal.terms');
+
 // Test route for debugging permissions
 Route::get('/test-permission', function () {
     $user = auth()->user();

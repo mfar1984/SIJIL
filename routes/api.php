@@ -21,6 +21,38 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Legal Content API (Public - No Auth Required)
+Route::get('/legal/disclaimer', function() {
+    $content = view('legal.disclaimer')->render();
+    // Extract content from HTML
+    preg_match('/<div class="prose.*?>(.*?)<\/div>\s*<\/div>\s*<!-- Back Button -->/s', $content, $matches);
+    return response()->json([
+        'success' => true,
+        'title' => 'Disclaimer',
+        'html' => $matches[1] ?? strip_tags($content)
+    ]);
+});
+
+Route::get('/legal/privacy', function() {
+    $content = view('legal.privacy')->render();
+    preg_match('/<div class="prose.*?>(.*?)<\/div>\s*<\/div>\s*<!-- Back Button -->/s', $content, $matches);
+    return response()->json([
+        'success' => true,
+        'title' => 'Privacy Policy',
+        'html' => $matches[1] ?? strip_tags($content)
+    ]);
+});
+
+Route::get('/legal/terms', function() {
+    $content = view('legal.terms')->render();
+    preg_match('/<div class="prose.*?>(.*?)<\/div>\s*<\/div>\s*<!-- Back Button -->/s', $content, $matches);
+    return response()->json([
+        'success' => true,
+        'title' => 'Terms & Conditions',
+        'html' => $matches[1] ?? strip_tags($content)
+    ]);
+});
+
 // PWA Participant Routes (Public)
 Route::post('/participant/login', [PwaParticipantController::class, 'login']);
 Route::post('/participant/register', [PwaParticipantController::class, 'register']);

@@ -210,7 +210,6 @@
         </script>
         
         <!-- Notifications System -->
-        @can('helpdesk.read')
         <script>
             // Debug disabled for production
             function debugLog(message, data = null) {
@@ -271,7 +270,7 @@
                 window.markAllAsRead = function() {
                     // Marking all as read
                     
-                    fetch('/helpdesk/notifications/mark-read', {
+                    fetch('/notifications/mark-all-read', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -295,7 +294,7 @@
                             // All notifications marked as read
                         }
                         // Force a fresh pull from server to keep UI consistent with backend
-                        return fetch('/helpdesk/notifications');
+                        return fetch('/notifications');
                     })
                     .then(r => r && r.ok ? r.json() : null)
                     .then(fresh => {
@@ -311,7 +310,7 @@
                 
                 // Fetch initial notifications
                 // Fetching initial notifications
-                fetch('/helpdesk/notifications')
+                fetch('/notifications')
                     .then(response => {
                         if (!response.ok) {
                             // Silent fail if user doesn't have permission
@@ -351,7 +350,7 @@
                 // Real-time handled by Firebase Messaging (onMessage in resources/js/fcm.js)
                 // Fallback polling: refresh bell every 30s, play sound on increase
                 setInterval(() => {
-                    fetch('/helpdesk/notifications')
+                    fetch('/notifications')
                         .then(r => {
                             if (!r.ok) return null;
                             return r.json();

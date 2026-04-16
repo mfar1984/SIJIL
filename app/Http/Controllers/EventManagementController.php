@@ -553,6 +553,26 @@ class EventManagementController extends Controller
             'event_id' => $event->id,
         ]);
         $participant->save();
+        
+        // Create notification for event organizer
+        if ($event->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $event->user_id,
+                'type' => 'event_registration',
+                'title' => 'New Event Registration',
+                'message' => $request->name . ' has registered for ' . $event->name,
+                'icon' => 'person_add',
+                'url' => route('participants') . '?event_id=' . $event->id,
+                'data' => [
+                    'event_id' => $event->id,
+                    'event_name' => $event->name,
+                    'participant_id' => $participant->id,
+                    'participant_name' => $participant->name,
+                    'participant_email' => $participant->email
+                ]
+            ]);
+        }
+        
         return redirect()->route('event.register.thankyou', $event->registration_link);
     }
 

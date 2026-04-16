@@ -58,6 +58,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/fcm/unregister', [FcmController::class, 'unregister'])->name('fcm.unregister');
 });
 
+// Notification Routes
+Route::middleware(['auth', 'verified'])->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+    Route::post('/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+    Route::post('/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark-read');
+    Route::delete('/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
+});
+
 // Role Management Routes with permission middleware
 Route::get('/role-management', [App\Http\Controllers\RoleManagementController::class, 'index'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':roles.read'])

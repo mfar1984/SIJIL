@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\Participant;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use TCPDF;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -106,6 +107,7 @@ class EventManagementController extends Controller
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:active,pending,completed',
             'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
+            'disable_auto_expiry' => 'nullable|boolean',
         ]);
         
         // Create a new event
@@ -126,6 +128,7 @@ class EventManagementController extends Controller
         $event->contact_person = $request->contact_person;
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
+        $event->disable_auto_expiry = $request->has('disable_auto_expiry') ? true : false;
         
         // Handle poster upload
         if ($request->hasFile('poster')) {
@@ -229,6 +232,7 @@ class EventManagementController extends Controller
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:active,pending,completed',
             'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
+            'disable_auto_expiry' => 'nullable|boolean',
         ]);
         
         // Find the event
@@ -262,6 +266,7 @@ class EventManagementController extends Controller
         $event->contact_person = $request->contact_person;
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
+        $event->disable_auto_expiry = $request->has('disable_auto_expiry') ? true : false;
         
         // Handle poster upload (replace existing)
         if ($request->hasFile('poster')) {
@@ -573,14 +578,52 @@ class EventManagementController extends Controller
             ]);
         }
         
-        // Send Telegram notification if enabled
-        try {
-            $telegramService = new \App\Services\TelegramService();
-            if ($telegramService->isEnabled()) {
-                $telegramService->sendEventRegistrationNotification($participant, $event);
+        // Get global configuration for notifications
+        $globalConfig = \App\Models\GlobalConfig::getConfig();
+        
+        // Send email to participant if enabled
+        if ($globalConfig && $globalConfig->email_event_registration) {
+            try {
+                $emailService = new \App\Services\EmailService();
+                $mailable = new \App\Mail\EventRegistrationConfirmation($event, $participant);
+                $emailService->sendEmail($event->user_id, $mailable, $participant->email);
+            } catch (\Exception $e) {
+                Log::error('Failed to send participant email: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send Telegram notification: ' . $e->getMessage());
+        }
+        
+        // Send email to organizer if enabled
+        if ($globalConfig && $globalConfig->admin_new_registrations && $event->user) {
+            try {
+                $emailService = new \App\Services\EmailService();
+                $mailable = new \App\Mail\NewEventRegistrationNotification($event, $participant);
+                $emailService->sendEmail($event->user_id, $mailable, $event->user->email);
+            } catch (\Exception $e) {
+                Log::error('Failed to send organizer email: ' . $e->getMessage());
+            }
+        }
+        
+        // Send SMS to participant if enabled
+        if ($globalConfig && $globalConfig->sms_event_registration && $participant->phone) {
+            try {
+                $infobipService = new \App\Services\InfobipService();
+                $message = "Thank you for registering for {$event->name}. Date: {$event->start_date->format('d/m/Y')} at {$event->location}. We look forward to seeing you!";
+                $infobipService->sendSms($participant->phone, $message, $event->user_id);
+            } catch (\Exception $e) {
+                Log::error('Failed to send SMS: ' . $e->getMessage());
+            }
+        }
+        
+        // Send Telegram notification if enabled
+        if ($globalConfig && $globalConfig->telegram_event_registration) {
+            try {
+                $telegramService = new \App\Services\TelegramService();
+                if ($telegramService->isEnabled()) {
+                    $telegramService->sendEventRegistrationNotification($participant, $event);
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send Telegram notification: ' . $e->getMessage());
+            }
         }
         
         return redirect()->route('event.register.thankyou', $event->registration_link);

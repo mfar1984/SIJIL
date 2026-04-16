@@ -37,9 +37,9 @@ class GlobalConfig extends Model
         // Notification Settings
         'email_new_user_registration', 'email_event_registration', 'email_event_reminder',
         'email_certificate_generated', 'email_password_reset', 'sms_event_registration',
-        'sms_event_reminder', 'sms_reminder_hours', 'admin_system_errors',
+        'sms_event_reminder', 'sms_reminder_hours', 'sms_certificate_generated', 'admin_system_errors',
         'admin_new_registrations', 'admin_security_alerts', 'admin_notification_email',
-        'telegram_event_registration',
+        'telegram_event_registration', 'telegram_certificate_generated',
         
         // API Settings
         'api_enabled', 'api_rate_limit', 'enable_api_keys', 'enable_oauth',
@@ -82,10 +82,12 @@ class GlobalConfig extends Model
         'email_password_reset' => 'boolean',
         'sms_event_registration' => 'boolean',
         'sms_event_reminder' => 'boolean',
+        'sms_certificate_generated' => 'boolean',
         'admin_system_errors' => 'boolean',
         'admin_new_registrations' => 'boolean',
         'admin_security_alerts' => 'boolean',
         'telegram_event_registration' => 'boolean',
+        'telegram_certificate_generated' => 'boolean',
         'api_enabled' => 'boolean',
         'enable_api_keys' => 'boolean',
         'enable_oauth' => 'boolean',

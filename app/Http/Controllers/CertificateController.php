@@ -9,6 +9,7 @@ use App\Models\Participant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use TCPDF;
 use setasign\Fpdi\Tcpdf\Fpdi;
@@ -220,84 +221,66 @@ class CertificateController extends Controller
                 ]);
                 
                 // Certificate record created
-
-                // Send notification email (no attachment) using organizer DeliveryConfig
-                try {
-                    if (\App\Models\GlobalConfig::get('email_certificate_generated', true)) {
-                        $participantEmail = $participant->email ?? null;
-                        if ($participantEmail) {
-                            // Load organizer delivery config (event->user)
-                            $organizerUser = $event->user;
-                            $config = \App\Models\DeliveryConfig::getEmailConfig($organizerUser?->id);
-                            $fromName = $config->settings['from_name'] ?? ($organizerUser->name ?? 'E‑Certificate');
-                            $fromAddress = $config->settings['from_address'] ?? 'no-reply@e-certificate.com.my';
-
-                            // Configure mailer dynamically
-                            if ($config) {
-                                switch ($config->provider) {
-                                    case 'smtp':
-                                        config([
-                                            'mail.default' => 'smtp',
-                                            'mail.mailers.smtp.host' => $config->settings['host'] ?? 'smtp.mailtrap.io',
-                                            'mail.mailers.smtp.port' => $config->settings['port'] ?? '2525',
-                                            'mail.mailers.smtp.encryption' => (($config->settings['encryption'] ?? null) === 'none') ? null : ($config->settings['encryption'] ?? null),
-                                            'mail.mailers.smtp.username' => $config->settings['username'] ?? '',
-                                            'mail.mailers.smtp.password' => $config->settings['password'] ?? '',
-                                            'mail.from.address' => $fromAddress,
-                                            'mail.from.name' => $fromName,
-                                        ]);
-                                        break;
-                                    case 'mailgun':
-                                        config([
-                                            'mail.default' => 'mailgun',
-                                            'services.mailgun.domain' => $config->settings['domain'] ?? '',
-                                            'services.mailgun.secret' => $config->settings['secret'] ?? '',
-                                            'services.mailgun.endpoint' => $config->settings['endpoint'] ?? 'api.mailgun.net',
-                                            'mail.from.address' => $fromAddress,
-                                            'mail.from.name' => $fromName,
-                                        ]);
-                                        break;
-                                    case 'ses':
-                                        config([
-                                            'mail.default' => 'ses',
-                                            'services.ses.key' => $config->settings['key'] ?? '',
-                                            'services.ses.secret' => $config->settings['secret'] ?? '',
-                                            'services.ses.region' => $config->settings['region'] ?? 'us-east-1',
-                                            'mail.from.address' => $fromAddress,
-                                            'mail.from.name' => $fromName,
-                                        ]);
-                                        break;
-                                    case 'sendmail':
-                                        config([
-                                            'mail.default' => 'sendmail',
-                                            'mail.mailers.sendmail.path' => $config->settings['path'] ?? '/usr/sbin/sendmail -bs',
-                                            'mail.from.address' => $fromAddress,
-                                            'mail.from.name' => $fromName,
-                                        ]);
-                                        break;
-                                }
-                            }
-
-                            $subject = 'Your certificate is ready';
-                            $body = "Dear {$participant->name},<br><br>" .
-                                    "Your certificate is now available.<br>" .
-                                    "Certificate No: <strong>" . e($certificate->certificate_number) . "</strong><br>" .
-                                    "Event: <strong>" . e($event->name) . "</strong><br>" .
-                                    "Issued on: " . now()->format('d F Y') . "<br><br>" .
-                                    "You can view/download it from your https://user.e-certificate.com.my account (Certificates tab).<br><br>" .
-                                    "Regards,<br>" . e($fromName);
-
-                            \Mail::html($body, function($message) use ($participantEmail, $subject, $fromName, $fromAddress) {
-                                $message->to($participantEmail)->subject($subject)->from($fromAddress, $fromName);
-                            });
-                        }
+                
+                // Get global configuration for notifications
+                $globalConfig = \App\Models\GlobalConfig::getConfig();
+                
+                Log::info('Certificate notifications check', [
+                    'certificate_id' => $certificate->id,
+                    'participant_id' => $participant->id,
+                    'participant_phone' => $participant->phone,
+                    'email_enabled' => $globalConfig->email_certificate_generated ?? false,
+                    'sms_enabled' => $globalConfig->sms_certificate_generated ?? false,
+                    'telegram_enabled' => $globalConfig->telegram_certificate_generated ?? false,
+                ]);
+                
+                // Send email to participant if enabled
+                if ($globalConfig && $globalConfig->email_certificate_generated) {
+                    try {
+                        $emailService = new \App\Services\EmailService();
+                        $mailable = new \App\Mail\CertificateGeneratedNotification($event, $participant, $certificate);
+                        $emailService->sendEmail($event->user_id, $mailable, $participant->email);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send certificate email: ' . $e->getMessage());
                     }
-                } catch (\Throwable $e) {
-                    \Log::warning('Certificate email notification failed', [
-                        'participant_id' => $participantId,
-                        'certificate_id' => $certificate->id,
-                        'error' => $e->getMessage(),
-                    ]);
+                }
+                
+                // Send SMS to participant if enabled
+                if ($globalConfig && $globalConfig->sms_certificate_generated && $participant->phone) {
+                    try {
+                        Log::info('Attempting to send certificate SMS', [
+                            'participant_id' => $participant->id,
+                            'phone' => $participant->phone,
+                            'event_id' => $event->id,
+                            'user_id' => $event->user_id,
+                        ]);
+                        
+                        $infobipService = new \App\Services\InfobipService();
+                        $message = "Congratulations! Your certificate for {$event->name} is ready. Certificate No: {$certificate->certificate_number}. Please check your email for download instructions.";
+                        $result = $infobipService->sendSms($participant->phone, $message, $event->user_id);
+                        
+                        Log::info('SMS send result', [
+                            'success' => $result['success'] ?? false,
+                            'message' => $result['message'] ?? 'No message',
+                            'response' => isset($result['response']) ? json_encode($result['response']) : 'No response',
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send certificate SMS: ' . $e->getMessage(), [
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                    }
+                }
+                
+                // Send Telegram notification if enabled
+                if ($globalConfig && $globalConfig->telegram_certificate_generated) {
+                    try {
+                        $telegramService = new \App\Services\TelegramService();
+                        if ($telegramService->isEnabled()) {
+                            $telegramService->sendCertificateGeneratedNotification($participant, $event, $certificate);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send Telegram notification: ' . $e->getMessage());
+                    }
                 }
                 
                 $generatedCount++;

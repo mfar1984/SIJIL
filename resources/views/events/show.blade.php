@@ -151,8 +151,8 @@
                             Event Terms & Conditions
                         </label>
                         <div class="relative">
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] py-2 px-3 border min-h-[60px] whitespace-pre-wrap">
-                                {{ $event->condition ?? 'No terms & conditions provided.' }}
+                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] py-2 px-3 border min-h-[60px]">
+                                {!! $event->condition ?? '<p class="text-gray-500 italic">No terms & conditions provided.</p>' !!}
                             </div>
                         </div>
                     </div>

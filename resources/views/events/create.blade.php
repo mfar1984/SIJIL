@@ -330,9 +330,9 @@
                 
                 <!-- Status -->
                 <div class="pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Status</h2>
+                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Status & Registration Settings</h2>
                     
-                    <div>
+                    <div class="mb-4">
                         <label for="status" class="flex items-center text-xs font-medium text-gray-700 mb-1">
                             <span class="material-icons text-sm mr-1 text-primary-DEFAULT">toggle_on</span>
                             Event Status
@@ -353,6 +353,24 @@
                             </select>
                         </div>
                         <p class="mt-1 text-[10px] text-gray-500">Current status of the event</p>
+                    </div>
+                    
+                    <!-- Disable Auto Expiry Checkbox -->
+                    <div class="mt-4">
+                        <label class="flex items-start">
+                            <input 
+                                type="checkbox" 
+                                name="disable_auto_expiry" 
+                                id="disable_auto_expiry" 
+                                value="1"
+                                {{ old('disable_auto_expiry') ? 'checked' : '' }}
+                                class="mt-0.5 h-4 w-4 text-primary-DEFAULT border-gray-300 rounded focus:ring-primary-light"
+                            >
+                            <div class="ml-3">
+                                <span class="text-xs font-medium text-gray-700">Disable Auto Expiry</span>
+                                <p class="text-[10px] text-gray-500 mt-0.5">When enabled, registration will remain open even after the event start date. Registration will only close when status is manually changed to "Completed".</p>
+                            </div>
+                        </label>
                     </div>
                 </div>
                 

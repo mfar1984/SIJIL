@@ -1016,8 +1016,32 @@
         
         // Send test SMS
         function sendTestSms() {
+            // Show modal for phone number input
+            document.getElementById('testSmsModal').classList.remove('hidden');
+        }
+        
+        function closeTestSmsModal() {
+            document.getElementById('testSmsModal').classList.add('hidden');
+            document.getElementById('testPhoneNumber').value = '';
+        }
+        
+        function confirmSendTestSms() {
+            const phoneNumber = document.getElementById('testPhoneNumber').value.trim();
+            
+            if (!phoneNumber) {
+                alert('Please enter a phone number');
+                return;
+            }
+            
+            // Disable button and show loading
+            const sendBtn = document.getElementById('confirmSendSmsBtn');
+            const originalText = sendBtn.innerHTML;
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="material-icons text-xs mr-1 animate-spin">refresh</span>Sending...';
+            
             // Get the form data
             const formData = new FormData(document.getElementById('smsForm'));
+            formData.append('test_phone', phoneNumber);
             
             // Send the test SMS request
             fetch('{{ route('config.deliver.test-sms') }}', {
@@ -1029,13 +1053,19 @@
             })
             .then(response => response.json())
             .then(data => {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalText;
+                
                 if (data.success) {
-                    alert('Test SMS sent successfully!');
+                    closeTestSmsModal();
+                    alert('✓ Test SMS sent successfully to ' + phoneNumber);
                 } else {
-                    alert('Failed to send test SMS: ' + data.message);
+                    alert('✗ Failed to send test SMS: ' + data.message);
                 }
             })
             .catch(error => {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalText;
                 alert('Error: ' + error);
             });
         }
@@ -1065,4 +1095,57 @@
             @endif
         });
     </script>
+    
+    <!-- Test SMS Modal -->
+    <div id="testSmsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onclick="if(event.target === this) closeTestSmsModal()">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <span class="material-icons text-blue-600 mr-2">sms</span>
+                    Send Test SMS
+                </h3>
+                <button onclick="closeTestSmsModal()" class="text-gray-400 hover:text-gray-600">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            
+            <div class="mt-4">
+                <label for="testPhoneNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-icons text-gray-400 text-base">phone</span>
+                    </div>
+                    <input 
+                        type="tel" 
+                        id="testPhoneNumber" 
+                        class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                        placeholder="+60123456789"
+                        onkeypress="if(event.key === 'Enter') confirmSendTestSms()"
+                    >
+                </div>
+                <p class="mt-2 text-xs text-gray-500">
+                    Enter phone number with country code (e.g., +60123456789 for Malaysia)
+                </p>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+                <button 
+                    onclick="closeTestSmsModal()" 
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium transition-colors"
+                >
+                    Cancel
+                </button>
+                <button 
+                    id="confirmSendSmsBtn"
+                    onclick="confirmSendTestSms()" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors flex items-center"
+                >
+                    <span class="material-icons text-xs mr-1">send</span>
+                    Send Test SMS
+                </button>
+            </div>
+        </div>
+    </div>
 </x-app-layout> 

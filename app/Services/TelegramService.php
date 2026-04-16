@@ -57,13 +57,33 @@ class TelegramService
      */
     public function sendEventRegistrationNotification($participant, $event)
     {
+        // Get participant count for this event
+        $participantCount = $event->participants()->count();
+        
         $message = "🎉 <b>New Event Registration</b>\n\n";
         $message .= "📋 <b>Event:</b> {$event->name}\n";
         $message .= "👤 <b>Participant:</b> {$participant->name}\n";
         $message .= "📧 <b>Email:</b> {$participant->email}\n";
-        $message .= "📱 <b>Phone:</b> {$participant->phone_number}\n";
+        $message .= "📱 <b>Phone:</b> " . ($participant->phone ?? 'N/A') . "\n";
         $message .= "🏢 <b>Organization:</b> " . ($participant->organization ?? 'N/A') . "\n";
         $message .= "📅 <b>Registered:</b> " . now()->format('d/m/Y H:i:s') . "\n";
+        $message .= "🔢 <b>Participant #:</b> {$participantCount} / {$event->max_participants}\n";
+
+        return $this->sendMessage($message);
+    }
+
+    /**
+     * Send certificate generated notification
+     */
+    public function sendCertificateGeneratedNotification($participant, $event, $certificate)
+    {
+        $message = "🎓 <b>Certificate Generated</b>\n\n";
+        $message .= "📋 <b>Event:</b> {$event->name}\n";
+        $message .= "👤 <b>Participant:</b> {$participant->name}\n";
+        $message .= "📧 <b>Email:</b> {$participant->email}\n";
+        $message .= "🔢 <b>Certificate No:</b> {$certificate->certificate_number}\n";
+        $message .= "📅 <b>Generated:</b> " . now()->format('d/m/Y H:i:s') . "\n";
+        $message .= "🏢 <b>Organizer:</b> {$event->organizer}\n";
 
         return $this->sendMessage($message);
     }

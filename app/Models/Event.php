@@ -45,6 +45,7 @@ class Event extends Model
         'registration_link', // Unique registration link
         'registration_expires_at',
         'poster',
+        'disable_auto_expiry',
     ];
 
     /**
@@ -56,6 +57,7 @@ class Event extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'registration_expires_at' => 'datetime',
+        'disable_auto_expiry' => 'boolean',
     ];
 
     /**
@@ -111,11 +113,17 @@ class Event extends Model
      */
     public function isRegistrationExpired()
     {
+        // Always expired if status is completed
         if ($this->status === 'completed') {
             return true;
         }
         
-        // Registration expires when the event starts
+        // If auto expiry is disabled, only check status
+        if ($this->disable_auto_expiry) {
+            return false;
+        }
+        
+        // Registration expires when the event starts (default behavior)
         if ($this->start_date) {
             return now() >= $this->start_date;
         }

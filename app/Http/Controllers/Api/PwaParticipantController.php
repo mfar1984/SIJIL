@@ -313,10 +313,23 @@ class PwaParticipantController extends Controller
         }
         $participantIds = $participantIds->merge(\App\Models\Participant::where('email', $pwa->email)->pluck('id'))->unique()->values();
 
+        // Debug logging
+        \Log::info('PWA Certificate Lookup', [
+            'pwa_id' => $pwa->id,
+            'pwa_email' => $pwa->email,
+            'pwa_identity_card' => $pwa->identity_card,
+            'participant_ids_found' => $participantIds->toArray(),
+        ]);
+
         $certificates = \App\Models\Certificate::whereIn('participant_id', $participantIds->all())
                                    ->with('event')
                                    ->orderBy('generated_at', 'desc')
                                    ->get();
+
+        \Log::info('Certificates Found', [
+            'count' => $certificates->count(),
+            'certificate_ids' => $certificates->pluck('id')->toArray(),
+        ]);
 
         $data = $certificates->map(function($cert) {
             return [

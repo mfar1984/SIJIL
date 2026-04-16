@@ -140,6 +140,23 @@
                     </label>
                 </div>
             </div>
+            
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                <div class="flex items-center">
+                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">workspace_premium</span>
+                    <div>
+                        <p class="text-xs font-medium text-gray-700">Certificate Generated</p>
+                        <p class="text-[10px] text-gray-500">Send SMS when a certificate is generated</p>
+                    </div>
+                </div>
+                <div>
+                    <input type="hidden" name="sms_certificate_generated" value="0">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="sms_certificate_generated" value="1" class="sr-only peer" {{ (old('sms_certificate_generated', $config->sms_certificate_generated ?? false)) ? 'checked' : '' }} :disabled="!isEditing">
+                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-DEFAULT"></div>
+                    </label>
+                </div>
+            </div>
         </div>
         
         <div class="space-y-3">

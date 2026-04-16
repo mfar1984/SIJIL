@@ -80,3 +80,28 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Regular Participants Search API (for PWA auto-assign functionality)
 Route::get('/participants/search', [ParticipantSearchController::class, 'search']); 
+
+// Debug endpoint - remove after testing
+Route::get('/debug/certificates/{email}', function($email) {
+    $participants = \App\Models\Participant::where('email', $email)->get();
+    $certificates = \App\Models\Certificate::whereIn('participant_id', $participants->pluck('id'))->with('event')->get();
+    
+    return response()->json([
+        'email' => $email,
+        'participants_found' => $participants->count(),
+        'participants' => $participants->map(fn($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'email' => $p->email,
+            'identity_card' => $p->identity_card,
+        ]),
+        'certificates_found' => $certificates->count(),
+        'certificates' => $certificates->map(fn($c) => [
+            'id' => $c->id,
+            'certificate_number' => $c->certificate_number,
+            'event_name' => $c->event->name ?? 'N/A',
+            'participant_id' => $c->participant_id,
+            'generated_at' => $c->generated_at,
+        ]),
+    ]);
+}); 

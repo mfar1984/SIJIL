@@ -382,7 +382,12 @@ class DeliveryConfigController extends Controller
      */
     public function sendTestSms(Request $request)
     {
+        $request->validate([
+            'test_phone' => 'required|string',
+        ]);
+        
         $userId = Auth::id();
+        $phoneNumber = $request->input('test_phone');
         
         $config = DeliveryConfig::where('user_id', $userId)
             ->where('config_type', 'sms')
@@ -396,12 +401,17 @@ class DeliveryConfigController extends Controller
             ]);
         }
         
-        // In a real application, you would send a test SMS here
-        // For now, we'll just return a success message
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Test SMS sent successfully.'
-        ]);
+        // Send test SMS using InfobipService
+        try {
+            $infobipService = new \App\Services\InfobipService();
+            $result = $infobipService->sendTestSms($userId, $phoneNumber);
+            
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send test SMS: ' . $e->getMessage()
+            ]);
+        }
     }
 } 

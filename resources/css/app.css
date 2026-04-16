@@ -158,3 +158,71 @@ select {
         @apply absolute right-0 top-0 h-full w-1 bg-blue-600 rounded-l;
     }
 }
+
+/* Fix for toggle switches in Tailwind 4 */
+.peer:checked ~ div {
+    background-color: #063c96 !important; /* primary-DEFAULT color */
+}
+
+.peer:checked ~ div::after {
+    transform: translateX(100%);
+    border-color: white;
+}
+
+/* Fix for Material Icons size */
+.material-icons {
+    font-size: 20px !important;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+}
+
+.material-icons.text-xs {
+    font-size: 16px !important;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.material-icons.text-sm {
+    font-size: 18px !important;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+}
+
+.material-icons.text-lg {
+    font-size: 24px !important;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+}
+
+.material-icons.text-xl {
+    font-size: 28px !important;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+}
+
+.material-icons.text-2xl {
+    font-size: 32px !important;
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+}
+
+.material-icons.text-3xl {
+    font-size: 36px !important;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+}
+
+.material-icons.text-4xl {
+    font-size: 48px !important;
+    width: 48px;
+    height: 48px;
+    line-height: 48px;
+}
+

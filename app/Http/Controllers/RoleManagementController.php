@@ -89,6 +89,17 @@ class RoleManagementController extends Controller
             $role->permissions()->attach($request->permissions);
         }
         
+        // Log role creation
+        activity('role')
+            ->causedBy(auth()->user())
+            ->performedOn($role)
+            ->withProperties([
+                'role_name' => $role->name,
+                'permissions_count' => count($request->permissions ?? []),
+                'status' => $role->status
+            ])
+            ->log('Role created');
+        
         return redirect()->route('role.management')
             ->with('success', 'Role created successfully!');
     }
@@ -225,6 +236,11 @@ class RoleManagementController extends Controller
         // Find the role
         $role = Role::findOrFail($id);
         
+        // Store old values
+        $oldPermissions = $role->permissions->pluck('id')->toArray();
+        $oldName = $role->name;
+        $oldStatus = $role->status;
+        
         // Prevent modifying system roles (Administrator and Organizer)
         if (in_array($role->name, ['Administrator', 'Organizer']) && $role->name !== $request->role_name) {
             return redirect()->back()
@@ -241,12 +257,37 @@ class RoleManagementController extends Controller
         ]);
         
         // Sync permissions with role (detach all existing and attach new)
-        // Note: We allow updating permissions for Administrator as well,
-        // while still preventing renaming the system role above.
+        $newPermissions = $request->permissions ?? [];
         if ($request->has('permissions')) {
             $role->permissions()->sync($request->permissions);
         } else {
             $role->permissions()->detach();
+        }
+        
+        // Log role update
+        $changes = [];
+        if ($oldName != $request->role_name) $changes[] = 'name';
+        if ($oldStatus != $request->status) $changes[] = 'status';
+        if ($oldPermissions != $newPermissions) $changes[] = 'permissions';
+        
+        if (!empty($changes)) {
+            activity('role')
+                ->causedBy(auth()->user())
+                ->performedOn($role)
+                ->withProperties([
+                    'old' => [
+                        'name' => $oldName,
+                        'status' => $oldStatus,
+                        'permissions_count' => count($oldPermissions)
+                    ],
+                    'new' => [
+                        'name' => $role->name,
+                        'status' => $role->status,
+                        'permissions_count' => count($newPermissions)
+                    ],
+                    'changes' => $changes
+                ])
+                ->log('Role updated: ' . implode(', ', $changes));
         }
         
         return redirect()->route('role.show', $role->id)
@@ -275,6 +316,22 @@ class RoleManagementController extends Controller
             return redirect()->back()
                 ->with('error', 'Role cannot be deleted because it has assigned users.');
         }
+        
+        // Store role info before deletion
+        $roleName = $role->name;
+        $roleId = $role->id;
+        
+        // Log role deletion
+        activity('role')
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'deleted_role' => [
+                    'id' => $roleId,
+                    'name' => $roleName,
+                    'description' => $role->description
+                ]
+            ])
+            ->log("Role deleted: {$roleName}");
         
         // Delete the role
         $role->delete();

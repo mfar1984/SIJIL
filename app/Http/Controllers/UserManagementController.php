@@ -161,6 +161,20 @@ class UserManagementController extends Controller
             }
         }
         
+        // Log user creation
+        activity('user')
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->withProperties([
+                'attributes' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $role->name ?? 'N/A',
+                    'status' => $user->status
+                ]
+            ])
+            ->log('User created');
+        
         return redirect()->route('user.management')
             ->with('success', 'User created successfully!');
     }
@@ -216,6 +230,14 @@ class UserManagementController extends Controller
     {
         // Find the user
         $user = User::findOrFail($id);
+        
+        // Store old values for comparison
+        $oldValues = [
+            'name' => $user->name,
+            'email' => $user->email,
+            'role_id' => $user->role_id,
+            'status' => $user->status
+        ];
         
         // Validate the request
         $request->validate([
@@ -282,19 +304,48 @@ class UserManagementController extends Controller
         ];
         
         // Update password if provided
+        $passwordChanged = false;
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
+            $passwordChanged = true;
         }
         
         // Update the user
         $user->update($userData);
         
         // Sync role using Spatie Permission
+        $roleChanged = false;
         if ($request->filled('role_id')) {
             $role = Role::findById($request->role_id);
             if ($role) {
                 $user->syncRoles([$role->name]);
+                $roleChanged = $oldValues['role_id'] != $request->role_id;
             }
+        }
+        
+        // Log user update with changes
+        $changes = [];
+        if ($oldValues['name'] != $request->name) $changes[] = 'name';
+        if ($oldValues['email'] != $request->email) $changes[] = 'email';
+        if ($roleChanged) $changes[] = 'role';
+        if ($oldValues['status'] != $request->status) $changes[] = 'status';
+        if ($passwordChanged) $changes[] = 'password';
+        
+        if (!empty($changes)) {
+            activity('user')
+                ->causedBy(auth()->user())
+                ->performedOn($user)
+                ->withProperties([
+                    'old' => $oldValues,
+                    'attributes' => [
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role_id' => $user->role_id,
+                        'status' => $user->status
+                    ],
+                    'changes' => $changes
+                ])
+                ->log('User updated: ' . implode(', ', $changes));
         }
         
         return redirect()->route('user.management')
@@ -316,6 +367,23 @@ class UserManagementController extends Controller
         if ($user->id === Auth::id()) {
             return redirect()->back()->with('error', 'You cannot delete your own account.');
         }
+        
+        // Store user info before deletion
+        $userName = $user->name;
+        $userEmail = $user->email;
+        
+        // Log user deletion
+        activity('user')
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'deleted_user' => [
+                    'id' => $user->id,
+                    'name' => $userName,
+                    'email' => $userEmail,
+                    'role_id' => $user->role_id
+                ]
+            ])
+            ->log("User deleted: {$userName} ({$userEmail})");
         
         // Delete the user
         $user->delete();
@@ -349,8 +417,24 @@ class UserManagementController extends Controller
             return redirect()->back()->with('error', 'You cannot change your own status.');
         }
         
+        // Store old status
+        $oldStatus = $user->status;
+        
         // Update status
         $user->update(['status' => $status]);
+        
+        // Log status change
+        $logName = ($status === 'banned') ? 'security' : 'user';
+        activity($logName)
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->withProperties([
+                'old_status' => $oldStatus,
+                'new_status' => $status,
+                'user_name' => $user->name,
+                'user_email' => $user->email
+            ])
+            ->log("User status changed from {$oldStatus} to {$status}");
         
         return redirect()->back()
             ->with('success', "User status changed to {$status} successfully.");

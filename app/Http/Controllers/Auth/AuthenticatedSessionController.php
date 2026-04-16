@@ -27,6 +27,16 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        
+        // Log successful login
+        activity('auth')
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'email' => $request->email
+            ])
+            ->log('User logged in successfully');
 
         return redirect()->intended(route('dashboard', absolute: false));
     }
@@ -36,6 +46,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        
+        // Log logout before destroying session
+        activity('auth')
+            ->causedBy($user)
+            ->withProperties([
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ])
+            ->log('User logged out');
+        
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

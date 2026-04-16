@@ -43,6 +43,16 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            
+            // Log failed login attempt
+            activity('security')
+                ->withProperties([
+                    'email' => $this->email,
+                    'ip_address' => $this->ip(),
+                    'user_agent' => $this->userAgent(),
+                    'reason' => 'Invalid credentials'
+                ])
+                ->log('Failed login attempt');
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -54,6 +64,19 @@ class LoginRequest extends FormRequest
         if (isset($user->status) && in_array(strtolower($user->status), ['inactive', 'banned'])) {
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
+            
+            // Log blocked login attempt
+            activity('security')
+                ->causedBy($user)
+                ->withProperties([
+                    'email' => $this->email,
+                    'ip_address' => $this->ip(),
+                    'user_agent' => $this->userAgent(),
+                    'reason' => 'Account ' . $user->status,
+                    'status' => $user->status
+                ])
+                ->log('Login blocked - Account ' . $user->status);
+            
             $message = $user->status === 'banned' ? 'Your account is banned. Please contact support.' : 'Your account is inactive. Please contact support.';
             throw ValidationException::withMessages([
                 'email' => $message,
@@ -79,6 +102,16 @@ class LoginRequest extends FormRequest
         }
 
         event(new Lockout($this));
+        
+        // Log rate limit exceeded
+        activity('security')
+            ->withProperties([
+                'email' => $this->email,
+                'ip_address' => $this->ip(),
+                'user_agent' => $this->userAgent(),
+                'reason' => 'Too many login attempts'
+            ])
+            ->log('Login rate limit exceeded');
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
 

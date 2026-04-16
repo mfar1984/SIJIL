@@ -415,19 +415,22 @@ class HelpdeskController extends Controller
      */
     public function getNotifications(Request $request)
     {
-        // If endpoint is accessed directly in the browser (expects HTML),
-        // redirect to Helpdesk UI instead of dumping JSON.
-        $acceptsJson = $request->wantsJson() || $request->ajax() || str_contains((string) $request->header('Accept'), 'application/json');
-        if (!$acceptsJson) {
-            return redirect()->route('helpdesk.index');
-        }
-
-        $user = Auth::user();
-        $isAdmin = $user->hasRole('Administrator');
-        
-        // Get recent tickets and messages as notifications
-        $notifications = [];
-        $unreadCount = 0;
+        try {
+            // Always return JSON for API requests
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json([
+                    'notifications' => [],
+                    'unreadCount' => 0
+                ]);
+            }
+            
+            $isAdmin = $user->hasRole('Administrator');
+            
+            // Get recent tickets and messages as notifications
+            $notifications = [];
+            $unreadCount = 0;
         
         // For Admin: Only show tickets/messages assigned to this admin
         if ($isAdmin) {
@@ -541,6 +544,16 @@ class HelpdeskController extends Controller
             'notifications' => $notifications,
             'unreadCount' => $unreadCount
         ]);
+        
+        } catch (\Exception $e) {
+            // Log error but return empty response to prevent breaking frontend
+            \Log::error('Error fetching notifications: ' . $e->getMessage());
+            
+            return response()->json([
+                'notifications' => [],
+                'unreadCount' => 0
+            ]);
+        }
     }
     
     /**

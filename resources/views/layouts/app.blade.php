@@ -210,6 +210,7 @@
         </script>
         
         <!-- Notifications System -->
+        @can('helpdesk.read')
         <script>
             // Debug disabled for production
             function debugLog(message, data = null) {
@@ -313,11 +314,18 @@
                 fetch('/helpdesk/notifications')
                     .then(response => {
                         if (!response.ok) {
+                            // Silent fail if user doesn't have permission
+                            if (response.status === 403 || response.status === 404) {
+                                console.log('[NOTIFICATION] Helpdesk notifications not available for this user');
+                                return null;
+                            }
                             throw new Error('Network response was not ok');
                         }
                         return response.json();
                     })
                     .then(data => {
+                        if (!data) return; // Skip if no data (permission denied)
+                        
                         // Initial notifications received
                         
                         // Update Alpine component directly if ready
@@ -335,14 +343,22 @@
                             }}));
                         } catch(_) {}
                     })
-                    .catch(error => console.error('[NOTIFICATION] Error fetching notifications:', error));
+                    .catch(error => {
+                        // Silent fail - don't spam console with errors
+                        console.log('[NOTIFICATION] Could not fetch notifications');
+                    });
                 
                 // Real-time handled by Firebase Messaging (onMessage in resources/js/fcm.js)
                 // Fallback polling: refresh bell every 30s, play sound on increase
                 setInterval(() => {
                     fetch('/helpdesk/notifications')
-                        .then(r => r.json())
+                        .then(r => {
+                            if (!r.ok) return null;
+                            return r.json();
+                        })
                         .then(data => {
+                            if (!data) return; // Skip if no data
+                            
                             if (notificationContainer.__x) {
                                 const cd = notificationContainer.__x.$data;
                                 const prev = typeof window.__lastUnreadCount === 'number' ? window.__lastUnreadCount : cd.unreadCount;
@@ -367,5 +383,6 @@
                 // Notification system initialization complete
             });
         </script>
+        @endcan
     </body>
 </html>

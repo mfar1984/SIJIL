@@ -5,10 +5,27 @@ $placeholderFormat = '{{participant_name}}';
 
 // Background data
 if ($template && $template->background_pdf) {
+    // Fix URL to use current APP_URL instead of hardcoded localhost:8000
+    $backgroundUrl = $template->background_pdf;
+    
+    // If it's a full URL with old domain, convert to relative path
+    if (str_contains($backgroundUrl, 'http://') || str_contains($backgroundUrl, 'https://')) {
+        // Extract path after /storage/
+        if (preg_match('/\/storage\/(.+)$/', $backgroundUrl, $matches)) {
+            $backgroundUrl = asset('storage/' . $matches[1]);
+        }
+    } else if (!str_starts_with($backgroundUrl, '/')) {
+        // If it's a relative path without leading slash
+        $backgroundUrl = asset('storage/' . $backgroundUrl);
+    } else {
+        // If it starts with /, use as is
+        $backgroundUrl = asset(ltrim($backgroundUrl, '/'));
+    }
+    
     $initialBackground = [
         'name' => $template->name,
-        'preview_image' => $template->background_pdf,
-        'pdf_file' => $template->background_pdf
+        'preview_image' => $backgroundUrl,
+        'pdf_file' => $backgroundUrl
     ];
 } else {
     $initialBackground = null;

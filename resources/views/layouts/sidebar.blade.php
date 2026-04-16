@@ -13,7 +13,7 @@
     
     @can('events.read')
     <div class="mt-2"></div>
-    <div class="category-header relative" onclick="toggleSection('event-section')">
+    <div class="category-header relative" onclick="toggleSection('event-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
                 <span class="material-icons text-base text-green-500 mr-3">event</span>
@@ -51,7 +51,7 @@
     <!-- Attendance Section -->
     @if(auth()->user()->can('attendance_management.read') || auth()->user()->can('attendance.read') || auth()->user()->can('archives.read'))
     <div class="mt-2"></div>
-    <div class="category-header relative" onclick="toggleSection('attendance-section')">
+    <div class="category-header relative" onclick="toggleSection('attendance-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
                 <span class="material-icons text-base text-orange-500 mr-3">how_to_reg</span>
@@ -67,12 +67,12 @@
         </x-sidebar-submenu-item>
         @endcan
         @can('attendance.read')
-        <x-sidebar-submenu-item href="{{ route('attendance.list') }}" icon="view_list">
+        <x-sidebar-submenu-item href="{{ route('attendance.list') }}" icon="view_list" :active="request()->routeIs('attendance.list')">
             Attendance List
         </x-sidebar-submenu-item>
         @endcan
         @can('archives.read')
-        <x-sidebar-submenu-item href="{{ route('attendance.archive') }}" icon="inventory">
+        <x-sidebar-submenu-item href="{{ route('attendance.archive') }}" icon="inventory" :active="request()->routeIs('attendance.archive')">
             Archive
         </x-sidebar-submenu-item>
         @endcan
@@ -82,7 +82,7 @@
     <!-- Certificate Management -->
     @if(auth()->user()->can('certificates.read') || auth()->user()->can('certificates.create') || auth()->user()->can('templates.read'))
     <div class="mt-4"></div>
-    <div class="category-header relative" onclick="toggleSection('certificate-section')">
+    <div class="category-header relative" onclick="toggleSection('certificate-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
                 <span class="material-icons text-base text-yellow-500 mr-3">workspace_premium</span>
@@ -111,7 +111,7 @@
     <!-- PWA Management Section -->
     @if(auth()->user()->can('pwa_participants.read') || auth()->user()->can('pwa_analytics.read') || auth()->user()->can('pwa_templates.read') || auth()->user()->can('pwa_settings.read'))
     <div class="mt-4"></div>
-    <div class="category-header relative" onclick="toggleSection('ecertificate-section')">
+    <div class="category-header relative" onclick="toggleSection('ecertificate-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
                 <span class="material-icons text-base text-indigo-500 mr-3">smartphone</span>
@@ -147,7 +147,7 @@
     <!-- Reports Section -->
     @if(auth()->user()->can('attendance_reports.read') || auth()->user()->can('event_statistics.read') || auth()->user()->can('certificate_reports.read'))
     <div class="mt-4"></div>
-    <div class="category-header relative" onclick="toggleSection('reports-section')">
+    <div class="category-header relative" onclick="toggleSection('reports-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
                 <span class="material-icons text-base text-red-500 mr-3">assessment</span>
@@ -178,7 +178,7 @@
     <!-- Campaign Section -->
     @if(auth()->user()->can('campaigns.read') || auth()->user()->can('delivery.read'))
     <div class="mt-4"></div>
-    <div class="category-header relative" onclick="toggleSection('campaign-section')">
+    <div class="category-header relative" onclick="toggleSection('campaign-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
                 <span class="material-icons text-base text-pink-500 mr-3">campaign</span>
@@ -220,7 +220,7 @@
     
     <!-- Settings Section -->
     @if(auth()->user()->can('global_config.read') || auth()->user()->can('roles.read') || auth()->user()->can('users.read') || auth()->user()->can('log_activity.read'))
-    <div class="category-header relative" onclick="toggleSection('settings-section')">
+    <div class="category-header relative" onclick="toggleSection('settings-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
                 <span class="material-icons text-base text-cyan-600 mr-3">settings</span>
@@ -259,7 +259,12 @@
     @endif
     
     <script>
-        function toggleSection(sectionId) {
+        function toggleSection(sectionId, event) {
+            // If click came from a link (submenu item), don't toggle
+            if (event && event.target.closest('a')) {
+                return;
+            }
+            
             const section = document.getElementById(sectionId);
             const icon = document.getElementById(sectionId + '-icon');
             

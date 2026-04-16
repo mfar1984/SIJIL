@@ -1,61 +1,301 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sijil - E-Certificate Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem pengurusan sijil elektronik yang komprehensif untuk acara, latihan, dan program. Dibangunkan menggunakan Laravel 12 dengan sokongan penuh untuk pengurusan peserta, kehadiran, sijil digital, dan notifikasi push.
 
-## About Laravel
+## ✨ Ciri-ciri Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 🎯 Pengurusan Acara
+- Cipta dan urus acara dengan mudah
+- QR code untuk pendaftaran peserta
+- Public registration forms
+- Event poster upload
+- Conditional attendance tracking
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 👥 Pengurusan Peserta
+- Database peserta terpusat
+- Import bulk participants
+- PWA participant system dengan mobile app support
+- Identity verification (IC/Passport)
+- Participant profiles dengan address & demographics
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### ✅ Sistem Kehadiran
+- QR code check-in/check-out
+- Multiple attendance sessions per event
+- GPS coordinates tracking
+- Manual check-in option
+- Real-time attendance monitoring
+- Archive system untuk historical data
 
-## Learning Laravel
+### 🎓 Sijil Digital
+- Template designer dengan drag-and-drop
+- PDF certificate generation
+- Bulk certificate creation
+- Email delivery automation
+- Certificate verification system
+- Custom placeholders support
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 📊 Laporan & Analitik
+- Attendance reports dengan export
+- Certificate distribution reports
+- Event statistics dashboard
+- Activity logs & audit trails
+- Security audit logs
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 📧 Campaign Management
+- Email campaigns dengan tracking
+- SMS campaigns (Infobip integration)
+- Open & click tracking
+- Template management
+- Scheduled delivery
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 🎫 Helpdesk System
+- Ticket management
+- Real-time notifications
+- File attachments support
+- Status tracking (Open, In Progress, Resolved, Closed)
+- Admin & user notifications
 
-## Laravel Sponsors
+### 📝 Survey System
+- Create surveys dengan multiple question types
+- Public/Private/Registered access control
+- Anonymous responses support
+- Response analytics & visualization
+- Export responses to CSV
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 🔐 Role & Permissions
+- Granular permission system
+- Administrator & Organizer roles
+- Custom role creation
+- Permission matrix management
+- Activity logging
 
-### Premium Partners
+### 🔔 Push Notifications
+- Firebase Cloud Messaging (FCM)
+- Real-time browser notifications
+- Service worker support
+- Token management
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 🛠️ Teknologi
 
-## Contributing
+### Backend
+- **Framework**: Laravel 12
+- **PHP**: 8.1+
+- **Database**: MySQL 5.7+
+- **Queue**: Database driver (Redis recommended for production)
+- **Cache**: Database/Redis
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Frontend
+- **Build Tool**: Vite
+- **CSS Framework**: Tailwind CSS 3
+- **JavaScript**: Alpine.js
+- **UI Components**: Flowbite
+- **Icons**: Heroicons
 
-## Code of Conduct
+### Integrations
+- **Firebase**: Cloud Messaging & Admin SDK
+- **Infobip**: SMS gateway
+- **TCPDF**: PDF generation
+- **QR Code**: Bacon QR Code
+- **Permissions**: Spatie Laravel Permission
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 📋 Keperluan Sistem
 
-## Security Vulnerabilities
+- PHP 8.1 atau lebih tinggi
+- MySQL 5.7+ atau MariaDB 10.3+
+- Composer 2.x
+- Node.js 18+ & NPM
+- Redis (optional, recommended untuk production)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### PHP Extensions
+- BCMath, Ctype, Fileinfo, JSON, Mbstring
+- OpenSSL, PDO, Tokenizer, XML
+- GD atau Imagick
+- Redis (optional)
 
-## License
+## 🚀 Quick Start
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+# 1. Clone repository
+git clone <repository-url> sijil
+cd sijil
+
+# 2. Install dependencies
+composer install
+npm install
+
+# 3. Setup environment
+cp .env.example .env
+php artisan key:generate
+
+# 4. Configure database dalam .env
+# DB_DATABASE=esijil
+# DB_USERNAME=root
+# DB_PASSWORD=root
+
+# 5. Run migrations & seeders
+php artisan migrate
+php artisan db:seed
+
+# 6. Build assets
+npm run build
+
+# 7. Create storage link
+php artisan storage:link
+
+# 8. Start development server
+php artisan serve
+```
+
+**Default Login:**
+- Email: `admin@e-certificate.com.my`
+- Password: `password`
+
+⚠️ **Tukar password selepas first login!**
+
+## 📚 Dokumentasi
+
+- **[Quick Start Guide](QUICK_START.md)** - Setup dalam 5 minit
+- **[Firebase Setup](FIREBASE_SETUP.md)** - Configure push notifications
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment
+- **[Changelog](CHANGELOG_FIREBASE_FIX.md)** - Recent updates
+
+## 🔧 Development
+
+### Run Development Server
+```bash
+# Option 1: Laravel server only
+php artisan serve
+
+# Option 2: Full stack (server + queue + logs + vite)
+composer dev
+```
+
+### Queue Worker
+```bash
+php artisan queue:work
+```
+
+### Watch Assets
+```bash
+npm run dev
+```
+
+### Clear Caches
+```bash
+php artisan optimize:clear
+```
+
+### Maintenance Commands
+```bash
+# Verify certificate templates
+php artisan templates:verify
+
+# Fix template URLs
+php artisan templates:fix-urls
+
+# Check application status
+php artisan about
+```
+
+## 🏗️ Struktur Modul
+
+```
+sijil/
+├── app/
+│   ├── Console/Commands/      # Scheduled tasks
+│   ├── Events/                # Event classes
+│   ├── Http/Controllers/      # Controllers
+│   ├── Models/                # Eloquent models
+│   ├── Services/              # Business logic
+│   └── Helpers/               # Helper functions
+├── database/
+│   ├── migrations/            # Database migrations
+│   └── seeders/               # Database seeders
+├── resources/
+│   ├── views/                 # Blade templates
+│   ├── js/                    # JavaScript files
+│   └── css/                   # Stylesheets
+├── routes/
+│   ├── web.php               # Web routes
+│   ├── api.php               # API routes
+│   └── channels.php          # Broadcasting channels
+└── storage/
+    ├── credentials/          # Firebase & other credentials
+    └── app/public/           # Public storage
+```
+
+## 🔐 Security
+
+- Environment variables untuk sensitive data
+- Firebase credentials dalam `storage/credentials/` (git-ignored)
+- CSRF protection enabled
+- XSS protection
+- SQL injection protection (Eloquent ORM)
+- Password hashing (bcrypt)
+- Activity logging & audit trails
+
+## 🧪 Testing
+
+```bash
+# Run tests
+php artisan test
+
+# Run specific test
+php artisan test --filter=TestName
+```
+
+## 📦 Production Deployment
+
+Lihat [DEPLOYMENT.md](DEPLOYMENT.md) untuk panduan lengkap deployment ke production.
+
+### Quick Checklist
+- [ ] Set `APP_ENV=production`
+- [ ] Set `APP_DEBUG=false`
+- [ ] Configure proper database
+- [ ] Setup Firebase credentials
+- [ ] Configure mail server
+- [ ] Setup queue workers (Supervisor)
+- [ ] Setup cron jobs
+- [ ] Configure web server (Nginx/Apache)
+- [ ] Enable SSL certificate
+- [ ] Setup backups
+- [ ] Configure monitoring
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+## 📝 License
+
+This project is proprietary software. All rights reserved.
+
+## 👥 Team
+
+- **Developer**: [Your Name]
+- **Organization**: [Your Organization]
+
+## 📞 Support
+
+Untuk sokongan dan pertanyaan:
+- Email: support@e-certificate.com.my
+- Documentation: Lihat folder docs/
+- Issues: Gunakan GitHub Issues
+
+## 🙏 Acknowledgments
+
+- Laravel Framework
+- Tailwind CSS
+- Alpine.js
+- Firebase
+- Spatie Laravel Permission
+- Dan semua open source contributors
+
+---
+
+**Version**: 1.0.0  
+**Last Updated**: April 16, 2026  
+**Status**: Production Ready (with proper configuration)

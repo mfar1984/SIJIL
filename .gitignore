@@ -27,3 +27,33 @@ Thumbs.db
 client_secret_*.json
 *firebase*.json
 /storage/credentials/
+
+# Documentation & Notes (not needed in production)
+*.md
+!README.md
+!LICENSE.md
+
+# Editor & IDE
+/.cursor
+.cursor/
+
+# Temporary & Test Files
+temp_*.php
+test_*.php
+chart_check.txt
+chathistory.md
+CHAT*.md
+ENV.txt
+ENV.production.txt
+design.html
+
+# PWA Build Files (deploy separately)
+/PWA/dist/
+/PWA/dev-dist/
+/PWA/node_modules/
+/PWA/webuser/
+
+# Database
+*.sqlite
+*.sqlite-journal
+database.sqlite

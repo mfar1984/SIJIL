@@ -20,7 +20,6 @@ class User extends Authenticatable
         return LogOptions::defaults()
             ->logOnly(['name', 'email', 'role_id', 'status', 'phone', 'organization'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => "User {$eventName}");
     }
 

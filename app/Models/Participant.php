@@ -16,7 +16,6 @@ class Participant extends Model
         return LogOptions::defaults()
             ->logOnly(['name', 'email', 'phone', 'event_id', 'status'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => "Participant {$eventName}");
     }
 

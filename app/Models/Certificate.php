@@ -16,7 +16,6 @@ class Certificate extends Model
         return LogOptions::defaults()
             ->logOnly(['participant_id', 'event_id', 'template_id', 'certificate_number', 'status'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => "Certificate {$eventName}");
     }
     /**

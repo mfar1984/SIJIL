@@ -16,7 +16,6 @@ class Campaign extends Model
         return LogOptions::defaults()
             ->logOnly(['name', 'type', 'status', 'scheduled_at', 'sent_count'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => "Campaign {$eventName}");
     }
 

@@ -17,7 +17,6 @@ class Event extends Model
         return LogOptions::defaults()
             ->logOnly(['name', 'description', 'start_date', 'end_date', 'location', 'status'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => "Event {$eventName}");
     }
 

@@ -18,8 +18,8 @@
         "laravel/tinker": "^3.0",
         "propaganistas/laravel-phone": "^6.0",
         "setasign/fpdi": "^2.6",
-        "spatie/laravel-activitylog": "^4.10",
-        "spatie/laravel-permission": "^6.3",
+        "spatie/laravel-activitylog": "^5.0",
+        "spatie/laravel-permission": "^7.0",
         "tecnickcom/tcpdf": "^6.10"
     },
     "require-dev": {
@@ -30,7 +30,7 @@
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^13.0"
     },
     "autoload": {
         "psr-4": {

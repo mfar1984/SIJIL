@@ -175,6 +175,7 @@ select {
     width: 20px;
     height: 20px;
     line-height: 20px;
+    vertical-align: middle;
 }
 
 .material-icons.text-xs {
@@ -192,37 +193,37 @@ select {
 }
 
 .material-icons.text-lg {
+    font-size: 22px !important;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+}
+
+.material-icons.text-xl {
     font-size: 24px !important;
     width: 24px;
     height: 24px;
     line-height: 24px;
 }
 
-.material-icons.text-xl {
+.material-icons.text-2xl {
     font-size: 28px !important;
     width: 28px;
     height: 28px;
     line-height: 28px;
 }
 
-.material-icons.text-2xl {
+.material-icons.text-3xl {
     font-size: 32px !important;
     width: 32px;
     height: 32px;
     line-height: 32px;
 }
 
-.material-icons.text-3xl {
-    font-size: 36px !important;
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
-}
-
 .material-icons.text-4xl {
-    font-size: 48px !important;
-    width: 48px;
-    height: 48px;
-    line-height: 48px;
+    font-size: 40px !important;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
 }
 

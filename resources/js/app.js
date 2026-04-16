@@ -10,7 +10,7 @@ Alpine.start();
 import 'flowbite';
 
 // Import intl-tel-input
-import 'intl-tel-input/build/css/intlTelInput.css';
+import 'intl-tel-input/dist/css/intlTelInput.css';
 
 // Initialize Firebase Cloud Messaging registration lazily to enable code-splitting
 document.addEventListener('DOMContentLoaded', () => {

@@ -382,6 +382,5 @@
                 // Notification system initialization complete
             });
         </script>
-        @endcan
     </body>
 </html>

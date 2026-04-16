@@ -573,6 +573,16 @@ class EventManagementController extends Controller
             ]);
         }
         
+        // Send Telegram notification if enabled
+        try {
+            $telegramService = new \App\Services\TelegramService();
+            if ($telegramService->isEnabled()) {
+                $telegramService->sendEventRegistrationNotification($participant, $event);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send Telegram notification: ' . $e->getMessage());
+        }
+        
         return redirect()->route('event.register.thankyou', $event->registration_link);
     }
 

@@ -39,6 +39,7 @@ class GlobalConfig extends Model
         'email_certificate_generated', 'email_password_reset', 'sms_event_registration',
         'sms_event_reminder', 'sms_reminder_hours', 'admin_system_errors',
         'admin_new_registrations', 'admin_security_alerts', 'admin_notification_email',
+        'telegram_event_registration',
         
         // API Settings
         'api_enabled', 'api_rate_limit', 'enable_api_keys', 'enable_oauth',
@@ -49,6 +50,10 @@ class GlobalConfig extends Model
         
         // Webhook Settings
         'enable_webhooks', 'webhook_secret', 'webhook_events',
+        
+        // Telegram Settings
+        'telegram_bot_token', 'telegram_bot_username', 'telegram_channel_id',
+        'telegram_owner_user_id', 'telegram_owner_username',
     ];
 
     protected $casts = [
@@ -80,6 +85,7 @@ class GlobalConfig extends Model
         'admin_system_errors' => 'boolean',
         'admin_new_registrations' => 'boolean',
         'admin_security_alerts' => 'boolean',
+        'telegram_event_registration' => 'boolean',
         'api_enabled' => 'boolean',
         'enable_api_keys' => 'boolean',
         'enable_oauth' => 'boolean',

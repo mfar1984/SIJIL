@@ -477,7 +477,7 @@
         <!-- Stepper Navigation -->
         <div class="flex justify-center mb-4">
             <template x-for="n in 5" :key="n">
-                <div :class="{'bg-blue-600 text-white': step === n, 'bg-gray-200 text-gray-500': step !== n}" class="w-7 h-7 flex items-center justify-center rounded-full mx-1 text-xs font-bold cursor-pointer" @click="step = n">
+                <div :class="{'bg-blue-600 text-white': step === n, 'bg-gray-200 text-gray-500': step !== n, 'cursor-not-allowed opacity-50': step !== n, 'cursor-default': step === n}" class="w-7 h-7 flex items-center justify-center rounded-full mx-1 text-xs font-bold">
                     <span x-text="n"></span>
                 </div>
             </template>

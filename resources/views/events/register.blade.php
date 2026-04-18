@@ -496,8 +496,8 @@
             </div>
             <div class="p-4 flex justify-end">
                 <button type="button" @click="next()" class="btn btn-primary flex items-center gap-2">
-                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                     <span>Next</span>
+                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                 </button>
             </div>
         </div>
@@ -590,8 +590,8 @@
             <div class="p-4 flex justify-between">
                 <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
                 <button type="submit" class="btn btn-primary flex items-center gap-2">
-                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                     <span>Next</span>
+                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                 </button>
             </div>
         </form>
@@ -712,8 +712,8 @@
             <div class="p-4 flex justify-between">
                 <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
                 <button type="submit" class="btn btn-primary flex items-center gap-2">
-                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                     <span>Next</span>
+                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                 </button>
             </div>
         </form>
@@ -760,8 +760,8 @@
             <div class="p-4 flex justify-between">
                 <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
                 <button type="submit" class="btn btn-success flex items-center gap-2">
-                    <span class="material-icons-outlined text-[16px]">check_circle</span>
                     <span>Submit</span>
+                    <span class="material-icons-outlined text-[16px]">check_circle</span>
                 </button>
             </div>
         </form>
@@ -794,7 +794,9 @@
             <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white modal-card shadow w-full max-w-md text-xs">
                 <div class="px-4 py-3 border-b flex items-center justify-between">
                     <h3 class="font-semibold">Account Verification (IC/Passport)</h3>
-                    <button class="text-gray-500" @click="auth.open=false"><span class="material-icons-outlined text-sm">close</span></button>
+                    <button type="button" class="text-gray-500 hover:text-gray-700" @click="auth.open=false">
+                        <span class="material-icons-outlined text-sm">close</span>
+                    </button>
                 </div>
                 <div class="p-4 space-y-3">
                     <!-- Step: Lookup -->
@@ -814,7 +816,7 @@
                                 <button type="button" @click="submitLookup()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
                                     <span class="material-icons-outlined text-[16px]" x-show="!auth.loading">search</span>
                                     <span x-show="auth.loading" class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                    <span>Check</span>
+                                    <span x-show="!auth.loading">search</span>
                                 </button>
                             </div>
                         </div>
@@ -847,11 +849,11 @@
                             <div class="flex items-center justify-between mt-2">
                                 <button type="button" @click="doLogin()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
                                     <span class="material-icons-outlined text-[16px]">login</span>
-                                    <span>Login</span>
+                                    <span>login</span>
                                 </button>
                                 <button type="button" @click="doResetPassword()" class="btn btn-danger flex items-center gap-1" :disabled="auth.loading">
                                     <span class="material-icons-outlined text-[16px]">lock_reset</span>
-                                    <span>Reset Password</span>
+                                    <span>lock_reset</span>
                                 </button>
                             </div>
                             <div class="text-[10px] text-gray-500">If this is not your account, you can register a new account.</div>
@@ -879,7 +881,7 @@
                             <div class="flex justify-end">
                                 <button type="button" @click="doRegister()" class="btn btn-success flex items-center gap-1" :disabled="auth.loading">
                                     <span class="material-icons-outlined text-[16px]">person_add</span>
-                                    <span>Daftar & Teruskan</span>
+                                    <span>person_add</span>
                                 </button>
                             </div>
                         </div>

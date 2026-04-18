@@ -13,12 +13,9 @@ Standalone PHP website for verifying certificate authenticity via QR code scanni
 ## Installation
 
 1. Copy the `verification-website` folder to your web server
-2. Update `config.php` with your main application API endpoint:
-   ```php
-   define('API_ENDPOINT', 'https://your-domain.com/api/certificate/verify');
-   ```
+2. Configuration is automatic - detects localhost for development and production domain automatically
 3. Ensure PHP cURL extension is enabled
-4. Access via browser: `https://www.e-certificate.com`
+4. Access via browser: `https://www.e-certificate.com` (production) or `http://localhost` (development)
 
 ## Configuration
 
@@ -26,11 +23,23 @@ Standalone PHP website for verifying certificate authenticity via QR code scanni
 
 ```php
 <?php
-// API endpoint for certificate verification
-define('API_ENDPOINT', 'http://localhost:8000/api/certificate/verify');
+// Auto-detect API endpoint based on environment
+function getApiEndpoint() {
+    $hostname = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    
+    // Production
+    if (strpos($hostname, 'e-certificate.com.my') !== false) {
+        return 'https://apps.e-certificate.com.my/api/certificate/verify';
+    }
+    
+    // Development
+    return 'http://localhost:8000/api/certificate/verify';
+}
+
+define('API_ENDPOINT', getApiEndpoint());
 ```
 
-Update `API_ENDPOINT` to point to your main application's verification API.
+The API endpoint automatically detects the environment. No manual configuration needed.
 
 ## File Structure
 

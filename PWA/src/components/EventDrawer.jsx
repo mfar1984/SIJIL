@@ -33,11 +33,19 @@ const EventDrawer = ({ open, onClose, event }) => {
 
   const getBackendBaseURL = () => {
     const hostname = window.location.hostname
-    const port = '8000'
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `http://localhost:${port}`
+    
+    // Production
+    if (hostname.includes('e-certificate.com.my')) {
+      return 'https://apps.e-certificate.com.my'
     }
-    return `http://${hostname}:${port}`
+    
+    // Development - localhost
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000'
+    }
+    
+    // Network IP for testing
+    return `http://${hostname}:8000`
   }
 
   const getRenderableTerms = () => {

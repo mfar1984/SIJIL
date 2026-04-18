@@ -1,0 +1,41 @@
+{
+  "node_modules/intl-tel-input/dist/img/flags.webp": {
+    "file": "assets/flags-DjVgN9ag.webp",
+    "src": "node_modules/intl-tel-input/dist/img/flags.webp"
+  },
+  "node_modules/intl-tel-input/dist/img/flags@2x.webp": {
+    "file": "assets/flags@2x-QBzdwbZ8.webp",
+    "src": "node_modules/intl-tel-input/dist/img/flags@2x.webp"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-CRdyMhMD.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-DcpQIJjR.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/fcm.js"
+    ],
+    "css": [
+      "assets/app-BQXW8kt8.css"
+    ],
+    "assets": [
+      "assets/flags-DjVgN9ag.webp",
+      "assets/flags@2x-QBzdwbZ8.webp"
+    ]
+  },
+  "resources/js/fcm.js": {
+    "file": "assets/fcm-CUF60kUf.js",
+    "name": "fcm",
+    "src": "resources/js/fcm.js",
+    "isDynamicEntry": true
+  }
+}

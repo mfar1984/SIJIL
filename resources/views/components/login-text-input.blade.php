@@ -18,9 +18,9 @@
             {{ $label }}@if($required)*@endif
         </label>
     @endif
-    <div class="flex items-center border border-gray-400 rounded-[3px] px-1 py-0 transition">
+    <div class="flex items-center border border-gray-400 rounded-[3px] px-3 py-2 transition">
         @if($icon)
-            <span class="material-icons mr-3 text-xl" style="color: #2c61b6;">{{ $icon }}</span>
+            <span class="material-icons-outlined text-xl flex items-center justify-center" style="color: #2c61b6;">{{ $icon }}</span>
         @endif
         <input
             type="{{ $type }}"
@@ -29,7 +29,7 @@
             @if($required) required @endif
             @if($autocomplete) autocomplete="{{ $autocomplete }}" @endif
             value="{{ old($name, $value) }}"
-            class="flex-1 bg-transparent border-none outline-none text-xs text-gray-800 py-0 focus:outline-none focus:ring-0 focus:border-gray-400"
+            class="flex-1 bg-transparent border-none outline-none text-xs text-gray-800 ml-3 py-0 focus:outline-none focus:ring-0 focus:border-gray-400"
         />
     </div>
 </div> 

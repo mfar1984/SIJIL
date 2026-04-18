@@ -13,7 +13,7 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-start">
                 <div class="flex items-center">
-                    <span class="material-icons mr-2 text-indigo-500">edit</span>
+                    <span class="material-icons-outlined mr-2 text-indigo-500">edit</span>
                     <h1 class="text-xl font-bold text-gray-800">Edit Email Template</h1>
                 </div>
                 <a href="{{ route('pwa.templates') }}" class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-xs font-medium">Back</a>

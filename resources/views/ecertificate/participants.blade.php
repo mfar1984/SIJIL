@@ -12,14 +12,14 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">groups</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">groups</span>
                         <h1 class="text-xl font-bold text-gray-800">PWA Participants</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage all PWA participants and attendees</p>
                 </div>
                 @can('pwa_participants.create')
                 <a href="{{ route('pwa.participants.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                    <span class="material-icons text-xs mr-1">add_circle</span>
+                    <span class="material-icons-outlined text-xs mr-1">add_circle</span>
                     Add New PWA Participant
                 </a>
                 @endcan
@@ -114,18 +114,18 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ route('pwa.participants.show', $participant) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
-                                            <span class="material-icons text-blue-600 text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-blue-600 text-xs">visibility</span>
                                         </a>
                                         @can('pwa_participants.update')
                                         <a href="{{ route('pwa.participants.edit', $participant) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
-                                            <span class="material-icons text-yellow-600 text-xs">edit</span>
+                                            <span class="material-icons-outlined text-yellow-600 text-xs">edit</span>
                                         </a>
                                         @endcan
                                         @can('pwa_participants.update')
                                         <form method="POST" action="{{ route('pwa.participants.reset-password', $participant) }}" onsubmit="return confirm('Are you sure you want to reset the password for {{ $participant->name }}?')" class="inline-block">
                                             @csrf
                                             <button type="submit" class="p-1 bg-purple-50 rounded hover:bg-purple-100 border border-purple-100" title="Reset Password">
-                                                <span class="material-icons text-purple-600 text-xs">smartphone</span>
+                                                <span class="material-icons-outlined text-purple-600 text-xs">smartphone</span>
                                             </button>
                                         </form>
                                         @endcan
@@ -134,7 +134,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endcan

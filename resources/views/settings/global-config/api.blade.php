@@ -1,8 +1,42 @@
 <div x-show="activeTab === 'api'" class="space-y-2">
+    <style>
+        /* Tooltip styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
+        }
+    </style>
+    
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">api</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">api</span>
                 API Settings
             </h2>
         </div>
@@ -10,12 +44,22 @@
         <div class="p-4">
         <div class="space-y-3">
             <!-- API Status -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     API Status
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Enable/disable the REST API
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
-                    <div class="flex items-center mt-1">
+                    <div class="flex items-center">
                         <label class="inline-flex items-center mr-4">
                             <input 
                                 type="radio" 
@@ -23,7 +67,6 @@
                                 value="enabled" 
                                 class="text-primary-DEFAULT focus:ring-primary-light" 
                                 {{ (old('api_status', $config->api_status ?? 'enabled') == 'enabled') ? 'checked' : '' }}
-                                :disabled="!isEditing"
                             >
                             <span class="ml-2 text-xs text-gray-700">Enabled</span>
                         </label>
@@ -34,24 +77,32 @@
                                 value="disabled" 
                                 class="text-primary-DEFAULT focus:ring-primary-light"
                                 {{ (old('api_status', $config->api_status ?? 'enabled') == 'disabled') ? 'checked' : '' }}
-                                :disabled="!isEditing"
                             >
                             <span class="ml-2 text-xs text-gray-700">Disabled</span>
                         </label>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Enable/disable the REST API</p>
                 </div>
             </div>
             
             <!-- Rate Limiting -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="api_rate_limit" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="api_rate_limit" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Rate Limit (requests per minute)
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Maximum number of API requests per minute per client
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">data_usage</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">data_usage</span>
                         </div>
                         <input 
                             type="number" 
@@ -60,15 +111,12 @@
                             value="{{ old('api_rate_limit', $config->api_rate_limit ?? 60) }}" 
                             min="10" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Maximum number of API requests per minute per client</p>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -79,14 +127,13 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('enable_api_keys', $config->enable_api_keys ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Require API keys for access</span>
                     </label>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -97,14 +144,13 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('enable_oauth', $config->enable_oauth ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Enable OAuth 2.0 authorization</span>
                     </label>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -115,7 +161,6 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('api_cors_enabled', $config->api_cors_enabled ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Allow CORS for API requests</span>
                     </label>
@@ -123,9 +168,19 @@
             </div>
             
             <!-- CORS Domains -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="cors_domains" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                <label for="cors_domains" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
                     CORS Allowed Domains
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Domains allowed to make cross-origin API requests (comma separated)
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <textarea 
@@ -133,10 +188,7 @@
                         name="cors_domains" 
                         rows="2" 
                         class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                        :class="{'bg-gray-50': !isEditing}"
-                        :disabled="!isEditing"
                     >{{ old('cors_domains', $config->cors_domains ?? 'https://example.com, https://*.sijilevents.com') }}</textarea>
-                    <p class="mt-1 text-[10px] text-gray-500">Domains allowed to make cross-origin API requests (comma separated)</p>
                 </div>
             </div>
         </div>
@@ -146,7 +198,7 @@
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">integration_instructions</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">integration_instructions</span>
                 Third-Party Integrations
             </h2>
         </div>
@@ -166,8 +218,8 @@
                 </div>
                 <div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" class="sr-only peer" :disabled="!isEditing">
-                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-DEFAULT"></div>
+                        <input type="checkbox" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                     </label>
                 </div>
             </div>
@@ -189,8 +241,8 @@
                 </div>
                 <div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" class="sr-only peer" :disabled="!isEditing">
-                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-DEFAULT"></div>
+                        <input type="checkbox" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                     </label>
                 </div>
             </div>
@@ -208,8 +260,8 @@
                 </div>
                 <div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked class="sr-only peer" :disabled="!isEditing">
-                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-DEFAULT"></div>
+                        <input type="checkbox" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                     </label>
                 </div>
             </div>
@@ -229,8 +281,8 @@
                 </div>
                 <div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked class="sr-only peer" :disabled="!isEditing">
-                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-DEFAULT"></div>
+                        <input type="checkbox" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                     </label>
                 </div>
             </div>
@@ -241,17 +293,17 @@
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">webhook</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">webhook</span>
                 Webhooks
             </h2>
         </div>
         
         <div class="p-4">
         <div class="space-y-3">
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
-                    <label class="flex items-center">
+                    <label class="flex items-center gap-1">
                         <input type="hidden" name="enable_webhooks" value="0">
                         <input 
                             type="checkbox" 
@@ -259,24 +311,42 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('enable_webhooks', $config->enable_webhooks ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Enable webhooks</span>
+                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                  @mouseenter="show = true" 
+                                  @mouseleave="show = false">
+                                help_outline
+                            </span>
+                            <div x-show="show" x-transition class="tooltip-content">
+                                Allow external systems to receive event notifications
+                            </div>
+                        </div>
                     </label>
-                    <p class="mt-1 text-[10px] text-gray-500">Allow external systems to receive event notifications</p>
                 </div>
             </div>
             
             <!-- Webhook Secret -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="webhook_secret" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="webhook_secret" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Webhook Secret
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Secret key used to validate webhook requests
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="flex">
                         <div class="relative flex-1">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">password</span>
+                                <span class="material-icons-outlined text-[#004aad] text-base">password</span>
                             </div>
                             <input 
                                 type="password" 
@@ -284,26 +354,32 @@
                                 name="webhook_secret" 
                                 value="{{ old('webhook_secret', $config->webhook_secret ?? 'wh_sec_1a2b3c4d5e6f') }}" 
                                 class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                :class="{'bg-gray-50': !isEditing}"
-                                :disabled="!isEditing"
                             >
                         </div>
                         <button 
                             type="button"
                             class="ml-2 bg-gray-100 hover:bg-gray-200 text-xs text-gray-700 px-3 rounded"
-                            :disabled="!isEditing"
                         >
                             Regenerate
                         </button>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Secret key used to validate webhook requests</p>
                 </div>
             </div>
             
             <!-- Webhook Events -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="webhook_events" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                <label for="webhook_events" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
                     Webhook Events
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Events that will trigger webhook notifications (comma separated)
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <textarea 
@@ -311,10 +387,7 @@
                         name="webhook_events" 
                         rows="3" 
                         class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                        :class="{'bg-gray-50': !isEditing}"
-                        :disabled="!isEditing"
                     >{{ old('webhook_events', $config->webhook_events ?? 'event.created, event.updated, registration.completed, certificate.generated, attendance.recorded') }}</textarea>
-                    <p class="mt-1 text-[10px] text-gray-500">Events that will trigger webhook notifications (comma separated)</p>
                 </div>
             </div>
         </div>

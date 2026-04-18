@@ -11,7 +11,7 @@
         <div class="p-6 border-b border-gray-200 flex justify-between items-start">
             <div>
                 <div class="flex items-center">
-                    <span class="material-icons mr-2 text-primary-DEFAULT">campaign</span>
+                    <span class="material-icons-outlined mr-2 text-primary-DEFAULT">campaign</span>
                     <h1 class="text-xl font-bold text-gray-800">Campaign Details</h1>
                 </div>
                 <p class="text-xs text-gray-500 mt-1 ml-8">View detailed information about this campaign</p>
@@ -19,7 +19,7 @@
             <div class="flex space-x-3">
                 @can('campaigns.update')
                 <a href="{{ route('campaign.edit', ['campaign' => $campaign->id]) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
-                    <span class="material-icons text-yellow-600 text-xs">edit</span>
+                    <span class="material-icons-outlined text-yellow-600 text-xs">edit</span>
                 </a>
                 @endcan
                 @can('campaigns.delete')
@@ -27,12 +27,12 @@
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                        <span class="material-icons text-red-600 text-xs">delete</span>
+                        <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                     </button>
                 </form>
                 @endcan
                 <a href="{{ route('campaign.index') }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="Back">
-                    <span class="material-icons text-primary-DEFAULT text-xs">arrow_back</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT text-xs">arrow_back</span>
                 </a>
             </div>
         </div>
@@ -42,19 +42,19 @@
                 <h2 class="text-base font-semibold text-gray-700 mb-4">Campaign Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">campaign</span>Campaign Name</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">campaign</span>Campaign Name</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">{{ $campaign->name }}</div>
                     </div>
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">category</span>Campaign Type</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">category</span>Campaign Type</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">{{ ucfirst($campaign->campaign_type) }} Campaign</div>
                     </div>
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">description</span>Description</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">description</span>Description</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3 min-h-[40px]">{{ $campaign->description ?: 'No description available.' }}</div>
                     </div>
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">toggle_on</span>Status</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">toggle_on</span>Status</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">
                             @if($campaign->status == 'completed')
                                 <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">Completed</span>
@@ -74,15 +74,15 @@
                 <h2 class="text-base font-semibold text-gray-700 mb-4">Schedule Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_available</span>Start Date</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event_available</span>Start Date</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">{{ $campaign->start_date ? $campaign->start_date->format('d M Y') : 'Not specified' }}</div>
                     </div>
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_busy</span>End Date</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event_busy</span>End Date</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">{{ $campaign->end_date ? $campaign->end_date->format('d M Y') : 'Not specified' }}</div>
                     </div>
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">schedule</span>Schedule Type</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">schedule</span>Schedule Type</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">
                             @if($campaign->schedule_type == 'now')
                                 Immediate
@@ -100,7 +100,7 @@
                 <h2 class="text-base font-semibold text-gray-700 mb-4">Audience Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">group</span>Audience Type</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">group</span>Audience Type</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">
                             @if($campaign->audience_type == 'all_participants')
                                 All Participants
@@ -116,7 +116,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">people</span>Recipients Count</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">people</span>Recipients Count</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">
                             @if($campaign->recipients_count > 0)
                                 {{ $campaign->recipients_count }} participants
@@ -127,13 +127,13 @@
                     </div>
                     @if($campaign->audience_type == 'specific_event' && $campaign->event)
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_note</span>Event</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event_note</span>Event</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">{{ $campaign->event->name }}</div>
                     </div>
                     @endif
                     @if($campaign->audience_type == 'custom_filter' && is_array($campaign->filter_criteria))
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">filter_list</span>Filter Criteria</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">filter_list</span>Filter Criteria</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">
                             <ul class="list-disc pl-4">
                                 @if(isset($campaign->filter_criteria['age']) && $campaign->filter_criteria['age'])
@@ -151,7 +151,7 @@
                     @endif
                     @if($campaign->audience_type == 'custom_emails' && isset($campaign->filter_criteria['custom_emails']))
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">email</span>Custom Email Addresses</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">email</span>Custom Email Addresses</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">
                             <ul class="list-disc pl-4">
                                 @foreach($campaign->filter_criteria['custom_emails'] as $email)
@@ -168,11 +168,11 @@
                 <h2 class="text-base font-semibold text-gray-700 mb-4">Content Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">subject</span>Email Subject</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">subject</span>Email Subject</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">{{ $campaign->content['subject'] ?? 'No subject' }}</div>
                     </div>
                     <div class="md:col-span-2">
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">description</span>Email Content Preview</label>
+                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">description</span>Email Content Preview</label>
                         <div class="w-full text-xs border border-gray-200 bg-gray-50 rounded py-2 px-3">
                             <div style="background: #fff; padding: 20px; border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); max-width: 800px; margin: 0 auto;">
                                 <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
@@ -204,7 +204,7 @@
                                 <p class="text-xs text-blue-700 font-medium">Sent</p>
                                 <p class="text-2xl font-bold text-blue-800">{{ $campaign->recipients_count }}</p>
                             </div>
-                            <span class="material-icons text-blue-500 text-2xl">send</span>
+                            <span class="material-icons-outlined text-blue-500 text-2xl">send</span>
                         </div>
                     </div>
                     <div class="bg-green-50 rounded-md p-4 border border-green-100">
@@ -213,7 +213,7 @@
                                 <p class="text-xs text-green-700 font-medium">Delivered</p>
                                 <p class="text-2xl font-bold text-green-800">{{ $campaign->delivered_count }}</p>
                             </div>
-                            <span class="material-icons text-green-500 text-2xl">mark_email_read</span>
+                            <span class="material-icons-outlined text-green-500 text-2xl">mark_email_read</span>
                         </div>
                     </div>
                     <div class="bg-amber-50 rounded-md p-4 border border-amber-100">
@@ -229,7 +229,7 @@
                                     @endif
                                 </p>
                             </div>
-                            <span class="material-icons text-amber-500 text-2xl">visibility</span>
+                            <span class="material-icons-outlined text-amber-500 text-2xl">visibility</span>
                         </div>
                     </div>
                 </div>

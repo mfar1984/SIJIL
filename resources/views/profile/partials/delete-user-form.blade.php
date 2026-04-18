@@ -13,7 +13,7 @@
             x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
             class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
         >
-            <span class="material-icons text-xs mr-1">delete</span>
+            <span class="material-icons-outlined text-xs mr-1">delete</span>
             {{ __('Delete Account') }}
         </x-danger-button>
     </div>
@@ -43,7 +43,7 @@
                     {{ __('Cancel') }}
                 </x-secondary-button>
                 <x-danger-button class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                    <span class="material-icons text-xs mr-1">delete</span>
+                    <span class="material-icons-outlined text-xs mr-1">delete</span>
                     {{ __('Delete Account') }}
                 </x-danger-button>
             </div>

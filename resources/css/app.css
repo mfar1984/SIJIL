@@ -159,18 +159,9 @@ select {
     }
 }
 
-/* Fix for toggle switches in Tailwind 4 */
-.peer:checked ~ div {
-    background-color: #063c96 !important; /* primary-DEFAULT color */
-}
-
-.peer:checked ~ div::after {
-    transform: translateX(100%);
-    border-color: white;
-}
-
-/* Fix for Material Icons size */
-.material-icons {
+/* Material Icons fix */
+.material-icons,
+.material-icons-outlined {
     font-size: 20px !important;
     width: 20px;
     height: 20px;
@@ -178,52 +169,97 @@ select {
     vertical-align: middle;
 }
 
-.material-icons.text-xs {
+/* Toggle switch - Fix for disabled state */
+/* CRITICAL: Tailwind peer-checked classes don't generate CSS for disabled inputs */
+/* We need explicit CSS rules with high specificity */
+
+/* Background color for disabled checked toggle - MUST be blue like enabled state */
+label input[type="checkbox"]:disabled:checked + div {
+    background-color: #2563eb !important; /* blue-600 - same as enabled */
+}
+
+/* Move the white circle to the right when disabled and checked */
+label input[type="checkbox"]:disabled:checked + div::after {
+    transform: translateX(1.25rem) !important; /* 20px - moves circle to right */
+    border-color: white !important;
+    left: 2px !important; /* Keep left position consistent */
+}
+
+/* Ensure unchecked disabled state keeps circle on left */
+label input[type="checkbox"]:disabled:not(:checked) + div::after {
+    transform: translateX(0) !important;
+    left: 2px !important;
+}
+
+.material-icons.text-xs,
+.material-icons-outlined.text-xs {
     font-size: 16px !important;
     width: 16px;
     height: 16px;
     line-height: 16px;
 }
 
-.material-icons.text-sm {
+.material-icons.text-sm,
+.material-icons-outlined.text-sm {
     font-size: 18px !important;
     width: 18px;
     height: 18px;
     line-height: 18px;
 }
 
-.material-icons.text-lg {
+.material-icons.text-base,
+.material-icons-outlined.text-base {
+    font-size: 16px !important;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.material-icons.text-lg,
+.material-icons-outlined.text-lg {
     font-size: 22px !important;
     width: 22px;
     height: 22px;
     line-height: 22px;
 }
 
-.material-icons.text-xl {
+.material-icons.text-xl,
+.material-icons-outlined.text-xl {
     font-size: 24px !important;
     width: 24px;
     height: 24px;
     line-height: 24px;
 }
 
-.material-icons.text-2xl {
+.material-icons.text-2xl,
+.material-icons-outlined.text-2xl {
     font-size: 28px !important;
     width: 28px;
     height: 28px;
     line-height: 28px;
 }
 
-.material-icons.text-3xl {
+.material-icons.text-3xl,
+.material-icons-outlined.text-3xl {
     font-size: 32px !important;
     width: 32px;
     height: 32px;
     line-height: 32px;
 }
 
-.material-icons.text-4xl {
+.material-icons.text-4xl,
+.material-icons-outlined.text-4xl {
     font-size: 40px !important;
     width: 40px;
     height: 40px;
     line-height: 40px;
 }
 
+
+
+/* Glass Blur Modal Backdrop */
+.modal-backdrop-glass {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}

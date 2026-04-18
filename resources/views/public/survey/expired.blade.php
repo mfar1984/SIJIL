@@ -44,7 +44,7 @@
         <div class="bg-white shadow-lg rounded-lg overflow-hidden">
             <div class="p-8 text-center">
                 <div class="flex justify-center mb-6">
-                    <span class="material-icons text-5xl text-amber-500">error_outline</span>
+                    <span class="material-icons-outlined text-5xl text-amber-500">error_outline</span>
                 </div>
                 
                 <h1 class="text-2xl font-bold text-gray-800 mb-2">Survey Unavailable</h1>

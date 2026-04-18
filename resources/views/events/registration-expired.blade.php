@@ -8,7 +8,7 @@
             <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 mr-4">
-                        <span class="material-icons text-white text-3xl">event_busy</span>
+                        <span class="material-icons-outlined text-white text-3xl">event_busy</span>
                     </div>
                     <h1 class="text-white text-xl md:text-2xl font-bold leading-tight">
                         {{ $event->name }}
@@ -19,7 +19,7 @@
             <div class="p-6">
                 <div class="text-center py-8">
                     <div class="mb-6 text-red-500">
-                        <span class="material-icons text-6xl">access_time</span>
+                        <span class="material-icons-outlined text-6xl">access_time</span>
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">Registration Expired</h2>
                     <p class="text-gray-600 mb-6">
@@ -27,7 +27,7 @@
                     </p>
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 text-center">
                         <div class="flex justify-center mb-3">
-                            <span class="material-icons text-gray-500 text-4xl">calendar_today</span>
+                            <span class="material-icons-outlined text-gray-500 text-4xl">calendar_today</span>
                         </div>
                         <div class="text-gray-700 text-base font-semibold">
                             {{ \Carbon\Carbon::parse($event->start_date)->format('d M Y') }}

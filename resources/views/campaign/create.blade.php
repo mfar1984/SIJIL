@@ -7,17 +7,51 @@
 
     <x-slot name="title">Create New Campaign</x-slot>
 
+    <style>
+        /* Tooltip styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
+        }
+    </style>
+
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">campaign</span>
+                <span class="material-icons-outlined mr-2 text-primary-DEFAULT">campaign</span>
                 <h1 class="text-xl font-bold text-gray-800">Create New Campaign</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">Create a new marketing campaign</p>
         </div>
         
         <div class="p-6">
-            <form action="{{ route('campaign.store') }}" method="POST" class="space-y-6" id="campaignForm">
+            <form action="{{ route('campaign.store') }}" method="POST" class="space-y-2" id="campaignForm">
                 @csrf
                 
                 @if ($errors->any())
@@ -32,272 +66,444 @@
                 @endif
                 
                 <!-- Campaign Type Selection -->
-                <div class="mb-6">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Campaign Type</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-blue-500" id="email-campaign-label">
-                            <input type="radio" name="campaign_type" value="email" class="sr-only" {{ old('campaign_type', 'email') == 'email' ? 'checked' : '' }}>
-                            <span class="flex flex-1">
-                                <span class="flex flex-col">
-                                    <span class="flex items-center text-sm font-medium text-gray-900">
-                                        <span class="material-icons text-blue-600 mr-2" id="email-icon">email</span>
-                                        Email Campaign
-                                    </span>
-                                    <span class="mt-1 flex items-center text-xs text-gray-500">
-                                        Send emails to participants
-                                    </span>
-                                </span>
-                            </span>
-                            <span class="material-icons text-blue-600 shrink-0" id="email-check-icon">check_circle</span>
-                        </label>
-                        
-                        <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none hover:border-blue-500" id="sms-campaign-label">
-                            <input type="radio" name="campaign_type" value="sms" class="sr-only" {{ old('campaign_type') == 'sms' ? 'checked' : '' }}>
-                            <span class="flex flex-1">
-                                <span class="flex flex-col">
-                                    <span class="flex items-center text-sm font-medium text-gray-900">
-                                        <span class="material-icons text-gray-600 mr-2" id="sms-icon">sms</span>
-                                        SMS Campaign
-                                    </span>
-                                    <span class="mt-1 flex items-center text-xs text-gray-500">
-                                        Send SMS messages to participants
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">category</span>
+                            Campaign Type
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none border-blue-500" id="email-campaign-label">
+                                <input type="radio" name="campaign_type" value="email" class="sr-only" {{ old('campaign_type', 'email') == 'email' ? 'checked' : '' }}>
+                                <span class="flex flex-1">
+                                    <span class="flex flex-col">
+                                        <span class="flex items-center text-sm font-medium text-gray-900">
+                                            <span class="material-icons-outlined text-blue-600 mr-2" id="email-icon">email</span>
+                                            Email Campaign
+                                        </span>
+                                        <span class="mt-1 flex items-center text-xs text-gray-500">
+                                            Send emails to participants
+                                        </span>
                                     </span>
                                 </span>
-                            </span>
-                            <span class="material-icons text-blue-600 shrink-0 hidden" id="sms-check-icon">check_circle</span>
-                        </label>
+                                <span class="material-icons-outlined text-blue-600 shrink-0" id="email-check-icon">check_circle</span>
+                            </label>
+                            
+                            <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none hover:border-blue-500" id="sms-campaign-label">
+                                <input type="radio" name="campaign_type" value="sms" class="sr-only" {{ old('campaign_type') == 'sms' ? 'checked' : '' }}>
+                                <span class="flex flex-1">
+                                    <span class="flex flex-col">
+                                        <span class="flex items-center text-sm font-medium text-gray-900">
+                                            <span class="material-icons-outlined text-gray-600 mr-2" id="sms-icon">sms</span>
+                                            SMS Campaign
+                                        </span>
+                                        <span class="mt-1 flex items-center text-xs text-gray-500">
+                                            Send SMS messages to participants
+                                        </span>
+                                    </span>
+                                </span>
+                                <span class="material-icons-outlined text-blue-600 shrink-0 hidden" id="sms-check-icon">check_circle</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Campaign Details -->
-                <div class="mb-6">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Campaign Details</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="campaign_name" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">campaign</span>
-                                Campaign Name <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">drive_file_rename_outline</span>
-                                </div>
-                                <input type="text" id="campaign_name" name="campaign_name" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter campaign name" value="{{ old('campaign_name') }}" required>
-                            </div>
-                            <p class="mt-1 text-[10px] text-gray-500">Enter a descriptive name for your campaign</p>
-                        </div>
-                        
-                        <div>
-                            <label for="campaign_description" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">description</span>
-                                Description
-                            </label>
-                            <div class="relative">
-                                <textarea id="campaign_description" name="campaign_description" rows="3" class="w-full text-xs border-gray-300 rounded-[1px] py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter campaign description">{{ old('campaign_description') }}</textarea>
-                            </div>
-                            <p class="mt-1 text-[10px] text-gray-500">Provide a brief description of your campaign's purpose</p>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="start_date" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_available</span>
-                                    Start Date <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">calendar_today</span>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">campaign</span>
+                            Campaign Details
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Campaign Name -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="campaign_name" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Campaign Name <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Enter a descriptive name for your campaign
+                                        </div>
                                     </div>
-                                    <input type="date" id="start_date" name="start_date" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('start_date') }}" required>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">drive_file_rename_outline</span>
+                                        </div>
+                                        <input type="text" id="campaign_name" name="campaign_name" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter campaign name" value="{{ old('campaign_name') }}" required>
+                                    </div>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Date when the campaign will start</p>
                             </div>
                             
-                            <div>
-                                <label for="end_date" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_busy</span>
-                                    End Date
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">calendar_today</span>
+                            <!-- Description -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                <label for="campaign_description" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                                    Description
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Provide a brief description of your campaign's purpose
+                                        </div>
                                     </div>
-                                    <input type="date" id="end_date" name="end_date" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('end_date') }}">
+                                </label>
+                                <div class="flex-1">
+                                    <textarea id="campaign_description" name="campaign_description" rows="3" class="w-full text-xs border-gray-300 rounded py-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter campaign description">{{ old('campaign_description') }}</textarea>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Date when the campaign will end (optional)</p>
+                            </div>
+                            
+                            <!-- Start Date -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="start_date" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Start Date <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Date when the campaign will start
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
+                                        </div>
+                                        <input type="date" id="start_date" name="start_date" class="w-full h-9 text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('start_date') }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- End Date -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="end_date" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    End Date
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Date when the campaign will end (optional)
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
+                                        </div>
+                                        <input type="date" id="end_date" name="end_date" class="w-full h-9 text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('end_date') }}">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <hr class="my-6">
-                
                 <!-- Target Audience -->
-                <div class="mb-6">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Target Audience</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="audience_type" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">groups</span>
-                                Select Audience <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">people</span>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">groups</span>
+                            Target Audience
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Select Audience -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="audience_type" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Select Audience <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Choose which participants will receive this campaign
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">people</span>
+                                        </div>
+                                        <select id="audience_type" name="audience_type" class="w-full h-9 text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
+                                            <option value="">Select audience type</option>
+                                            <option value="all_participants" {{ old('audience_type') == 'all_participants' ? 'selected' : '' }}>All Participants</option>
+                                            <option value="specific_event" {{ old('audience_type') == 'specific_event' ? 'selected' : '' }}>Specific Event</option>
+                                            <option value="custom_filter" {{ old('audience_type') == 'custom_filter' ? 'selected' : '' }}>Custom Filter</option>
+                                            <option value="custom_emails" {{ old('audience_type') == 'custom_emails' ? 'selected' : '' }}>Custom</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <select id="audience_type" name="audience_type" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
-                                    <option value="">Select audience type</option>
-                                    <option value="all_participants" {{ old('audience_type') == 'all_participants' ? 'selected' : '' }}>All Participants</option>
-                                    <option value="specific_event" {{ old('audience_type') == 'specific_event' ? 'selected' : '' }}>Specific Event</option>
-                                    <option value="custom_filter" {{ old('audience_type') == 'custom_filter' ? 'selected' : '' }}>Custom Filter</option>
-                                    <option value="custom_emails" {{ old('audience_type') == 'custom_emails' ? 'selected' : '' }}>Custom</option>
-                                </select>
                             </div>
-                            <p class="mt-1 text-[10px] text-gray-500">Choose which participants will receive this campaign</p>
-                        </div>
-                        
-                        <div id="event_selection" class="hidden">
-                            <label for="event_id" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                                Select Event
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">event_note</span>
+                            
+                            <!-- Event Selection (conditional) -->
+                            <div id="event_selection" class="hidden flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="event_id" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Select Event
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Target participants from a specific event
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">event_note</span>
+                                        </div>
+                                        <select id="event_id" name="event_id" class="w-full h-9 text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                            <option value="">Select an event</option>
+                                            @foreach($events as $event)
+                                                <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
-                                <select id="event_id" name="event_id" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                                    <option value="">Select an event</option>
-                                    @foreach($events as $event)
-                                        <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
-                                    @endforeach
-                                </select>
                             </div>
-                            <p class="mt-1 text-[10px] text-gray-500">Target participants from a specific event</p>
-                        </div>
-                        
-                        <div id="custom_filter_options" class="hidden space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="filter_age" class="block text-xs font-medium text-gray-700 mb-1">Age Range</label>
-                                    <select id="filter_age" name="filter_age" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                                        <option value="">Any age</option>
-                                        <option value="18-24" {{ old('filter_age') == '18-24' ? 'selected' : '' }}>18-24</option>
-                                        <option value="25-34" {{ old('filter_age') == '25-34' ? 'selected' : '' }}>25-34</option>
-                                        <option value="35-44" {{ old('filter_age') == '35-44' ? 'selected' : '' }}>35-44</option>
-                                        <option value="45+" {{ old('filter_age') == '45+' ? 'selected' : '' }}>45+</option>
-                                    </select>
+                            
+                            <!-- Custom Filter Options (conditional) -->
+                            <div id="custom_filter_options" class="hidden space-y-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="filter_age" class="block text-xs font-medium text-gray-700 mb-1">Age Range</label>
+                                        <select id="filter_age" name="filter_age" class="w-full h-9 rounded border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-xs">
+                                            <option value="">Any age</option>
+                                            <option value="18-24" {{ old('filter_age') == '18-24' ? 'selected' : '' }}>18-24</option>
+                                            <option value="25-34" {{ old('filter_age') == '25-34' ? 'selected' : '' }}>25-34</option>
+                                            <option value="35-44" {{ old('filter_age') == '35-44' ? 'selected' : '' }}>35-44</option>
+                                            <option value="45+" {{ old('filter_age') == '45+' ? 'selected' : '' }}>45+</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="filter_gender" class="block text-xs font-medium text-gray-700 mb-1">Gender</label>
+                                        <select id="filter_gender" name="filter_gender" class="w-full h-9 rounded border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-xs">
+                                            <option value="">Any gender</option>
+                                            <option value="male" {{ old('filter_gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                            <option value="female" {{ old('filter_gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 
                                 <div>
-                                    <label for="filter_gender" class="block text-xs font-medium text-gray-700 mb-1">Gender</label>
-                                    <select id="filter_gender" name="filter_gender" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                                        <option value="">Any gender</option>
-                                        <option value="male" {{ old('filter_gender') == 'male' ? 'selected' : '' }}>Male</option>
-                                        <option value="female" {{ old('filter_gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                    <label for="filter_attendance" class="block text-xs font-medium text-gray-700 mb-1">Attendance Status</label>
+                                    <select id="filter_attendance" name="filter_attendance" class="w-full h-9 rounded border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-xs">
+                                        <option value="">Any status</option>
+                                        <option value="attended" {{ old('filter_attendance') == 'attended' ? 'selected' : '' }}>Attended</option>
+                                        <option value="not_attended" {{ old('filter_attendance') == 'not_attended' ? 'selected' : '' }}>Not Attended</option>
+                                        <option value="registered" {{ old('filter_attendance') == 'registered' ? 'selected' : '' }}>Registered Only</option>
                                     </select>
                                 </div>
                             </div>
                             
-                            <div>
-                                <label for="filter_attendance" class="block text-xs font-medium text-gray-700 mb-1">Attendance Status</label>
-                                <select id="filter_attendance" name="filter_attendance" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm">
-                                    <option value="">Any status</option>
-                                    <option value="attended" {{ old('filter_attendance') == 'attended' ? 'selected' : '' }}>Attended</option>
-                                    <option value="not_attended" {{ old('filter_attendance') == 'not_attended' ? 'selected' : '' }}>Not Attended</option>
-                                    <option value="registered" {{ old('filter_attendance') == 'registered' ? 'selected' : '' }}>Registered Only</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div id="custom_emails_input" class="hidden space-y-4">
-                            <div>
-                                <label for="custom_emails" class="block text-xs font-medium text-gray-700 mb-1">
+                            <!-- Custom Emails Input (conditional) -->
+                            <div id="custom_emails_input" class="hidden flex flex-col md:flex-row md:items-start gap-3">
+                                <label for="custom_emails" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
                                     Custom Email Addresses <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Enter custom email addresses separated by commas for testing purposes
+                                        </div>
+                                    </div>
                                 </label>
-                                <textarea id="custom_emails" name="custom_emails" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter email addresses separated by commas, e.g. test@example.com, user@domain.com">{{ old('custom_emails') }}</textarea>
-                                <p class="mt-1 text-[10px] text-gray-500">Enter custom email addresses separated by commas for testing purposes</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Email Subject (always visible) -->
-                <div class="mb-6" id="email_subject_section">
-                    <div class="space-y-4">
-                        <div>
-                            <label for="email_subject" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">subject</span>
-                                Email Subject <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" id="email_subject" name="email_subject" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('email_subject', '') }}" required>
-                            </div>
-                            <p class="mt-1 text-[10px] text-gray-500">The subject line that will appear in recipients' inbox</p>
-                            @error('email_subject')
-                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Email Campaign Content (shown by default) -->
-                <div id="email_content" class="mb-6">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Email Content</h2>
-                    <div class="space-y-4">                        
-                        <div>
-                            <label for="email_template" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">template</span>
-                                Email Template
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">dashboard</span>
+                                <div class="flex-1">
+                                    <textarea id="custom_emails" name="custom_emails" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter email addresses separated by commas, e.g. test@example.com, user@domain.com">{{ old('custom_emails') }}</textarea>
                                 </div>
-                                <select id="email_template" name="email_template" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                                    <option value="">-- Select a Template --</option>
-                                    <option value="welcome">Welcome Email</option>
-                                    <option value="certificate">Certificate Ready</option>
-                                    <option value="custom">Custom Template</option>
-                                </select>
                             </div>
-                            <p class="mt-1 text-[10px] text-gray-500">Choose a pre-designed template or create your own</p>
-                        </div>
-                        
-                        <div>
-                            <label for="email_content" class="block text-xs font-medium text-gray-700 mb-1">Email Content <span class="text-red-500">*</span></label>
-                            <div class="border border-gray-300 rounded-md">
-                                <textarea id="email_content" name="email_content" rows="15" class="w-full border-0 bg-gray-50 focus:ring-0 text-sm" placeholder="Compose your email content here..."></textarea>
-                            </div>
-                            <p class="mt-1 text-[10px] text-gray-500">Compose the body of your email with formatting options.</p>
-                        </div>
-                        
-                        <div class="flex items-center">
-                            <input type="checkbox" id="include_unsubscribe" name="include_unsubscribe" class="rounded border-gray-300 text-primary-DEFAULT shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" checked>
-                            <label for="include_unsubscribe" class="ml-2 block text-xs text-gray-700">Include unsubscribe link (recommended)</label>
                         </div>
                     </div>
                 </div>
                 
-                <!-- SMS Campaign Content (hidden by default) -->
-                <div id="sms_content" class="mb-6 hidden">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">SMS Content</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="sms_message" class="block text-xs font-medium text-gray-700 mb-1">
-                                Message Content <span class="text-red-500">*</span>
-                            </label>
-                            <textarea id="sms_message" name="sms_message" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter SMS message (160 characters max)">{{ old('sms_message') }}</textarea>
-                            <p class="mt-1 text-xs text-gray-500">Characters: <span id="sms_char_count">0</span>/160</p>
+                <!-- Email Subject -->
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm" id="email_subject_section">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">subject</span>
+                            Email Subject
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="email_subject" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Subject Line <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            The subject line that will appear in recipients' inbox
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <input type="text" id="email_subject" name="email_subject" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('email_subject', '') }}" required>
+                                    @error('email_subject')
+                                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div>
-                            <label for="include_shortlink" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">link</span>
-                                Include Short Link
-                            </label>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="include_shortlink" name="include_shortlink" class="rounded border-gray-300 text-primary-DEFAULT shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" {{ old('include_shortlink') ? 'checked' : '' }}>
-                                <label for="include_shortlink" class="ml-2 block text-xs text-gray-700">Add a shortened URL to the message</label>
+                    </div>
+                </div>
+                
+                <!-- Email Campaign Content -->
+                <div id="email_content" class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">email</span>
+                            Email Content
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Email Template -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="email_template" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Email Template
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Choose a pre-designed template or create your own
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">dashboard</span>
+                                        </div>
+                                        <select id="email_template" name="email_template" class="w-full h-9 text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                            <option value="">-- Select a Template --</option>
+                                            <option value="welcome">Welcome Email</option>
+                                            <option value="certificate">Certificate Ready</option>
+                                            <option value="custom">Custom Template</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Email Content -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                <label for="email_content" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                                    Email Content <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Compose the body of your email with formatting options
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="border border-gray-300 rounded-md">
+                                        <textarea id="email_content" name="email_content" rows="15" class="w-full border-0 bg-gray-50 focus:ring-0 text-sm" placeholder="Compose your email content here..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Include Unsubscribe -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <div class="md:w-40"></div>
+                                <div class="flex-1">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="include_unsubscribe" name="include_unsubscribe" class="rounded border-gray-300 text-primary-DEFAULT shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" checked>
+                                        <label for="include_unsubscribe" class="ml-2 block text-xs text-gray-700">Include unsubscribe link (recommended)</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SMS Campaign Content -->
+                <div id="sms_content" class="bg-white border border-gray-200 rounded-md shadow-sm hidden">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">sms</span>
+                            SMS Content
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- SMS Message -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                <label for="sms_message" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                                    Message Content <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Enter SMS message (160 characters max)
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <textarea id="sms_message" name="sms_message" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter SMS message (160 characters max)">{{ old('sms_message') }}</textarea>
+                                    <p class="mt-1 text-xs text-gray-500">Characters: <span id="sms_char_count">0</span>/160</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Include Short Link -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <div class="md:w-40"></div>
+                                <div class="flex-1">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="include_shortlink" name="include_shortlink" class="rounded border-gray-300 text-primary-DEFAULT shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50" {{ old('include_shortlink') ? 'checked' : '' }}>
+                                        <label for="include_shortlink" class="ml-2 block text-xs text-gray-700">Add a shortened URL to the message</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -306,33 +512,45 @@
 
                 
                 <!-- Scheduling Options -->
-                <div class="mb-6">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Scheduling Options</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-2">When to Send</label>
-                            <div class="space-y-2">
-                                <div class="flex items-center">
-                                    <input type="radio" id="send_now" name="schedule_type" value="now" class="focus:ring-primary-DEFAULT h-4 w-4 text-primary-DEFAULT border-gray-300" {{ old('schedule_type', 'now') == 'now' ? 'checked' : '' }}>
-                                    <label for="send_now" class="ml-2 block text-sm text-gray-700">Send immediately</label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="radio" id="send_scheduled" name="schedule_type" value="scheduled" class="focus:ring-primary-DEFAULT h-4 w-4 text-primary-DEFAULT border-gray-300" {{ old('schedule_type') == 'scheduled' ? 'checked' : '' }}>
-                                    <label for="send_scheduled" class="ml-2 block text-sm text-gray-700">Schedule for later</label>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">schedule</span>
+                            Scheduling Options
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- When to Send -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">When to Send</label>
+                                <div class="flex-1">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center">
+                                            <input type="radio" id="send_now" name="schedule_type" value="now" class="focus:ring-primary-DEFAULT h-4 w-4 text-primary-DEFAULT border-gray-300" {{ old('schedule_type', 'now') == 'now' ? 'checked' : '' }}>
+                                            <label for="send_now" class="ml-2 block text-sm text-gray-700">Send immediately</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input type="radio" id="send_scheduled" name="schedule_type" value="scheduled" class="focus:ring-primary-DEFAULT h-4 w-4 text-primary-DEFAULT border-gray-300" {{ old('schedule_type') == 'scheduled' ? 'checked' : '' }}>
+                                            <label for="send_scheduled" class="ml-2 block text-sm text-gray-700">Schedule for later</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div id="scheduled_options" class="hidden">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="scheduled_date" class="block text-xs font-medium text-gray-700 mb-1">Date</label>
-                                    <input type="date" id="scheduled_date" name="scheduled_date" class="w-full h-9 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" value="{{ old('scheduled_date') }}">
-                                </div>
-                                
-                                <div>
-                                    <label for="scheduled_time" class="block text-xs font-medium text-gray-700 mb-1">Time</label>
-                                    <input type="time" id="scheduled_time" name="scheduled_time" class="w-full h-9 rounded-md border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-sm" value="{{ old('scheduled_time') }}">
+                            
+                            <!-- Scheduled Options (conditional) -->
+                            <div id="scheduled_options" class="hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="scheduled_date" class="block text-xs font-medium text-gray-700 mb-1">Date</label>
+                                        <input type="date" id="scheduled_date" name="scheduled_date" class="w-full h-9 rounded border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-xs" value="{{ old('scheduled_date') }}">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="scheduled_time" class="block text-xs font-medium text-gray-700 mb-1">Time</label>
+                                        <input type="time" id="scheduled_time" name="scheduled_time" class="w-full h-9 rounded border-gray-300 shadow-sm focus:border-primary-DEFAULT focus:ring focus:ring-primary-DEFAULT focus:ring-opacity-50 text-xs" value="{{ old('scheduled_time') }}">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -340,17 +558,17 @@
                 </div>
                 
                 <!-- Form Actions -->
-                <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
-                    <a href="{{ route('campaign.index') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <a href="{{ route('campaign.index') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button type="submit" name="save_draft" class="px-3 h-[36px] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">save</span>
+                    <button type="submit" name="save_draft" class="px-3 h-[36px] bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">save</span>
                         Save as Draft
                     </button>
-                    <button type="submit" name="save_send" class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">send</span>
+                    <button type="submit" name="save_send" class="px-3 h-[36px] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">send</span>
                         Save & Send
                     </button>
                 </div>

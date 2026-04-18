@@ -407,7 +407,7 @@
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 mr-3">
-                        <span class="material-icons text-white text-xl">event</span>
+                        <span class="material-icons-outlined text-white text-xl">event</span>
                     </div>
                     <h1 class="text-white text-lg font-semibold leading-tight">
                         {{ $event->name }}
@@ -487,7 +487,7 @@
         <div x-show="step === 2" class="bg-white shadow rounded-lg overflow-hidden mb-6 text-xs">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-3">
                 <h2 class="text-white text-base font-semibold flex items-center">
-                    <span class="material-icons text-white text-sm mr-2">rule</span>
+                    <span class="material-icons-outlined text-white text-sm mr-2">rule</span>
                     Syarat-syarat Program/Event
                 </h2>
             </div>
@@ -496,7 +496,7 @@
             </div>
             <div class="p-4 flex justify-end">
                 <button type="button" @click="next()" class="btn btn-primary flex items-center gap-2">
-                    <span class="material-icons text-[16px]">arrow_forward</span>
+                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                     <span>Next</span>
                 </button>
             </div>
@@ -506,7 +506,7 @@
         <form x-show="step === 3" @submit.prevent="next()" class="bg-white shadow rounded-lg overflow-hidden mb-6 text-xs">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3">
                 <h2 class="text-white text-base font-semibold flex items-center">
-                    <span class="material-icons text-white text-sm mr-2">person</span>
+                    <span class="material-icons-outlined text-white text-sm mr-2">person</span>
                     Personal Information
                 </h2>
             </div>
@@ -590,7 +590,7 @@
             <div class="p-4 flex justify-between">
                 <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
                 <button type="submit" class="btn btn-primary flex items-center gap-2">
-                    <span class="material-icons text-[16px]">arrow_forward</span>
+                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                     <span>Next</span>
                 </button>
             </div>
@@ -600,7 +600,7 @@
         <form x-show="step === 4" @submit.prevent="next()" class="bg-white shadow rounded-lg overflow-hidden mb-6 text-xs">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3">
                 <h2 class="text-white text-base font-semibold flex items-center">
-                    <span class="material-icons text-white text-sm mr-2">work</span>
+                    <span class="material-icons-outlined text-white text-sm mr-2">work</span>
                     Organization & Contact
                 </h2>
             </div>
@@ -712,7 +712,7 @@
             <div class="p-4 flex justify-between">
                 <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
                 <button type="submit" class="btn btn-primary flex items-center gap-2">
-                    <span class="material-icons text-[16px]">arrow_forward</span>
+                    <span class="material-icons-outlined text-[16px]">arrow_forward</span>
                     <span>Next</span>
                 </button>
             </div>
@@ -723,7 +723,7 @@
             @csrf
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3">
                 <h2 class="text-white text-base font-semibold flex items-center">
-                    <span class="material-icons text-white text-sm mr-2">preview</span>
+                    <span class="material-icons-outlined text-white text-sm mr-2">preview</span>
                     Preview & Submit
                 </h2>
             </div>
@@ -760,7 +760,7 @@
             <div class="p-4 flex justify-between">
                 <button type="button" @click="prev()" class="btn btn-secondary">Back</button>
                 <button type="submit" class="btn btn-success flex items-center gap-2">
-                    <span class="material-icons text-[16px]">check_circle</span>
+                    <span class="material-icons-outlined text-[16px]">check_circle</span>
                     <span>Submit</span>
                 </button>
             </div>
@@ -770,7 +770,7 @@
         <div x-show="step === 1" class="bg-white shadow rounded-lg overflow-hidden mb-6 text-xs">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-3">
                 <h2 class="text-white text-base font-semibold flex items-center">
-                    <span class="material-icons text-white text-sm mr-2">info</span>
+                    <span class="material-icons-outlined text-white text-sm mr-2">info</span>
                     Welcome! Please review the event information and click Next to proceed.
                 </h2>
             </div>
@@ -790,11 +790,11 @@
 
         <!-- Auth Gate Modal (IC Lookup + Login/Register) -->
         <div x-show="auth.open" style="display:none" class="fixed inset-0 z-50">
-            <div class="absolute inset-0 bg-black bg-opacity-40" @click="auth.open=false"></div>
+            <div class="absolute inset-0 modal-backdrop-glass" @click="auth.open=false"></div>
             <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white modal-card shadow w-full max-w-md text-xs">
                 <div class="px-4 py-3 border-b flex items-center justify-between">
                     <h3 class="font-semibold">Account Verification (IC/Passport)</h3>
-                    <button class="text-gray-500" @click="auth.open=false"><span class="material-icons text-sm">close</span></button>
+                    <button class="text-gray-500" @click="auth.open=false"><span class="material-icons-outlined text-sm">close</span></button>
                 </div>
                 <div class="p-4 space-y-3">
                     <!-- Step: Lookup -->
@@ -812,7 +812,7 @@
                             <div class="flex items-center justify-between mt-3">
                                 <div class="hint">Format: 000000-00-0000</div>
                                 <button type="button" @click="submitLookup()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[16px]" x-show="!auth.loading">search</span>
+                                    <span class="material-icons-outlined text-[16px]" x-show="!auth.loading">search</span>
                                     <span x-show="auth.loading" class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                                     <span>Check</span>
                                 </button>
@@ -846,11 +846,11 @@
                             </div>
                             <div class="flex items-center justify-between mt-2">
                                 <button type="button" @click="doLogin()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[16px]">login</span>
+                                    <span class="material-icons-outlined text-[16px]">login</span>
                                     <span>Login</span>
                                 </button>
                                 <button type="button" @click="doResetPassword()" class="btn btn-danger flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[16px]">lock_reset</span>
+                                    <span class="material-icons-outlined text-[16px]">lock_reset</span>
                                     <span>Reset Password</span>
                                 </button>
                             </div>
@@ -878,7 +878,7 @@
                             </div>
                             <div class="flex justify-end">
                                 <button type="button" @click="doRegister()" class="btn btn-success flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons text-[16px]">person_add</span>
+                                    <span class="material-icons-outlined text-[16px]">person_add</span>
                                     <span>Daftar & Teruskan</span>
                                 </button>
                             </div>

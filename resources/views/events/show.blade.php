@@ -7,32 +7,66 @@
 
     <x-slot name="title">Event Details</x-slot>
 
+    <style>
+        /* Tooltip styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
+        }
+    </style>
+
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <span class="material-icons mr-2 text-primary-DEFAULT">event_note</span>
+                    <span class="material-icons-outlined mr-2 text-primary-DEFAULT">event_note</span>
                     <h1 class="text-xl font-bold text-gray-800">Event Details</h1>
                 </div>
                 <div class="flex space-x-3">
+                    <a href="{{ route('event.management') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
+                        Back to List
+                    </a>
                     @can('events.update')
                     <a href="{{ route('event.edit', $event->id) }}" class="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">edit</span>
+                        <span class="material-icons-outlined text-xs mr-1">edit</span>
                         Edit Event
                     </a>
                     @endcan
-                    <a href="{{ route('event.management') }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">arrow_back</span>
-                        Back to List
-                    </a>
                 </div>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">View detailed information about this event</p>
         </div>
         
-        <div class="p-6 space-y-6">
+        <div class="p-6 space-y-2">
             <!-- Event Status Banner -->
-            <div class="rounded p-3 mb-6 flex items-center 
+            <div class="rounded p-3 mb-4 flex items-center 
                 @if($event->status === 'active')
                     bg-status-active-bg border border-status-active-text/20
                 @elseif($event->status === 'pending')
@@ -41,7 +75,7 @@
                     bg-status-completed-bg border border-status-completed-text/20
                 @endif
             ">
-                <span class="material-icons mr-2 
+                <span class="material-icons-outlined mr-2 
                     @if($event->status === 'active')
                         text-status-active-text
                     @elseif($event->status === 'pending')
@@ -82,326 +116,357 @@
                 </div>
             </div>
             
-            <!-- Basic Information -->
-            <div class="border-b border-gray-200 pb-5">
-                <h2 class="text-sm font-semibold text-gray-700 mb-4">Basic Information</h2>
-                <div class="grid grid-cols-1 gap-6">
-                    <!-- Event Name -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                            Event Name
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">title</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->name }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Organizer -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">people</span>
-                            Organizer
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">business</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->organizer }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Event Description -->
-                    <div class="mt-4">
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">description</span>
-                            Event Description
-                        </label>
-                        <div class="relative">
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] py-2 px-3 border min-h-[80px] whitespace-pre-wrap">
-                                {{ $event->description ?? 'No description provided.' }}
-                            </div>
-                        </div>
-                    </div>
-                    @if($event->poster)
-                    <!-- Event Poster -->
-                    <div class="mt-2">
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">image</span>
-                            Poster
-                        </label>
-                        <div class="relative">
-                            <a href="{{ asset('storage/'.$event->poster) }}" target="_blank" class="inline-block">
-                                <img src="{{ asset('storage/'.$event->poster) }}" alt="Event Poster" class="max-h-96 rounded border border-gray-200">
-                            </a>
-                        </div>
-                    </div>
-                    @endif
-                    <!-- Event Terms & Conditions -->
-                    <div class="mt-4">
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">rule</span>
-                            Event Terms & Conditions
-                        </label>
-                        <div class="relative">
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] py-2 px-3 border min-h-[60px]">
-                                {!! $event->condition ?? '<p class="text-gray-500 italic">No terms & conditions provided.</p>' !!}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Date and Time -->
-            <div class="border-b border-gray-200 pb-5">
-                <h2 class="text-sm font-semibold text-gray-700 mb-4">Date and Time</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <!-- Start Date & Time -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                            Start Date & Time
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">calendar_today</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ \Carbon\Carbon::parse($event->start_date)->format('l, d F Y') }} - {{ \Carbon\Carbon::parse($event->start_time)->format('h:iA') }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- End Date & Time -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                            End Date & Time
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">calendar_today</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ \Carbon\Carbon::parse($event->end_date)->format('l, d F Y') }} - {{ \Carbon\Carbon::parse($event->end_time)->format('h:iA') }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Location -->
-            <div class="border-b border-gray-200 pb-5">
-                <h2 class="text-sm font-semibold text-gray-700 mb-4">Location & Venue</h2>
-                <div class="grid grid-cols-1 gap-6">
-                    <!-- Location -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">location_on</span>
-                            Location
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">place</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->location }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Address -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">pin_drop</span>
-                            Address
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">map</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->address ?? 'No address provided.' }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Capacity and Registration -->
-            <div class="border-b border-gray-200 pb-5">
-                <h2 class="text-sm font-semibold text-gray-700 mb-4">Capacity & Registration</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Maximum Participants -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">people</span>
-                            Maximum Capacity
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">people_outline</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->max_participants ?? 'Not specified' }}
-                            </div>
-                        </div>
-                    </div>
+            <!-- Basic Information Section -->
+            <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">info</span>
+                        Basic Information
+                    </h2>
                 </div>
                 
-                <!-- Registration Status -->
-                <div class="mt-4">
-                    @if($event->max_participants && $event->participants->count() >= $event->max_participants)
-                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-                            <div class="flex">
-                                <div class="py-1"><span class="material-icons text-xl mr-2">warning</span></div>
-                                <div>
-                                    <p class="font-bold">Event is fully booked</p>
-                                    <p class="text-sm">The maximum number of participants has been reached.</p>
+                <div class="p-4">
+                    <div class="space-y-3">
+                        <!-- Event Name -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Event Name</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">title</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->name }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    @elseif($event->status === 'active')
-                        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative" role="alert">
-                            <div class="flex">
-                                <div class="py-1"><span class="material-icons text-xl mr-2">check_circle</span></div>
-                                <div>
-                                    <p class="font-bold">Registration is open</p>
-                                    <p class="text-sm">
-                                        @if($event->max_participants)
-                                        {{ $event->max_participants - $event->participants->count() }} spots remaining.
+                        
+                        <!-- Organizer -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Organizer</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">business</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->organizer }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Event Description -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">Description</label>
+                            <div class="flex-1">
+                                <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] py-2 px-3 border min-h-[80px] whitespace-pre-wrap">
+                                    {{ $event->description ?? 'No description provided.' }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if($event->poster)
+                        <!-- Event Poster -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">Poster</label>
+                            <div class="flex-1">
+                                <a href="{{ asset('storage/'.$event->poster) }}" target="_blank" class="inline-block">
+                                    <img src="{{ asset('storage/'.$event->poster) }}" alt="Event Poster" class="max-h-96 rounded border border-gray-200">
+                                </a>
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- Event Terms & Conditions -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">Terms & Conditions</label>
+                            <div class="flex-1">
+                                <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] py-2 px-3 border min-h-[60px]">
+                                    {!! $event->condition ?? '<p class="text-gray-500 italic">No terms & conditions provided.</p>' !!}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date and Time Section -->
+            <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">schedule</span>
+                        Date and Time
+                    </h2>
+                </div>
+                
+                <div class="p-4">
+                    <div class="space-y-3">
+                        <!-- Start Date & Time -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Start Date & Time</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ \Carbon\Carbon::parse($event->start_date)->format('l, d F Y') }} - {{ \Carbon\Carbon::parse($event->start_time)->format('h:iA') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- End Date & Time -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">End Date & Time</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ \Carbon\Carbon::parse($event->end_date)->format('l, d F Y') }} - {{ \Carbon\Carbon::parse($event->end_time)->format('h:iA') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Location Section -->
+            <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">location_on</span>
+                        Location & Venue
+                    </h2>
+                </div>
+                
+                <div class="p-4">
+                    <div class="space-y-3">
+                        <!-- Location -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Location</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">place</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->location }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Address -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">Address</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">map</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->address ?? 'No address provided.' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Capacity and Registration Section -->
+            <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">groups</span>
+                        Capacity & Registration
+                    </h2>
+                </div>
+                
+                <div class="p-4">
+                    <div class="space-y-3">
+                        <!-- Maximum Participants -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Maximum Capacity</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">people_outline</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->max_participants ?? 'Not specified' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Registration Status -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <div class="md:w-40"></div>
+                            <div class="flex-1">
+                                @if($event->max_participants && $event->participants->count() >= $event->max_participants)
+                                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                        <div class="flex">
+                                            <div class="py-1"><span class="material-icons-outlined text-xl mr-2">warning</span></div>
+                                            <div>
+                                                <p class="font-bold">Event is fully booked</p>
+                                                <p class="text-sm">The maximum number of participants has been reached.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif($event->status === 'active')
+                                    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative" role="alert">
+                                        <div class="flex">
+                                            <div class="py-1"><span class="material-icons-outlined text-xl mr-2">check_circle</span></div>
+                                            <div>
+                                                <p class="font-bold">Registration is open</p>
+                                                <p class="text-sm">
+                                                    @if($event->max_participants)
+                                                    {{ $event->max_participants - $event->participants->count() }} spots remaining.
+                                                    @else
+                                                    Unlimited spots available.
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Information Section -->
+            <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">contact_phone</span>
+                        Contact Information
+                    </h2>
+                </div>
+                
+                <div class="p-4">
+                    <div class="space-y-3">
+                        <!-- Contact Person -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Contact Person</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">person_outline</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->contact_person ?? 'Not specified' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contact Email -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Contact Email</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">mail_outline</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        @if($event->contact_email)
+                                        <a href="mailto:{{ $event->contact_email }}" class="text-blue-600 hover:underline">
+                                            {{ $event->contact_email }}
+                                        </a>
                                         @else
-                                        Unlimited spots available.
+                                        Not specified
                                         @endif
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    @endif
-                </div>
-            </div>
-            
-            <!-- Contact Information -->
-            <div class="border-b border-gray-200 pb-5">
-                <h2 class="text-sm font-semibold text-gray-700 mb-4">Contact Information</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Contact Person -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">person</span>
-                            Contact Person
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">person_outline</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->contact_person ?? 'Not specified' }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Contact Email -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">email</span>
-                            Contact Email
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">mail_outline</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                @if($event->contact_email)
-                                <a href="mailto:{{ $event->contact_email }}" class="text-blue-600 hover:underline">
-                                    {{ $event->contact_email }}
-                                </a>
-                                @else
-                                Not specified
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Contact Phone -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
-                            Contact Phone
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">call</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                @if($event->contact_phone)
-                                <a href="tel:{{ $event->contact_phone }}" class="text-blue-600 hover:underline">
-                                    {{ $event->contact_phone }}
-                                </a>
-                                @else
-                                Not specified
-                                @endif
+                        
+                        <!-- Contact Phone -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Contact Phone</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">call</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        @if($event->contact_phone)
+                                        <a href="tel:{{ $event->contact_phone }}" class="text-blue-600 hover:underline">
+                                            {{ $event->contact_phone }}
+                                        </a>
+                                        @else
+                                        Not specified
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Administrative Information -->
-            <div>
-                <h2 class="text-sm font-semibold text-gray-700 mb-4">Administrative Information</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Created Date -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">today</span>
-                            Created Date
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">date_range</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->created_at->format('d M Y - H:i') }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Updated Date -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">update</span>
-                            Updated Date
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">edit_calendar</span>
-                            </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->updated_at->format('d M Y - H:i') }}
+            <!-- Administrative Information Section -->
+            <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                    <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">admin_panel_settings</span>
+                        Administrative Information
+                    </h2>
+                </div>
+                
+                <div class="p-4">
+                    <div class="space-y-3">
+                        <!-- Created Date -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Created Date</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">date_range</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->created_at->format('d M Y - H:i') }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Created By -->
-                    <div>
-                        <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">person</span>
-                            Created By
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">account_circle</span>
+                        
+                        <!-- Updated Date -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Updated Date</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">edit_calendar</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->updated_at->format('d M Y - H:i') }}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
-                                {{ $event->user ? $event->user->name : 'Unknown' }}
+                        </div>
+                        
+                        <!-- Created By -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-40">Created By</label>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="material-icons-outlined text-[#004aad] text-base">account_circle</span>
+                                    </div>
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                        {{ $event->user ? $event->user->name : 'Unknown' }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -409,4 +474,4 @@
             </div>
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>

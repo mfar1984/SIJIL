@@ -11,7 +11,7 @@
             name="email"
             id="email"
             label="Email"
-            icon="mail"
+            icon="email"
             required
             autocomplete="username"
             :value="old('email')"
@@ -47,7 +47,7 @@
     </div>
 
     <!-- Legal Modal -->
-    <div id="legalModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4" onclick="closeLegalModal()">
+    <div id="legalModal" class="hidden fixed inset-0 modal-backdrop-glass z-[9999] flex items-center justify-center p-4" onclick="closeLegalModal()">
         <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-slideUp" onclick="event.stopPropagation()">
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">

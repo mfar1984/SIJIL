@@ -14,7 +14,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">insights</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">insights</span>
                         <h1 class="text-xl font-bold text-gray-800">Analytics for: {{ $survey->title }}</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">
@@ -22,12 +22,12 @@
                     </p>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('survey.responses', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">format_list_bulleted</span>
+                    <a href="{{ route('survey.responses', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">format_list_bulleted</span>
                         View All Responses
                     </a>
-                    <a href="{{ route('survey.show', $survey) }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">arrow_back</span>
+                    <a href="{{ route('survey.show', $survey) }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
                         Back to Survey
                     </a>
                 </div>
@@ -37,7 +37,7 @@
         <div class="p-6 space-y-6">
             @if($survey->completed_responses_count == 0)
                 <div class="bg-yellow-50 border border-yellow-200 p-4 rounded text-yellow-800 flex items-center">
-                    <span class="material-icons mr-2">warning</span>
+                    <span class="material-icons-outlined mr-2">warning</span>
                     <div>
                         <p class="font-bold">No responses yet</p>
                         <p class="text-xs mt-1">This survey doesn't have any completed responses yet. Analytics will be available once responses are collected.</p>
@@ -48,7 +48,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-blue-50 border border-blue-100 rounded p-4">
                         <div class="flex items-center">
-                            <span class="material-icons text-blue-700 mr-2">leaderboard</span>
+                            <span class="material-icons-outlined text-blue-700 mr-2">leaderboard</span>
                             <h3 class="text-xs font-medium text-blue-800">Total Responses</h3>
                         </div>
                         <div class="flex items-end mt-2">
@@ -61,7 +61,7 @@
                     
                     <div class="bg-green-50 border border-green-100 rounded p-4">
                         <div class="flex items-center">
-                            <span class="material-icons text-green-700 mr-2">percent</span>
+                            <span class="material-icons-outlined text-green-700 mr-2">percent</span>
                             <h3 class="text-xs font-medium text-green-800">Completion Rate</h3>
                         </div>
                         @php
@@ -78,7 +78,7 @@
                     
                     <div class="bg-purple-50 border border-purple-100 rounded p-4">
                         <div class="flex items-center">
-                            <span class="material-icons text-purple-700 mr-2">timer</span>
+                            <span class="material-icons-outlined text-purple-700 mr-2">timer</span>
                             <h3 class="text-xs font-medium text-purple-800">Average Completion Time</h3>
                         </div>
                         @php
@@ -105,7 +105,7 @@
                 <!-- Responses Over Time -->
                 <div class="border-b border-gray-200 pb-6">
                     <div class="flex items-center mb-4">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">timeline</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">timeline</span>
                         <h2 class="text-sm font-semibold text-gray-700">Responses Over Time</h2>
                     </div>
                     <div class="bg-gray-50 border border-gray-200 rounded p-4">
@@ -116,7 +116,7 @@
                 <!-- Question Analysis -->
                 <div>
                     <div class="flex items-center mb-4">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">analytics</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">analytics</span>
                         <h2 class="text-sm font-semibold text-gray-700">Question Analysis</h2>
                     </div>
                     
@@ -237,9 +237,9 @@
                                                             <div class="ml-3">
                                                                 @for($i = 1; $i <= 5; $i++)
                                                                     @if($i <= round($averageRating))
-                                                                        <span class="material-icons text-yellow-500">star</span>
+                                                                        <span class="material-icons-outlined text-yellow-500">star</span>
                                                                     @else
-                                                                        <span class="material-icons text-gray-300">star_outline</span>
+                                                                        <span class="material-icons-outlined text-gray-300">star_outline</span>
                                                                     @endif
                                                                 @endfor
                                                             </div>

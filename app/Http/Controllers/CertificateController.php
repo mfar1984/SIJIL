@@ -6,6 +6,8 @@ use App\Models\Certificate;
 use App\Models\CertificateTemplate;
 use App\Models\Event;
 use App\Models\Participant;
+use App\Services\CertificateNumberGenerator;
+use App\Services\CertificateEncryptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +15,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use TCPDF;
 use setasign\Fpdi\Tcpdf\Fpdi;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Writer;
 
 class CertificateController extends Controller
 {
@@ -192,33 +198,41 @@ class CertificateController extends Controller
                 
                 // Processing participant
                 
-                // Check if certificate already exists
+                // Check if certificate already exists for this event and participant
                 $existingCertificate = Certificate::where('event_id', $eventId)
                     ->where('participant_id', $participantId)
-                    ->where('template_id', $templateId)
                     ->first();
                 
                 if ($existingCertificate) {
-                    $errors[] = "Certificate for {$participant->name} already exists";
-                    // Certificate already exists
+                    // Certificate already exists - skip or regenerate?
+                    // For now, we'll skip to prevent duplicates
+                    $errors[] = "Certificate for {$participant->name} already exists (Cert No: {$existingCertificate->certificate_number})";
                     continue;
                 }
                 
-                // Generate PDF certificate
-                $pdfPath = $this->generateCertificatePDF($event, $participant, $template);
+                // Generate certificate number first
+                $certificateNumberGenerator = app(\App\Services\CertificateNumberGenerator::class);
+                $certificateNumber = $certificateNumberGenerator->generate();
                 
-                // PDF generated
-                
-                // Create certificate record
+                // Create certificate record first (so generateCertificatePDF can find it to update)
                 $certificate = Certificate::create([
                     'event_id' => $eventId,
                     'participant_id' => $participantId,
                     'template_id' => $templateId,
-                    'certificate_number' => Certificate::generateCertificateNumber(),
-                    'pdf_file' => $pdfPath,
+                    'certificate_number' => $certificateNumber,
+                    'pdf_file' => '', // Will be updated after PDF generation
                     'generated_at' => now(),
                     'generated_by' => Auth::id(),
                 ]);
+                
+                // Generate PDF certificate (this will use the certificate number we generated)
+                $pdfPath = $this->generateCertificatePDF($event, $participant, $template, false, $certificateNumber);
+                
+                // Update certificate with PDF path
+                $certificate->pdf_file = $pdfPath;
+                $certificate->save();
+                
+                // PDF generated
                 
                 // Certificate record created
                 
@@ -299,11 +313,21 @@ class CertificateController extends Controller
         if ($generatedCount > 0) {
             $message = "{$generatedCount} certificate(s) generated successfully.";
             if (count($errors) > 0) {
-                $message .= " There were " . count($errors) . " error(s).";
+                $message .= " However, there were " . count($errors) . " issue(s): " . implode('; ', array_slice($errors, 0, 3));
+                if (count($errors) > 3) {
+                    $message .= " and " . (count($errors) - 3) . " more...";
+                }
             }
             return redirect()->route('certificates.index')->with('success', $message);
         } else {
-            return back()->with('error', 'Failed to generate certificates: ' . implode(', ', $errors));
+            $errorMessage = 'Failed to generate any certificates.';
+            if (count($errors) > 0) {
+                $errorMessage .= ' Reasons: ' . implode('; ', array_slice($errors, 0, 3));
+                if (count($errors) > 3) {
+                    $errorMessage .= ' and ' . (count($errors) - 3) . ' more...';
+                }
+            }
+            return redirect()->route('certificates.index')->with('error', $errorMessage);
         }
     }
     
@@ -377,8 +401,13 @@ class CertificateController extends Controller
     /**
      * Generate a certificate PDF
      */
-    private function generateCertificatePDF(Event $event, Participant $participant, CertificateTemplate $template, bool $isPreview = false)
+    private function generateCertificatePDF(Event $event, Participant $participant, CertificateTemplate $template, bool $isPreview = false, ?string $certificateNumber = null)
     {
+        // Generate certificate number if not provided
+        if (!$certificateNumber) {
+            $certificateNumber = app(CertificateNumberGenerator::class)->generate();
+        }
+        
         // Get/normalise template PDF relative path
         // Start from pdf_file if available; normalise various formats
         $pdfRelPath = $template->pdf_file;
@@ -508,8 +537,14 @@ class CertificateController extends Controller
                     $content = $element['content'] ?? '';
                     
                     // Process placeholders in content with format {{placeholder}}
-                    $content = preg_replace_callback('/\{\{([^}]+)\}\}/', function($matches) use ($event, $participant) {
+                    $content = preg_replace_callback('/\{\{([^}]+)\}\}/', function($matches) use ($event, $participant, $certificateNumber) {
                         $placeholderType = trim($matches[1]);
+                        
+                        // Handle CERT-GEN placeholder
+                        if ($placeholderType === 'CERT-GEN') {
+                            return $certificateNumber;
+                        }
+                        
                         return $this->getPlaceholderText($placeholderType, $event, $participant);
                     }, $content);
                     
@@ -565,6 +600,57 @@ class CertificateController extends Controller
                         $pdf->SetDrawColor(255, 0, 0);
                         $pdf->Circle($xPt, $yPt, 1);
                     }
+                }
+                elseif ($element['type'] === 'qrcode') {
+                    // Generate QR code
+                    $qrCodeData = $this->generateQrCodeData($certificateNumber, $event, $participant);
+                    $qrCodeImage = $this->generateQrCodeImage($qrCodeData);
+                    
+                    // Get element properties (in mm from designer)
+                    $x = $element['x'];
+                    $y = $element['y'];
+                    $width = $element['width'];
+                    $height = $element['height'];
+                    
+                    // Calculate position and size using proportional scaling
+                    // Same approach as text elements
+                    $pageWidth = $pdf->getPageWidth();
+                    $pageHeight = $pdf->getPageHeight();
+                    
+                    // Calculate position as percentage of template size, then apply to actual page size
+                    $xPt = ($x / $template->template_data['width']) * $pageWidth;
+                    $yPt = ($y / $template->template_data['height']) * $pageHeight;
+                    
+                    // Calculate size as percentage of template size, then apply to actual page size
+                    $widthMm = ($width / $template->template_data['width']) * $pageWidth;
+                    $heightMm = ($height / $template->template_data['height']) * $pageHeight;
+                    
+                    // Ensure QR code stays within page boundaries with safety margin
+                    // TCPDF needs extra margin to prevent page overflow
+                    $safetyMargin = 20; // 20mm safety margin from bottom
+                    
+                    // Check if QR code would extend beyond safe zone
+                    if ($yPt + $heightMm > $pageHeight - $safetyMargin) {
+                        // Adjust Y position to fit within safe zone
+                        $yPt = $pageHeight - $heightMm - $safetyMargin;
+                        \Log::warning('QR code Y position adjusted to prevent page overflow', [
+                            'original_y' => $y,
+                            'adjusted_y' => $yPt,
+                            'height' => $heightMm,
+                            'page_height' => $pageHeight
+                        ]);
+                    }
+                    
+                    if ($xPt + $widthMm > $pageWidth) {
+                        $widthMm = $pageWidth - $xPt - 5; // Leave 5mm margin from right
+                    }
+                    
+                    // Ensure minimum size
+                    $widthMm = max($widthMm, 10); // Minimum 10mm
+                    $heightMm = max($heightMm, 10); // Minimum 10mm
+                    
+                    // Embed QR code in PDF
+                    $pdf->ImageSVG('@' . $qrCodeImage, $xPt, $yPt, $widthMm, $heightMm, '', '', '', 0, false);
                 }
                 // Handle other element types if needed (e.g., images)
             }
@@ -668,6 +754,7 @@ class CertificateController extends Controller
             }
             $outputFile = 'certificate_' . time() . '_' . $participant->id . '.pdf';
             $pdf->Output($outputPath . $outputFile, 'F');
+            
             return 'certificates/' . $outputFile;
         }
     }
@@ -752,5 +839,44 @@ class CertificateController extends Controller
         }
         $certificate->delete();
         return redirect()->route('certificates.index')->with('success', 'Certificate deleted successfully.');
+    }
+
+    /**
+     * Generate QR code data payload
+     * 
+     * @param string $certificateNumber
+     * @param Event $event
+     * @param Participant $participant
+     * @return string Encrypted QR code data
+     */
+    private function generateQrCodeData(string $certificateNumber, Event $event, Participant $participant): string
+    {
+        $data = [
+            'certificate_number' => $certificateNumber,
+            'participant_name' => $participant->name,
+            'event_name' => $event->name,
+            'event_date' => $event->start_date->format('Y-m-d'),
+            'event_time' => $event->start_time ? substr($event->start_time, 0, 5) : '',
+        ];
+        
+        $encryptionService = app(CertificateEncryptionService::class);
+        return $encryptionService->encrypt($data);
+    }
+
+    /**
+     * Generate QR code image (SVG)
+     * 
+     * @param string $data QR code data
+     * @return string SVG content
+     */
+    private function generateQrCodeImage(string $data): string
+    {
+        $renderer = new ImageRenderer(
+            new RendererStyle(400),
+            new SvgImageBackEnd()
+        );
+        
+        $writer = new Writer($renderer);
+        return $writer->writeString($data);
     }
 } 

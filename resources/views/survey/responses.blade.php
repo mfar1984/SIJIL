@@ -14,7 +14,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">format_list_bulleted</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">format_list_bulleted</span>
                         <h1 class="text-xl font-bold text-gray-800">Responses for: {{ $survey->title }}</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">
@@ -23,19 +23,19 @@
                 </div>
                 <div class="flex space-x-3">
                     @can('survey_responses.read')
-                    <a href="{{ route('survey.analytics', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">insights</span>
+                    <a href="{{ route('survey.analytics', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">insights</span>
                         View Analytics
                     </a>
                     @endcan
                     @can('survey_responses.export')
-                    <button onclick="exportToCsv()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">file_download</span>
+                    <button onclick="exportToCsv()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">file_download</span>
                         Export to CSV
                     </button>
                     @endcan
-                    <a href="{{ route('survey.show', $survey) }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 py-1 rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">arrow_back</span>
+                    <a href="{{ route('survey.show', $survey) }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
                         Back to Survey
                     </a>
                 </div>
@@ -46,7 +46,7 @@
             @if($responses->isEmpty())
                 <div class="bg-gray-50 border border-gray-200 rounded p-6 text-center">
                     <div class="flex justify-center">
-                        <span class="material-icons text-gray-400 text-5xl">question_answer</span>
+                        <span class="material-icons-outlined text-gray-400 text-5xl">question_answer</span>
                     </div>
                     <h3 class="mt-2 text-gray-500 text-lg font-medium">No responses yet</h3>
                     <p class="mt-1 text-gray-400 text-sm">There are no responses to this survey yet.</p>
@@ -171,14 +171,14 @@
                                     <td class="py-3 px-4">
                                         <div class="flex justify-center space-x-2">
                                             <button onclick="viewResponse({{ $response->id }})" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details">
-                                                <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                                <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                             </button>
                                             
                                             <form action="{{ route('survey.responses.destroy', [$survey, $response]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this response?');" class="inline-block">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Response">
-                                                    <span class="material-icons text-red-600 text-xs">delete</span>
+                                                    <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                                 </button>
                                             </form>
                                         </div>
@@ -210,12 +210,12 @@
     </div>
     
     <!-- Response Details Modal -->
-    <div id="response-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto font-sans text-gray-700">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-                <h3 class="text-lg font-medium font-sans text-gray-800" id="modal-title">Response Details</h3>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
-                    <span class="material-icons">close</span>
+    <div id="response-modal" class="fixed inset-0 modal-backdrop-glass z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto font-sans text-gray-700">
+            <div class="px-6 py-4 bg-primary-light text-white flex items-center justify-between">
+                <h3 class="text-lg font-medium" id="modal-title">Response Details</h3>
+                <button onclick="closeModal()" class="text-white hover:text-gray-200">
+                    <span class="material-icons-outlined">close</span>
                 </button>
             </div>
             
@@ -275,7 +275,7 @@
                         </div>
                         
                         <div class="flex items-center mb-3 font-sans">
-                            <span class="material-icons mr-2 text-primary-DEFAULT">question_answer</span>
+                            <span class="material-icons-outlined mr-2 text-primary-DEFAULT">question_answer</span>
                             <h4 class="font-medium text-sm font-sans text-gray-800">Responses</h4>
                         </div>
                     `;
@@ -308,9 +308,9 @@
                             html += `<div class="flex items-center">`;
                             for (let i = 1; i <= 5; i++) {
                                 if (i <= starRating) {
-                                    html += `<span class="material-icons text-yellow-500">star</span>`;
+                                    html += `<span class="material-icons-outlined text-yellow-500">star</span>`;
                                 } else {
-                                    html += `<span class="material-icons text-gray-300">star_outline</span>`;
+                                    html += `<span class="material-icons-outlined text-gray-300">star_outline</span>`;
                                 }
                             }
                             html += ` <span class="ml-2 text-xs">(${answer}/5)</span>`;

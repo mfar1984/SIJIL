@@ -4,7 +4,7 @@
         <a href="{{ route('dashboard') }}" class="block relative">
             <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('dashboard') ? 'bg-blue-100' : '' }} relative">
                 <div class="flex items-center">
-                    <span class="material-icons text-base text-blue-500 mr-3">dashboard</span>
+                    <span class="material-icons-outlined text-base text-blue-500 mr-3">dashboard</span>
                     <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Dashboard</p>
                 </div>
             </div>
@@ -16,10 +16,10 @@
     <div class="category-header relative" onclick="toggleSection('event-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-base text-green-500 mr-3">event</span>
+                <span class="material-icons-outlined text-base text-green-500 mr-3">event</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Event</p>
             </div>
-            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="event-section-icon">expand_more</span>
+            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="event-section-icon">expand_more</span>
         </div>
     </div>
     <div id="event-section" class="hierarchical-menu" style="display: none;">
@@ -40,7 +40,7 @@
         <a href="{{ route('participants') }}" class="block relative">
             <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('participants') ? 'bg-blue-100' : '' }} relative">
                 <div class="flex items-center">
-                    <span class="material-icons text-base text-purple-500 mr-3">people</span>
+                    <span class="material-icons-outlined text-base text-purple-500 mr-3">people</span>
                     <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Participants</p>
                 </div>
             </div>
@@ -54,10 +54,10 @@
     <div class="category-header relative" onclick="toggleSection('attendance-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-base text-orange-500 mr-3">how_to_reg</span>
+                <span class="material-icons-outlined text-base text-orange-500 mr-3">how_to_reg</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Attendance</p>
             </div>
-            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="attendance-section-icon">expand_more</span>
+            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="attendance-section-icon">expand_more</span>
         </div>
     </div>
     <div id="attendance-section" class="hierarchical-menu" style="display: none;">
@@ -85,10 +85,10 @@
     <div class="category-header relative" onclick="toggleSection('certificate-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-base text-yellow-500 mr-3">workspace_premium</span>
+                <span class="material-icons-outlined text-base text-yellow-500 mr-3">workspace_premium</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Certificate</p>
             </div>
-            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="certificate-section-icon">expand_more</span>
+            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="certificate-section-icon">expand_more</span>
         </div>
     </div>
     <div id="certificate-section" class="hierarchical-menu" style="display: none;">
@@ -114,10 +114,10 @@
     <div class="category-header relative" onclick="toggleSection('ecertificate-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-base text-indigo-500 mr-3">smartphone</span>
+                <span class="material-icons-outlined text-base text-indigo-500 mr-3">smartphone</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">PWA Management</p>
             </div>
-            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="ecertificate-section-icon">expand_more</span>
+            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="ecertificate-section-icon">expand_more</span>
         </div>
     </div>
     <div id="ecertificate-section" class="hierarchical-menu" style="display: none;">
@@ -150,10 +150,10 @@
     <div class="category-header relative" onclick="toggleSection('reports-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-base text-red-500 mr-3">assessment</span>
+                <span class="material-icons-outlined text-base text-red-500 mr-3">assessment</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Reports</p>
             </div>
-            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="reports-section-icon">expand_more</span>
+            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="reports-section-icon">expand_more</span>
         </div>
     </div>
     <div id="reports-section" class="hierarchical-menu" style="display: none;">
@@ -181,10 +181,10 @@
     <div class="category-header relative" onclick="toggleSection('campaign-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-base text-pink-500 mr-3">campaign</span>
+                <span class="material-icons-outlined text-base text-pink-500 mr-3">campaign</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Campaign</p>
             </div>
-            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="campaign-section-icon">expand_more</span>
+            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="campaign-section-icon">expand_more</span>
         </div>
     </div>
     <div id="campaign-section" class="hierarchical-menu" style="display: none;">
@@ -207,7 +207,7 @@
         <a href="{{ route('helpdesk.index') }}" class="block relative">
             <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('helpdesk.index') ? 'bg-blue-100' : '' }} relative">
                 <div class="flex items-center">
-                    <span class="material-icons text-base text-teal-500 mr-3">help</span>
+                    <span class="material-icons-outlined text-base text-teal-500 mr-3">help</span>
                     <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Helpdesk</p>
                 </div>
             </div>
@@ -223,10 +223,10 @@
     <div class="category-header relative" onclick="toggleSection('settings-section', event)">
         <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
             <div class="flex items-center">
-                <span class="material-icons text-base text-cyan-600 mr-3">settings</span>
+                <span class="material-icons-outlined text-base text-cyan-600 mr-3">settings</span>
                 <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Settings</p>
             </div>
-            <span class="material-icons text-xs text-gray-500 transform transition-transform duration-200" id="settings-section-icon">expand_more</span>
+            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="settings-section-icon">expand_more</span>
         </div>
     </div>
     <div id="settings-section" class="hierarchical-menu" style="display: none;">

@@ -10,7 +10,7 @@
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-orange-500">inventory</span>
+                <span class="material-icons-outlined mr-2 text-orange-500">inventory</span>
                 <h1 class="text-xl font-bold text-gray-800">Attendance Archive</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">View archived/completed attendance sessions</p>
@@ -115,13 +115,13 @@
                             <td class="py-3 px-4">
                                 <div class="flex justify-center space-x-2">
                                     <a href="{{ route('attendance.show', $attendance->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                     </a>
                                     @can('archives.archive')
                                     <form method="POST" action="{{ route('attendance.unarchive-action', $attendance->id) }}" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" onclick="return confirm('Unarchive this attendance?')" title="Unarchive">
-                                            <span class="material-icons text-green-600 text-xs">unarchive</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">unarchive</span>
                                         </button>
                                     </form>
                                     @endcan
@@ -130,7 +130,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                            <span class="material-icons text-red-600 text-xs">delete</span>
+                                            <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                         </button>
                                     </form>
                                     @endcan

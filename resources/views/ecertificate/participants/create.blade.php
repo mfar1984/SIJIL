@@ -9,10 +9,28 @@
 
     <x-slot name="title">Create PWA Participant</x-slot>
 
+    <style>
+        .tooltip-wrapper { position: relative; display: inline-flex; }
+        .tooltip-content {
+            position: absolute; bottom: 100%; left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937; color: white;
+            padding: 6px 10px; border-radius: 6px;
+            font-size: 11px; white-space: nowrap;
+            z-index: 1000; pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .tooltip-content::after {
+            content: ''; position: absolute;
+            top: 100%; left: 50%; transform: translateX(-50%);
+            border: 4px solid transparent; border-top-color: #1f2937;
+        }
+    </style>
+
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">person_add</span>
+                <span class="material-icons-outlined mr-2 text-primary-DEFAULT">person_add</span>
                 <h1 class="text-xl font-bold text-gray-800">Create PWA Participant</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">Add participants with PWA access credentials</p>
@@ -26,12 +44,12 @@
                 <div class="registration-method-card" data-method="manual">
                     <div class="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-primary-DEFAULT cursor-pointer transition-all duration-200">
                         <div class="flex items-center mb-3">
-                            <span class="material-icons text-primary-DEFAULT mr-2">edit</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">edit</span>
                             <h3 class="text-sm font-medium text-gray-800">Manual Entry</h3>
                         </div>
                         <p class="text-xs text-gray-600 mb-3">Create new participant with PWA access</p>
                         <div class="flex items-center text-xs text-gray-500">
-                            <span class="material-icons text-xs mr-1">info</span>
+                            <span class="material-icons-outlined text-xs mr-1">info</span>
                             Single participant creation
                         </div>
                     </div>
@@ -41,12 +59,12 @@
                 <div class="registration-method-card" data-method="auto-assign">
                     <div class="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-primary-DEFAULT cursor-pointer transition-all duration-200">
                         <div class="flex items-center mb-3">
-                            <span class="material-icons text-primary-DEFAULT mr-2">sync</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">sync</span>
                             <h3 class="text-sm font-medium text-gray-800">Auto-assign</h3>
                         </div>
                         <p class="text-xs text-gray-600 mb-3">Convert existing participants to PWA users</p>
                         <div class="flex items-center text-xs text-gray-500">
-                            <span class="material-icons text-xs mr-1">info</span>
+                            <span class="material-icons-outlined text-xs mr-1">info</span>
                             Bulk conversion available
                         </div>
                     </div>
@@ -56,12 +74,12 @@
                 <div class="registration-method-card" data-method="bulk-import">
                     <div class="bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-primary-DEFAULT cursor-pointer transition-all duration-200">
                         <div class="flex items-center mb-3">
-                            <span class="material-icons text-primary-DEFAULT mr-2">upload_file</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">upload_file</span>
                             <h3 class="text-sm font-medium text-gray-800">Bulk Import</h3>
                         </div>
                         <p class="text-xs text-gray-600 mb-3">Import multiple participants via CSV/Excel</p>
                         <div class="flex items-center text-xs text-gray-500">
-                            <span class="material-icons text-xs mr-1">info</span>
+                            <span class="material-icons-outlined text-xs mr-1">info</span>
                             Large-scale registration
                         </div>
                     </div>
@@ -82,376 +100,502 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('pwa.participants.store') }}" class="space-y-6">
+                <form method="POST" action="{{ route('pwa.participants.store') }}" class="space-y-2">
                     @csrf
                     <input type="hidden" name="registration_method" value="manual">
 
                     <!-- Basic Information -->
-                    <div class="border-b border-gray-200 pb-5">
-                        <h2 class="text-sm font-semibold text-gray-700 mb-4">Basic Information</h2>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <!-- Full Name -->
-                            <div>
-                                <label for="name" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">person</span>
-                                    Full Name <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">badge</span>
-                                    </div>
-                                    <input type="text" name="name" id="name" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('name') }}" required>
-                                </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Enter participant's full name</p>
-                            </div>
-
-                            <!-- Email -->
-                            <div>
-                                <label for="email" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">email</span>
-                                    Email Address <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">alternate_email</span>
-                                    </div>
-                                    <input type="email" name="email" id="email" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('email') }}" required>
-                                </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Used for login and notifications</p>
-                            </div>
+                    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                                <span class="material-icons-outlined text-primary-DEFAULT mr-2">info</span>
+                                Basic Information
+                            </h2>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <!-- Username -->
-                            <div>
-                                <label for="username" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">account_circle</span>
-                                    Username <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">person_outline</span>
-                                    </div>
-                                    <input type="text" name="username" id="username" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('username') }}" required>
-                                </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Unique username for PWA login</p>
-                            </div>
-
-                            <!-- Phone -->
-                            <div>
-                                <label for="phone" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
-                                    Phone Number
-                                </label>
-                                <div class="relative">
-                                    <input type="tel" name="phone" id="phone" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone') }}">
-                                </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Contact number for notifications</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <!-- Organization -->
-                            <div>
-                                <label for="organization" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">business</span>
-                                    Organization/Company
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">apartment</span>
-                                    </div>
-                                    <input type="text" name="organization" id="organization" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('organization') }}">
-                                </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Company or organization</p>
-                            </div>
-
-                            <!-- Identity Card / Passport No. -->
-                            <div>
-                                <label for="id_type" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">badge</span>
-                                    Identity Card / Passport No.
-                                </label>
-                                <div class="mb-2">
-                                    <select name="id_type" id="id_type" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" onchange="toggleIdFields()">
-                                        <option value="">-- Select IC / Passport --</option>
-                                        <option value="ic" {{ old('id_type') == 'ic' ? 'selected' : '' }}>Identity Card</option>
-                                        <option value="passport" {{ old('id_type') == 'passport' ? 'selected' : '' }}>Passport</option>
-                                    </select>
-                                </div>
-                                <div id="ic_field" class="relative hidden">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">assignment_ind</span>
-                                    </div>
-                                    <input type="text" name="identity_card" id="identity_card" placeholder="000000-00-0000" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('identity_card') }}" maxlength="14" oninput="formatIC(this)">
-                                </div>
-                                <div id="passport_field" class="relative hidden">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">assignment_ind</span>
-                                    </div>
-                                    <input type="text" name="passport_no" id="passport_no" placeholder="A00000000" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('passport_no') }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <!-- Date of Birth -->
-                            <div>
-                                <label for="date_of_birth" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">cake</span>
-                                    Date of Birth
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">calendar_today</span>
-                                    </div>
-                                    <input type="date" name="date_of_birth" id="date_of_birth" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('date_of_birth') }}">
-                                </div>
-                                <p class="mt-1 text-[10px] text-gray-500">For age verification and demographic analysis</p>
-                            </div>
-
-                            <!-- Gender -->
-                            <div>
-                                <label for="gender" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">wc</span>
-                                    Gender
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">person</span>
-                                    </div>
-                                    <select name="gender" id="gender" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                                        <option value="">-- Select Gender --</option>
-                                        <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
-                                        <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
-                                        <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
-                                    </select>
-                                </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Select participant's gender for demographic data</p>
-                            </div>
-                        </div>
-
-                        <!-- Address -->
-                        <div class="mt-4">
-                            <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">home</span>
-                                Address
-                            </label>
-                            
-                            <!-- Address 1 and Address 2 in one row (2 columns) -->
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <!-- Address 1 -->
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">location_on</span>
-                                    </div>
-                                    <input type="text" name="address1" id="address1" placeholder="Address Line 1" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                        value="{{ old('address1') }}">
-                                </div>
-                                
-                                <!-- Address 2 -->
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">location_on</span>
-                                    </div>
-                                    <input type="text" name="address2" id="address2" placeholder="Address Line 2" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                        value="{{ old('address2') }}">
-                                </div>
-                            </div>
-                            
-                            <!-- State, City, Postcode, Country in one row (4 columns) -->
-                            <div class="grid grid-cols-4 gap-2">
-                                <!-- State -->
-                                <div>
-                                    <label for="state" class="block text-xs font-medium text-gray-700 mb-1">State</label>
-                                    <select name="state" id="state" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                        onchange="handleStateChange()">
-                                        <option value="">-- Select State --</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- City -->
-                                <div>
-                                    <label for="city" class="block text-xs font-medium text-gray-700 mb-1">City</label>
-                                    <select name="city" id="city" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" disabled>
-                                        <option value="">-- Select City --</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Postcode -->
-                                <div>
-                                    <label for="postcode" class="block text-xs font-medium text-gray-700 mb-1">Postcode</label>
-                                    <select name="postcode" id="postcode" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" disabled>
-                                        <option value="">-- Select Postcode --</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Country -->
-                                <div>
-                                    <label for="country" class="block text-xs font-medium text-gray-700 mb-1">Country</label>
-                                    <select name="country" id="country" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                                        <!-- Dropdown will be filled by JavaScript -->
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Manual inputs for Others option -->
-                            <div id="manual-address-fields" class="hidden mt-4">
-                                <div class="grid grid-cols-4 gap-2">
-                                    <!-- Manual State -->
-                                    <div>
-                                        <label for="manual_state" class="block text-xs font-medium text-gray-700 mb-1">State (Manual)</label>
+                        
+                        <div class="p-4">
+                            <div class="space-y-3">
+                                <!-- Full Name -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="name" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Full Name <span class="text-red-500">*</span>
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Enter participant's full name
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
                                         <div class="relative">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="material-icons text-[#004aad] text-base">edit_location</span>
+                                                <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
                                             </div>
-                                            <input type="text" name="manual_state" id="manual_state" 
-                                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                                placeholder="Enter state manually">
+                                            <input type="text" name="name" id="name" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('name') }}" required>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Manual City -->
-                                    <div>
-                                        <label for="manual_city" class="block text-xs font-medium text-gray-700 mb-1">City (Manual)</label>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="email" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Email Address <span class="text-red-500">*</span>
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Used for login and notifications
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
                                         <div class="relative">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="material-icons text-[#004aad] text-base">edit_location</span>
+                                                <span class="material-icons-outlined text-[#004aad] text-base">alternate_email</span>
                                             </div>
-                                            <input type="text" name="manual_city" id="manual_city" 
-                                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                                placeholder="Enter city manually">
+                                            <input type="email" name="email" id="email" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('email') }}" required>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Manual Postcode -->
-                                    <div>
-                                        <label for="manual_postcode" class="block text-xs font-medium text-gray-700 mb-1">Postcode (Manual)</label>
+                                </div>
+
+                                <!-- Username -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="username" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Username <span class="text-red-500">*</span>
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Unique username for PWA login
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
                                         <div class="relative">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="material-icons text-[#004aad] text-base">edit_location</span>
+                                                <span class="material-icons-outlined text-[#004aad] text-base">person_outline</span>
                                             </div>
-                                            <input type="text" name="manual_postcode" id="manual_postcode" 
-                                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                                placeholder="Enter postcode manually">
+                                            <input type="text" name="username" id="username" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('username') }}" required>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Empty column to match grid -->
-                                    <div>
-                                        <!-- This is empty to match the Country column position -->
+                                </div>
+
+                                <!-- Phone -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="phone" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Phone Number
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Contact number for notifications
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
+                                        <div class="relative">
+                                            <input type="tel" name="phone" id="phone" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('phone') }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Organization -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="organization" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Organization/Company
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Company or organization
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="material-icons-outlined text-[#004aad] text-base">apartment</span>
+                                            </div>
+                                            <input type="text" name="organization" id="organization" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('organization') }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Identity Card / Passport No. -->
+                                <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                    <label for="id_type" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+                                        Identity Card / Passport No.
+                                    </label>
+                                    <div class="flex-1">
+                                        <div class="mb-2">
+                                            <select name="id_type" id="id_type" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" onchange="toggleIdFields()">
+                                                <option value="">-- Select IC / Passport --</option>
+                                                <option value="ic" {{ old('id_type') == 'ic' ? 'selected' : '' }}>Identity Card</option>
+                                                <option value="passport" {{ old('id_type') == 'passport' ? 'selected' : '' }}>Passport</option>
+                                            </select>
+                                        </div>
+                                        <div id="ic_field" class="relative hidden">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="material-icons-outlined text-[#004aad] text-base">assignment_ind</span>
+                                            </div>
+                                            <input type="text" name="identity_card" id="identity_card" placeholder="000000-00-0000" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('identity_card') }}" maxlength="14" oninput="formatIC(this)">
+                                        </div>
+                                        <div id="passport_field" class="relative hidden">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="material-icons-outlined text-[#004aad] text-base">assignment_ind</span>
+                                            </div>
+                                            <input type="text" name="passport_no" id="passport_no" placeholder="A00000000" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('passport_no') }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Date of Birth -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="date_of_birth" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Date of Birth
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                For age verification and demographic analysis
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
+                                            </div>
+                                            <input type="date" name="date_of_birth" id="date_of_birth" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('date_of_birth') }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Gender -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="gender" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Gender
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Select participant's gender for demographic data
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="material-icons-outlined text-[#004aad] text-base">person</span>
+                                            </div>
+                                            <select name="gender" id="gender" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                                <option value="">-- Select Gender --</option>
+                                                <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                                <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                                <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Address -->
+                                <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                    <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+                                        Address
+                                    </label>
+                                    <div class="flex-1">
+                                        <!-- Address 1 and Address 2 in one row (2 columns) -->
+                                        <div class="grid grid-cols-2 gap-2 mb-2">
+                                            <!-- Address 1 -->
+                                            <div class="relative">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <span class="material-icons-outlined text-[#004aad] text-base">location_on</span>
+                                                </div>
+                                                <input type="text" name="address1" id="address1" placeholder="Address Line 1" 
+                                                    class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                                    value="{{ old('address1') }}">
+                                            </div>
+                                            
+                                            <!-- Address 2 -->
+                                            <div class="relative">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <span class="material-icons-outlined text-[#004aad] text-base">location_on</span>
+                                                </div>
+                                                <input type="text" name="address2" id="address2" placeholder="Address Line 2" 
+                                                    class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                                    value="{{ old('address2') }}">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- State, City, Postcode, Country in one row (4 columns) -->
+                                        <div class="grid grid-cols-4 gap-2">
+                                            <!-- State -->
+                                            <div>
+                                                <label for="state" class="block text-xs font-medium text-gray-700 mb-1">State</label>
+                                                <select name="state" id="state" 
+                                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                                    onchange="handleStateChange()">
+                                                    <option value="">-- Select State --</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <!-- City -->
+                                            <div>
+                                                <label for="city" class="block text-xs font-medium text-gray-700 mb-1">City</label>
+                                                <select name="city" id="city" 
+                                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" disabled>
+                                                    <option value="">-- Select City --</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <!-- Postcode -->
+                                            <div>
+                                                <label for="postcode" class="block text-xs font-medium text-gray-700 mb-1">Postcode</label>
+                                                <select name="postcode" id="postcode" 
+                                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" disabled>
+                                                    <option value="">-- Select Postcode --</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <!-- Country -->
+                                            <div>
+                                                <label for="country" class="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                                                <select name="country" id="country" 
+                                                    class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                                    <!-- Dropdown will be filled by JavaScript -->
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Manual inputs for Others option -->
+                                        <div id="manual-address-fields" class="hidden mt-4">
+                                            <div class="grid grid-cols-4 gap-2">
+                                                <!-- Manual State -->
+                                                <div>
+                                                    <label for="manual_state" class="block text-xs font-medium text-gray-700 mb-1">State (Manual)</label>
+                                                    <div class="relative">
+                                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <span class="material-icons-outlined text-[#004aad] text-base">edit_location</span>
+                                                        </div>
+                                                        <input type="text" name="manual_state" id="manual_state" 
+                                                            class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                                            placeholder="Enter state manually">
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Manual City -->
+                                                <div>
+                                                    <label for="manual_city" class="block text-xs font-medium text-gray-700 mb-1">City (Manual)</label>
+                                                    <div class="relative">
+                                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <span class="material-icons-outlined text-[#004aad] text-base">edit_location</span>
+                                                        </div>
+                                                        <input type="text" name="manual_city" id="manual_city" 
+                                                            class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                                            placeholder="Enter city manually">
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Manual Postcode -->
+                                                <div>
+                                                    <label for="manual_postcode" class="block text-xs font-medium text-gray-700 mb-1">Postcode (Manual)</label>
+                                                    <div class="relative">
+                                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <span class="material-icons-outlined text-[#004aad] text-base">edit_location</span>
+                                                        </div>
+                                                        <input type="text" name="manual_postcode" id="manual_postcode" 
+                                                            class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                                            placeholder="Enter postcode manually">
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Empty column to match grid -->
+                                                <div>
+                                                    <!-- This is empty to match the Country column position -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Hidden field to store the combined address -->
+                                        <input type="hidden" name="address" id="address">
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Hidden field to store the combined address -->
-                            <input type="hidden" name="address" id="address">
-                            
-                            <p class="mt-1 text-[10px] text-gray-500">Enter full mailing address</p>
                         </div>
                     </div>
 
                     <!-- Additional Information -->
-                    <div class="border-b border-gray-200 pb-5">
-                        <h2 class="text-sm font-semibold text-gray-700 mb-4">Additional Information</h2>
-                        <div class="grid grid-cols-2 gap-4">
-                            <!-- Job Title -->
-                            <div>
-                                <label for="job_title" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">work</span>
-                                    Job Title
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">badge</span>
+                    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                                <span class="material-icons-outlined text-primary-DEFAULT mr-2">description</span>
+                                Additional Information
+                            </h2>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="space-y-3">
+                                <!-- Job Title -->
+                                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <label for="job_title" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                        Job Title
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Current position or role
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
+                                            </div>
+                                            <input type="text" name="job_title" id="job_title" class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('job_title') }}">
+                                        </div>
                                     </div>
-                                    <input type="text" name="job_title" id="job_title" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('job_title') }}">
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Current position or role</p>
-                            </div>
 
-                            <!-- Notes -->
-                            <div>
-                                <label for="notes" class="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-                                <textarea id="notes" name="notes" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional information about this participant">{{ old('notes') }}</textarea>
-                                <p class="mt-1 text-[10px] text-gray-500">Internal notes about this participant (not visible to them)</p>
+                                <!-- Notes -->
+                                <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                    <label for="notes" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                                        Notes
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Internal notes (not visible to participant)
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <div class="flex-1">
+                                        <textarea id="notes" name="notes" rows="3" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Any additional information about this participant">{{ old('notes') }}</textarea>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Event Assignment -->
-                    <div class="border-b border-gray-200 pb-5">
-                        <h2 class="text-sm font-semibold text-gray-700 mb-4">Event Assignment</h2>
-                        <div class="grid grid-cols-1 gap-4">
-                            <div>
-                                <label class="flex items-center text-xs font-medium text-gray-700 mb-2">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                                    Assign to Events <span class="text-red-500">*</span>
-                                </label>
-                                <div class="grid grid-cols-2 gap-4 max-h-40 overflow-y-auto border border-gray-200 rounded p-3">
-                                    @foreach($events as $event)
-                                        <div class="flex items-center">
-                                            <input type="checkbox" name="event_ids[]" id="event_{{ $event->id }}" value="{{ $event->id }}" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light">
-                                            <label for="event_{{ $event->id }}" class="ml-2 text-xs text-gray-700 cursor-pointer">
-                                                {{ $event->name }}
-                                                <span class="text-gray-500 block text-[10px]">{{ $event->start_date ? $event->start_date->format('M d, Y') : 'No date' }}</span>
-                                            </label>
+                    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                                <span class="material-icons-outlined text-primary-DEFAULT mr-2">event</span>
+                                Event Assignment
+                            </h2>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                        Assign to Events <span class="text-red-500">*</span>
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Select events this participant can access
+                                            </div>
                                         </div>
-                                    @endforeach
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-4 max-h-40 overflow-y-auto border border-gray-200 rounded p-3">
+                                        @foreach($events as $event)
+                                            <div class="flex items-center">
+                                                <input type="checkbox" name="event_ids[]" id="event_{{ $event->id }}" value="{{ $event->id }}" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light">
+                                                <label for="event_{{ $event->id }}" class="ml-2 text-xs text-gray-700 cursor-pointer">
+                                                    {{ $event->name }}
+                                                    <span class="text-gray-500 block text-[10px]">{{ $event->start_date ? $event->start_date->format('M d, Y') : 'No date' }}</span>
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Select events this participant can access</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Account Settings -->
-                    <div class="border-b border-gray-200 pb-5">
-                        <h2 class="text-sm font-semibold text-gray-700 mb-4">Account Settings</h2>
-                        <div class="space-y-4">
-                            <!-- Auto-generate Password -->
-                            <div class="flex items-center">
-                                <input type="checkbox" name="auto_generate_password" id="auto_generate_password" value="1" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
-                                <label for="auto_generate_password" class="ml-2 text-xs text-gray-700 cursor-pointer">
-                                    Auto-generate secure password
-                                </label>
-                            </div>
+                    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                                <span class="material-icons-outlined text-primary-DEFAULT mr-2">settings</span>
+                                Account Settings
+                            </h2>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="space-y-3">
+                                <!-- Auto-generate Password -->
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="auto_generate_password" id="auto_generate_password" value="1" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
+                                    <label for="auto_generate_password" class="ml-2 text-xs text-gray-700 cursor-pointer">
+                                        Auto-generate secure password
+                                    </label>
+                                </div>
 
-                            <!-- Send Welcome Email -->
-                            <div class="flex items-center">
-                                <input type="checkbox" name="send_welcome_email" id="send_welcome_email" value="1" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
-                                <label for="send_welcome_email" class="ml-2 text-xs text-gray-700 cursor-pointer">
-                                    Send welcome email with login credentials
-                                </label>
-                            </div>
+                                <!-- Send Welcome Email -->
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="send_welcome_email" id="send_welcome_email" value="1" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
+                                    <label for="send_welcome_email" class="ml-2 text-xs text-gray-700 cursor-pointer">
+                                        Send welcome email with login credentials
+                                    </label>
+                                </div>
 
-                            <!-- Account Status -->
-                            <div class="flex items-center">
-                                <input type="checkbox" name="is_active" id="is_active" value="1" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
-                                <label for="is_active" class="ml-2 text-xs text-gray-700 cursor-pointer">
-                                    Account is active (can login immediately)
-                                </label>
+                                <!-- Account Status -->
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="is_active" id="is_active" value="1" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
+                                    <label for="is_active" class="ml-2 text-xs text-gray-700 cursor-pointer">
+                                        Account is active (can login immediately)
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Form Actions -->
-                    <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
-                        <button type="button" class="change-method-btn px-3 py-1 bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                            <span class="material-icons text-xs mr-1">swap_horiz</span>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" class="change-method-btn px-3 h-[36px] bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                            <span class="material-icons-outlined text-xs mr-1">swap_horiz</span>
                             Change Method
                         </button>
-                        <a href="{{ route('pwa.participants') }}" class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                            <span class="material-icons text-xs mr-1">cancel</span>
+                        <a href="{{ route('pwa.participants') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                            <span class="material-icons-outlined text-xs mr-1">cancel</span>
                             Cancel
                         </a>
-                        <button type="submit" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                            <span class="material-icons text-xs mr-1">save</span>
+                        <button type="submit" class="px-3 h-[36px] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                            <span class="material-icons-outlined text-xs mr-1">save</span>
                             Create PWA Participant
                         </button>
                     </div>
@@ -470,11 +614,11 @@
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="text-xs font-medium text-gray-700 mb-1">Search Participants</label>
-                            <input type="text" id="participant-search" placeholder="Search by name, email, organization..." class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <input type="text" id="participant-search" placeholder="Search by name, email, organization..." class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-700 mb-1">Filter by Event</label>
-                            <select id="event-filter" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <select id="event-filter" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
                                 <option value="">All Events</option>
                                 @foreach($events as $event)
                                     <option value="{{ $event->id }}">{{ $event->name }}</option>
@@ -495,7 +639,7 @@
                         <div id="participants-list" class="p-4">
                             <!-- Participants will be loaded here via AJAX -->
                             <div class="text-center py-8">
-                                <span class="material-icons text-gray-400 text-xs mb-2">search</span>
+                                <span class="material-icons-outlined text-gray-400 text-xs mb-2">search</span>
                                 <p class="text-xs text-gray-500">Search for participants to convert to PWA users</p>
                             </div>
                         </div>
@@ -530,17 +674,17 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
-                    <button type="button" class="change-method-btn px-3 py-1 bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">swap_horiz</span>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" class="change-method-btn px-3 h-[36px] bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">swap_horiz</span>
                         Change Method
                     </button>
-                    <a href="{{ route('pwa.participants') }}" class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                    <a href="{{ route('pwa.participants') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button type="button" id="convert-participants-btn" class="px-3 py-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">sync</span>
+                    <button type="button" id="convert-participants-btn" class="px-3 h-[36px] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">sync</span>
                         Convert Selected (<span id="selected-count">0</span>)
                     </button>
                 </div>
@@ -556,7 +700,7 @@
                     
                     <!-- File Upload -->
                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        <span class="material-icons text-gray-400 text-4xl mb-2">cloud_upload</span>
+                        <span class="material-icons-outlined text-gray-400 text-4xl mb-2">cloud_upload</span>
                         <p class="text-sm text-gray-600 mb-2">Drag and drop your file here, or click to browse</p>
                         <p class="text-xs text-gray-500 mb-4">Supported formats: CSV, XLSX (Max 5MB)</p>
                         <input type="file" id="bulk-import-file" accept=".csv,.xlsx,.xls" class="hidden">
@@ -585,7 +729,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="text-xs font-medium text-gray-700 mb-1">Default Event Assignment</label>
-                            <select id="bulk-import-event" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <select id="bulk-import-event" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
                                 <option value="">Select default event</option>
                                 @foreach($events as $event)
                                     <option value="{{ $event->id }}">{{ $event->name }}</option>
@@ -594,7 +738,7 @@
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-700 mb-1">Account Status</label>
-                            <select id="bulk-import-status" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <select id="bulk-import-status" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
                                 <option value="1">Active</option>
                                 <option value="0">Inactive</option>
                             </select>
@@ -603,17 +747,17 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
-                    <button type="button" class="change-method-btn px-3 py-1 bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">swap_horiz</span>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" class="change-method-btn px-3 h-[36px] bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">swap_horiz</span>
                         Change Method
                     </button>
-                    <a href="{{ route('pwa.participants') }}" class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                    <a href="{{ route('pwa.participants') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button type="button" id="start-import-btn" class="px-3 py-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center" disabled>
-                        <span class="material-icons text-xs mr-1">upload_file</span>
+                    <button type="button" id="start-import-btn" class="px-3 h-[36px] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center" disabled>
+                        <span class="material-icons-outlined text-xs mr-1">upload_file</span>
                         Start Import
                     </button>
                 </div>
@@ -724,7 +868,7 @@
                 // Show loading
                 document.getElementById('participants-list').innerHTML = `
                     <div class="text-center py-8">
-                        <span class="material-icons text-gray-400 text-4xl mb-2 animate-spin">refresh</span>
+                        <span class="material-icons-outlined text-gray-400 text-4xl mb-2 animate-spin">refresh</span>
                         <p class="text-sm text-gray-500">Searching participants...</p>
                     </div>
                 `;
@@ -753,7 +897,7 @@
                         console.error('Error:', error);
                         document.getElementById('participants-list').innerHTML = `
                             <div class="text-center py-8">
-                                <span class="material-icons text-red-400 text-4xl mb-2">error</span>
+                                <span class="material-icons-outlined text-red-400 text-4xl mb-2">error</span>
                                 <p class="text-sm text-red-500">Error loading participants</p>
                                 <p class="text-xs text-gray-400 mt-1">${error.message}</p>
                             </div>
@@ -765,7 +909,7 @@
                 if (participants.length === 0) {
                     document.getElementById('participants-list').innerHTML = `
                         <div class="text-center py-8">
-                            <span class="material-icons text-gray-400 text-4xl mb-2">search_off</span>
+                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">search_off</span>
                             <p class="text-sm text-gray-500">No participants found</p>
                         </div>
                     `;
@@ -912,7 +1056,7 @@ Ahmad Faizal,ahmad@example.com,60123456787,Company C,789 Pine Rd Shah Alam,2,881
 
                 // Show loading
                 startImportBtn.disabled = true;
-                startImportBtn.innerHTML = '<span class="material-icons text-xs mr-1 animate-spin">refresh</span>Importing...';
+                startImportBtn.innerHTML = '<span class="material-icons-outlined text-xs mr-1 animate-spin">refresh</span>Importing...';
 
                 fetch('{{ route("pwa.participants.store") }}', {
                     method: 'POST',
@@ -933,7 +1077,7 @@ Ahmad Faizal,ahmad@example.com,60123456787,Company C,789 Pine Rd Shah Alam,2,881
                 })
                 .finally(() => {
                     startImportBtn.disabled = false;
-                    startImportBtn.innerHTML = '<span class="material-icons text-xs mr-1">upload_file</span>Start Import';
+                    startImportBtn.innerHTML = '<span class="material-icons-outlined text-xs mr-1">upload_file</span>Start Import';
                 });
             });
         });

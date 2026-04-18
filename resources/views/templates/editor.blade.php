@@ -23,7 +23,7 @@
         
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">design_services</span>
+                <span class="material-icons-outlined mr-2 text-primary-DEFAULT">design_services</span>
                 <h1 class="text-xl font-bold text-gray-800">Design Certificate: {{ $template->name }}</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">Add and position text elements on your certificate template</p>
@@ -33,9 +33,9 @@
         <div class="px-6 pt-4">
             <div x-show="message.text" x-transition x-cloak :class="{'bg-green-100 border-green-400 text-green-700': message.type === 'success', 'bg-red-100 border-red-400 text-red-700': message.type === 'error', 'bg-blue-100 border-blue-400 text-blue-700': message.type === 'info'}" class="border px-4 py-3 rounded mb-4">
                 <div class="flex items-center">
-                    <span class="material-icons mr-2" x-show="message.type === 'success'">check_circle</span>
-                    <span class="material-icons mr-2" x-show="message.type === 'error'">error</span>
-                    <span class="material-icons mr-2" x-show="message.type === 'info'">info</span>
+                    <span class="material-icons-outlined mr-2" x-show="message.type === 'success'">check_circle</span>
+                    <span class="material-icons-outlined mr-2" x-show="message.type === 'error'">error</span>
+                    <span class="material-icons-outlined mr-2" x-show="message.type === 'info'">info</span>
                 <span x-text="message.text"></span>
                 </div>
             </div>
@@ -48,29 +48,29 @@
                     <div class="flex space-x-2">
                         @verbatim
                         <button @click="addPlaceholder('name')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs flex items-center">
-                            <span class="material-icons text-xs mr-1">add</span> {{ name }}
+                            <span class="material-icons-outlined text-xs mr-1">add</span> {{ name }}
                         </button>
                         <button @click="addPlaceholder('organization')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs flex items-center">
-                            <span class="material-icons text-xs mr-1">add</span> {{ organization }}
+                            <span class="material-icons-outlined text-xs mr-1">add</span> {{ organization }}
                         </button>
                         <button @click="addPlaceholder('event')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs flex items-center">
-                            <span class="material-icons text-xs mr-1">add</span> {{ event }}
+                            <span class="material-icons-outlined text-xs mr-1">add</span> {{ event }}
                         </button>
                         <button @click="addPlaceholder('date')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs flex items-center">
-                            <span class="material-icons text-xs mr-1">add</span> {{ date }}
+                            <span class="material-icons-outlined text-xs mr-1">add</span> {{ date }}
                         </button>
                         <button @click="addPlaceholder('identity_card')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs flex items-center">
-                            <span class="material-icons text-xs mr-1">add</span> {{ identity_card }}
+                            <span class="material-icons-outlined text-xs mr-1">add</span> {{ identity_card }}
                         </button>
                         @endverbatim
                     </div>
                     <div class="flex items-center space-x-2">
                         <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                            <span class="material-icons text-xs mr-1">info</span>
+                            <span class="material-icons-outlined text-xs mr-1">info</span>
                             Position: <span x-text="mousePosition.x"></span>mm, <span x-text="mousePosition.y"></span>mm
                         </span>
                         <button @click="toggleGrid()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs flex items-center">
-                            <span class="material-icons text-xs mr-1" x-text="showGrid ? 'grid_off' : 'grid_on'"></span>
+                            <span class="material-icons-outlined text-xs mr-1" x-text="showGrid ? 'grid_off' : 'grid_on'"></span>
                             <span x-text="showGrid ? 'Hide Grid' : 'Show Grid'"></span>
                         </button>
                     </div>
@@ -156,7 +156,7 @@
                         @click="savePlaceholders()" 
                         class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded-md flex items-center"
                     >
-                        <span class="material-icons mr-1">save</span>
+                        <span class="material-icons-outlined mr-1">save</span>
                         Save Design
                     </button>
                 </div>

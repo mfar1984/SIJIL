@@ -12,19 +12,19 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">card_membership</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">card_membership</span>
                         <h1 class="text-xl font-bold text-gray-800">Certificate Reports</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Monitor and export certificate issuance data</p>
                 </div>
                 <div class="flex gap-2">
                     <a href="#" onclick="printReport()" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">print</span>
+                        <span class="material-icons-outlined text-xs mr-1">print</span>
                         Print
                     </a>
                     @can('certificate_reports.export')
                     <a href="#" onclick="exportCertificateReport()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">file_download</span>
+                        <span class="material-icons-outlined text-xs mr-1">file_download</span>
                         Export Report
                     </a>
                     @endcan
@@ -40,7 +40,7 @@
                     <p class="text-xs text-amber-700 font-medium">Total Certificates Issued</p>
                     <p class="text-2xl font-bold text-amber-800">{{ number_format($totalCertificates) }}</p>
                     <div class="mt-1 text-xs text-amber-600 flex items-center">
-                        <span class="material-icons text-xs mr-1">card_membership</span>
+                        <span class="material-icons-outlined text-xs mr-1">card_membership</span>
                         <span>Certificates in the system</span>
                     </div>
                 </div>
@@ -49,7 +49,7 @@
                     <p class="text-xs text-blue-700 font-medium">Certificate Templates</p>
                     <p class="text-2xl font-bold text-blue-800">{{ $totalTemplates }}</p>
                     <div class="mt-1 text-xs text-blue-600 flex items-center">
-                        <span class="material-icons text-xs mr-1">add_circle</span>
+                        <span class="material-icons-outlined text-xs mr-1">add_circle</span>
                         <span>{{ $newTemplatesThisMonth }} new templates this month</span>
                     </div>
                 </div>
@@ -58,7 +58,7 @@
                     <p class="text-xs text-green-700 font-medium">Email Delivery Rate</p>
                     <p class="text-2xl font-bold text-green-800">{{ $emailDeliveryRate }}%</p>
                     <div class="mt-1 text-xs text-green-600 flex items-center">
-                        <span class="material-icons text-xs mr-1">check_circle</span>
+                        <span class="material-icons-outlined text-xs mr-1">check_circle</span>
                         <span>{{ number_format($emailsDelivered) }} emails delivered successfully</span>
                     </div>
                 </div>
@@ -159,14 +159,14 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ route('reports.certificates.show', ['id' => $certificate->certificate_number]) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
                                         @can('certificate_reports.export')
                                         <a href="{{ route('reports.certificates.download', ['id' => $certificate->certificate_number]) }}" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Download">
-                                            <span class="material-icons text-green-600 text-xs">download</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">download</span>
                                         </a>
                                         <a href="#" onclick="sendEmail('{{ $certificate->certificate_number }}', '{{ $certificate->participant->email ?? '' }}')" class="p-1 bg-purple-50 rounded hover:bg-purple-100 border border-purple-100" title="Email">
-                                            <span class="material-icons text-purple-600 text-xs">email</span>
+                                            <span class="material-icons-outlined text-purple-600 text-xs">email</span>
                                         </a>
                                         @endcan
                                         @can('certificate_reports.delete')
@@ -174,7 +174,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endcan
@@ -207,7 +207,7 @@
     </div>
 
     <!-- Modal for sending email -->
-    <div id="sendEmailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div id="sendEmailModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-glass hidden">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
             <div class="px-6 py-4 border-b flex items-center justify-between">
                 <h3 class="text-lg font-medium">Send Certificate Email</h3>

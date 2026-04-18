@@ -12,7 +12,7 @@
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">edit</span>
+                <span class="material-icons-outlined mr-2 text-primary-DEFAULT">edit</span>
                 <h1 class="text-xl font-bold text-gray-800">Edit Attendance</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">Modify attendance session information</p>
@@ -28,23 +28,30 @@
                     </ul>
                 </div>
             @endif
-            <form method="POST" action="{{ route('attendance.update', $attendance->id) }}" class="space-y-8">
+            <form method="POST" action="{{ route('attendance.update', $attendance->id) }}" class="space-y-2">
                 @csrf
                 @method('PUT')
                 <!-- Step 1: Select Event -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">1. Select Event</h2>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">event</span>
+                            1. Select Event
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="event_id" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                                Event
+                            <label for="event_id" class="text-xs font-medium text-gray-700 mb-1 block">
+                                Event <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">event</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">event</span>
                                 </div>
-                                <select name="event_id" id="event_id" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" x-model="selectedEventId" @change="updateEventInfo()" required>
+                                <select name="event_id" id="event_id" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" x-model="selectedEventId" @change="updateEventInfo()" required>
                                     <option value="">-- Select Event --</option>
                                     <template x-for="event in events" :key="event.id">
                                         <option :value="event.id" x-text="event.name" :selected="event.id == selectedEventId"></option>
@@ -67,10 +74,20 @@
                             </div>
                         </template>
                     </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- Step 2: Attendance Type -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">2. Attendance Type</h2>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">category</span>
+                            2. Attendance Type
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
                     <div class="flex flex-col md:flex-row gap-4">
                         <label class="flex items-center cursor-pointer">
                             <input type="radio" name="attendance_type" value="single" x-model="attendanceType" class="mr-2">
@@ -91,34 +108,44 @@
                             <span class="text-xs">Enable Checkout (if unchecked, participants only need to check in)</span>
                         </label>
                     </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- Step 3: Attendance Sessions -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">3. Attendance Sessions</h2>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">schedule</span>
+                            3. Attendance Sessions
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
                     <!-- Single session -->
                     <template x-if="attendanceType === 'single' && selectedEvent">
                         <div class="grid grid-cols-1" :class="enableCheckout ? 'md:grid-cols-5' : 'md:grid-cols-3'">
                             <div>
-                                <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
+                                <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
                                 <input type="date" name="sessions[0][date]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[0].date" required>
                             </div>
                             <div>
-                                <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
+                                <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
                                 <input type="time" name="sessions[0][checkin_start_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[0].checkin_start_time" required>
                             </div>
                             <div>
-                                <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
+                                <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
                                 <input type="time" name="sessions[0][checkin_end_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[0].checkin_end_time" required>
                             </div>
                             <template x-if="enableCheckout">
                                 <div>
-                                    <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
+                                    <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
                                     <input type="time" name="sessions[0][checkout_start_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[0].checkout_start_time">
                                 </div>
                             </template>
                             <template x-if="enableCheckout">
                                 <div>
-                                    <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
+                                    <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
                                     <input type="time" name="sessions[0][checkout_end_time]" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[0].checkout_end_time">
                                 </div>
                             </template>
@@ -130,26 +157,26 @@
                             <template x-for="(day, idx) in eventDays" :key="day.date">
                                 <div class="grid grid-cols-1" :class="enableCheckout ? 'md:grid-cols-5' : 'md:grid-cols-3'">
                                     <div>
-                                        <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
+                                        <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
                                         <input type="date" :name="`sessions[${idx}][date]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[idx].date" readonly>
                                     </div>
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
+                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
                                         <input type="time" :name="`sessions[${idx}][checkin_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[idx].checkin_start_time" required>
                                     </div>
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
+                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
                                         <input type="time" :name="`sessions[${idx}][checkin_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[idx].checkin_end_time" required>
                                     </div>
                                     <template x-if="enableCheckout">
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
+                                            <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
                                             <input type="time" :name="`sessions[${idx}][checkout_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[idx].checkout_start_time">
                                         </div>
                                     </template>
                                     <template x-if="enableCheckout">
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
+                                            <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
                                             <input type="time" :name="`sessions[${idx}][checkout_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="sessions[idx].checkout_end_time">
                                         </div>
                                     </template>
@@ -163,79 +190,91 @@
                             <template x-for="(session, idx) in sessions" :key="idx">
                                 <div class="grid grid-cols-1" :class="enableCheckout ? 'md:grid-cols-5' : 'md:grid-cols-3'">
                                     <div>
-                                        <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
+                                        <label class="text-xs font-medium text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">calendar_today</span>Date</label>
                                         <input type="date" :name="`sessions[${idx}][date]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.date" required>
                                     </div>
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
+                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">login</span>Check-in Start</label>
                                         <input type="time" :name="`sessions[${idx}][checkin_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkin_start_time" required>
                                     </div>
                                     <div>
-                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
+                                        <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">login</span>Check-in End</label>
                                         <input type="time" :name="`sessions[${idx}][checkin_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkin_end_time" required>
                                     </div>
                                     <template x-if="enableCheckout">
                                         <div>
-                                            <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
+                                            <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out Start</label>
                                             <input type="time" :name="`sessions[${idx}][checkout_start_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkout_start_time">
                                         </div>
                                     </template>
                                     <template x-if="enableCheckout">
                                         <div class="flex items-center w-full gap-2">
                                             <div class="flex-1">
-                                                <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
+                                                <label class="text-xs font-semibold text-gray-700 mb-1 flex items-center"><span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">logout</span>Check-out End</label>
                                                 <input type="time" :name="`sessions[${idx}][checkout_end_time]`" class="w-full h-9 text-xs border-gray-300 rounded-[1px]" x-model="session.checkout_end_time">
                                             </div>
                                             <button type="button" @click="removeSession(idx)">
-                                                <span class="material-icons text-red-600 text-xl">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xl">delete</span>
                                             </button>
                                         </div>
                                     </template>
                                     <template x-if="!enableCheckout">
                                         <div class="flex items-center h-full pt-6">
                                             <button type="button" @click="removeSession(idx)">
-                                                <span class="material-icons text-red-600 text-xl">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xl">delete</span>
                                             </button>
                                         </div>
                                     </template>
                                 </div>
                             </template>
                             <button type="button" class="mt-2 px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium flex items-center" @click="addSession()">
-                                <span class="material-icons text-xs mr-1">add_circle</span>
+                                <span class="material-icons-outlined text-xs mr-1">add_circle</span>
                                 Add Session
                             </button>
                         </div>
                     </template>
+                        </div>
+                    </div>
                 </div>
                 <!-- Step 4: Status -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">4. Status</h2>
-                    <div class="w-full md:w-1/3">
-                        <label for="status" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">toggle_on</span>
-                            Status
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">shield</span>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">toggle_on</span>
+                            4. Status
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="status" class="text-xs font-medium text-gray-700 md:w-40">
+                                    Status <span class="text-red-500">*</span>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">shield</span>
+                                        </div>
+                                        <select name="status" id="status" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" required>
+                                            <option value="active" x-bind:selected="status === 'active'">Active</option>
+                                            <option value="expired" x-bind:selected="status === 'expired'">Expired</option>
+                                            <option value="completed" x-bind:selected="status === 'completed'">Completed</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                            <select name="status" id="status" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
-                                <option value="active" x-bind:selected="status === 'active'">Active</option>
-                                <option value="expired" x-bind:selected="status === 'expired'">Expired</option>
-                                <option value="completed" x-bind:selected="status === 'completed'">Completed</option>
-                            </select>
                         </div>
-                        <p class="mt-1 text-[10px] text-gray-500">Current status of this attendance session</p>
                     </div>
                 </div>
                 <!-- Step 5: Buttons -->
-                <div class="pt-6 flex justify-end space-x-3">
-                    <a href="{{ route('attendance.show', $attendance->id) }}" class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <a href="{{ route('attendance.show', $attendance->id) }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button type="submit" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">save</span>
+                    <button type="submit" class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">save</span>
                         Update Attendance
                     </button>
                 </div>

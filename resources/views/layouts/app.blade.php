@@ -24,6 +24,7 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
         
         <!-- Alpine.js -->
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -60,7 +61,7 @@
                             <!-- Notifications -->
                             <div class="flex items-center justify-center h-8" x-data="{ showNotifications: false, notifications: [], unreadCount: 0 }" id="notification-container" x-on:add-notification.window="notifications.unshift($event.detail); unreadCount++; if (notifications.length > 20) { notifications.pop() }" x-on:set-notifications.window="notifications = $event.detail.notifications || []; unreadCount = $event.detail.unreadCount || 0" x-on:mark-all-read.window="notifications.forEach(n => n.read_at = (new Date()).toISOString()); unreadCount = 0">
                                 <button @click="showNotifications = !showNotifications" class="text-gray-500 hover:text-gray-700 flex items-center justify-center relative">
-                                    <span class="material-icons text-xl">notifications</span>
+                                    <span class="material-icons-outlined text-xl">notifications</span>
                                     <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center"></span>
                                 </button>
                                 
@@ -82,7 +83,7 @@
                                             <a :href="notification.url" class="block py-2 px-3 hover:bg-gray-50 border-b border-gray-100 transition duration-150 ease-in-out" :class="{'bg-blue-50': !notification.read_at}">
                                                 <div class="flex items-start">
                                                     <div class="flex-shrink-0 mr-2">
-                                                        <span class="material-icons text-primary-DEFAULT" x-text="notification.icon || 'forum'"></span>
+                                                        <span class="material-icons-outlined text-primary-DEFAULT" x-text="notification.icon || 'forum'"></span>
                                                     </div>
                                                     <div class="flex-grow">
                                                         <p class="text-xs font-medium" x-text="notification.title"></p>
@@ -109,7 +110,7 @@
                                     <button class="flex items-center text-xs font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none transition duration-150 ease-in-out">
                                         <div class="flex items-center space-x-2">
                                             <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                                                <span class="material-icons text-xs text-gray-500">person</span>
+                                                <span class="material-icons-outlined text-xs text-gray-500">person</span>
                                             </div>
                                             <div class="hidden md:flex">
                                                 <span class="text-xs">{{ Auth::user()->name }}</span>
@@ -127,7 +128,7 @@
                                 <x-slot name="content">
                                     <x-dropdown-link :href="route('profile.edit')">
                                         <div class="flex items-center space-x-2">
-                                            <span class="material-icons text-xs">account_circle</span>
+                                            <span class="material-icons-outlined text-xs">account_circle</span>
                                             <span class="text-xs">{{ __('Profile') }}</span>
                                         </div>
                                     </x-dropdown-link>
@@ -140,7 +141,7 @@
                                                 onclick="event.preventDefault();
                                                             this.closest('form').submit();">
                                             <div class="flex items-center space-x-2">
-                                                <span class="material-icons text-xs">logout</span>
+                                                <span class="material-icons-outlined text-xs">logout</span>
                                                 <span class="text-xs">{{ __('Log Out') }}</span>
                                             </div>
                                         </x-dropdown-link>
@@ -154,7 +155,7 @@
                     <div class="px-4 py-2 bg-gray-50 border-t border-gray-100">
                         <nav class="flex items-center text-xs">
                             <a href="{{ route('dashboard') }}" class="text-primary-light flex items-center">
-                                <span class="material-icons text-xs">home</span>
+                                <span class="material-icons-outlined text-xs">home</span>
                                 <span class="ml-1">Home</span>
                             </a>
                             

@@ -4,12 +4,12 @@
         <div class="relative flex flex-col items-center">
             <!-- Minimalist Fullscreen Icon -->
             <button type="button" onclick="toggleFullScreen()" title="Full Screen" class="absolute -top-8 right-0 z-20">
-                <span class="material-icons text-gray-500 text-xl hover:text-gray-700">fullscreen</span>
+                <span class="material-icons-outlined text-gray-500 text-xl hover:text-gray-700">fullscreen</span>
             </button>
             <div id="qrCard" class="bg-white rounded shadow-md border border-gray-300 p-8 flex flex-col items-center transition-all duration-200">
                 <div class="mb-4 text-center">
                     <h1 class="text-lg font-bold text-gray-800 flex items-center justify-center">
-                        <span class="material-icons text-primary-DEFAULT mr-2">qr_code</span>
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">qr_code</span>
                         Event Registration QR Code
                     </h1>
                     <div class="text-xs text-gray-500 mt-1">Scan this QR code to register for the event</div>

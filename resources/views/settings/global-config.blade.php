@@ -7,12 +7,12 @@
 
     <x-slot name="title">Global Config</x-slot>
 
-    <div class="bg-white rounded shadow-md border border-gray-300" x-data="{ isEditing: false }">
+    <div class="bg-white rounded shadow-md border border-gray-300" x-data="{ isEditing: true }">
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">settings</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">settings</span>
                         <h1 class="text-xl font-bold text-gray-800">Global Configuration</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage system-wide configuration settings</p>
@@ -29,7 +29,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'general', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'general'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">tune</span>
+                        <span class="material-icons-outlined text-xs mr-2">tune</span>
                         General
                     </button>
                     <button 
@@ -37,7 +37,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'security', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'security'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">security</span>
+                        <span class="material-icons-outlined text-xs mr-2">security</span>
                         Security
                     </button>
                     <button 
@@ -45,7 +45,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'appearance', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'appearance'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">palette</span>
+                        <span class="material-icons-outlined text-xs mr-2">palette</span>
                         Appearance
                     </button>
                     <button 
@@ -53,7 +53,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'notifications', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'notifications'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">notifications</span>
+                        <span class="material-icons-outlined text-xs mr-2">notifications</span>
                         Notifications
                     </button>
                     <button 
@@ -61,7 +61,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'telegram', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'telegram'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">telegram</span>
+                        <span class="material-icons-outlined text-xs mr-2">telegram</span>
                         Telegram
                     </button>
                     <button 
@@ -69,7 +69,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'api', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'api'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">code</span>
+                        <span class="material-icons-outlined text-xs mr-2">code</span>
                         API & Integrations
                     </button>
                 </div>
@@ -91,26 +91,11 @@
                     <div class="mt-6 flex justify-end space-x-3">
                         @can('global_config.update')
                         <button 
-                            type="button" 
-                            @click="isEditing = !isEditing" 
-                            x-show="!isEditing"
-                            class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-                            x-transition
-                        >
-                            <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                <span class="material-icons text-xs mr-1">edit</span>
-                                <span>Edit Settings</span>
-                            </span>
-                        </button>
-                        
-                        <button 
-                            type="submit" 
-                            x-show="isEditing"
+                            type="submit"
                             class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
-                            x-transition
                         >
                             <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                <span class="material-icons text-xs mr-1">save</span>
+                                <span class="material-icons-outlined text-xs mr-1">save</span>
                                 <span>Save Changes</span>
                             </span>
                         </button>
@@ -145,7 +130,7 @@
                     const originalText = submitButton.innerHTML;
                     
                     // Show loading state
-                    submitButton.innerHTML = '<span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out"><span class="material-icons text-xs mr-1">hourglass_empty</span> Saving...</span>';
+                    submitButton.innerHTML = '<span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out"><span class="material-icons-outlined text-xs mr-1">hourglass_empty</span> Saving...</span>';
                     submitButton.disabled = true;
                     
                     fetch(form.action, {

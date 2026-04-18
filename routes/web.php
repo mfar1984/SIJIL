@@ -624,6 +624,10 @@ Route::middleware(['auth'])->prefix('survey')->name('survey.')->group(function (
     Route::get('/{survey}/analytics', [App\Http\Controllers\SurveyController::class, 'showAnalytics'])
         ->middleware(PermissionMiddleware::class.':survey_responses.read')
         ->name('analytics');
+        
+    Route::get('/{survey}/qrcode-image', [App\Http\Controllers\SurveyController::class, 'downloadQrCodeImage'])
+        ->middleware(PermissionMiddleware::class.':surveys.read')
+        ->name('qrcode-image');
 });
 
 // Public Survey Routes

@@ -1,8 +1,42 @@
 <div x-show="activeTab === 'security'" class="space-y-2">
+    <style>
+        /* Tooltip styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
+        }
+    </style>
+    
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">password</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">password</span>
                 Password Policies
             </h2>
         </div>
@@ -10,14 +44,24 @@
         <div class="p-4">
         <div class="space-y-3">
             <!-- Minimum Password Length -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="min_password_length" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="min_password_length" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Minimum Password Length
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Minimum number of characters required for passwords
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">123</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">123</span>
                         </div>
                         <input 
                             type="number" 
@@ -31,19 +75,28 @@
                             :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Minimum number of characters required for passwords</p>
                 </div>
             </div>
             
             <!-- Password Expiry -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="password_expiry" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="password_expiry" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Password Expiry (days)
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Days before password expires (0 for never)
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">calendar_today</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
                         </div>
                         <input 
                             type="number" 
@@ -56,11 +109,10 @@
                             :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Days before password expires (0 for never)</p>
                 </div>
             </div>
 
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -78,7 +130,7 @@
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -96,7 +148,7 @@
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -120,7 +172,7 @@
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">login</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">login</span>
                 Login Security
             </h2>
         </div>
@@ -128,14 +180,24 @@
         <div class="p-4">
         <div class="space-y-3">
             <!-- Max Login Attempts -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="max_login_attempts" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="max_login_attempts" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Max Login Attempts
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Maximum login attempts before temporary lockout
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">pin</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">pin</span>
                         </div>
                         <input 
                             type="number" 
@@ -148,19 +210,28 @@
                             :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Maximum login attempts before temporary lockout</p>
                 </div>
             </div>
             
             <!-- Lockout Duration -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="lockout_duration" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="lockout_duration" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Lockout Duration (minutes)
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Duration of account lockout after failed attempts
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">lock_clock</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">lock_clock</span>
                         </div>
                         <input 
                             type="number" 
@@ -173,19 +244,28 @@
                             :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Duration of account lockout after failed attempts</p>
                 </div>
             </div>
             
             <!-- Session Timeout -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="session_timeout" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="session_timeout" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Session Timeout (minutes)
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Inactive time before automatic logout
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">timelapse</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">timelapse</span>
                         </div>
                         <input 
                             type="number" 
@@ -198,11 +278,10 @@
                             :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Inactive time before automatic logout</p>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -220,7 +299,7 @@
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -244,14 +323,14 @@
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">gpp_maybe</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">gpp_maybe</span>
                 Security Auditing
             </h2>
         </div>
         
         <div class="p-4">
         <div class="space-y-3">
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -269,7 +348,7 @@
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -287,7 +366,7 @@
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">
@@ -305,7 +384,7 @@
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center">

@@ -465,4 +465,24 @@ class SurveyController extends Controller
         
         return response()->stream($callback, 200, $headers);
     }
+    
+    /**
+     * Download QR code image for survey
+     */
+    public function downloadQrCodeImage($id)
+    {
+        $survey = Survey::findOrFail($id);
+        $surveyLink = $survey->public_url;
+
+        // Generate QR code SVG (BaconQrCode v2.x, set size via RendererStyle)
+        $renderer = new \BaconQrCode\Renderer\Image\SvgImageBackEnd();
+        $style = new \BaconQrCode\Renderer\RendererStyle\RendererStyle(800);
+        $imageRenderer = new \BaconQrCode\Renderer\ImageRenderer($style, $renderer);
+        $writer = new \BaconQrCode\Writer($imageRenderer);
+        $qrSvg = $writer->writeString($surveyLink);
+
+        return response($qrSvg)
+            ->header('Content-Type', 'image/svg+xml')
+            ->header('Content-Disposition', 'attachment; filename="survey-' . $id . '-qrcode.svg"');
+    }
 }

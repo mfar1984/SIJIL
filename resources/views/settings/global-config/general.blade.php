@@ -1,8 +1,42 @@
 <div x-show="activeTab === 'general'" class="space-y-2">
+    <style>
+        /* Tooltip styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
+        }
+    </style>
+    
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">business</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">business</span>
                 Organization Settings
             </h2>
         </div>
@@ -10,14 +44,24 @@
         <div class="p-4">
         <div class="space-y-3">
             <!-- Organization Name -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="org_name" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="org_name" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Organization Name
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Official name of your organization
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">business</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">business</span>
                         </div>
                         <input 
                             type="text" 
@@ -25,23 +69,30 @@
                             name="org_name" 
                             value="{{ old('org_name', $config->org_name ?? '') }}" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Official name of your organization</p>
                 </div>
             </div>
             
             <!-- Contact Email -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="org_email" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="org_email" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Contact Email
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Primary contact email address
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">email</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">email</span>
                         </div>
                         <input 
                             type="email" 
@@ -49,30 +100,35 @@
                             name="org_email" 
                             value="{{ old('org_email', $config->org_email ?? '') }}" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Primary contact email address</p>
                 </div>
             </div>
             
             <!-- Default Timezone -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="timezone" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="timezone" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Default Timezone
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            System default timezone for dates and times
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">public</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">public</span>
                         </div>
                         <select 
                             id="timezone" 
                             name="timezone" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                             <option value="UTC" {{ (old('timezone', $config->timezone ?? '') == 'UTC') ? 'selected' : '' }}>UTC</option>
                             <option value="Asia/Kuala_Lumpur" {{ (old('timezone', $config->timezone ?? '') == 'Asia/Kuala_Lumpur') ? 'selected' : '' }}>Asia/Kuala Lumpur (UTC+8)</option>
@@ -80,26 +136,33 @@
                             <option value="Asia/Jakarta" {{ (old('timezone', $config->timezone ?? '') == 'Asia/Jakarta') ? 'selected' : '' }}>Asia/Jakarta (UTC+7)</option>
                         </select>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">System default timezone for dates and times</p>
                 </div>
             </div>
             
             <!-- Date Format -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="date_format" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="date_format" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Date Format
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Format for displaying dates throughout the system
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">today</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">today</span>
                         </div>
                         <select 
                             id="date_format" 
                             name="date_format" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                             <option value="Y-m-d" {{ (old('date_format', $config->date_format ?? 'd/m/Y') == 'Y-m-d') ? 'selected' : '' }}>YYYY-MM-DD (e.g. 2023-06-15)</option>
                             <option value="d/m/Y" {{ (old('date_format', $config->date_format ?? 'd/m/Y') == 'd/m/Y') ? 'selected' : '' }}>DD/MM/YYYY (e.g. 15/06/2023)</option>
@@ -107,30 +170,52 @@
                             <option value="d-M-Y" {{ (old('date_format', $config->date_format ?? 'd/m/Y') == 'd-M-Y') ? 'selected' : '' }}>DD-Mon-YYYY (e.g. 15-Jun-2023)</option>
                         </select>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Format for displaying dates throughout the system</p>
                 </div>
             </div>
             
             <!-- Organization Logo -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="org_logo" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="org_logo" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Organization Logo
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Recommended size: 200x200px, max 1MB
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="flex items-center space-x-4">
                         <div class="w-16 h-16 border border-gray-300 rounded flex items-center justify-center bg-gray-50">
                             <img src="/images/logo.png" alt="Logo" class="max-w-full max-h-full p-1">
                         </div>
-                        <div>
-                            <label class="bg-white border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 px-3 py-2 rounded cursor-pointer"
-                                :class="{'opacity-50 cursor-not-allowed': !isEditing}"
-                                :disabled="!isEditing"
-                            >
-                                <span class="material-icons text-xs mr-1 inline-block align-text-bottom">upload</span>
-                                Upload New Logo
-                                <input type="file" name="org_logo" class="hidden" :disabled="!isEditing">
-                            </label>
-                            <p class="text-[10px] text-gray-500 mt-1">Recommended size: 200x200px, max 1MB</p>
+                        <div class="flex-1">
+                            <div class="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    id="org-logo-filename" 
+                                    readonly 
+                                    placeholder="No file chosen"
+                                    class="flex-1 h-9 text-xs border-gray-300 rounded bg-gray-50 cursor-default focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    :class="{'opacity-50': !isEditing}"
+                                >
+                                <label for="org_logo" class="px-4 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-xs font-medium text-gray-700 cursor-pointer"
+                                    :class="{'opacity-50 cursor-not-allowed': !isEditing}"
+                                >
+                                    Browse
+                                </label>
+                                <input 
+                                    type="file" 
+                                    name="org_logo" 
+                                    id="org_logo" 
+                                    class="hidden"
+                                    onchange="document.getElementById('org-logo-filename').value = this.files[0] ? this.files[0].name : ''"
+                                >
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -142,7 +227,7 @@
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">tune</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">tune</span>
                 System Settings
             </h2>
         </div>
@@ -150,12 +235,22 @@
         <div class="p-4">
         <div class="space-y-3">
             <!-- Maintenance Mode -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Maintenance Mode
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Enable maintenance mode to temporarily disable the site
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
-                    <div class="flex items-center mt-1">
+                    <div class="flex items-center">
                         <label class="inline-flex items-center mr-4">
                             <input 
                                 type="radio" 
@@ -163,7 +258,6 @@
                                 value="0" 
                                 class="text-primary-DEFAULT focus:ring-primary-light" 
                                 {{ (old('maintenance_mode', $config->maintenance_mode ?? 0) == 0) ? 'checked' : '' }}
-                                :disabled="!isEditing"
                             >
                             <span class="ml-2 text-xs text-gray-700">Off</span>
                         </label>
@@ -174,22 +268,30 @@
                                 value="1" 
                                 class="text-primary-DEFAULT focus:ring-primary-light"
                                 {{ (old('maintenance_mode', $config->maintenance_mode ?? 0) == 1) ? 'checked' : '' }}
-                                :disabled="!isEditing"
                             >
                             <span class="ml-2 text-xs text-gray-700">On</span>
                         </label>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Enable maintenance mode to temporarily disable the site</p>
                 </div>
             </div>
             
             <!-- Debug Mode -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Debug Mode
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Show detailed error messages for debugging
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
-                    <div class="flex items-center mt-1">
+                    <div class="flex items-center">
                         <label class="inline-flex items-center mr-4">
                             <input 
                                 type="radio" 
@@ -197,7 +299,6 @@
                                 value="0" 
                                 class="text-primary-DEFAULT focus:ring-primary-light" 
                                 {{ (old('debug_mode', $config->debug_mode ?? 0) == 0) ? 'checked' : '' }}
-                                :disabled="!isEditing"
                             >
                             <span class="ml-2 text-xs text-gray-700">Off</span>
                         </label>
@@ -208,24 +309,32 @@
                                 value="1" 
                                 class="text-primary-DEFAULT focus:ring-primary-light"
                                 {{ (old('debug_mode', $config->debug_mode ?? 0) == 1) ? 'checked' : '' }}
-                                :disabled="!isEditing"
                             >
                             <span class="ml-2 text-xs text-gray-700">On</span>
                         </label>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Show detailed error messages for debugging</p>
                 </div>
             </div>
             
             <!-- Cache Lifetime -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="cache_lifetime" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="cache_lifetime" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Cache Lifetime (minutes)
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            How long to keep cached data (0 for no caching)
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">schedule</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">schedule</span>
                         </div>
                         <input 
                             type="number" 
@@ -234,30 +343,35 @@
                             value="{{ old('cache_lifetime', $config->cache_lifetime ?? 60) }}" 
                             min="0" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">How long to keep cached data (0 for no caching)</p>
                 </div>
             </div>
             
             <!-- Default Pagination -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="pagination" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="pagination" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Default Pagination
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Number of items to display per page
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">view_list</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">view_list</span>
                         </div>
                         <select 
                             id="pagination" 
                             name="pagination" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                             <option value="10" {{ (old('pagination', $config->pagination ?? 25) == 10) ? 'selected' : '' }}>10 items per page</option>
                             <option value="25" {{ (old('pagination', $config->pagination ?? 25) == 25) ? 'selected' : '' }}>25 items per page</option>
@@ -265,14 +379,13 @@
                             <option value="100" {{ (old('pagination', $config->pagination ?? 25) == 100) ? 'selected' : '' }}>100 items per page</option>
                         </select>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Number of items to display per page</p>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
-                    <label class="flex items-center">
+                    <label class="flex items-center gap-1">
                         <input type="hidden" name="enable_error_reporting" value="0">
                         <input 
                             type="checkbox" 
@@ -280,18 +393,26 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('enable_error_reporting', $config->enable_error_reporting ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Enable system error reporting</span>
+                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                  @mouseenter="show = true" 
+                                  @mouseleave="show = false">
+                                help_outline
+                            </span>
+                            <div x-show="show" x-transition class="tooltip-content">
+                                Send error reports to system administrators
+                            </div>
+                        </div>
                     </label>
-                    <p class="mt-1 text-[10px] text-gray-500">Send error reports to system administrators</p>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
-                    <label class="flex items-center">
+                    <label class="flex items-center gap-1">
                         <input type="hidden" name="enable_activity_logging" value="0">
                         <input 
                             type="checkbox" 
@@ -299,11 +420,19 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('enable_activity_logging', $config->enable_activity_logging ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Enable activity logging</span>
+                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                  @mouseenter="show = true" 
+                                  @mouseleave="show = false">
+                                help_outline
+                            </span>
+                            <div x-show="show" x-transition class="tooltip-content">
+                                Track all user actions in the system log
+                            </div>
+                        </div>
                     </label>
-                    <p class="mt-1 text-[10px] text-gray-500">Track all user actions in the system log</p>
                 </div>
             </div>
         </div>
@@ -313,7 +442,7 @@
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons text-primary-DEFAULT mr-2">event</span>
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">event</span>
                 Event Settings
             </h2>
         </div>
@@ -321,14 +450,24 @@
         <div class="p-4">
         <div class="space-y-3">
             <!-- Registration Expiry -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="event_expiry" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="event_expiry" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Registration Expiry (hours)
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Time until registration links expire
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">hourglass_empty</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">hourglass_empty</span>
                         </div>
                         <input 
                             type="number" 
@@ -337,44 +476,58 @@
                             value="{{ old('event_expiry', $config->event_expiry ?? 48) }}" 
                             min="1" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Time until registration links expire</p>
                 </div>
             </div>
             
             <!-- Default Event Status -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="default_event_status" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <label for="default_event_status" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
                     Default Event Status
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Status assigned to newly created events
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons text-[#004aad] text-base">label</span>
+                            <span class="material-icons-outlined text-[#004aad] text-base">label</span>
                         </div>
                         <select 
                             id="default_event_status" 
                             name="default_event_status" 
                             class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            :class="{'bg-gray-50': !isEditing}"
-                            :disabled="!isEditing"
                         >
                             <option value="draft" {{ (old('default_event_status', $config->default_event_status ?? 'published') == 'draft') ? 'selected' : '' }}>Draft</option>
                             <option value="published" {{ (old('default_event_status', $config->default_event_status ?? 'published') == 'published') ? 'selected' : '' }}>Published</option>
                             <option value="archived" {{ (old('default_event_status', $config->default_event_status ?? 'published') == 'archived') ? 'selected' : '' }}>Archived</option>
                         </select>
                     </div>
-                    <p class="mt-1 text-[10px] text-gray-500">Status assigned to newly created events</p>
                 </div>
             </div>
             
             <!-- Registration Message -->
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
-                <label for="registration_message" class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                <label for="registration_message" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
                     Default Registration Message
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                              @mouseenter="show = true" 
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Message shown after successful registration
+                        </div>
+                    </div>
                 </label>
                 <div class="flex-1">
                     <textarea 
@@ -382,17 +535,14 @@
                         name="registration_message" 
                         rows="3" 
                         class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                        :class="{'bg-gray-50': !isEditing}"
-                        :disabled="!isEditing"
                     >{{ old('registration_message', $config->registration_message ?? 'Thank you for registering for this event. Please check your email for confirmation details.') }}</textarea>
-                    <p class="mt-1 text-[10px] text-gray-500">Message shown after successful registration</p>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
-                    <label class="flex items-center">
+                    <label class="flex items-center gap-1">
                         <input type="hidden" name="allow_multiple_registrations" value="0">
                         <input 
                             type="checkbox" 
@@ -400,17 +550,16 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('allow_multiple_registrations', $config->allow_multiple_registrations ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Allow multiple registrations per email</span>
                     </label>
                 </div>
             </div>
             
-            <div class="flex flex-col md:flex-row md:items-start gap-1">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <div class="md:w-40"></div>
                 <div class="flex-1">
-                    <label class="flex items-center">
+                    <label class="flex items-center gap-1">
                         <input type="hidden" name="auto_send_confirmation_emails" value="0">
                         <input 
                             type="checkbox" 
@@ -418,7 +567,6 @@
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                             {{ (old('auto_send_confirmation_emails', $config->auto_send_confirmation_emails ?? true)) ? 'checked' : '' }}
-                            :disabled="!isEditing"
                         >
                         <span class="ml-2 text-xs text-gray-700">Automatically send confirmation emails</span>
                     </label>

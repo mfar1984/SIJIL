@@ -12,7 +12,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">assignment</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">assignment</span>
                         <h1 class="text-xl font-bold text-gray-800">Attendance Reports</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">View and export attendance data for events</p>
@@ -20,7 +20,7 @@
                 <div>
                     @can('attendance_reports.export')
                     <a href="#" onclick="exportReport()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out ml-2">
-                        <span class="material-icons text-xs mr-1">file_download</span>
+                        <span class="material-icons-outlined text-xs mr-1">file_download</span>
                         Export Report
                     </a>
                     @endcan
@@ -152,14 +152,14 @@
                             <td class="py-3 px-4">
                                 <div class="flex justify-center space-x-2">
                                     <a href="{{ route('reports.attendance.show', ['id' => $row['id']]) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                     </a>
                                     @can('attendance_reports.export')
                                     <form method="POST" action="{{ route('reports.attendance.export') }}" class="inline-block">
                                         @csrf
                                         <input type="hidden" name="session_id" value="{{ $row['id'] }}">
                                         <button type="submit" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Export">
-                                            <span class="material-icons text-green-600 text-xs">download</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">download</span>
                                         </button>
                                     </form>
                                     @endcan
@@ -168,7 +168,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                            <span class="material-icons text-red-600 text-xs">delete</span>
+                                            <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                         </button>
                                     </form>
                                     @endcan
@@ -202,7 +202,7 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div id="deleteModal" class="fixed inset-0 modal-backdrop-glass z-50 flex items-center justify-center hidden">
         <div class="bg-white rounded-lg shadow-xl max-w-md mx-4 w-full">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">Confirm Deletion</h3>

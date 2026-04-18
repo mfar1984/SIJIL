@@ -12,7 +12,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">settings</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">settings</span>
                         <h1 class="text-xl font-bold text-gray-800">Global Configuration</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage system-wide configuration settings</p>
@@ -30,7 +30,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'general', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'general'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">tune</span>
+                        <span class="material-icons-outlined text-xs mr-2">tune</span>
                         General
                     </button>
                     <button 
@@ -38,7 +38,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'security', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'security'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">security</span>
+                        <span class="material-icons-outlined text-xs mr-2">security</span>
                         Security
                     </button>
                     <button 
@@ -46,7 +46,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'appearance', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'appearance'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">palette</span>
+                        <span class="material-icons-outlined text-xs mr-2">palette</span>
                         Appearance
                     </button>
                     <button 
@@ -54,7 +54,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'notifications', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'notifications'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">notifications</span>
+                        <span class="material-icons-outlined text-xs mr-2">notifications</span>
                         Notifications
                     </button>
                     <button 
@@ -62,7 +62,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'api', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'api'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">code</span>
+                        <span class="material-icons-outlined text-xs mr-2">code</span>
                         API & Integrations
                     </button>
                 </div>
@@ -76,7 +76,7 @@
                 <div x-show="activeTab === 'general'" class="space-y-4">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
                         <div class="flex">
-                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">info</span>
                             <div class="text-xs text-blue-700">
                                 <p class="font-medium">General Configuration</p>
                                 <p class="mt-1">Configure basic system settings including organization information and system preferences.</p>
@@ -86,7 +86,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">business</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">business</span>
                             Organization Settings
                         </h2>
                         
@@ -94,12 +94,12 @@
                             <!-- Organization Name -->
                             <div>
                                 <label for="org_name" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">domain</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">domain</span>
                                     Organization Name
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">business</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">business</span>
                                     </div>
                                     <input 
                                         type="text" 
@@ -117,12 +117,12 @@
                             <!-- Contact Email -->
                             <div>
                                 <label for="org_email" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">alternate_email</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">alternate_email</span>
                                     Contact Email
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">email</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">email</span>
                                     </div>
                                     <input 
                                         type="email" 
@@ -140,12 +140,12 @@
                             <!-- Default Timezone -->
                             <div>
                                 <label for="timezone" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">schedule</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">schedule</span>
                                     Default Timezone
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">public</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">public</span>
                                     </div>
                                     <select 
                                         id="timezone" 
@@ -166,12 +166,12 @@
                             <!-- Date Format -->
                             <div>
                                 <label for="date_format" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">date_range</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">date_range</span>
                                     Date Format
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">today</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">today</span>
                                     </div>
                                     <select 
                                         id="date_format" 
@@ -193,7 +193,7 @@
                         <!-- Organization Logo -->
                         <div class="mt-4">
                             <label for="org_logo" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">image</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">image</span>
                                 Organization Logo
                             </label>
                             <div class="flex items-center space-x-4 mt-2">
@@ -205,7 +205,7 @@
                                         :class="{'opacity-50 cursor-not-allowed': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <span class="material-icons text-xs mr-1 inline-block align-text-bottom">upload</span>
+                                        <span class="material-icons-outlined text-xs mr-1 inline-block align-text-bottom">upload</span>
                                         Upload New Logo
                                         <input type="file" name="org_logo" class="hidden" :disabled="!isEditing">
                                     </label>
@@ -217,7 +217,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">tune</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">tune</span>
                             System Settings
                         </h2>
                         
@@ -225,7 +225,7 @@
                             <!-- Maintenance Mode -->
                             <div>
                                 <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">build</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">build</span>
                                     Maintenance Mode
                                 </label>
                                 <div class="flex items-center mt-2">
@@ -258,7 +258,7 @@
                             <!-- Debug Mode -->
                             <div>
                                 <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">bug_report</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">bug_report</span>
                                     Debug Mode
                                 </label>
                                 <div class="flex items-center mt-2">
@@ -291,12 +291,12 @@
                             <!-- Cache Lifetime -->
                             <div>
                                 <label for="cache_lifetime" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">timer</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">timer</span>
                                     Cache Lifetime (minutes)
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">schedule</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">schedule</span>
                                     </div>
                                     <input 
                                         type="number" 
@@ -315,12 +315,12 @@
                             <!-- Default Pagination -->
                             <div>
                                 <label for="pagination" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">format_list_numbered</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">format_list_numbered</span>
                                     Default Pagination
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">view_list</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">view_list</span>
                                     </div>
                                     <select 
                                         id="pagination" 
@@ -374,7 +374,7 @@
                     
                     <div>
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">event</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">event</span>
                             Event Settings
                         </h2>
                         
@@ -382,12 +382,12 @@
                             <!-- Registration Expiry -->
                             <div>
                                 <label for="event_expiry" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">timer_off</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">timer_off</span>
                                     Registration Expiry (hours)
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">hourglass_empty</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">hourglass_empty</span>
                                     </div>
                                     <input 
                                         type="number" 
@@ -406,12 +406,12 @@
                             <!-- Default Event Status -->
                             <div>
                                 <label for="default_event_status" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">flag</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">flag</span>
                                     Default Event Status
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">label</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">label</span>
                                     </div>
                                     <select 
                                         id="default_event_status" 
@@ -432,12 +432,12 @@
                         <!-- Registration Message -->
                         <div class="mt-4">
                             <label for="registration_message" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">message</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">message</span>
                                 Default Registration Message
                             </label>
                             <div class="relative">
                                 <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">description</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">description</span>
                                 </div>
                                 <textarea 
                                     id="registration_message" 
@@ -487,7 +487,7 @@
                 <div x-show="activeTab === 'security'" class="space-y-4">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
                         <div class="flex">
-                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">info</span>
                             <div class="text-xs text-blue-700">
                                 <p class="font-medium">Security Configuration</p>
                                 <p class="mt-1">Configure security-related settings including password policies and access controls.</p>
@@ -497,7 +497,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">password</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">password</span>
                             Password Policies
                         </h2>
                         
@@ -505,12 +505,12 @@
                             <!-- Minimum Password Length -->
                             <div>
                                 <label for="min_password_length" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">straighten</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">straighten</span>
                                     Minimum Password Length
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">123</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">123</span>
                                     </div>
                                     <input 
                                         type="number" 
@@ -530,12 +530,12 @@
                             <!-- Password Expiry -->
                             <div>
                                 <label for="password_expiry" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_busy</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event_busy</span>
                                     Password Expiry (days)
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">calendar_today</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
                                     </div>
                                     <input 
                                         type="number" 
@@ -600,7 +600,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">login</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">login</span>
                             Login Security
                         </h2>
                         
@@ -608,12 +608,12 @@
                             <!-- Max Login Attempts -->
                             <div>
                                 <label for="max_login_attempts" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">block</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">block</span>
                                     Max Login Attempts
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">pin</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">pin</span>
                                     </div>
                                     <input 
                                         type="number" 
@@ -632,12 +632,12 @@
                             <!-- Lockout Duration -->
                             <div>
                                 <label for="lockout_duration" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">timer</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">timer</span>
                                     Lockout Duration (minutes)
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">lock_clock</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">lock_clock</span>
                                     </div>
                                     <input 
                                         type="number" 
@@ -656,12 +656,12 @@
                             <!-- Session Timeout -->
                             <div>
                                 <label for="session_timeout" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">timer_off</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">timer_off</span>
                                     Session Timeout (minutes)
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">timelapse</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">timelapse</span>
                                     </div>
                                     <input 
                                         type="number" 
@@ -711,7 +711,7 @@
                     
                     <div>
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">gpp_maybe</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">gpp_maybe</span>
                             Security Auditing
                         </h2>
                         
@@ -781,7 +781,7 @@
                 <div x-show="activeTab === 'appearance'" class="space-y-4">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
                         <div class="flex">
-                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">info</span>
                             <div class="text-xs text-blue-700">
                                 <p class="font-medium">Appearance Configuration</p>
                                 <p class="mt-1">Customize the look and feel of your application including themes and branding.</p>
@@ -791,7 +791,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">palette</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">palette</span>
                             Theme Settings
                         </h2>
                         
@@ -799,12 +799,12 @@
                             <!-- Primary Color -->
                             <div>
                                 <label for="primary_color" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">format_color_fill</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">format_color_fill</span>
                                     Primary Color
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">colorize</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">colorize</span>
                                     </div>
                                     <div class="flex items-center">
                                         <input 
@@ -829,12 +829,12 @@
                             <!-- Secondary Color -->
                             <div>
                                 <label for="secondary_color" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">format_color_fill</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">format_color_fill</span>
                                     Secondary Color
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">colorize</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">colorize</span>
                                     </div>
                                     <div class="flex items-center">
                                         <input 
@@ -859,12 +859,12 @@
                             <!-- Default Theme -->
                             <div>
                                 <label for="default_theme" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">brightness_medium</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">brightness_medium</span>
                                     Default Theme
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">style</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">style</span>
                                     </div>
                                     <select 
                                         id="default_theme" 
@@ -884,12 +884,12 @@
                             <!-- Font Family -->
                             <div>
                                 <label for="font_family" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">text_format</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">text_format</span>
                                     Font Family
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">font_download</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">font_download</span>
                                     </div>
                                     <select 
                                         id="font_family" 
@@ -927,7 +927,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">branding_watermark</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">branding_watermark</span>
                             Branding Settings
                         </h2>
                         
@@ -935,7 +935,7 @@
                             <!-- Favicon -->
                             <div>
                                 <label for="favicon" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">bookmark</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">bookmark</span>
                                     Favicon
                                 </label>
                                 <div class="flex items-center space-x-4 mt-2">
@@ -947,7 +947,7 @@
                                             :class="{'opacity-50 cursor-not-allowed': !isEditing}"
                                             :disabled="!isEditing"
                                         >
-                                            <span class="material-icons text-xs mr-1 inline-block align-text-bottom">upload</span>
+                                            <span class="material-icons-outlined text-xs mr-1 inline-block align-text-bottom">upload</span>
                                             Upload Favicon
                                             <input type="file" name="favicon" class="hidden" :disabled="!isEditing">
                                         </label>
@@ -959,7 +959,7 @@
                             <!-- Login Background -->
                             <div>
                                 <label for="login_background" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">wallpaper</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">wallpaper</span>
                                     Login Background
                                 </label>
                                 <div class="mt-2">
@@ -967,7 +967,7 @@
                                         :class="{'opacity-50 cursor-not-allowed': !isEditing}"
                                         :disabled="!isEditing"
                                     >
-                                        <span class="material-icons text-xs mr-1 inline-block align-text-bottom">upload</span>
+                                        <span class="material-icons-outlined text-xs mr-1 inline-block align-text-bottom">upload</span>
                                         Upload Background
                                         <input type="file" name="login_background" class="hidden" :disabled="!isEditing">
                                     </label>
@@ -979,12 +979,12 @@
                         <!-- Custom CSS -->
                         <div class="mt-4">
                             <label for="custom_css" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">code</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">code</span>
                                 Custom CSS
                             </label>
                             <div class="relative">
                                 <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">css</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">css</span>
                                 </div>
                                 <textarea 
                                     id="custom_css" 
@@ -1004,7 +1004,7 @@
                     
                     <div>
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">view_quilt</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">view_quilt</span>
                             Layout Settings
                         </h2>
                         
@@ -1012,12 +1012,12 @@
                             <!-- Sidebar Default State -->
                             <div>
                                 <label for="sidebar_default" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">view_sidebar</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">view_sidebar</span>
                                     Sidebar Default State
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">view_sidebar</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">view_sidebar</span>
                                     </div>
                                     <select 
                                         id="sidebar_default" 
@@ -1037,12 +1037,12 @@
                             <!-- Table Row Density -->
                             <div>
                                 <label for="table_density" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">density_medium</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">density_medium</span>
                                     Table Row Density
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">table_rows</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">table_rows</span>
                                     </div>
                                     <select 
                                         id="table_density" 
@@ -1096,7 +1096,7 @@
                 <div x-show="activeTab === 'notifications'" class="space-y-4">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
                         <div class="flex">
-                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">info</span>
                             <div class="text-xs text-blue-700">
                                 <p class="font-medium">Notifications Configuration</p>
                                 <p class="mt-1">Configure system notifications, alerts, and reminders.</p>
@@ -1106,14 +1106,14 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">email</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">email</span>
                             Email Notifications
                         </h2>
                         
                         <div class="grid grid-cols-1 gap-3 mb-4">
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">person_add</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">person_add</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">New User Registration</p>
                                         <p class="text-[10px] text-gray-500">Send email when a new user registers</p>
@@ -1129,7 +1129,7 @@
                             
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">event_available</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">event_available</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">Event Registration</p>
                                         <p class="text-[10px] text-gray-500">Send confirmation email after event registration</p>
@@ -1145,7 +1145,7 @@
                             
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">event_upcoming</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">event_upcoming</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">Event Reminder</p>
                                         <p class="text-[10px] text-gray-500">Send reminder email before event starts</p>
@@ -1161,7 +1161,7 @@
                             
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">workspace_premium</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">workspace_premium</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">Certificate Generated</p>
                                         <p class="text-[10px] text-gray-500">Send email when a certificate is generated</p>
@@ -1177,7 +1177,7 @@
                             
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">password</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">password</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">Password Reset</p>
                                         <p class="text-[10px] text-gray-500">Send email for password reset requests</p>
@@ -1195,14 +1195,14 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">sms</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">sms</span>
                             SMS Notifications
                         </h2>
                         
                         <div class="grid grid-cols-1 gap-3 mb-4">
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">event_available</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">event_available</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">Event Registration</p>
                                         <p class="text-[10px] text-gray-500">Send SMS confirmation after registration</p>
@@ -1218,7 +1218,7 @@
                             
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">event_upcoming</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">event_upcoming</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">Event Reminder</p>
                                         <p class="text-[10px] text-gray-500">Send SMS reminder before event starts</p>
@@ -1235,12 +1235,12 @@
                         
                         <div class="mt-4">
                             <label for="sms_reminder_hours" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">schedule</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">schedule</span>
                                 SMS Reminder Time (hours before event)
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">access_time</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">access_time</span>
                                 </div>
                                 <input 
                                     type="number" 
@@ -1260,14 +1260,14 @@
                     
                     <div>
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">admin_panel_settings</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">admin_panel_settings</span>
                             Admin Notifications
                         </h2>
                         
                         <div class="grid grid-cols-1 gap-3 mb-4">
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">warning</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">warning</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">System Errors</p>
                                         <p class="text-[10px] text-gray-500">Notify admins about system errors</p>
@@ -1283,7 +1283,7 @@
                             
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">new_releases</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">new_releases</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">New Registrations</p>
                                         <p class="text-[10px] text-gray-500">Notify admins about new user registrations</p>
@@ -1299,7 +1299,7 @@
                             
                             <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                 <div class="flex items-center">
-                                    <span class="material-icons text-primary-DEFAULT mr-2 text-sm">security</span>
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-sm">security</span>
                                     <div>
                                         <p class="text-xs font-medium text-gray-700">Security Alerts</p>
                                         <p class="text-[10px] text-gray-500">Notify admins about security-related events</p>
@@ -1316,12 +1316,12 @@
                         
                         <div class="mt-4">
                             <label for="admin_notification_email" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">mark_email_read</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">mark_email_read</span>
                                 Admin Notification Email
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">email</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">email</span>
                                 </div>
                                 <input 
                                     type="email" 
@@ -1342,7 +1342,7 @@
                 <div x-show="activeTab === 'api'" class="space-y-4">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
                         <div class="flex">
-                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">info</span>
                             <div class="text-xs text-blue-700">
                                 <p class="font-medium">API & Integrations Configuration</p>
                                 <p class="mt-1">Manage API settings and third-party integrations.</p>
@@ -1352,7 +1352,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">api</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">api</span>
                             API Settings
                         </h2>
                         
@@ -1360,7 +1360,7 @@
                             <!-- API Status -->
                             <div>
                                 <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">toggle_on</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">toggle_on</span>
                                     API Status
                                 </label>
                                 <div class="flex items-center mt-2">
@@ -1393,12 +1393,12 @@
                             <!-- Rate Limiting -->
                             <div>
                                 <label for="api_rate_limit" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">speed</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">speed</span>
                                     Rate Limit (requests per minute)
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">data_usage</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">data_usage</span>
                                     </div>
                                                                     <input 
                                     type="number" 
@@ -1462,12 +1462,12 @@
                         
                         <div class="mt-4">
                             <label for="cors_domains" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">public</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">public</span>
                                 CORS Allowed Domains
                             </label>
                             <div class="relative">
                                 <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">link</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">link</span>
                                 </div>
                                 <textarea 
                                     id="cors_domains" 
@@ -1484,7 +1484,7 @@
                     
                     <div class="border-b border-gray-200 pb-5">
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">integration_instructions</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">integration_instructions</span>
                             Third-Party Integrations
                         </h2>
                         
@@ -1585,7 +1585,7 @@
                     
                     <div>
                         <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">webhook</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">webhook</span>
                             Webhooks
                         </h2>
                         
@@ -1607,12 +1607,12 @@
                         
                         <div class="mt-4">
                             <label for="webhook_secret" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">key</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">key</span>
                                 Webhook Secret
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">password</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">password</span>
                                 </div>
                                 <div class="flex">
                                     <input 
@@ -1638,12 +1638,12 @@
                         
                         <div class="mt-4">
                             <label for="webhook_events" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event</span>
                                 Webhook Events
                             </label>
                             <div class="relative">
                                 <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">list</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">list</span>
                                 </div>
                                 <textarea 
                                     id="webhook_events" 
@@ -1670,7 +1670,7 @@
                         x-transition
                     >
                         <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1">edit</span>
+                            <span class="material-icons-outlined text-xs mr-1">edit</span>
                             <span>Edit Settings</span>
                         </span>
                     </button>
@@ -1682,7 +1682,7 @@
                         x-transition
                     >
                         <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1">save</span>
+                            <span class="material-icons-outlined text-xs mr-1">save</span>
                             <span>Save Changes</span>
                         </span>
                     </button>
@@ -1721,7 +1721,7 @@
                     const originalText = submitButton.innerHTML;
                     
                     // Show loading state
-                    submitButton.innerHTML = '<span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out"><span class="material-icons text-xs mr-1">hourglass_empty</span> Saving...</span>';
+                    submitButton.innerHTML = '<span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out"><span class="material-icons-outlined text-xs mr-1">hourglass_empty</span> Saving...</span>';
                     submitButton.disabled = true;
                     
                     fetch(form.action, {

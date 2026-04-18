@@ -58,7 +58,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-indigo-500">analytics</span>
+                        <span class="material-icons-outlined mr-2 text-indigo-500">analytics</span>
                         <h1 class="text-xl font-bold text-gray-800">PWA Analytics</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">View PWA usage statistics and user engagement metrics</p>
@@ -72,7 +72,7 @@
                     </select>
                     @can('pwa_analytics.export')
                     <a href="{{ route('pwa.analytics.export') }}" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 h-[36px] rounded text-xs font-medium flex items-center">
-                        <span class="material-icons text-xs mr-1">download</span>
+                        <span class="material-icons-outlined text-xs mr-1">download</span>
                         Export
                     </a>
                     @endcan
@@ -92,7 +92,7 @@
                                 <p class="text-2xl font-bold">{{ number_format($totalParticipants ?? 0) }}</p>
                                 <p class="text-xs opacity-90 mt-1">Registered participants</p>
                             </div>
-                            <span class="material-icons text-3xl opacity-80">people</span>
+                            <span class="material-icons-outlined text-3xl opacity-80">people</span>
                         </div>
                     </div>
 
@@ -104,7 +104,7 @@
                                 <p class="text-2xl font-bold">{{ number_format($totalEvents ?? 0) }}</p>
                                 <p class="text-xs opacity-90 mt-1">Events with PWA access</p>
                             </div>
-                            <span class="material-icons text-3xl opacity-80">event</span>
+                            <span class="material-icons-outlined text-3xl opacity-80">event</span>
                         </div>
                     </div>
 
@@ -116,7 +116,7 @@
                                 <p class="text-2xl font-bold">{{ number_format($totalAttendance ?? 0) }}</p>
                                 <p class="text-xs opacity-90 mt-1">Check-ins recorded</p>
                             </div>
-                            <span class="material-icons text-3xl opacity-80">qr_code_scanner</span>
+                            <span class="material-icons-outlined text-3xl opacity-80">qr_code_scanner</span>
                         </div>
                     </div>
 
@@ -128,7 +128,7 @@
                                 <p class="text-2xl font-bold">{{ number_format($totalCertificates ?? 0) }}</p>
                                 <p class="text-xs opacity-90 mt-1">Certificates issued</p>
                             </div>
-                            <span class="material-icons text-3xl opacity-80">download</span>
+                            <span class="material-icons-outlined text-3xl opacity-80">download</span>
                         </div>
                     </div>
                 </div>
@@ -165,7 +165,7 @@
                             </div>
                             
                             <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 h-[36px] rounded text-xs font-medium flex items-center">
-                                <span class="material-icons text-xs mr-1">filter_alt</span>
+                                <span class="material-icons-outlined text-xs mr-1">filter_alt</span>
                                 Apply Filter
                             </button>
                         </div>
@@ -195,7 +195,7 @@
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                         <h3 class="font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-purple-600 mr-2">trending_up</span>
+                            <span class="material-icons-outlined text-purple-600 mr-2">trending_up</span>
                             Activity Trends ({{ $dateRange == 'custom' ? $startDate . ' to ' . $endDate : 'Last ' . $dateRange . ' Days' }})
                         </h3>
                     </div>
@@ -216,7 +216,7 @@
                 <!-- Setup Required Message -->
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
                     <div class="flex items-center">
-                        <span class="material-icons text-yellow-600 mr-3">warning</span>
+                        <span class="material-icons-outlined text-yellow-600 mr-3">warning</span>
                         <div>
                             <h3 class="text-sm font-semibold text-yellow-800">Database Setup Required</h3>
                             <p class="text-xs text-yellow-700 mt-1">PWA tables need to be created. Please run the migrations to set up the database.</p>

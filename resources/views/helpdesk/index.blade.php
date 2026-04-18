@@ -13,7 +13,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">help</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">help</span>
                         <h1 class="text-xl font-bold text-gray-800">Helpdesk</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Communication platform between Administrators and Organizers</p>
@@ -22,7 +22,7 @@
                     <!-- Trigger button -->
                     @can('helpdesk.create')
                     <button @click="showModal = true" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">add_circle</span>
+                        <span class="material-icons-outlined text-xs mr-1">add_circle</span>
                         Create New Ticket
                     </button>
                     @endcan
@@ -35,7 +35,7 @@
                         x-transition:leave="transition ease-in duration-200"
                         x-transition:leave-start="opacity-100"
                         x-transition:leave-end="opacity-0"
-                        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                        class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-glass"
                         style="display: none;"
                     >
                         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden" @click.away="showModal = false">
@@ -114,7 +114,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'all', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'all'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">list</span>
+                        <span class="material-icons-outlined text-xs mr-2">list</span>
                         All Tickets
                     </button>
                     <button 
@@ -122,7 +122,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'open', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'open'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">fiber_new</span>
+                        <span class="material-icons-outlined text-xs mr-2">fiber_new</span>
                         Open
                         <span class="ml-1 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{{ $openCount }}</span>
                     </button>
@@ -131,7 +131,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'inProgress', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'inProgress'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">pending_actions</span>
+                        <span class="material-icons-outlined text-xs mr-2">pending_actions</span>
                         In Progress
                         <span class="ml-1 bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">{{ $inProgressCount }}</span>
                     </button>
@@ -140,7 +140,7 @@
                         :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'resolved', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'resolved'}"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">task_alt</span>
+                        <span class="material-icons-outlined text-xs mr-2">task_alt</span>
                         Resolved
                         <span class="ml-1 bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">{{ $resolvedCount }}</span>
                     </button>
@@ -264,7 +264,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
                                         @can('helpdesk.delete')
                                         @if($isAdmin)
@@ -272,7 +272,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endif
@@ -280,7 +280,7 @@
                                         @if($ticket->status != 'closed')
                                         @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
-                                            <span class="material-icons text-green-600 text-xs">reply</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">reply</span>
                                         </a>
                                         @endcan
                                         @endif
@@ -331,7 +331,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
                                         @can('helpdesk.delete')
                                         @if($isAdmin)
@@ -339,7 +339,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endif
@@ -347,7 +347,7 @@
                                         @if($ticket->status != 'closed')
                                         @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
-                                            <span class="material-icons text-green-600 text-xs">reply</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">reply</span>
                                         </a>
                                         @endcan
                                         @endif
@@ -412,7 +412,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
                                         @can('helpdesk.delete')
                                         @if($isAdmin)
@@ -420,7 +420,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endif
@@ -428,7 +428,7 @@
                                         @if($ticket->status != 'closed')
                                         @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
-                                            <span class="material-icons text-green-600 text-xs">reply</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">reply</span>
                                         </a>
                                         @endcan
                                         @endif
@@ -493,7 +493,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Ticket">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
                                         @can('helpdesk.delete')
                                         @if($isAdmin)
@@ -501,7 +501,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete Ticket">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endif
@@ -509,7 +509,7 @@
                                         @if($ticket->status != 'closed')
                                         @can('helpdesk.update')
                                         <a href="{{ route('helpdesk.show', $ticket->id) }}#reply-form" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Reply to Ticket">
-                                            <span class="material-icons text-green-600 text-xs">reply</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">reply</span>
                                         </a>
                                         @endcan
                                         @endif

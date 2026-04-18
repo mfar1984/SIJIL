@@ -12,7 +12,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">view_list</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">view_list</span>
                         <h1 class="text-xl font-bold text-gray-800">Attendance List</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">View and manage attendance records for events</p>

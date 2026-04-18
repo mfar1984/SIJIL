@@ -7,10 +7,44 @@
 
     <x-slot name="title">Create New Event</x-slot>
 
+    <style>
+        /* Tooltip styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
+        }
+    </style>
+
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">event_note</span>
+                <span class="material-icons-outlined mr-2 text-primary-DEFAULT">event_note</span>
                 <h1 class="text-xl font-bold text-gray-800">Create New Event</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">Add a new event to the system</p>
@@ -27,366 +61,627 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('event.store') }}" class="space-y-6" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('event.store') }}" class="space-y-2" enctype="multipart/form-data">
                 @csrf
                 
-                <!-- Basic Information -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Basic Information</h2>
-                    
-                    <!-- Event Name -->
-                    <div class="mb-4">
-                        <label for="name" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                            Event Name
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">title</span>
-                            </div>
-                            <input 
-                                type="text" 
-                                name="name" 
-                                id="name" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                value="{{ old('name') }}" 
-                                required
-                            >
-                        </div>
-                        <p class="mt-1 text-[10px] text-gray-500">Enter a descriptive name for the event</p>
+                <!-- Basic Information Section -->
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">info</span>
+                            Basic Information
+                        </h2>
                     </div>
                     
-                    <!-- Organizer -->
-                    <div class="mb-4">
-                        <label for="organizer" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">people</span>
-                            Organizer
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">group</span>
-                            </div>
-                            <input 
-                                type="text" 
-                                name="organizer" 
-                                id="organizer" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                value="{{ old('organizer') }}"
-                                required
-                            >
-                        </div>
-                        <p class="mt-1 text-[10px] text-gray-500">Department or organization hosting the event</p>
-                    </div>
-                    
-                    <!-- Description -->
-                    <div class="mb-4">
-                        <label for="description" class="block text-xs font-medium text-gray-700 mb-1">Description</label>
-                        <textarea 
-                            name="description" 
-                            id="description" 
-                            rows="3" 
-                            class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                        >{{ old('description') }}</textarea>
-                        <p class="mt-1 text-[10px] text-gray-500">Provide a detailed description of the event</p>
-                    </div>
-                    <!-- Poster Attachment -->
-                    <div class="mb-4">
-                        <label for="poster" class="block text-xs font-medium text-gray-700 mb-1">Poster (Attachment)</label>
-                        <input type="file" name="poster" id="poster" accept="image/png,image/jpeg,image/webp" class="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                        <p class="mt-1 text-[10px] text-gray-500">Recommended: JPG/PNG/WebP, max 2 MB, portrait 1200×1600 (3:4)</p>
-                    </div>
-                    <div class="mb-4">
-                        <label for="condition" class="block text-xs font-medium text-gray-700 mb-1">Event Terms & Conditions</label>
-                        <textarea name="condition" id="condition" rows="12" class="w-full text-sm" placeholder="Write event terms & conditions here...">{{ old('condition') }}</textarea>
-                        <p class="text-[10px] text-gray-500 mt-1">Example: Only participants aged 18 and above, must bring IC, etc.</p>
-                    </div>
-                </div>
-                
-                <!-- Date and Time -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Date and Time</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <!-- Start Date -->
-                        <div>
-                            <label for="start_date" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>
-                                Start Date
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">event</span>
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Event Name -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="name" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Event Name
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Enter a descriptive name for the event
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">title</span>
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            name="name" 
+                                            id="name" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('name') }}" 
+                                            required
+                                        >
+                                    </div>
                                 </div>
-                                <input 
-                                    type="date" 
-                                    name="start_date" 
-                                    id="start_date" 
-                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('start_date') }}" 
-                                    required
-                                >
                             </div>
-                        </div>
-                        
-                        <!-- Start Time -->
-                        <div>
-                            <label for="start_time" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">schedule</span>
-                                Start Time
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">access_time</span>
+                            
+                            <!-- Organizer -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="organizer" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Organizer
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Department or organization hosting the event
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">group</span>
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            name="organizer" 
+                                            id="organizer" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                            value="{{ old('organizer') }}"
+                                            required
+                                        >
+                                    </div>
                                 </div>
-                                <input 
-                                    type="time" 
-                                    name="start_time" 
-                                    id="start_time" 
-                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('start_time') }}" 
-                                    required
-                                >
                             </div>
-                        </div>
-                        
-                        <!-- End Date -->
-                        <div>
-                            <label for="end_date" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">calendar_today</span>
-                                End Date
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">event</span>
+                            
+                            <!-- Description -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                <label for="description" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                                    Description
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Provide a detailed description of the event
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <textarea 
+                                        name="description" 
+                                        id="description" 
+                                        rows="3" 
+                                        class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    >{{ old('description') }}</textarea>
                                 </div>
-                                <input 
-                                    type="date" 
-                                    name="end_date" 
-                                    id="end_date" 
-                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('end_date') }}" 
-                                    required
-                                >
                             </div>
-                        </div>
-                        
-                        <!-- End Time -->
-                        <div>
-                            <label for="end_time" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">schedule</span>
-                                End Time
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">access_time</span>
+                            
+                            <!-- Poster -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="poster" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Poster
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            JPG/PNG/WebP, max 2 MB, portrait 1200×1600 (3:4)
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1 flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        id="poster-filename" 
+                                        readonly 
+                                        placeholder="No file chosen"
+                                        class="flex-1 h-9 text-xs border-gray-300 rounded bg-gray-50 cursor-default focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    >
+                                    <label for="poster" class="px-4 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-xs font-medium text-gray-700 cursor-pointer">
+                                        Browse
+                                    </label>
+                                    <input 
+                                        type="file" 
+                                        name="poster" 
+                                        id="poster" 
+                                        accept="image/png,image/jpeg,image/webp" 
+                                        class="hidden"
+                                        onchange="document.getElementById('poster-filename').value = this.files[0] ? this.files[0].name : ''"
+                                    >
                                 </div>
-                                <input 
-                                    type="time" 
-                                    name="end_time" 
-                                    id="end_time" 
-                                    class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('end_time') }}" 
-                                    required
-                                >
+                            </div>
+                            
+                            <!-- Terms & Conditions -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                <label for="condition" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                                    Terms & Conditions
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Example: Only participants aged 18+, must bring IC
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <textarea name="condition" id="condition" rows="12" class="w-full text-sm border-gray-300 rounded" placeholder="Write event terms & conditions here...">{{ old('condition') }}</textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Location -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Location Information</h2>
-                    
-                    <!-- Venue Name -->
-                    <div class="mb-4">
-                        <label for="location" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">location_on</span>
-                            Venue Name
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">business</span>
-                            </div>
-                            <input 
-                                type="text" 
-                                name="location" 
-                                id="location" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                value="{{ old('location') }}" 
-                                required
-                            >
-                        </div>
-                        <p class="mt-1 text-[10px] text-gray-500">Name of the venue where the event will be held</p>
+
+                <!-- Date and Time Section -->
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">schedule</span>
+                            Date and Time
+                        </h2>
                     </div>
                     
-                    <!-- Address -->
-                    <div class="mb-4">
-                        <label for="address" class="block text-xs font-medium text-gray-700 mb-1">Complete Address</label>
-                        <textarea 
-                            name="address" 
-                            id="address" 
-                            rows="3" 
-                            class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                        >{{ old('address') }}</textarea>
-                        <p class="mt-1 text-[10px] text-gray-500">Full address of the venue including city and postcode</p>
-                    </div>
-                </div>
-                
-                <!-- Participant Information -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Participant Information</h2>
-                    
-                    <!-- Max Participants -->
-                    <div class="mb-4">
-                        <label for="max_participants" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">groups</span>
-                            Maximum Participants
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">person_add</span>
-                            </div>
-                            <input 
-                                type="number" 
-                                name="max_participants" 
-                                id="max_participants" 
-                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                value="{{ old('max_participants') }}" 
-                                min="1"
-                                required
-                            >
-                        </div>
-                        <p class="mt-1 text-[10px] text-gray-500">Maximum number of participants allowed</p>
-                    </div>
-                </div>
-                
-                <!-- Contact Information -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Contact Information</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Contact Person -->
-                        <div>
-                            <label for="contact_person" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">person</span>
-                                Contact Person
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">person_outline</span>
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Start Date -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="start_date" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Start Date
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Event start date
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">event</span>
+                                        </div>
+                                        <input 
+                                            type="date" 
+                                            name="start_date" 
+                                            id="start_date" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('start_date') }}" 
+                                            required
+                                        >
+                                    </div>
                                 </div>
-                                <input 
-                                    type="text" 
-                                    name="contact_person" 
-                                    id="contact_person" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('contact_person') }}"
-                                >
                             </div>
-                        </div>
-                        
-                        <!-- Contact Email -->
-                        <div>
-                            <label for="contact_email" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">email</span>
-                                Contact Email
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">alternate_email</span>
+                            
+                            <!-- Start Time -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="start_time" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Start Time
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Event start time
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">access_time</span>
+                                        </div>
+                                        <input 
+                                            type="time" 
+                                            name="start_time" 
+                                            id="start_time" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('start_time') }}" 
+                                            required
+                                        >
+                                    </div>
                                 </div>
-                                <input 
-                                    type="email" 
-                                    name="contact_email" 
-                                    id="contact_email" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('contact_email') }}"
-                                >
                             </div>
-                        </div>
-                        
-                        <!-- Contact Phone -->
-                        <div>
-                            <label for="contact_phone" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
-                                Contact Phone
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">call</span>
+                            
+                            <!-- End Date -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="end_date" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    End Date
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Event end date
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">event</span>
+                                        </div>
+                                        <input 
+                                            type="date" 
+                                            name="end_date" 
+                                            id="end_date" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('end_date') }}" 
+                                            required
+                                        >
+                                    </div>
                                 </div>
-                                <input 
-                                    type="tel" 
-                                    name="contact_phone" 
-                                    id="contact_phone" 
-                                    class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                                    value="{{ old('contact_phone') }}"
-                                    placeholder="+60123456789"
-                                >
+                            </div>
+                            
+                            <!-- End Time -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="end_time" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    End Time
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Event end time
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">access_time</span>
+                                        </div>
+                                        <input 
+                                            type="time" 
+                                            name="end_time" 
+                                            id="end_time" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('end_time') }}" 
+                                            required
+                                        >
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Status -->
-                <div class="pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4">Status & Registration Settings</h2>
-                    
-                    <div class="mb-4">
-                        <label for="status" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                            <span class="material-icons text-sm mr-1 text-primary-DEFAULT">toggle_on</span>
-                            Event Status
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">shield</span>
-                            </div>
-                            <select 
-                                name="status" 
-                                id="status" 
-                                class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]" 
-                                required
-                            >
-                                <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                            </select>
-                        </div>
-                        <p class="mt-1 text-[10px] text-gray-500">Current status of the event</p>
+                <!-- Location Section -->
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">location_on</span>
+                            Location Information
+                        </h2>
                     </div>
                     
-                    <!-- Disable Auto Expiry Checkbox -->
-                    <div class="mt-4">
-                        <label class="flex items-start">
-                            <input 
-                                type="checkbox" 
-                                name="disable_auto_expiry" 
-                                id="disable_auto_expiry" 
-                                value="1"
-                                {{ old('disable_auto_expiry') ? 'checked' : '' }}
-                                class="mt-0.5 h-4 w-4 text-primary-DEFAULT border-gray-300 rounded focus:ring-primary-light"
-                            >
-                            <div class="ml-3">
-                                <span class="text-xs font-medium text-gray-700">Disable Auto Expiry</span>
-                                <p class="text-[10px] text-gray-500 mt-0.5">When enabled, registration will remain open even after the event start date. Registration will only close when status is manually changed to "Completed".</p>
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Venue Name -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="location" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Venue Name
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Name of the venue where event will be held
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">business</span>
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            name="location" 
+                                            id="location" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('location') }}" 
+                                            required
+                                        >
+                                    </div>
+                                </div>
                             </div>
-                        </label>
+                            
+                            <!-- Address -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                                <label for="address" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                                    Complete Address
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Full address including city and postcode
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <textarea 
+                                        name="address" 
+                                        id="address" 
+                                        rows="3" 
+                                        class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                    >{{ old('address') }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Participant Information Section -->
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">groups</span>
+                            Participant Information
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Max Participants -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="max_participants" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Maximum Participants
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Maximum number of participants allowed
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">person_add</span>
+                                        </div>
+                                        <input 
+                                            type="number" 
+                                            name="max_participants" 
+                                            id="max_participants" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('max_participants') }}" 
+                                            min="1"
+                                            required
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
+                <!-- Contact Information Section -->
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">contact_phone</span>
+                            Contact Information
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Contact Person -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="contact_person" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Contact Person
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Name of contact person for this event
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">person_outline</span>
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            name="contact_person" 
+                                            id="contact_person" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('contact_person') }}"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contact Email -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="contact_email" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Contact Email
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Email address for event inquiries
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">alternate_email</span>
+                                        </div>
+                                        <input 
+                                            type="email" 
+                                            name="contact_email" 
+                                            id="contact_email" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('contact_email') }}"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contact Phone -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="contact_phone" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Contact Phone
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Phone number for event inquiries
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">call</span>
+                                        </div>
+                                        <input 
+                                            type="tel" 
+                                            name="contact_phone" 
+                                            id="contact_phone" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            value="{{ old('contact_phone') }}"
+                                            placeholder="+60123456789"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status & Settings Section -->
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">settings</span>
+                            Status & Registration Settings
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Event Status -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="status" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Event Status
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Current status of the event
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="material-icons-outlined text-[#004aad] text-base">shield</span>
+                                        </div>
+                                        <select 
+                                            name="status" 
+                                            id="status" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]" 
+                                            required
+                                        >
+                                            <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                            <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
+                                            <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Disable Auto Expiry -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <div class="md:w-40"></div>
+                                <div class="flex-1">
+                                    <label class="flex items-center gap-1">
+                                        <input 
+                                            type="checkbox" 
+                                            name="disable_auto_expiry" 
+                                            id="disable_auto_expiry" 
+                                            value="1"
+                                            {{ old('disable_auto_expiry') ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        >
+                                        <span class="ml-2 text-xs text-gray-700">Disable Auto Expiry</span>
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Registration remains open after event start date
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="flex justify-end space-x-3 pt-4">
                     <a 
                         href="{{ route('event.management') }}" 
                         class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                        <span class="material-icons-outlined text-xs mr-1">cancel</span>
                         Cancel
                     </a>
                     <button 
                         type="submit" 
                         class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center"
                     >
-                        <span class="material-icons text-xs mr-1">save</span>
+                        <span class="material-icons-outlined text-xs mr-1">save</span>
                         Create Event
                     </button>
                 </div>
@@ -401,9 +696,9 @@
             if (window.tinymce) {
                 tinymce.init({
                     selector: '#condition',
-                    plugins: 'autolink link image lists table code help wordcount preview fontsize fontfamily textcolor lineheight placeholder',
+                    plugins: 'autolink link image lists table code help wordcount preview',
                     toolbar: [
-                        'fontfamily fontsize | forecolor backcolor | bold italic underline | alignleft aligncenter alignright alignjustify | lineheight',
+                        'blocks fontfamily fontsize | forecolor backcolor | bold italic underline | alignleft aligncenter alignright alignjustify',
                         'bullist numlist | link image | table | code'
                     ],
                     menubar: false,
@@ -417,10 +712,9 @@
                     entity_encoding: 'raw',
                     resize: false,
                     skin: 'oxide',
-                    fontsize_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 28pt 36pt 48pt',
+                    font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 28pt 36pt 48pt',
                     font_family_formats: 'Arial=arial,helvetica,sans-serif; Courier New=courier new,courier,monospace; Georgia=georgia,palatino; Helvetica=helvetica; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva',
-                    lineheight_formats: '1 1.1 1.2 1.3 1.4 1.5 1.6 1.8 2',
-                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14pt; } .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before { font-size: 12px; color: #6b7280; }',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14pt; line-height: 1.6; }',
                     placeholder: 'Write event terms & conditions here...',
                     images_upload_handler: function (blobInfo, progress) {
                         return new Promise(function(resolve, reject) {

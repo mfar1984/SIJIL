@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PwaParticipantController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\ParticipantSearchController;
+use App\Http\Controllers\Api\CertificateVerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +81,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Regular Participants Search API (for PWA auto-assign functionality)
 Route::get('/participants/search', [ParticipantSearchController::class, 'search']); 
+
+// Certificate verification (public, no auth required)
+Route::post('/certificate/verify', [CertificateVerificationController::class, 'verify']);
 
 // Debug endpoint - remove after testing
 Route::get('/debug/certificates/{email}', function($email) {

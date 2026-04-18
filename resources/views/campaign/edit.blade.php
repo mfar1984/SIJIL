@@ -10,7 +10,7 @@
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">edit</span>
+                <span class="material-icons-outlined mr-2 text-primary-DEFAULT">edit</span>
                 <h1 class="text-xl font-bold text-gray-800">Edit Campaign</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">Modify campaign information</p>
@@ -29,12 +29,12 @@
                     <div class="space-y-4">
                         <div>
                             <label for="campaign_name" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">campaign</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">campaign</span>
                                 Campaign Name <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">drive_file_rename_outline</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">drive_file_rename_outline</span>
                                 </div>
                                 <input type="text" id="campaign_name" name="campaign_name" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ $campaign->name }}" required>
                             </div>
@@ -43,7 +43,7 @@
                         
                         <div>
                             <label for="campaign_description" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">description</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">description</span>
                                 Description
                             </label>
                             <div class="relative">
@@ -55,12 +55,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="start_date" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_available</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event_available</span>
                                     Start Date <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">calendar_today</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
                                     </div>
                                     <input type="date" id="start_date" name="start_date" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ $campaign->start_date->format('Y-m-d') }}" required>
                                 </div>
@@ -69,12 +69,12 @@
                             
                             <div>
                                 <label for="end_date" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event_busy</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event_busy</span>
                                     End Date
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">calendar_today</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
                                     </div>
                                     <input type="date" id="end_date" name="end_date" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ $campaign->end_date ? $campaign->end_date->format('Y-m-d') : '' }}">
                                 </div>
@@ -93,7 +93,7 @@
                             <span class="flex flex-1">
                                 <span class="flex flex-col">
                                     <span class="flex items-center text-sm font-medium text-gray-900">
-                                        <span class="material-icons {{ $campaign->campaign_type == 'email' ? 'text-blue-600' : 'text-gray-600' }} mr-2" id="email-icon">email</span>
+                                        <span class="material-icons-outlined {{ $campaign->campaign_type == 'email' ? 'text-blue-600' : 'text-gray-600' }} mr-2" id="email-icon">email</span>
                                         Email Campaign
                                     </span>
                                     <span class="mt-1 flex items-center text-xs text-gray-500">
@@ -101,7 +101,7 @@
                                     </span>
                                 </span>
                             </span>
-                            <span class="material-icons text-blue-600 shrink-0 {{ $campaign->campaign_type == 'email' ? '' : 'hidden' }}" id="email-check-icon">check_circle</span>
+                            <span class="material-icons-outlined text-blue-600 shrink-0 {{ $campaign->campaign_type == 'email' ? '' : 'hidden' }}" id="email-check-icon">check_circle</span>
                         </label>
                         
                         <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none {{ $campaign->campaign_type == 'sms' ? 'border-blue-500' : 'hover:border-blue-500' }}" id="sms-campaign-label">
@@ -109,7 +109,7 @@
                             <span class="flex flex-1">
                                 <span class="flex flex-col">
                                     <span class="flex items-center text-sm font-medium text-gray-900">
-                                        <span class="material-icons {{ $campaign->campaign_type == 'sms' ? 'text-blue-600' : 'text-gray-600' }} mr-2" id="sms-icon">sms</span>
+                                        <span class="material-icons-outlined {{ $campaign->campaign_type == 'sms' ? 'text-blue-600' : 'text-gray-600' }} mr-2" id="sms-icon">sms</span>
                                         SMS Campaign
                                     </span>
                                     <span class="mt-1 flex items-center text-xs text-gray-500">
@@ -117,7 +117,7 @@
                                     </span>
                                 </span>
                             </span>
-                            <span class="material-icons text-blue-600 shrink-0 {{ $campaign->campaign_type == 'sms' ? '' : 'hidden' }}" id="sms-check-icon">check_circle</span>
+                            <span class="material-icons-outlined text-blue-600 shrink-0 {{ $campaign->campaign_type == 'sms' ? '' : 'hidden' }}" id="sms-check-icon">check_circle</span>
                         </label>
                     </div>
                 </div>
@@ -130,12 +130,12 @@
                     <div class="space-y-4">
                         <div>
                             <label for="audience_type" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">groups</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">groups</span>
                                 Select Audience <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">people</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">people</span>
                                 </div>
                                 <select id="audience_type" name="audience_type" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
                                     <option value="all_participants" {{ $campaign->audience_type == 'all_participants' ? 'selected' : '' }}>All Participants</option>
@@ -149,12 +149,12 @@
                         
                         <div id="event_selection" class="{{ $campaign->audience_type == 'specific_event' ? '' : 'hidden' }}">
                             <label for="event_id" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">event</span>
                                 Select Event
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">event_note</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">event_note</span>
                                 </div>
                                 <select id="event_id" name="event_id" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
                                     <option value="">Select an event</option>
@@ -215,7 +215,7 @@
                     <div class="space-y-4">
                         <div>
                             <label for="email_subject" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">subject</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">subject</span>
                                 Email Subject <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
@@ -235,12 +235,12 @@
                     <div class="space-y-4">                        
                         <div>
                             <label for="email_template" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">template</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">template</span>
                                 Email Template
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">dashboard</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">dashboard</span>
                                 </div>
                                 <select id="email_template" name="email_template" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
                                     <option value="">-- Select a Template --</option>
@@ -281,7 +281,7 @@
                         
                         <div>
                             <label for="include_shortlink" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                <span class="material-icons text-sm mr-1 text-primary-DEFAULT">link</span>
+                                <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">link</span>
                                 Include Short Link
                             </label>
                             <div class="flex items-center">
@@ -329,12 +329,12 @@
                 <!-- Form Actions -->
                 <div class="border-t border-gray-200 pt-4 mt-6 flex justify-end space-x-3">
                     <a href="{{ route('campaign.index') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                        <span class="material-icons-outlined text-xs mr-1">cancel</span>
                         Cancel
                     </a>
                     @can('campaigns.update')
                     <button type="submit" class="px-3 h-[36px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-[1px] shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">save</span>
+                        <span class="material-icons-outlined text-xs mr-1">save</span>
                         Update Campaign
                     </button>
                     @endcan

@@ -69,14 +69,14 @@ $initialIsActive = $template && $template->is_active ? true : false;
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="flex items-center">
-                            <span class="material-icons mr-2 text-primary-DEFAULT">design_services</span>
+                            <span class="material-icons-outlined mr-2 text-primary-DEFAULT">design_services</span>
                             <h1 class="text-xl font-bold text-gray-800">{{ $template ? 'Edit Template Design' : 'Create Template Design' }}</h1>
                         </div>
                         <p class="text-xs text-gray-500 mt-1 ml-8">{{ $template ? 'Customize the layout and elements of ' . $template->name : 'Create and position elements for your certificate' }}</p>
                     </div>
                     <div class="flex gap-2">
                         <a href="{{ route('template.designer') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1">arrow_back</span>
+                            <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
                             Back to Templates
                         </a>
                     </div>
@@ -87,13 +87,13 @@ $initialIsActive = $template && $template->is_active ? true : false;
                 <!-- Step 1: Background Selection -->
                 <div x-show="step === 1" class="border rounded-lg bg-white p-6 shadow-sm">
                     <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                        <span class="material-icons text-primary-DEFAULT text-base mr-1">palette</span>
+                        <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">palette</span>
                         Step 1: Choose Certificate Background
                     </h2>
                     
                     <div class="mb-6 ml-6">
                         <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT text-base mr-1">crop_landscape</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">crop_landscape</span>
                             Orientation
                         </label>
                         <div class="flex gap-4 mt-2">
@@ -110,12 +110,12 @@ $initialIsActive = $template && $template->is_active ? true : false;
                     
                     <div class="mb-6 ml-6">
                         <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT text-base mr-1">picture_as_pdf</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">picture_as_pdf</span>
                             PDF Background
                         </label>
                         <input type="file" accept=".pdf" class="hidden" id="pdf-upload" @change="handleBackgroundUpload($event)">
                         <label for="pdf-upload" class="inline-flex px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm font-medium items-center text-xs transition-colors duration-200 ease-in-out cursor-pointer">
-                            <span class="material-icons text-xs mr-1">upload_file</span>
+                            <span class="material-icons-outlined text-xs mr-1">upload_file</span>
                             Upload PDF Background
                         </label>
                         <p class="text-xs text-gray-500 mt-1">Select a PDF file to use as the certificate background</p>
@@ -129,7 +129,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                     <iframe x-bind:src="selectedBackground.preview_image + '#toolbar=0&navpanes=0&scrollbar=0'" class="w-full h-full"></iframe>
                                 </div>
                                 <button type="button" class="mt-4 px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mx-auto" @click="proceedToDesign">
-                                    <span class="material-icons text-xs mr-1">navigate_next</span>
+                                    <span class="material-icons-outlined text-xs mr-1">navigate_next</span>
                                     Proceed to Design Canvas
                                 </button>
                             </div>
@@ -151,7 +151,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                 <div class="flex items-center flex-wrap gap-3">
                                     <div>
                                         <label for="name" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                            <span class="material-icons text-primary-DEFAULT text-base mr-1">title</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">title</span>
                                             Template Name
                                         </label>
                                         <input type="text" id="name" name="name" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring focus:ring-primary-light focus:border-primary-light" x-model="name" required>
@@ -159,22 +159,29 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                     
                                     <div>
                                         <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addTextElement">
-                                            <span class="material-icons text-xs mr-1">text_fields</span>
+                                            <span class="material-icons-outlined text-xs mr-1">text_fields</span>
                                             Add Text
                                         </button>
                                     </div>
                                     
                                     <div>
                                         <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addImageElement">
-                                            <span class="material-icons text-xs mr-1">image</span>
+                                            <span class="material-icons-outlined text-xs mr-1">image</span>
                                             Add Image
                                         </button>
                                         <input type="file" id="image-upload" accept="image/*" class="hidden" @change="handleImageUpload">
                                     </div>
                                     
                                     <div>
+                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addQrCodeElement">
+                                            <span class="material-icons-outlined text-xs mr-1">qr_code</span>
+                                            Add QR Code
+                                        </button>
+                                    </div>
+                                    
+                                    <div>
                                         <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="step = 1">
-                                            <span class="material-icons text-xs mr-1">palette</span>
+                                            <span class="material-icons-outlined text-xs mr-1">palette</span>
                                             Background
                                         </button>
                                     </div>
@@ -182,7 +189,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                 
                                 <div>
                                     <button type="submit" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                        <span class="material-icons text-xs mr-1">save</span>
+                                        <span class="material-icons-outlined text-xs mr-1">save</span>
                                         {{ $template ? 'Update Template' : 'Save Template' }}
                                     </button>
                                 </div>
@@ -192,7 +199,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                         <!-- Design Canvas -->
                         <div class="border rounded-lg bg-white p-6 shadow-sm relative">
                             <h3 class="text-xs font-medium text-gray-700 mb-3 flex items-center">
-                                <span class="material-icons text-primary-DEFAULT text-base mr-1">design_services</span>
+                                <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">design_services</span>
                                 Design Canvas
                             </h3>
                             
@@ -216,50 +223,91 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                         
                                         <!-- Text Elements -->
                                         <template x-for="element in templateData.elements" :key="element.id">
-                                            <template x-if="element.type === 'text'">
-                                                <div class="absolute cursor-move"
-                                                    :style="{
-                                                        left: `${(element.x / templateData.width) * 100}%`,
-                                                        top: `${(element.y / templateData.height) * 100}%`,
-                                                        fontSize: `${element.fontSize}px`,
-                                                        fontFamily: element.fontFamily || 'Arial',
-                                                        fontWeight: element.fontWeight || 'normal',
-                                                        fontStyle: element.fontStyle || 'normal',
-                                                        textDecoration: element.textDecoration || 'none',
-                                                        color: element.color || '#000000',
-                                                        textAlign: element.textAlign || 'left',
-                                                        transform: element.textAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                                        border: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : '1px dashed transparent',
-                                                        padding: '4px',
-                                                        backgroundColor: selectedElement && selectedElement.id === element.id ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-                                                        minWidth: '50px'
-                                                    }"
-                                                    @click="handleElementClick(element, $event)"
-                                                    @mousedown="handleElementDrag(element, $event)">
-                                                    <span x-text="element.content"></span>
-                                                </div>
-                                            </template>
-                                            <template x-if="element.type === 'image'">
-                                                <div class="absolute"
-                                                    :style="{
-                                                        left: `${(element.x / templateData.width) * 100}%`,
-                                                        top: `${(element.y / templateData.height) * 100}%`,
-                                                        width: `${(element.width / templateData.width) * 100}%`,
-                                                        height: `${(element.height / templateData.height) * 100}%`
-                                                    }">
-                                                    <img :src="element.src" class="w-full h-full cursor-move"
+                                            <div>
+                                                <template x-if="element.type === 'text'">
+                                                    <div class="absolute cursor-move"
                                                         :style="{
-                                                            border: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : 'none'
+                                                            left: `${(element.x / templateData.width) * 100}%`,
+                                                            top: `${(element.y / templateData.height) * 100}%`,
+                                                            fontSize: `${element.fontSize}px`,
+                                                            fontFamily: element.fontFamily || 'Arial',
+                                                            fontWeight: element.fontWeight || 'normal',
+                                                            fontStyle: element.fontStyle || 'normal',
+                                                            textDecoration: element.textDecoration || 'none',
+                                                            color: element.color || '#000000',
+                                                            textAlign: element.textAlign || 'left',
+                                                            transform: element.textAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                                            border: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : '1px dashed transparent',
+                                                            padding: '4px',
+                                                            backgroundColor: selectedElement && selectedElement.id === element.id ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                                                            minWidth: '50px'
                                                         }"
                                                         @click="handleElementClick(element, $event)"
                                                         @mousedown="handleElementDrag(element, $event)">
-                                                </div>
-                                            </template>
+                                                        <span x-text="element.content"></span>
+                                                    </div>
+                                                </template>
+                                                <template x-if="element.type === 'image'">
+                                                    <div class="absolute"
+                                                        :style="{
+                                                            left: `${(element.x / templateData.width) * 100}%`,
+                                                            top: `${(element.y / templateData.height) * 100}%`,
+                                                            width: `${(element.width / templateData.width) * 100}%`,
+                                                            height: `${(element.height / templateData.height) * 100}%`
+                                                        }">
+                                                        <img :src="element.src" class="w-full h-full cursor-move"
+                                                            :style="{
+                                                                border: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : 'none'
+                                                            }"
+                                                            @click="handleElementClick(element, $event)"
+                                                            @mousedown="handleElementDrag(element, $event)">
+                                                    </div>
+                                                </template>
+                                                <template x-if="element.type === 'qrcode'">
+                                                    <div class="absolute cursor-move"
+                                                        :style="{
+                                                            left: `${(element.x / templateData.width) * 100}%`,
+                                                            top: `${(element.y / templateData.height) * 100}%`,
+                                                            width: `${(element.width / templateData.width) * 100}%`,
+                                                            height: `${(element.height / templateData.height) * 100}%`,
+                                                            border: selectedElement && selectedElement.id === element.id ? '2px solid #6366f1' : '2px dashed #6366f1',
+                                                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontSize: '12px',
+                                                            color: '#6366f1',
+                                                            fontWeight: '500'
+                                                        }"
+                                                        @click="handleElementClick(element, $event)"
+                                                        @mousedown="handleElementDrag(element, $event)">
+                                                        <div class="text-center">
+                                                            <span class="material-icons-outlined text-2xl block mb-1">qr_code</span>
+                                                            <span class="text-xs">QR Code</span>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </template>
                                     </div>
                                     
-                                    <div class="mt-4 text-center">
-                                        <p class="text-xs text-gray-500">Add text elements with placeholder tags like <code>@{{participant_name}}</code> to be replaced with actual data.</p>
+                                    <div class="mt-4">
+                                        <div class="bg-gray-50 border border-gray-200 rounded p-3">
+                                            <p class="text-xs font-medium text-gray-700 mb-2">
+                                                <span class="material-icons-outlined text-xs align-middle mr-1">info</span>
+                                                Available Placeholders:
+                                            </p>
+                                            <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{participant_name}}</code></div>
+                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{event_name}}</code></div>
+                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{event_date}}</code></div>
+                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{event_time}}</code></div>
+                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{CERT-GEN}}</code> <span class="text-green-600">✓ New</span></div>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                <code class="bg-white px-1 py-0.5 rounded">@{{CERT-GEN}}</code> generates unique certificate number (e.g., CERT-20260417120000-A1B2C3)
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -268,7 +316,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                     <!-- Text Element Properties -->
                                     <div x-show="selectedElement !== null" class="border rounded-lg bg-white p-4 shadow-md">
                                         <h3 class="text-xs font-medium text-gray-700 mb-3 bg-primary-light text-white p-2 rounded flex items-center">
-                                            <span class="material-icons text-base mr-1">tune</span>
+                                            <span class="material-icons-outlined text-base mr-1">tune</span>
                                             Element Properties
                                         </h3>
                                         
@@ -277,7 +325,29 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                             <!-- Content -->
                                             <div class="mb-3">
                                                 <label class="block text-xs font-medium text-gray-700 mb-1">Text Content</label>
-                                                <input type="text" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" x-model="selectedElement.content" @input="updateElement('content', $event.target.value)">
+                                                <input type="text" class="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-2" x-model="selectedElement.content" @input="updateElement('content', $event.target.value)">
+                                                
+                                                <!-- Quick Insert Placeholders -->
+                                                <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                                                    <p class="text-xs font-medium text-gray-600 mb-1">Quick Insert:</p>
+                                                    <div class="flex flex-wrap gap-1">
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{participant_name}}')">
+                                                            Name
+                                                        </button>
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{event_name}}')">
+                                                            Event
+                                                        </button>
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{event_date}}')">
+                                                            Date
+                                                        </button>
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{event_time}}')">
+                                                            Time
+                                                        </button>
+                                                        <button type="button" class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded font-medium" @click="updateElement('content', selectedElement.content + '{{CERT-GEN}}')">
+                                                            Cert No.
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                             
                                             <!-- Font Options -->
@@ -319,21 +389,21 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                                         class="p-1.5 rounded"
                                                         :class="selectedElement.fontWeight === 'bold' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
                                                         @click="updateElement('fontWeight', selectedElement.fontWeight === 'bold' ? 'normal' : 'bold')">
-                                                        <span class="material-icons text-xs">format_bold</span>
+                                                        <span class="material-icons-outlined text-xs">format_bold</span>
                                                     </button>
                                                     
                                                     <button type="button" 
                                                         class="p-1.5 rounded"
                                                         :class="selectedElement.fontStyle === 'italic' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
                                                         @click="updateElement('fontStyle', selectedElement.fontStyle === 'italic' ? 'normal' : 'italic')">
-                                                        <span class="material-icons text-xs">format_italic</span>
+                                                        <span class="material-icons-outlined text-xs">format_italic</span>
                                                     </button>
                                                     
                                                     <button type="button" 
                                                         class="p-1.5 rounded"
                                                         :class="selectedElement.textDecoration === 'underline' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
                                                         @click="updateElement('textDecoration', selectedElement.textDecoration === 'underline' ? 'none' : 'underline')">
-                                                        <span class="material-icons text-xs">format_underlined</span>
+                                                        <span class="material-icons-outlined text-xs">format_underlined</span>
                                                     </button>
                                                     
                                                     <div class="mx-1 h-6 border-l border-gray-300"></div>
@@ -342,21 +412,21 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                                         class="p-1.5 rounded"
                                                         :class="selectedElement.textAlign === 'left' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
                                                         @click="updateElement('textAlign', 'left')">
-                                                        <span class="material-icons text-xs">format_align_left</span>
+                                                        <span class="material-icons-outlined text-xs">format_align_left</span>
                                                     </button>
                                                     
                                                     <button type="button" 
                                                         class="p-1.5 rounded"
                                                         :class="selectedElement.textAlign === 'center' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
                                                         @click="updateElement('textAlign', 'center')">
-                                                        <span class="material-icons text-xs">format_align_center</span>
+                                                        <span class="material-icons-outlined text-xs">format_align_center</span>
                                                     </button>
                                                     
                                                     <button type="button" 
                                                         class="p-1.5 rounded"
                                                         :class="selectedElement.textAlign === 'right' ? 'bg-primary-DEFAULT text-white' : 'bg-white border border-gray-300'"
                                                         @click="updateElement('textAlign', 'right')">
-                                                        <span class="material-icons text-xs">format_align_right</span>
+                                                        <span class="material-icons-outlined text-xs">format_align_right</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -379,7 +449,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                             <!-- Delete Button -->
                                             <div class="mt-4">
                                                 <button type="button" class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium flex items-center justify-center" @click="deleteElement">
-                                                    <span class="material-icons text-xs mr-1">delete</span>
+                                                    <span class="material-icons-outlined text-xs mr-1">delete</span>
                                                     Delete Element
                                                 </button>
                                             </div>
@@ -426,8 +496,74 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                             <!-- Delete Button -->
                                             <div class="mt-4">
                                                 <button type="button" class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium flex items-center justify-center" @click="deleteElement">
-                                                    <span class="material-icons text-xs mr-1">delete</span>
+                                                    <span class="material-icons-outlined text-xs mr-1">delete</span>
                                                     Delete Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- QR Code Element Properties -->
+                                        <div x-show="selectedElement && selectedElement.type === 'qrcode'">
+                                            <!-- Dimensions -->
+                                            <div class="mb-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">QR Code Size</label>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Width</label>
+                                                        <div class="flex items-center">
+                                                            <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="selectedElement.width" @input="updateElement('width', parseInt($event.target.value) || 30)">
+                                                            <span class="ml-1 text-xs text-gray-500">mm</span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Height</label>
+                                                        <div class="flex items-center">
+                                                            <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="selectedElement.height" @input="updateElement('height', parseInt($event.target.value) || 30)">
+                                                            <span class="ml-1 text-xs text-gray-500">mm</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Position -->
+                                            <div class="mb-3 border-t border-gray-200 pt-3">
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">QR Code Position</label>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">X Position</label>
+                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.x || 0)" @input="updateElement('x', parseInt($event.target.value) || 0)">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Y Position</label>
+                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.y || 0)" @input="updateElement('y', parseInt($event.target.value) || 0)">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Info -->
+                                            <div class="mb-3 border-t border-gray-200 pt-3">
+                                                <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-2">
+                                                    <p class="text-xs text-blue-800">
+                                                        <span class="material-icons-outlined text-xs align-middle mr-1">info</span>
+                                                        QR code will contain encrypted certificate data for verification.
+                                                    </p>
+                                                </div>
+                                                <div class="bg-amber-50 border border-amber-200 rounded p-3">
+                                                    <p class="text-xs text-amber-800 mb-1">
+                                                        <span class="material-icons-outlined text-xs align-middle mr-1">warning</span>
+                                                        <strong>Size and position are in millimeters (mm).</strong>
+                                                    </p>
+                                                    <p class="text-xs text-amber-800">
+                                                        For A4 portrait (210mm × 297mm): Maximum safe Y position is <strong>247mm</strong> for 30mm QR code to prevent page overflow.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Delete Button -->
+                                            <div class="mt-4">
+                                                <button type="button" class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium flex items-center justify-center" @click="deleteElement">
+                                                    <span class="material-icons-outlined text-xs mr-1">delete</span>
+                                                    Delete QR Code
                                                 </button>
                                             </div>
                                         </div>
@@ -436,18 +572,22 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                     <!-- Add Elements Panel when no element is selected -->
                                     <div x-show="!selectedElement" class="border rounded-lg bg-white p-4 shadow-md">
                                         <div class="text-center p-4">
-                                            <span class="material-icons text-primary-DEFAULT text-2xl">add_circle</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-2xl">add_circle</span>
                                             <p class="text-sm font-medium text-gray-700 mt-2">Add Elements</p>
                                             <p class="text-xs text-gray-500 mb-4">Add text or images to your certificate</p>
                                             
                                             <div class="flex justify-center gap-2">
                                                 <button type="button" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium flex items-center" @click="addTextElement">
-                                                    <span class="material-icons text-xs mr-1">text_fields</span>
+                                                    <span class="material-icons-outlined text-xs mr-1">text_fields</span>
                                                     Add Text
                                                 </button>
                                                 <button type="button" class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium flex items-center" @click="addImageElement">
-                                                    <span class="material-icons text-xs mr-1">image</span>
+                                                    <span class="material-icons-outlined text-xs mr-1">image</span>
                                                     Add Image
+                                                </button>
+                                                <button type="button" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-medium flex items-center" @click="addQrCodeElement">
+                                                    <span class="material-icons-outlined text-xs mr-1">qr_code</span>
+                                                    Add QR
                                                 </button>
                                             </div>
                                         </div>
@@ -554,12 +694,15 @@ $initialIsActive = $template && $template->is_active ? true : false;
                         const newX = startElementX + (deltaX / rect.width) * this.templateData.width;
                         const newY = startElementY + (deltaY / rect.height) * this.templateData.height;
                         
+                        // For QR code elements, add extra margin to prevent page overflow
+                        const safetyMargin = element.type === 'qrcode' ? 20 : 0;
+                        
                         // Update element in template data
                         this.templateData.elements = this.templateData.elements.map(el => 
                             el.id === element.id ? { 
                                 ...el, 
                                 x: Math.max(0, Math.min(this.templateData.width - (el.width || 50), newX)),
-                                y: Math.max(0, Math.min(this.templateData.height - (el.height || 20), newY))
+                                y: Math.max(0, Math.min(this.templateData.height - (el.height || 20) - safetyMargin, newY))
                             } : el
                         );
                         
@@ -568,7 +711,7 @@ $initialIsActive = $template && $template->is_active ? true : false;
                             this.selectedElement = { 
                                 ...this.selectedElement, 
                                 x: Math.max(0, Math.min(this.templateData.width - (element.width || 50), newX)),
-                                y: Math.max(0, Math.min(this.templateData.height - (element.height || 20), newY))
+                                y: Math.max(0, Math.min(this.templateData.height - (element.height || 20) - safetyMargin, newY))
                             };
                         }
                     };
@@ -584,6 +727,25 @@ $initialIsActive = $template && $template->is_active ? true : false;
                 
                 updateElement(field, value) {
                     if (!this.selectedElement) return;
+                    
+                    // For QR code elements, validate position to prevent page overflow
+                    if (this.selectedElement.type === 'qrcode') {
+                        const safetyMargin = 20; // 20mm safety margin for QR codes
+                        
+                        if (field === 'y') {
+                            const maxY = this.templateData.height - (this.selectedElement.height || 30) - safetyMargin;
+                            value = Math.max(0, Math.min(maxY, value));
+                        } else if (field === 'x') {
+                            const maxX = this.templateData.width - (this.selectedElement.width || 30);
+                            value = Math.max(0, Math.min(maxX, value));
+                        } else if (field === 'height') {
+                            const maxHeight = this.templateData.height - this.selectedElement.y - safetyMargin;
+                            value = Math.max(10, Math.min(maxHeight, value));
+                        } else if (field === 'width') {
+                            const maxWidth = this.templateData.width - this.selectedElement.x;
+                            value = Math.max(10, Math.min(maxWidth, value));
+                        }
+                    }
                     
                     // Update element in template data
                     this.templateData.elements = this.templateData.elements.map(el => 
@@ -611,6 +773,14 @@ $initialIsActive = $template && $template->is_active ? true : false;
                 
                 addImageElement() {
                     document.getElementById('image-upload').click();
+                },
+                
+                addQrCodeElement() {
+                    this.draggedElement = {
+                        type: 'qrcode',
+                        width: 30,  // Default size in mm (30mm x 30mm)
+                        height: 30
+                    };
                 },
                 
                 handleImageUpload(e) {

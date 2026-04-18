@@ -14,7 +14,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">card_membership</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">card_membership</span>
                         <h1 class="text-xl font-bold text-gray-800">Certificate Details</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">
@@ -23,16 +23,16 @@
                 </div>
                 <div class="flex space-x-2">
                     <a href="{{ route('reports.certificates') }}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">arrow_back</span>
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
                     <button onclick="printCertificate()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">print</span>
+                        <span class="material-icons-outlined text-xs mr-1">print</span>
                         Print
                     </button>
                     @can('certificate_reports.export')
                     <a href="{{ route('reports.certificates.download', ['id' => $certificate->certificate_number]) }}" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">file_download</span>
+                        <span class="material-icons-outlined text-xs mr-1">file_download</span>
                         Download PDF
                     </a>
                     @endcan
@@ -46,12 +46,12 @@
                 <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2 text-base">preview</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-base">preview</span>
                             Certificate Preview
                         </h2>
                         @if($certificate->pdf_file)
                         <a href="{{ asset('storage/' . $certificate->pdf_file) }}" target="_blank" class="text-xs text-primary-DEFAULT flex items-center">
-                            <span class="material-icons text-xs mr-1">fullscreen</span>
+                            <span class="material-icons-outlined text-xs mr-1">fullscreen</span>
                             View Full Size
                         </a>
                         @endif
@@ -74,7 +74,7 @@
             <!-- Certificate Information -->
             <div class="mb-6 border border-gray-200 rounded-md p-4">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT mr-2 text-base">info</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-base">info</span>
                     Certificate Information
                 </h2>
                 
@@ -111,7 +111,7 @@
             <!-- Recipient Information -->
             <div class="mb-6 border border-gray-200 rounded-md p-4">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT mr-2 text-base">person</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-base">person</span>
                     Recipient Information
                 </h2>
                 
@@ -202,7 +202,7 @@
             <!-- Event Information -->
             <div class="mb-6 border border-gray-200 rounded-md p-4">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT mr-2 text-base">event</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-base">event</span>
                     Event Information
                 </h2>
                 
@@ -246,7 +246,7 @@
             <!-- Delivery Information -->
             <div class="border border-gray-200 rounded-md p-4">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT mr-2 text-base">send</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-base">send</span>
                     Delivery Information
                 </h2>
                 
@@ -281,7 +281,7 @@
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-xs flex items-center">
-                            <span class="material-icons text-xs mr-1">delete</span>
+                            <span class="material-icons-outlined text-xs mr-1">delete</span>
                             Delete Certificate
                         </button>
                     </form>

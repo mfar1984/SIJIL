@@ -18,19 +18,19 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">preview</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">preview</span>
                         <h1 class="text-xl font-bold text-gray-800">Template Preview</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">{{ $template->name }}</p>
                 </div>
                 <div class="flex gap-2">
                     <a href="{{ route('template.designer') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">arrow_back</span>
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
                         Back to Templates
                     </a>
                     @can('templates.update')
                     <a href="{{ route('template.edit', $template->id) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">edit</span>
+                        <span class="material-icons-outlined text-xs mr-1">edit</span>
                         Edit Template
                     </a>
                     @endcan
@@ -43,7 +43,7 @@
                 <div class="md:w-1/3 space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT text-base mr-1">title</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">title</span>
                             Template Name
                         </label>
                         <p class="text-sm ml-6">{{ $template->name }}</p>
@@ -51,7 +51,7 @@
                     
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT text-base mr-1">notes</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">notes</span>
                             Description
                         </label>
                         <p class="text-sm ml-6">{{ $template->description ?: 'No description provided' }}</p>
@@ -59,7 +59,7 @@
                     
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT text-base mr-1">crop_landscape</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">crop_landscape</span>
                             Orientation
                         </label>
                         <p class="text-sm ml-6 capitalize">{{ $template->orientation }}</p>
@@ -68,7 +68,7 @@
                     @if(Schema::hasColumn('certificate_templates', 'is_active'))
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                <span class="material-icons text-primary-DEFAULT text-base mr-1">toggle_on</span>
+                                <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">toggle_on</span>
                                 Status
                             </label>
                             <div class="ml-6">
@@ -83,7 +83,7 @@
                     
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT text-base mr-1">calendar_today</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">calendar_today</span>
                             Created Date
                         </label>
                         <p class="text-sm ml-6">{{ $template->created_at->format('d M Y, H:i') }}</p>
@@ -93,13 +93,13 @@
                         <div class="flex gap-2">
                             @can('templates.create')
                             <a href="{{ route('template.designer.create', ['id' => $template->id]) }}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                <span class="material-icons text-xs mr-1">design_services</span>
+                                <span class="material-icons-outlined text-xs mr-1">design_services</span>
                                 Edit Design
                             </a>
                             <form action="{{ route('template.duplicate', $template->id) }}" method="POST" class="inline">
                                 @csrf
                                 <button type="submit" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                    <span class="material-icons text-xs mr-1">content_copy</span>
+                                    <span class="material-icons-outlined text-xs mr-1">content_copy</span>
                                     Duplicate
                                 </button>
                             </form>
@@ -111,7 +111,7 @@
                 <div class="md:w-2/3">
                     <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
                         <h2 class="text-xs font-medium text-gray-700 mb-3 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT text-base mr-1">preview</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">preview</span>
                             Certificate Preview
                         </h2>
                         

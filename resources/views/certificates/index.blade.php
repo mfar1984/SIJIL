@@ -12,14 +12,14 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">workspace_premium</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">workspace_premium</span>
                         <h1 class="text-xl font-bold text-gray-800">Manage Certificates</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">View and generate certificates for participants</p>
                 </div>
                 @can('certificates.create')
                 <a href="{{ route('certificates.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                    <span class="material-icons text-xs mr-1">add_circle</span>
+                    <span class="material-icons-outlined text-xs mr-1">add_circle</span>
                     Generate Certificates
                 </a>
                 @endcan
@@ -132,17 +132,17 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ asset('storage/' . $certificate->pdf_file) }}" target="_blank" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                         </a>
                                         <a href="{{ asset('storage/' . $certificate->pdf_file) }}" download class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Download">
-                                            <span class="material-icons text-green-600 text-xs">download</span>
+                                            <span class="material-icons-outlined text-green-600 text-xs">download</span>
                                         </a>
                                         @can('certificates.delete')
                                         <form method="POST" action="{{ route('certificates.destroy', $certificate->id) }}" onsubmit="return confirm('Are you sure you want to delete this certificate?')" class="inline-block">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endcan

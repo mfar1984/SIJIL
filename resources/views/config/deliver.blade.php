@@ -7,12 +7,46 @@
 
     <x-slot name="title">Config Deliver</x-slot>
 
+    <style>
+        /* Tooltip styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
+        }
+    </style>
+
     <div class="bg-white rounded shadow-md border border-gray-300" x-data="{ isEditing: false }">
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">settings_applications</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">settings_applications</span>
                         <h1 class="text-xl font-bold text-gray-800">Config Deliver</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Configure email and SMS delivery settings</p>
@@ -27,7 +61,7 @@
                         x-transition
                     >
                         <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1" x-text="isEditing ? 'save' : 'edit'"></span>
+                            <span class="material-icons-outlined text-xs mr-1" x-text="isEditing ? 'save' : 'edit'"></span>
                             <span x-text="isEditing ? 'Save Changes' : 'Edit Settings'"></span>
                         </span>
                     </button>
@@ -46,7 +80,7 @@
                         id="emailTabButton"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 border-primary-DEFAULT text-primary-DEFAULT focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">email</span>
+                        <span class="material-icons-outlined text-xs mr-2">email</span>
                         Email Configuration
                     </button>
                     <button 
@@ -55,16 +89,16 @@
                         id="smsTabButton"
                         class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none transition duration-150 ease-in-out"
                     >
-                        <span class="material-icons text-xs mr-2">sms</span>
+                        <span class="material-icons-outlined text-xs mr-2">sms</span>
                         SMS Configuration
                     </button>
                 </div>
             </div>
                 <!-- Email Configuration Tab -->
-            <div id="emailTab" class="space-y-4">
+            <div id="emailTab" class="space-y-2">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
                         <div class="flex">
-                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">info</span>
                             <div class="text-xs text-blue-700">
                                 <p class="font-medium">Email Configuration</p>
                                 <p class="mt-1">Configure your email sending settings. Make sure to test your configuration after saving.</p>
@@ -79,17 +113,17 @@
                         <h2 class="text-sm font-semibold text-gray-700 mb-4">Mail Driver</h2>
                             <div>
                                 <label for="mail_driver" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">settings</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">settings</span>
                                     Mail Driver
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">dns</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">dns</span>
                                     </div>
                                     <select 
                                         id="mail_driver" 
                                         name="mail_driver" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :class="{'bg-gray-50': !isEditing}"
                                         :disabled="!isEditing"
                                         onchange="toggleMailDriverSettings()"
@@ -100,7 +134,6 @@
                                         <option value="sendmail" {{ isset($emailConfig) && $emailConfig->provider == 'sendmail' ? 'selected' : '' }}>Sendmail</option>
                                     </select>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Select the mail service provider to use</p>
                             </div>
                                     </div>
                     <!-- SMTP Settings -->
@@ -110,61 +143,59 @@
                             <!-- Mail Host -->
                             <div>
                                 <label for="mail_host" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">dns</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">dns</span>
                                     Mail Host
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">language</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">language</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="mail_host" 
                                         name="mail_host" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['host']) ? $emailConfig->settings['host'] : 'smtp.mailtrap.io' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">SMTP server hostname (e.g., smtp.gmail.com)</p>
                             </div>
                             
                             <!-- Mail Port -->
                             <div>
                                 <label for="mail_port" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">settings_ethernet</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">settings_ethernet</span>
                                     Mail Port
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">pin</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">pin</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="mail_port" 
                                         name="mail_port" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['port']) ? $emailConfig->settings['port'] : '2525' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">SMTP server port (e.g., 587 for TLS, 465 for SSL)</p>
                             </div>
                             
                             <!-- Encryption -->
                             <div>
                                 <label for="mail_encryption" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">security</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">security</span>
                                     Encryption
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">enhanced_encryption</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">enhanced_encryption</span>
                                     </div>
                                     <select 
                                         id="mail_encryption" 
                                         name="mail_encryption" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                         <option value="tls" {{ isset($emailConfig) && isset($emailConfig->settings['encryption']) && $emailConfig->settings['encryption'] == 'tls' ? 'selected' : '' }}>TLS</option>
@@ -172,7 +203,6 @@
                                         <option value="none" {{ isset($emailConfig) && isset($emailConfig->settings['encryption']) && $emailConfig->settings['encryption'] == 'none' ? 'selected' : '' }}>None</option>
                                     </select>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Connection encryption protocol</p>
                             </div>
                         </div>
                         
@@ -180,45 +210,43 @@
                             <!-- Mail Username -->
                             <div>
                                 <label for="mail_username" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">person</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">person</span>
                                     Mail Username
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">account_circle</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">account_circle</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="mail_username" 
                                         name="mail_username" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['username']) ? $emailConfig->settings['username'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">SMTP authentication username</p>
                             </div>
                             
                             <!-- Mail Password -->
                             <div>
                                 <label for="mail_password" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     Mail Password
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">lock</span>
                                     </div>
                                     <input 
                                         type="password" 
                                         id="mail_password" 
                                         name="mail_password" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['password']) ? $emailConfig->settings['password'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">SMTP authentication password</p>
                             </div>
                         </div>
                     </div>
@@ -229,67 +257,64 @@
                             <!-- Mailgun Domain -->
                             <div>
                                 <label for="mailgun_domain" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">dns</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">dns</span>
                                     Mailgun Domain
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">language</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">language</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="mailgun_domain" 
                                         name="mailgun_domain" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['domain']) ? $emailConfig->settings['domain'] : '' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Mailgun domain</p>
                             </div>
                             
                             <!-- Mailgun Secret -->
                             <div>
                                 <label for="mailgun_secret" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     Mailgun Secret
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">lock</span>
                                     </div>
                                     <input 
                                         type="password" 
                                         id="mailgun_secret" 
                                         name="mailgun_secret" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['secret']) ? $emailConfig->settings['secret'] : '' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Mailgun API key</p>
                             </div>
                             
                             <!-- Mailgun Endpoint -->
                             <div>
                                 <label for="mailgun_endpoint" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">link</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">link</span>
                                     Mailgun Endpoint
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">public</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">public</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="mailgun_endpoint" 
                                         name="mailgun_endpoint" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['endpoint']) ? $emailConfig->settings['endpoint'] : 'api.mailgun.net' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Mailgun API endpoint (api.mailgun.net or api.eu.mailgun.net)</p>
                             </div>
                         </div>
                     </div>
@@ -301,61 +326,59 @@
                             <!-- SES Key -->
                             <div>
                                 <label for="ses_key" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     AWS Access Key ID
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">account_circle</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">account_circle</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="ses_key" 
                                         name="ses_key" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['key']) ? $emailConfig->settings['key'] : '' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your AWS access key ID</p>
                             </div>
                             
                             <!-- SES Secret -->
                             <div>
                                 <label for="ses_secret" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     AWS Secret Access Key
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">lock</span>
                                     </div>
                                     <input 
                                         type="password" 
                                         id="ses_secret" 
                                         name="ses_secret" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['secret']) ? $emailConfig->settings['secret'] : '' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your AWS secret access key</p>
                             </div>
                             
                             <!-- SES Region -->
                             <div>
                                 <label for="ses_region" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">public</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">public</span>
                                     AWS Region
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">language</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">language</span>
                                     </div>
                                     <select 
                                         id="ses_region" 
                                         name="ses_region" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                         <option value="us-east-1" {{ isset($emailConfig) && isset($emailConfig->settings['region']) && $emailConfig->settings['region'] == 'us-east-1' ? 'selected' : '' }}>US East (N. Virginia)</option>
@@ -372,7 +395,6 @@
                                         <option value="eu-west-2" {{ isset($emailConfig) && isset($emailConfig->settings['region']) && $emailConfig->settings['region'] == 'eu-west-2' ? 'selected' : '' }}>Europe (London)</option>
                                     </select>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">AWS region where SES is configured</p>
                             </div>
                         </div>
                     </div>
@@ -383,52 +405,50 @@
                             <!-- From Address -->
                             <div>
                                 <label for="mail_from_address" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">alternate_email</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">alternate_email</span>
                                     From Address
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">email</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">email</span>
                                     </div>
                                     <input 
                                         type="email" 
                                         id="mail_from_address" 
                                         name="mail_from_address" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['from_address']) ? $emailConfig->settings['from_address'] : 'no-reply@example.com' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Email address that will appear in the From field</p>
                             </div>
                             
                             <!-- From Name -->
                             <div>
                                 <label for="mail_from_name" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">badge</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">badge</span>
                                     From Name
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">person</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">person</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="mail_from_name" 
                                         name="mail_from_name" 
                                         value="{{ isset($emailConfig) && isset($emailConfig->settings['from_name']) ? $emailConfig->settings['from_name'] : 'SIJIL System' }}" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Name that will appear in the From field</p>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mt-4">
                         <h2 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">send</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">send</span>
                             Test Email Configuration
                         </h2>
                         <div class="flex items-center p-4 bg-gray-50 border border-gray-200 rounded-md">
@@ -440,7 +460,7 @@
                                 :class="{'bg-gray-400 hover:bg-gray-500 cursor-not-allowed border-gray-500': !isEditing, 'bg-blue-600 hover:bg-blue-700 border-blue-700': isEditing}"
                             :disabled="!isEditing"
                         >
-                            <span class="material-icons text-xs mr-1">send</span>
+                            <span class="material-icons-outlined text-xs mr-1">send</span>
                             Send Test Email
                         </button>
                         <span class="text-xs text-gray-500 ml-3">Test your email configuration by sending a test email.</span>
@@ -448,11 +468,11 @@
                 </div>
 
                 <!-- Test Email Modal -->
-                <div id="testEmailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div id="testEmailModal" class="fixed inset-0 modal-backdrop-glass flex items-center justify-center z-50 hidden">
                     <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                                <span class="material-icons text-primary-DEFAULT mr-2">email</span>
+                                <span class="material-icons-outlined text-primary-DEFAULT mr-2">email</span>
                                 Send Test Email
                             </h3>
                             <button type="button" onclick="hideTestEmailModal()" class="text-gray-400 hover:text-gray-600">
@@ -466,7 +486,7 @@
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="material-icons text-[#004aad] text-base">email</span>
+                                    <span class="material-icons-outlined text-[#004aad] text-base">email</span>
                                 </div>
                                 <input type="email" id="test_email" name="test_email" class="w-full text-sm border-gray-300 rounded-md pl-10 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Enter email address">
                             </div>
@@ -491,7 +511,7 @@
             <div id="smsTab" class="space-y-4" style="display: none;">
                     <div class="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
                         <div class="flex">
-                            <span class="material-icons text-blue-600 mr-2">info</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">info</span>
                             <div class="text-xs text-blue-700">
                                 <p class="font-medium">SMS Configuration</p>
                             <p class="mt-1">Configure your SMS gateway settings. Supported providers: Twilio, Nexmo, AWS SNS, and Infobip.</p>
@@ -508,17 +528,17 @@
                             <!-- SMS Provider -->
                             <div>
                                 <label for="sms_provider" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">sms</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">sms</span>
                                     SMS Provider
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">business</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">business</span>
                                     </div>
                                     <select 
                                         id="sms_provider" 
                                         name="sms_provider" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                         onchange="toggleSmsProviderSettings()"
                                     >
@@ -528,7 +548,6 @@
                                         <option value="infobip" {{ isset($smsConfig) && $smsConfig->provider == 'infobip' ? 'selected' : '' }}>Infobip</option>
                                     </select>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Select your SMS gateway provider</p>
                             </div>
                         </div>
                     </div>
@@ -539,56 +558,54 @@
                             <!-- Twilio Account SID -->
                             <div>
                                 <label for="twilio_sid" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">fingerprint</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">fingerprint</span>
                                     Twilio Account SID
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">vpn_key</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">vpn_key</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="twilio_sid" 
                                         name="twilio_sid" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'twilio' && isset($smsConfig->settings['sid']) ? $smsConfig->settings['sid'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Twilio account SID from the Twilio dashboard</p>
                             </div>
                             
                             <!-- Twilio Auth Token -->
                             <div>
                                 <label for="twilio_token" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     Twilio Auth Token
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">lock</span>
                                     </div>
                                     <input 
                                         type="password" 
                                         id="twilio_token" 
                                         name="twilio_token" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'twilio' && isset($smsConfig->settings['token']) ? $smsConfig->settings['token'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Twilio authentication token</p>
                             </div>
                             
                             <!-- From Number -->
                             <div>
                                 <label for="twilio_from" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">phone</span>
                                     From Number
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">call</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">call</span>
                                     </div>
                                     <input 
                                         type="text" 
@@ -596,11 +613,10 @@
                                         name="twilio_from" 
                                         placeholder="+12345678901" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'twilio' && isset($smsConfig->settings['from']) ? $smsConfig->settings['from'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Twilio phone number to send SMS from (with country code)</p>
                             </div>
                         </div>
                     </div>
@@ -612,56 +628,54 @@
                             <!-- Nexmo Key -->
                             <div>
                                 <label for="nexmo_key" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     Nexmo API Key
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">key</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">key</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="nexmo_key" 
                                         name="nexmo_key" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'nexmo' && isset($smsConfig->settings['key']) ? $smsConfig->settings['key'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Nexmo API key</p>
                             </div>
                             
                             <!-- Nexmo Secret -->
                             <div>
                                 <label for="nexmo_secret" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     Nexmo API Secret
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">lock</span>
                                     </div>
                                     <input 
                                         type="password" 
                                         id="nexmo_secret" 
                                         name="nexmo_secret" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'nexmo' && isset($smsConfig->settings['secret']) ? $smsConfig->settings['secret'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Nexmo API secret</p>
                             </div>
                             
                             <!-- From Number/Name -->
                             <div>
                                 <label for="nexmo_from" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">phone</span>
                                     From Number/Name
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">call</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">call</span>
                                     </div>
                                     <input 
                                         type="text" 
@@ -669,11 +683,10 @@
                                         name="nexmo_from" 
                                         placeholder="SIJIL"
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'nexmo' && isset($smsConfig->settings['from']) ? $smsConfig->settings['from'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Sender ID (alphanumeric name or phone number)</p>
                             </div>
                         </div>
                     </div>
@@ -684,61 +697,59 @@
                             <!-- AWS Key -->
                             <div>
                                 <label for="aws_key" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     AWS Access Key ID
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">key</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">key</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="aws_key" 
                                         name="aws_key" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'aws_sns' && isset($smsConfig->settings['key']) ? $smsConfig->settings['key'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your AWS access key ID</p>
                             </div>
                             
                             <!-- AWS Secret -->
                             <div>
                                 <label for="aws_secret" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     AWS Secret Access Key
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">lock</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">lock</span>
                                     </div>
                                     <input 
                                         type="password" 
                                         id="aws_secret" 
                                         name="aws_secret" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'aws_sns' && isset($smsConfig->settings['secret']) ? $smsConfig->settings['secret'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your AWS secret access key</p>
                             </div>
                             
                             <!-- AWS Region -->
                             <div>
                                 <label for="aws_region" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">public</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">public</span>
                                     AWS Region
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">language</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">language</span>
                                     </div>
                                     <select 
                                         id="aws_region" 
                                         name="aws_region" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                         <option value="us-east-1" {{ isset($smsConfig) && $smsConfig->provider == 'aws_sns' && isset($smsConfig->settings['region']) && $smsConfig->settings['region'] == 'us-east-1' ? 'selected' : '' }}>US East (N. Virginia)</option>
@@ -755,7 +766,6 @@
                                         <option value="eu-west-2" {{ isset($smsConfig) && $smsConfig->provider == 'aws_sns' && isset($smsConfig->settings['region']) && $smsConfig->settings['region'] == 'eu-west-2' ? 'selected' : '' }}>Europe (London)</option>
                                     </select>
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">AWS region where SNS is configured</p>
                             </div>
                         </div>
                     </div>
@@ -766,34 +776,33 @@
                             <!-- Infobip API Key -->
                             <div>
                                 <label for="infobip_key" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">vpn_key</span>
                                     Infobip API Key
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">key</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">key</span>
                                     </div>
                                     <input 
                                         type="text" 
                                         id="infobip_key" 
                                         name="infobip_key" 
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'infobip' && isset($smsConfig->settings['key']) ? $smsConfig->settings['key'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Infobip API key</p>
                             </div>
                             
                             <!-- Infobip Base URL -->
                             <div>
                                 <label for="infobip_base_url" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">link</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">link</span>
                                     Infobip Base URL
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">public</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">public</span>
                                     </div>
                                     <input 
                                         type="text" 
@@ -801,22 +810,21 @@
                                         name="infobip_base_url" 
                                         placeholder="https://api.infobip.com"
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'infobip' && isset($smsConfig->settings['base_url']) ? $smsConfig->settings['base_url'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Your Infobip API base URL</p>
                             </div>
                             
                             <!-- From Name/Number -->
                     <div>
                                 <label for="infobip_from" class="flex items-center text-xs font-medium text-gray-700 mb-1">
-                                    <span class="material-icons text-sm mr-1 text-primary-DEFAULT">phone</span>
+                                    <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">phone</span>
                                     From Name/Number
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons text-[#004aad] text-base">call</span>
+                                        <span class="material-icons-outlined text-[#004aad] text-base">call</span>
                                     </div>
                                     <input 
                                         type="text" 
@@ -824,11 +832,10 @@
                                         name="infobip_from" 
                                         placeholder="InfoSMS"
                                         value="{{ isset($smsConfig) && $smsConfig->provider == 'infobip' && isset($smsConfig->settings['from']) ? $smsConfig->settings['from'] : '' }}"
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        class="w-full text-xs border-gray-300 rounded pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                         :disabled="!isEditing"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-gray-500">Sender ID (alphanumeric name or phone number)</p>
                             </div>
                         </div>
                     </div>
@@ -836,7 +843,7 @@
                         <h2 class="text-sm font-semibold text-gray-700 mb-4">SMS Template</h2>
                         <div class="relative">
                             <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                                <span class="material-icons text-[#004aad] text-base">description</span>
+                                <span class="material-icons-outlined text-[#004aad] text-base">description</span>
                             </div>
                             <textarea 
                                 id="sms_template" 
@@ -846,12 +853,11 @@
                                 :disabled="!isEditing"
                             >{{ isset($smsConfig) && $smsConfig->default_template ? $smsConfig->default_template : 'Hello {name}, your event {event_name} is starting soon. Please don\'t forget to bring your ID. Thank you!' }}</textarea>
                         </div>
-                        <p class="mt-1 text-[10px] text-gray-500">Available variables: {name}, {event_name}, {date}, {location}</p>
                     </div>
                     
                     <div class="mt-4">
                         <h2 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-2">sms</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">sms</span>
                             Test SMS Configuration
                         </h2>
                         <div class="flex items-center p-4 bg-gray-50 border border-gray-200 rounded-md">
@@ -863,7 +869,7 @@
                                 :class="{'bg-gray-400 hover:bg-gray-500 cursor-not-allowed border-gray-500': !isEditing, 'bg-blue-600 hover:bg-blue-700 border-blue-700': isEditing}"
                             :disabled="!isEditing"
                         >
-                            <span class="material-icons text-xs mr-1">sms</span>
+                            <span class="material-icons-outlined text-xs mr-1">sms</span>
                             Send Test SMS
                         </button>
                         <span class="text-xs text-gray-500 ml-3">Test your SMS configuration by sending a test message.</span>
@@ -1037,7 +1043,7 @@
             const sendBtn = document.getElementById('confirmSendSmsBtn');
             const originalText = sendBtn.innerHTML;
             sendBtn.disabled = true;
-            sendBtn.innerHTML = '<span class="material-icons text-xs mr-1 animate-spin">refresh</span>Sending...';
+            sendBtn.innerHTML = '<span class="material-icons-outlined text-xs mr-1 animate-spin">refresh</span>Sending...';
             
             // Get the form data
             const formData = new FormData(document.getElementById('smsForm'));
@@ -1101,7 +1107,7 @@
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                    <span class="material-icons text-blue-600 mr-2">sms</span>
+                    <span class="material-icons-outlined text-blue-600 mr-2">sms</span>
                     Send Test SMS
                 </h3>
                 <button onclick="closeTestSmsModal()" class="text-gray-400 hover:text-gray-600">
@@ -1115,7 +1121,7 @@
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span class="material-icons text-gray-400 text-base">phone</span>
+                        <span class="material-icons-outlined text-gray-400 text-base">phone</span>
                     </div>
                     <input 
                         type="tel" 
@@ -1142,7 +1148,7 @@
                     onclick="confirmSendTestSms()" 
                     class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors flex items-center"
                 >
-                    <span class="material-icons text-xs mr-1">send</span>
+                    <span class="material-icons-outlined text-xs mr-1">send</span>
                     Send Test SMS
                 </button>
             </div>

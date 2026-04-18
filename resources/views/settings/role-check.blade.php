@@ -11,7 +11,7 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <span class="material-icons mr-2 text-primary-DEFAULT">security</span>
+                    <span class="material-icons-outlined mr-2 text-primary-DEFAULT">security</span>
                     <h1 class="text-xl font-bold text-gray-800">Role & Permission Check</h1>
                 </div>
                 <div class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
@@ -62,12 +62,12 @@
                                     <span class="text-sm">{{ $module }}</span>
                                     @if($hasAccess)
                                         <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs flex items-center">
-                                            <span class="material-icons text-xs mr-1">check_circle</span>
+                                            <span class="material-icons-outlined text-xs mr-1">check_circle</span>
                                             Access Granted
                                         </span>
                                     @else
                                         <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs flex items-center">
-                                            <span class="material-icons text-xs mr-1">block</span>
+                                            <span class="material-icons-outlined text-xs mr-1">block</span>
                                             No Access
                                         </span>
                                     @endif
@@ -106,7 +106,7 @@
             <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <span class="material-icons text-blue-600">info</span>
+                        <span class="material-icons-outlined text-blue-600">info</span>
                     </div>
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-blue-800">Data Access Policy</h3>

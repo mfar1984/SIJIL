@@ -10,14 +10,14 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">event</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">event</span>
                         <h1 class="text-xl font-bold text-gray-800">Event Management</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Manage all events and activities</p>
                 </div>
                 @can('events.create')
                 <a href="{{ route('event.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                    <span class="material-icons text-xs mr-1">add_circle</span>
+                    <span class="material-icons-outlined text-xs mr-1">add_circle</span>
                     Create New Event
                 </a>
                 @endcan
@@ -136,16 +136,16 @@
                                         <!-- Registration Options Dropdown -->
                                         <div class="relative" x-data="{ registrationDropdownOpen{{ $event->id }}: false }">
                                             <button @click="registrationDropdownOpen{{ $event->id }} = !registrationDropdownOpen{{ $event->id }}" class="p-1 bg-purple-50 rounded hover:bg-purple-100 border border-purple-100" title="Registration Options">
-                                                <span class="material-icons text-purple-600 text-xs">format_list_bulleted</span>
+                                                <span class="material-icons-outlined text-purple-600 text-xs">format_list_bulleted</span>
                                             </button>
                                             <div x-show="registrationDropdownOpen{{ $event->id }}" @click.outside="registrationDropdownOpen{{ $event->id }} = false" class="absolute right-0 mt-2 z-50 w-48 bg-white rounded-md shadow-lg">
                                                 <div class="py-1 border border-gray-200 rounded-md">
                                                     <button @click="copyRegistrationLink('{{ route('event.register', ['token' => $event->registration_link]) }}')" class="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                                        <span class="material-icons text-blue-600 text-xs mr-2">link</span>
+                                                        <span class="material-icons-outlined text-blue-600 text-xs mr-2">link</span>
                                                         Copy Registration Link
                                                     </button>
                                                     <a href="{{ route('event.qrcode-image', $event->id) }}" class="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                                        <span class="material-icons text-indigo-600 text-xs mr-2">qr_code</span>
+                                                        <span class="material-icons-outlined text-indigo-600 text-xs mr-2">qr_code</span>
                                                         Download QR Code
                                                     </a>
                                                 </div>
@@ -153,11 +153,11 @@
                                         </div>
                                         
                                         <a href="{{ route('event.show', $event->id) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
-                                            <span class="material-icons text-blue-600 text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-blue-600 text-xs">visibility</span>
                                         </a>
                                         @can('events.update')
                                         <a href="{{ route('event.edit', $event->id) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
-                                            <span class="material-icons text-yellow-700 text-xs">edit</span>
+                                            <span class="material-icons-outlined text-yellow-700 text-xs">edit</span>
                                         </a>
                                         @endcan
                                         @can('events.delete')
@@ -165,7 +165,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                                <span class="material-icons text-red-600 text-xs">delete</span>
+                                                <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                             </button>
                                         </form>
                                         @endcan

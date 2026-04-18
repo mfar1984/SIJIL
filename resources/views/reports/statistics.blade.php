@@ -12,7 +12,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">insights</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">insights</span>
                         <h1 class="text-xl font-bold text-gray-800">Event Statistics</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Analyze event performance and trends</p>
@@ -28,7 +28,7 @@
                         <input type="hidden" name="event_type" value="{{ request('event_type') }}">
                         <input type="hidden" name="status_filter" value="{{ request('status_filter') }}">
                         <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1">file_download</span>
+                            <span class="material-icons-outlined text-xs mr-1">file_download</span>
                             Export Statistics
                         </button>
                     </form>
@@ -44,7 +44,7 @@
                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <div class="flex items-center">
                         <div class="p-3 bg-blue-100 rounded-full mr-4">
-                            <span class="material-icons text-blue-600">event</span>
+                            <span class="material-icons-outlined text-blue-600">event</span>
                         </div>
                         <div>
                             <p class="text-gray-500 text-xs">Total Events</p>
@@ -52,7 +52,7 @@
                         </div>
                     </div>
                     <div class="mt-2 text-xs {{ $eventPercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons text-xs mr-1">{{ $eventPercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
+                        <span class="material-icons-outlined text-xs mr-1">{{ $eventPercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
                         <span>{{ abs($eventPercentChange) }}% {{ $eventPercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
                     </div>
                 </div>
@@ -60,7 +60,7 @@
                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <div class="flex items-center">
                         <div class="p-3 bg-green-100 rounded-full mr-4">
-                            <span class="material-icons text-green-600">groups</span>
+                            <span class="material-icons-outlined text-green-600">groups</span>
                         </div>
                         <div>
                             <p class="text-gray-500 text-xs">Total Participants</p>
@@ -68,7 +68,7 @@
                         </div>
                     </div>
                     <div class="mt-2 text-xs {{ $participantPercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons text-xs mr-1">{{ $participantPercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
+                        <span class="material-icons-outlined text-xs mr-1">{{ $participantPercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
                         <span>{{ abs($participantPercentChange) }}% {{ $participantPercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
                     </div>
                 </div>
@@ -76,7 +76,7 @@
                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <div class="flex items-center">
                         <div class="p-3 bg-amber-100 rounded-full mr-4">
-                            <span class="material-icons text-amber-600">emoji_events</span>
+                            <span class="material-icons-outlined text-amber-600">emoji_events</span>
                         </div>
                         <div>
                             <p class="text-gray-500 text-xs">Certificates Issued</p>
@@ -84,7 +84,7 @@
                         </div>
                     </div>
                     <div class="mt-2 text-xs {{ $certificatePercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons text-xs mr-1">{{ $certificatePercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
+                        <span class="material-icons-outlined text-xs mr-1">{{ $certificatePercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
                         <span>{{ abs($certificatePercentChange) }}% {{ $certificatePercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
                     </div>
                 </div>
@@ -92,7 +92,7 @@
                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <div class="flex items-center">
                         <div class="p-3 bg-purple-100 rounded-full mr-4">
-                            <span class="material-icons text-purple-600">trending_up</span>
+                            <span class="material-icons-outlined text-purple-600">trending_up</span>
                         </div>
                         <div>
                             <p class="text-gray-500 text-xs">Avg. Attendance Rate</p>
@@ -100,7 +100,7 @@
                         </div>
                     </div>
                     <div class="mt-2 text-xs {{ $attendanceRatePercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons text-xs mr-1">{{ $attendanceRatePercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
+                        <span class="material-icons-outlined text-xs mr-1">{{ $attendanceRatePercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
                         <span>{{ abs($attendanceRatePercentChange) }}% {{ $attendanceRatePercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
                     </div>
                 </div>

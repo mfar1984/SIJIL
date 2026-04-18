@@ -12,7 +12,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">help</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">help</span>
                         <h1 class="text-xl font-bold text-gray-800">Ticket #{{ $ticket->ticket_id }}</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">{{ $ticket->subject }}</p>
@@ -21,7 +21,7 @@
                     @if($isAdmin)
                         <div class="flex space-x-2">
                             <button @click="document.querySelector('[x-data=\"{ showModal: false }\"]').__x.$data.showModal = true" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                <span class="material-icons text-xs mr-1">update</span>
+                                <span class="material-icons-outlined text-xs mr-1">update</span>
                                 Update Status
                             </button>
                             
@@ -32,7 +32,7 @@
                                 <input type="hidden" name="status" value="in_progress">
                                 <input type="hidden" name="assigned_to" value="{{ Auth::id() }}">
                                 <button type="submit" class="bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                    <span class="material-icons text-xs mr-1">engineering</span>
+                                    <span class="material-icons-outlined text-xs mr-1">engineering</span>
                                     Mark In Progress
                                 </button>
                             </form>
@@ -43,7 +43,7 @@
                                 @csrf
                                 <input type="hidden" name="status" value="resolved">
                                 <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                    <span class="material-icons text-xs mr-1">check_circle</span>
+                                    <span class="material-icons-outlined text-xs mr-1">check_circle</span>
                                     Mark Resolved
                                 </button>
                             </form>
@@ -54,7 +54,7 @@
                                 @csrf
                                 <input type="hidden" name="status" value="closed">
                                 <button type="submit" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                    <span class="material-icons text-xs mr-1">lock</span>
+                                    <span class="material-icons-outlined text-xs mr-1">lock</span>
                                     Close Ticket
                                 </button>
                             </form>
@@ -64,13 +64,13 @@
                         @can('helpdesk.update')
                         <!-- For Organizer: Reply button that scrolls to reply form -->
                         <a href="#reply-form" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1">reply</span>
+                            <span class="material-icons-outlined text-xs mr-1">reply</span>
                             Reply
                         </a>
                         @endcan
                     @endif
                     <a href="{{ route('helpdesk.index') }}" class="bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-700 hover:to-gray-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">arrow_back</span>
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
                 </div>
@@ -81,13 +81,13 @@
             <!-- Ticket Details -->
             <div class="mb-6">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT text-base mr-2">info</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT text-base mr-2">info</span>
                     Ticket Information
                 </h2>
                 <div class="grid grid-cols-{{ $isAdmin ? '6' : '5' }} gap-4">
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
-                            <span class="material-icons text-gray-400 text-xs mr-1">label</span>
+                            <span class="material-icons-outlined text-gray-400 text-xs mr-1">label</span>
                             Status
                         </p>
                         <div class="mt-1">
@@ -105,7 +105,7 @@
                     
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
-                            <span class="material-icons text-gray-400 text-xs mr-1">flag</span>
+                            <span class="material-icons-outlined text-gray-400 text-xs mr-1">flag</span>
                             Priority
                         </p>
                         <div class="mt-1">
@@ -123,7 +123,7 @@
                     
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
-                            <span class="material-icons text-gray-400 text-xs mr-1">category</span>
+                            <span class="material-icons-outlined text-gray-400 text-xs mr-1">category</span>
                             Category
                         </p>
                         <div class="mt-1">
@@ -133,7 +133,7 @@
                     
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
-                            <span class="material-icons text-gray-400 text-xs mr-1">person</span>
+                            <span class="material-icons-outlined text-gray-400 text-xs mr-1">person</span>
                             Submitted By
                         </p>
                         <p class="text-xs mt-1">{{ $ticket->user->name }}</p>
@@ -141,7 +141,7 @@
                     
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
-                            <span class="material-icons text-gray-400 text-xs mr-1">calendar_today</span>
+                            <span class="material-icons-outlined text-gray-400 text-xs mr-1">calendar_today</span>
                             Date Submitted
                         </p>
                         <p class="text-xs mt-1">{{ $ticket->created_at->format('d M Y H:i') }}</p>
@@ -150,7 +150,7 @@
                     @if($isAdmin)
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
                         <p class="text-xs text-gray-500 font-medium flex items-center">
-                            <span class="material-icons text-gray-400 text-xs mr-1">assignment_ind</span>
+                            <span class="material-icons-outlined text-gray-400 text-xs mr-1">assignment_ind</span>
                             Assigned To
                         </p>
                         <p class="text-xs mt-1">{{ $ticket->assignedUser ? $ticket->assignedUser->name : 'Not assigned' }}</p>
@@ -162,7 +162,7 @@
             <!-- Conversation -->
             <div class="mb-6">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT text-base mr-2">forum</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT text-base mr-2">forum</span>
                     Conversation
                 </h2>
                 
@@ -234,7 +234,7 @@
                                     <div class="flex flex-wrap gap-2">
                                         @foreach($message->attachments as $index => $attachment)
                                             <a href="{{ route('helpdesk.attachment', ['messageId' => $message->id, 'attachmentIndex' => $index]) }}" class="flex items-center px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs">
-                                                <span class="material-icons text-xs mr-1">attachment</span>
+                                                <span class="material-icons-outlined text-xs mr-1">attachment</span>
                                                 {{ $attachment['name'] }}
                                             </a>
                                         @endforeach
@@ -251,21 +251,21 @@
             @can('helpdesk.update')
             <div id="reply-form">
                 <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT text-base mr-2">reply</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT text-base mr-2">reply</span>
                     Add Reply
                 </h2>
                 
                 @if($ticket->status == 'closed')
                     <div class="bg-gray-100 border border-gray-300 rounded-md p-4 text-gray-700 text-sm">
                         <div class="flex items-center">
-                            <span class="material-icons text-gray-500 mr-2">lock</span>
+                            <span class="material-icons-outlined text-gray-500 mr-2">lock</span>
                             <p>This ticket has been closed and cannot be replied to anymore. If you need further assistance, please create a new ticket.</p>
                         </div>
                     </div>
                 @elseif($ticket->status == 'resolved')
                     <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-800 text-sm mb-4">
                         <div class="flex items-center">
-                            <span class="material-icons text-yellow-500 mr-2">info</span>
+                            <span class="material-icons-outlined text-yellow-500 mr-2">info</span>
                             <p>This ticket has been marked as resolved. If you reply, it will be automatically reopened as "In Progress". If no reply is received within 7 days, the ticket will be automatically closed.</p>
                         </div>
                     </div>
@@ -291,7 +291,7 @@
                             
                             <div>
                                 <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                    <span class="material-icons text-xs mr-1">send</span>
+                                    <span class="material-icons-outlined text-xs mr-1">send</span>
                                     Send Reply
                                 </button>
                             </div>
@@ -320,7 +320,7 @@
                             
                             <div>
                                 <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                    <span class="material-icons text-xs mr-1">send</span>
+                                    <span class="material-icons-outlined text-xs mr-1">send</span>
                                     Send Reply
                                 </button>
                             </div>
@@ -343,7 +343,7 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-glass"
             style="display: none;"
         >
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden" @click.away="showModal = false">

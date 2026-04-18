@@ -307,9 +307,9 @@
                                 @if($pid)
                                     @if($mode === 'show')
                                         @if($isChecked)
-                                            <span class="material-icons text-green-600 text-base">check_circle</span>
+                                            <span class="material-icons-outlined text-green-600 text-base">check_circle</span>
                                         @else
-                                            <span class="material-icons text-red-600 text-base">cancel</span>
+                                            <span class="material-icons-outlined text-red-600 text-base">cancel</span>
                                         @endif
                                     @else
                                         <input type="checkbox" name="permissions[]" value="{{ $pid }}" data-perm-group="{{ $groupKeyLower }}" class="perm-box rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light h-4 w-4" {{ $isChecked ? 'checked' : '' }}>

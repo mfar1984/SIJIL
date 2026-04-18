@@ -12,7 +12,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">security</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">security</span>
                         <h1 class="text-xl font-bold text-gray-800">Security & Audit</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Monitor and manage system security and audit trails</p>
@@ -22,30 +22,30 @@
                     @can('security_audit.delete')
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1">delete_sweep</span>
+                            <span class="material-icons-outlined text-xs mr-1">delete_sweep</span>
                             Clear Security Logs
-                            <span class="material-icons text-xs ml-1">arrow_drop_down</span>
+                            <span class="material-icons-outlined text-xs ml-1">arrow_drop_down</span>
                         </button>
                         <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
                             <div class="py-1">
                                 <button onclick="clearSecurityLogs('all')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">delete_forever</span>
+                                    <span class="material-icons-outlined text-xs mr-2">delete_forever</span>
                                     All Security Logs
                                 </button>
                                 <button onclick="clearSecurityLogs('30')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     30 Days
                                 </button>
                                 <button onclick="clearSecurityLogs('60')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     60 Days
                                 </button>
                                 <button onclick="clearSecurityLogs('90')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     90 Days
                                 </button>
                                 <button onclick="clearSecurityLogs('120')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     120 Days
                                 </button>
                             </div>
@@ -54,12 +54,12 @@
                     @endcan
                     @can('security_audit.export')
                     <button class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">download</span>
+                        <span class="material-icons-outlined text-xs mr-1">download</span>
                         Export Report
                     </button>
                     @endcan
                     <button class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">refresh</span>
+                        <span class="material-icons-outlined text-xs mr-1">refresh</span>
                         Refresh Data
                     </button>
                 </div>
@@ -253,7 +253,7 @@
                             <td class="py-3 px-4">
                                 <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                     </button>
                                 </div>
                             </td>
@@ -262,7 +262,7 @@
                                 <tr class="text-xs">
                                     <td colspan="8" class="py-8 px-4 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
-                                            <span class="material-icons text-gray-400 text-4xl mb-2">security</span>
+                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">security</span>
                                             <p class="text-sm">No security events found</p>
                                             <p class="text-xs text-gray-400 mt-1">Security events will appear here when security-related activities occur</p>
                                         </div>
@@ -304,7 +304,7 @@
                             <td class="py-3 px-4">
                                 <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                     </button>
                                 </div>
                             </td>
@@ -313,7 +313,7 @@
                                 <tr class="text-xs">
                                     <td colspan="7" class="py-8 px-4 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
-                                            <span class="material-icons text-gray-400 text-4xl mb-2">person</span>
+                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">person</span>
                                             <p class="text-sm">No user activities found</p>
                                             <p class="text-xs text-gray-400 mt-1">User activities will appear here when users perform actions</p>
                                         </div>
@@ -359,7 +359,7 @@
                             <td class="py-3 px-4">
                                 <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                     </button>
                                 </div>
                             </td>
@@ -368,7 +368,7 @@
                                 <tr class="text-xs">
                                     <td colspan="7" class="py-8 px-4 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
-                                            <span class="material-icons text-gray-400 text-4xl mb-2">admin_panel_settings</span>
+                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">admin_panel_settings</span>
                                             <p class="text-sm">No role changes found</p>
                                             <p class="text-xs text-gray-400 mt-1">Role changes will appear here when roles are modified</p>
                                         </div>
@@ -422,7 +422,7 @@
                             <td class="py-3 px-4">
                                 <div class="flex justify-center">
                                             <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                     </button>
                                 </div>
                             </td>
@@ -431,7 +431,7 @@
                                 <tr class="text-xs">
                                     <td colspan="7" class="py-8 px-4 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
-                                            <span class="material-icons text-gray-400 text-4xl mb-2">lock</span>
+                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">lock</span>
                                             <p class="text-sm">No access control events found</p>
                                             <p class="text-xs text-gray-400 mt-1">Access control events will appear here when authentication occurs</p>
                                         </div>
@@ -469,7 +469,7 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-glass"
             style="display: none;"
         >
             <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden" @click.away="showModal = false">
@@ -545,7 +545,7 @@
         </div>
         
         <!-- Security Details Modal -->
-        <div id="securityModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div id="securityModal" class="fixed inset-0 modal-backdrop-glass flex items-center justify-center z-50" style="display: none;">
             <div id="modalContent" class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <!-- Modal content will be populated by JavaScript -->
             </div>
@@ -587,7 +587,7 @@
                                         <div class="flex items-center justify-between mb-4">
                                             <h3 class="text-lg font-semibold text-gray-900">Security Activity Details</h3>
                                             <button onclick="closeSecurityModal()" class="text-gray-400 hover:text-gray-600">
-                                                <span class="material-icons text-xl">close</span>
+                                                <span class="material-icons-outlined text-xl">close</span>
                                             </button>
                                         </div>
                                         
@@ -650,7 +650,7 @@
                                         <div class="flex items-center justify-between mb-4">
                                             <h3 class="text-lg font-semibold text-gray-900">Error</h3>
                                             <button onclick="closeSecurityModal()" class="text-gray-400 hover:text-gray-600">
-                                                <span class="material-icons text-xl">close</span>
+                                                <span class="material-icons-outlined text-xl">close</span>
                                             </button>
                                         </div>
                                         <p class="text-sm text-red-600">Failed to load security details. Please try again.</p>
@@ -726,7 +726,7 @@
                             // Show loading state
                             const button = event.target;
                             const originalText = button.innerHTML;
-                            button.innerHTML = '<span class="material-icons text-xs mr-2 animate-spin">hourglass_empty</span>Clearing...';
+                            button.innerHTML = '<span class="material-icons-outlined text-xs mr-2 animate-spin">hourglass_empty</span>Clearing...';
                             button.disabled = true;
                             
                             // Make API call

@@ -12,7 +12,7 @@
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center">
-                <span class="material-icons mr-2 text-primary-DEFAULT">workspace_premium</span>
+                <span class="material-icons-outlined mr-2 text-primary-DEFAULT">workspace_premium</span>
                 <h1 class="text-xl font-bold text-gray-800">Generate Certificates</h1>
             </div>
             <p class="text-xs text-gray-500 mt-1 ml-8">Create certificates for participants</p>
@@ -28,123 +28,154 @@
                 </div>
             @endif
 
-            <form id="certificateForm" action="{{ route('certificates.store') }}" method="POST" class="space-y-6">
+            <form id="certificateForm" action="{{ route('certificates.store') }}" method="POST" class="space-y-2">
                 @csrf
                 
                 <!-- Step 1: Select Event -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                        <span class="material-icons text-sm mr-1 text-primary-DEFAULT">event</span>
-                        Step 1: Select Event
-                    </h2>
-                    <div class="mb-4">
-                        <label for="event_id" class="block text-xs font-medium text-gray-700 mb-1">Event</label>
-                        <select id="event_id" name="event_id" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
-                            <option value="">-- Select Event --</option>
-                            @foreach($events as $event)
-                                <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
-                            @endforeach
-                        </select>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">event</span>
+                            Step 1: Select Event
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="event_id" class="text-xs font-medium text-gray-700 md:w-40">Event</label>
+                                <div class="flex-1">
+                                    <select id="event_id" name="event_id" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
+                                        <option value="">-- Select Event --</option>
+                                        @foreach($events as $event)
+                                            <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Step 2: Select Template -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                        <span class="material-icons text-sm mr-1 text-primary-DEFAULT">design_services</span>
-                        Step 2: Select Certificate Template
-                    </h2>
-                    <div class="mb-4">
-                        <label for="template_id" class="block text-xs font-medium text-gray-700 mb-1">Template</label>
-                        <select id="template_id" name="template_id" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
-                            <option value="">-- Select Template --</option>
-                            @foreach($templates as $template)
-                                <option value="{{ $template->id }}" {{ old('template_id') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
-                            @endforeach
-                        </select>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">design_services</span>
+                            Step 2: Select Certificate Template
+                        </h2>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label for="template_id" class="text-xs font-medium text-gray-700 md:w-40">Template</label>
+                                <div class="flex-1">
+                                    <select id="template_id" name="template_id" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
+                                        <option value="">-- Select Template --</option>
+                                        @foreach($templates as $template)
+                                            <option value="{{ $template->id }}" {{ old('template_id') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Step 3: Select Participants -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                        <span class="material-icons text-sm mr-1 text-primary-DEFAULT">people</span>
-                        Step 3: Select Participants
-                    </h2>
-                    
-                    <!-- Data Source -->
-                    <div class="mb-4">
-                        <label class="block text-xs font-medium text-gray-700 mb-2">Data Source</label>
-                        <div class="flex space-x-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="data_source" value="participants" class="form-radio h-4 w-4 text-primary-DEFAULT" checked>
-                                <span class="ml-2 text-sm text-gray-700">All Participants</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="data_source" value="attendance" class="form-radio h-4 w-4 text-primary-DEFAULT">
-                                <span class="ml-2 text-sm text-gray-700">Attendance Records (Present Only)</span>
-                            </label>
-                        </div>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">people</span>
+                            Step 3: Select Participants
+                        </h2>
                     </div>
                     
-                    <!-- Search & Filter -->
-                    <div class="mb-4 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                        <div class="flex-1">
-                            <input type="text" id="search" placeholder="Search participants..." class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                        </div>
-                        <div>
-                            <button type="button" id="selectAll" class="text-xs text-primary-DEFAULT hover:underline">Select All</button>
-                            <button type="button" id="deselectAll" class="text-xs text-red-600 hover:underline ml-2">Deselect All</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Participants List -->
-                    <div class="border rounded-md overflow-hidden">
-                        <div class="max-h-60 overflow-y-auto p-2" id="participantsContainer">
-                            <div class="flex items-center justify-center h-20 text-gray-500">
-                                <span class="material-icons text-gray-300 mr-2">info</span>
-                                Please select an event first
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <!-- Data Source -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-2">Data Source</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="data_source" value="participants" class="form-radio h-4 w-4 text-primary-DEFAULT" checked>
+                                        <span class="ml-2 text-sm text-gray-700">All Participants</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="data_source" value="attendance" class="form-radio h-4 w-4 text-primary-DEFAULT">
+                                        <span class="ml-2 text-sm text-gray-700">Attendance Records (Present Only)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Search & Filter -->
+                            <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                                <div class="flex-1">
+                                    <input type="text" id="search" placeholder="Search participants..." class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                </div>
+                                <div>
+                                    <button type="button" id="selectAll" class="text-xs text-primary-DEFAULT hover:underline">Select All</button>
+                                    <button type="button" id="deselectAll" class="text-xs text-red-600 hover:underline ml-2">Deselect All</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Participants List -->
+                            <div class="border rounded-md overflow-hidden">
+                                <div class="max-h-60 overflow-y-auto p-2" id="participantsContainer">
+                                    <div class="flex items-center justify-center h-20 text-gray-500">
+                                        <span class="material-icons-outlined text-gray-300 mr-2">info</span>
+                                        Please select an event first
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Preview Certificate -->
-                <div class="border-b border-gray-200 pb-5">
-                    <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                        <span class="material-icons text-sm mr-1 text-primary-DEFAULT">preview</span>
-                        Preview Certificate
-                    </h2>
-                    <div class="mb-4">
-                        <button type="button" id="previewBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-xs flex items-center" disabled>
-                            <span class="material-icons text-xs mr-1">visibility</span>
+                <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-2">preview</span>
                             Preview Certificate
-                        </button>
-                        <p class="text-xs text-gray-500 mt-2">Select an event, template, and at least one participant to preview</p>
+                        </h2>
                     </div>
-                    <div id="previewContainer" class="hidden">
-                        <div class="border rounded-md p-4 bg-gray-50">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="text-sm font-medium text-gray-700">Certificate Preview</h3>
-                                <button type="button" id="expandPreviewBtn" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded flex items-center">
-                                    <span class="material-icons text-xs mr-1">fullscreen</span>
-                                    Expand
+                    
+                    <div class="p-4">
+                        <div class="space-y-3">
+                            <div>
+                                <button type="button" id="previewBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-xs flex items-center" disabled>
+                                    <span class="material-icons-outlined text-xs mr-1">visibility</span>
+                                    Preview Certificate
                                 </button>
+                                <p class="text-xs text-gray-500 mt-2">Select an event, template, and at least one participant to preview</p>
                             </div>
-                            <div id="regularPreview" class="bg-white border">
-                                <iframe id="previewFrame" class="w-full" style="height: 500px;"></iframe>
-                            </div>
-                            <!-- Fullscreen Modal Preview -->
-                            <div id="fullscreenPreview" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
-                                <div class="bg-white rounded-lg w-11/12 h-5/6 flex flex-col">
-                                    <div class="flex justify-between items-center p-4 border-b">
-                                        <h3 class="font-medium">Certificate Preview</h3>
-                                        <button id="closeFullscreenBtn" class="text-gray-500 hover:text-gray-700">
-                                            <span class="material-icons">close</span>
+                            <div id="previewContainer" class="hidden">
+                                <div class="border rounded-md p-4 bg-gray-50">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h3 class="text-sm font-medium text-gray-700">Certificate Preview</h3>
+                                        <button type="button" id="expandPreviewBtn" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded flex items-center">
+                                            <span class="material-icons-outlined text-xs mr-1">fullscreen</span>
+                                            Expand
                                         </button>
                                     </div>
-                                    <div class="flex-1 overflow-auto p-4">
-                                        <iframe id="fullscreenFrame" class="w-full h-full border-0"></iframe>
+                                    <div id="regularPreview" class="bg-white border">
+                                        <iframe id="previewFrame" class="w-full" style="height: 500px;"></iframe>
+                                    </div>
+                                    <!-- Fullscreen Modal Preview -->
+                                    <div id="fullscreenPreview" class="fixed inset-0 modal-backdrop-glass hidden z-50 flex items-center justify-center p-4">
+                                        <div class="bg-white rounded-lg w-11/12 h-5/6 flex flex-col">
+                                            <div class="flex justify-between items-center p-4 border-b">
+                                                <h3 class="font-medium">Certificate Preview</h3>
+                                                <button id="closeFullscreenBtn" class="text-gray-500 hover:text-gray-700">
+                                                    <span class="material-icons">close</span>
+                                                </button>
+                                            </div>
+                                            <div class="flex-1 overflow-auto p-4">
+                                                <iframe id="fullscreenFrame" class="w-full h-full border-0"></iframe>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -153,13 +184,13 @@
                 </div>
 
                 <!-- Submit Button -->
-                <div class="flex justify-end space-x-3">
-                    <a href="{{ route('certificates.index') }}" class="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons text-xs mr-1">cancel</span>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <a href="{{ route('certificates.index') }}" class="px-3 h-[36px] bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">cancel</span>
                         Cancel
                     </a>
-                    <button type="submit" id="generateBtn" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center" disabled>
-                        <span class="material-icons text-xs mr-1">workspace_premium</span>
+                    <button type="submit" id="generateBtn" class="px-3 h-[36px] bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center" disabled>
+                        <span class="material-icons-outlined text-xs mr-1">workspace_premium</span>
                         Generate Certificates
                     </button>
                 </div>
@@ -232,7 +263,7 @@
                 if (!eventId) {
                     participantsContainer.innerHTML = `
                         <div class="flex items-center justify-center h-20 text-gray-500">
-                            <span class="material-icons text-gray-300 mr-2">info</span>
+                            <span class="material-icons-outlined text-gray-300 mr-2">info</span>
                             Please select an event first
                         </div>
                     `;
@@ -260,7 +291,7 @@
                         console.error('Error loading participants:', error);
                         participantsContainer.innerHTML = `
                             <div class="flex items-center justify-center h-20 text-red-500">
-                                <span class="material-icons text-red-400 mr-2">error</span>
+                                <span class="material-icons-outlined text-red-400 mr-2">error</span>
                                 Error loading participants
                             </div>
                         `;
@@ -272,7 +303,7 @@
                 if (participants.length === 0) {
                     participantsContainer.innerHTML = `
                         <div class="flex items-center justify-center h-20 text-gray-500">
-                            <span class="material-icons text-gray-300 mr-2">people</span>
+                            <span class="material-icons-outlined text-gray-300 mr-2">people</span>
                             No participants found
                         </div>
                     `;
@@ -291,7 +322,7 @@
                 if (filteredParticipants.length === 0) {
                     participantsContainer.innerHTML = `
                         <div class="flex items-center justify-center h-20 text-gray-500">
-                            <span class="material-icons text-gray-300 mr-2">search</span>
+                            <span class="material-icons-outlined text-gray-300 mr-2">search</span>
                             No participants match your search
                         </div>
                     `;
@@ -389,7 +420,7 @@
                 .finally(() => {
                     previewBtn.disabled = false;
                     previewBtn.innerHTML = `
-                        <span class="material-icons text-xs mr-1">visibility</span>
+                        <span class="material-icons-outlined text-xs mr-1">visibility</span>
                         Preview Certificate
                     `;
                 });

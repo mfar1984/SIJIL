@@ -17,7 +17,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">event_available</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">event_available</span>
                         <h1 class="text-xl font-bold text-gray-800">Attendance Details</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">
@@ -26,11 +26,11 @@
                 </div>
                 <div class="flex space-x-2">
                     <a href="{{ route('reports.attendance.index') }}" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">arrow_back</span>
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
                         Back to List
                     </a>
                     <button onclick="exportAttendanceDetails()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">file_download</span>
+                        <span class="material-icons-outlined text-xs mr-1">file_download</span>
                         Export Details
                     </button>
                 </div>
@@ -41,7 +41,7 @@
             <!-- Event Information -->
             <div class="mb-6 border border-gray-200 rounded-md p-4">
                 <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT mr-2 text-base">event</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-base">event</span>
                     Event Information
                 </h2>
                 
@@ -111,7 +111,7 @@
             <!-- Attendance Details Table -->
             <div class="mb-6">
                 <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <span class="material-icons text-primary-DEFAULT mr-2 text-base">people</span>
+                    <span class="material-icons-outlined text-primary-DEFAULT mr-2 text-base">people</span>
                     Attendee List
                 </h2>
                 
@@ -160,7 +160,7 @@
                                         @endphp
                                         @if($certificate)
                                             <a href="{{ asset('storage/' . $certificate->pdf_file) }}" target="_blank" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Certificate">
-                                                <span class="material-icons text-red-600 align-middle">picture_as_pdf</span>
+                                                <span class="material-icons-outlined text-red-600 align-middle">picture_as_pdf</span>
                                             </a>
                                         @else
                                             -
@@ -183,7 +183,7 @@
                 <div class="border border-gray-200 rounded-md p-4" x-data="{ timelineView: 'hourly' }">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="text-xs font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-1 text-sm">timeline</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-1 text-sm">timeline</span>
                             Attendance Timeline
                         </h3>
                         <div class="flex space-x-2">
@@ -225,11 +225,11 @@
                         <!-- Hourly Stats -->
                         <div x-show="timelineView === 'hourly'" class="flex flex-wrap justify-between text-[10px] text-gray-500">
                             <div class="flex items-center space-x-1 mb-1 md:mb-0">
-                                <span class="material-icons text-blue-500 text-[10px]">schedule</span>
+                                <span class="material-icons-outlined text-blue-500 text-[10px]">schedule</span>
                                 <span>Peak check-in time: <span class="font-medium text-gray-700">{{ $timelineData['hourly']['peak_checkin_time'] }}</span></span>
                             </div>
                             <div class="flex items-center space-x-1">
-                                <span class="material-icons text-green-500 text-[10px]">schedule</span>
+                                <span class="material-icons-outlined text-green-500 text-[10px]">schedule</span>
                                 <span>Peak check-out time: <span class="font-medium text-gray-700">{{ $timelineData['hourly']['peak_checkout_time'] }}</span></span>
                             </div>
                         </div>
@@ -237,11 +237,11 @@
                         <!-- Daily Stats -->
                         <div x-show="timelineView === 'daily'" class="flex flex-wrap justify-between text-[10px] text-gray-500">
                             <div class="flex items-center space-x-1 mb-1 md:mb-0">
-                                <span class="material-icons text-blue-500 text-[10px]">event</span>
+                                <span class="material-icons-outlined text-blue-500 text-[10px]">event</span>
                                 <span>Peak attendance day: <span class="font-medium text-gray-700">{{ $timelineData['daily']['peak_day'] }}</span></span>
                             </div>
                             <div class="flex items-center space-x-1">
-                                <span class="material-icons text-blue-500 text-[10px]">people</span>
+                                <span class="material-icons-outlined text-blue-500 text-[10px]">people</span>
                                 <span>Total attendance: <span class="font-medium text-gray-700">{{ $timelineData['daily']['total_weekly'] }} attendees</span></span>
                             </div>
                         </div>
@@ -252,7 +252,7 @@
                 <div class="border border-gray-200 rounded-md p-4" x-data="{ demographicView: 'gender' }">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="text-xs font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-1 text-sm">pie_chart</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-1 text-sm">pie_chart</span>
                             Attendance Demographics
                         </h3>
                         <div class="flex space-x-2">
@@ -264,7 +264,7 @@
                     <!-- Note about data accuracy -->
                     <div class="bg-yellow-50 border border-yellow-100 rounded-md p-2 mb-3">
                         <p class="text-xs text-yellow-700 flex items-center">
-                            <span class="material-icons text-yellow-500 mr-1 text-xs">info</span>
+                            <span class="material-icons-outlined text-yellow-500 mr-1 text-xs">info</span>
                             <span>Demographics data may not be fully accurate as {{ $demographics['gender']['unknown'] }} participants have no gender data and {{ $demographics['age_groups']['unknown'] }} have no date of birth recorded.</span>
                         </p>
                     </div>
@@ -449,11 +449,11 @@
                         <!-- Gender Stats -->
                         <div x-show="demographicView === 'gender'" class="flex flex-wrap justify-between text-[10px] text-gray-500">
                             <div class="flex items-center space-x-1">
-                                <span class="material-icons text-blue-500 text-[10px]">pie_chart</span>
+                                <span class="material-icons-outlined text-blue-500 text-[10px]">pie_chart</span>
                                 <span>Gender ratio: <span class="font-medium text-gray-700">{{ $demographics['gender']['male_percent'] }}% male / {{ $demographics['gender']['female_percent'] }}% female</span></span>
                             </div>
                             <div class="flex items-center space-x-1">
-                                <span class="material-icons text-purple-500 text-[10px]">groups</span>
+                                <span class="material-icons-outlined text-purple-500 text-[10px]">groups</span>
                                 <span>Total attendees: <span class="font-medium text-gray-700">{{ $demographics['total_attendees'] }}</span></span>
                             </div>
                         </div>
@@ -461,11 +461,11 @@
                         <!-- Age Stats -->
                         <div x-show="demographicView === 'age'" class="flex flex-wrap justify-between text-[10px] text-gray-500">
                             <div class="flex items-center space-x-1 mb-1 md:mb-0">
-                                <span class="material-icons text-blue-500 text-[10px]">calculate</span>
+                                <span class="material-icons-outlined text-blue-500 text-[10px]">calculate</span>
                                 <span>Median age: <span class="font-medium text-gray-700">{{ $demographics['avg_age'] }} years</span></span>
                             </div>
                             <div class="flex items-center space-x-1">
-                                <span class="material-icons text-blue-600 text-[10px]">trending_up</span>
+                                <span class="material-icons-outlined text-blue-600 text-[10px]">trending_up</span>
                                 <span>Unknown age: <span class="font-medium text-gray-700">{{ $demographics['age_groups']['unknown'] }} attendees</span></span>
                             </div>
                         </div>
@@ -476,7 +476,7 @@
                 <div class="border border-gray-200 rounded-md p-4 md:col-span-2">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="text-xs font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-primary-DEFAULT mr-1 text-sm">analytics</span>
+                            <span class="material-icons-outlined text-primary-DEFAULT mr-1 text-sm">analytics</span>
                             Attendance Analytics
                         </h3>
                     </div>
@@ -485,7 +485,7 @@
                         <div class="bg-gray-50 p-3 rounded-md">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-500">Avg. Duration</span>
-                                <span class="material-icons text-primary-DEFAULT text-sm">timer</span>
+                                <span class="material-icons-outlined text-primary-DEFAULT text-sm">timer</span>
                             </div>
                             <p class="text-lg font-semibold text-gray-800 mt-1">{{ $analytics['avgDuration'] }}</p>
                             <p class="text-[10px] text-gray-500 flex items-center mt-1">
@@ -496,7 +496,7 @@
                         <div class="bg-gray-50 p-3 rounded-md">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-500">Attendance Rate</span>
-                                <span class="material-icons text-primary-DEFAULT text-sm">percent</span>
+                                <span class="material-icons-outlined text-primary-DEFAULT text-sm">percent</span>
                             </div>
                             <p class="text-lg font-semibold text-gray-800 mt-1">{{ $analytics['attendanceRate'] }}%</p>
                             <p class="text-[10px] text-gray-500 flex items-center mt-1">
@@ -507,7 +507,7 @@
                         <div class="bg-gray-50 p-3 rounded-md">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-500">Early Check-ins</span>
-                                <span class="material-icons text-primary-DEFAULT text-sm">schedule</span>
+                                <span class="material-icons-outlined text-primary-DEFAULT text-sm">schedule</span>
                             </div>
                             <p class="text-lg font-semibold text-gray-800 mt-1">{{ $analytics['earlyCheckins'] }}%</p>
                             <p class="text-[10px] text-gray-500 flex items-center mt-1">
@@ -518,7 +518,7 @@
                         <div class="bg-gray-50 p-3 rounded-md">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-500">Certificate Claims</span>
-                                <span class="material-icons text-primary-DEFAULT text-sm">workspace_premium</span>
+                                <span class="material-icons-outlined text-primary-DEFAULT text-sm">workspace_premium</span>
                             </div>
                             <p class="text-lg font-semibold text-gray-800 mt-1">{{ $analytics['certificateClaims'] }}%</p>
                             <p class="text-[10px] text-gray-500 flex items-center mt-1">

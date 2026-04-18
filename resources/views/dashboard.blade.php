@@ -39,7 +39,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">dashboard</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">dashboard</span>
                         <h1 class="text-xl font-bold text-gray-800">Analytics Dashboard</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Comprehensive analytics and statistics</p>
@@ -68,7 +68,7 @@
                         </div>
                     </div>
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium flex items-center">
-                        <span class="material-icons text-xs mr-1">filter_alt</span>
+                        <span class="material-icons-outlined text-xs mr-1">filter_alt</span>
                         Apply Filter
                     </button>
                 </form>
@@ -85,7 +85,7 @@
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalEvents) }}</h3>
                         </div>
                         <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span class="material-icons text-blue-600 text-2xl">event</span>
+                            <span class="material-icons-outlined text-blue-600 text-2xl">event</span>
                         </div>
                     </div>
                 </div>
@@ -97,7 +97,7 @@
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalParticipants) }}</h3>
                         </div>
                         <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                            <span class="material-icons text-green-600 text-2xl">groups</span>
+                            <span class="material-icons-outlined text-green-600 text-2xl">groups</span>
                         </div>
             </div>
             </div>
@@ -109,7 +109,7 @@
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalCertificates) }}</h3>
                         </div>
                         <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                            <span class="material-icons text-amber-600 text-2xl">card_membership</span>
+                            <span class="material-icons-outlined text-amber-600 text-2xl">card_membership</span>
                         </div>
                     </div>
                 </div>
@@ -121,7 +121,7 @@
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($totalAttendance) }}</h3>
                         </div>
                         <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                            <span class="material-icons text-purple-600 text-2xl">how_to_reg</span>
+                            <span class="material-icons-outlined text-purple-600 text-2xl">how_to_reg</span>
                         </div>
             </div>
             </div>
@@ -133,7 +133,7 @@
                             <h3 class="text-2xl font-semibold mt-1">{{ number_format($activeCampaigns) }}</h3>
                         </div>
                         <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                            <span class="material-icons text-indigo-600 text-2xl">campaign</span>
+                            <span class="material-icons-outlined text-indigo-600 text-2xl">campaign</span>
                         </div>
                     </div>
                 </div>
@@ -145,7 +145,7 @@
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                             <h3 class="font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-blue-600 mr-2">timeline</span>
+                            <span class="material-icons-outlined text-blue-600 mr-2">timeline</span>
                                 Events Over Time
                             </h3>
                     </div>
@@ -175,7 +175,7 @@
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                         <h3 class="font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-green-600 mr-2">people</span>
+                            <span class="material-icons-outlined text-green-600 mr-2">people</span>
                             Participants Over Time
                         </h3>
                     </div>
@@ -200,7 +200,7 @@
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                         <h3 class="font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-purple-600 mr-2">pie_chart</span>
+                            <span class="material-icons-outlined text-purple-600 mr-2">pie_chart</span>
                             Participant Gender Distribution
                         </h3>
                     </div>
@@ -222,7 +222,7 @@
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                         <h3 class="font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-amber-600 mr-2">pie_chart</span>
+                            <span class="material-icons-outlined text-amber-600 mr-2">pie_chart</span>
                             Event Status Distribution
                         </h3>
                     </div>
@@ -247,7 +247,7 @@
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                         <h3 class="font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-indigo-600 mr-2">campaign</span>
+                            <span class="material-icons-outlined text-indigo-600 mr-2">campaign</span>
                             Campaign Performance
                         </h3>
                     </div>
@@ -269,7 +269,7 @@
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                         <h3 class="font-medium text-gray-700 flex items-center">
-                            <span class="material-icons text-green-600 mr-2">how_to_reg</span>
+                            <span class="material-icons-outlined text-green-600 mr-2">how_to_reg</span>
                             Attendance Rate by Event
                         </h3>
                     </div>
@@ -292,7 +292,7 @@
             <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="p-4 border-b border-gray-200">
                             <h3 class="font-medium text-gray-700 flex items-center">
-                        <span class="material-icons text-blue-600 mr-2">show_chart</span>
+                        <span class="material-icons-outlined text-blue-600 mr-2">show_chart</span>
                                 Cumulative Event Growth
                             </h3>
                     </div>

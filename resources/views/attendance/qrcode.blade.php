@@ -112,12 +112,12 @@
         <div class="relative flex flex-col items-center">
             <!-- Minimalist Fullscreen Icon -->
             <button type="button" onclick="toggleFullScreen()" title="Full Screen" class="absolute -top-8 right-0 z-20">
-                <span class="material-icons text-gray-500 text-xl hover:text-gray-700">fullscreen</span>
+                <span class="material-icons-outlined text-gray-500 text-xl hover:text-gray-700">fullscreen</span>
             </button>
             <div id="qrCard" class="bg-white rounded shadow-md border border-gray-300 p-8 flex flex-col items-center transition-all duration-200">
                 <div class="mb-4 text-center">
                     <h1 class="text-lg font-bold text-gray-800 flex items-center justify-center">
-                        <span class="material-icons text-primary-DEFAULT mr-2">qr_code</span>
+                        <span class="material-icons-outlined text-primary-DEFAULT mr-2">qr_code</span>
                         Attendance QR Codes
                     </h1>
                     <div class="text-xs text-gray-500 mt-1">{{ $attendance->event->name ?? '-' }}</div>
@@ -125,7 +125,7 @@
 
                 @if($sessionsWithQR->isEmpty())
                     <div class="text-center py-8 text-gray-500 text-xs">
-                        <span class="material-icons text-4xl mb-2">event_busy</span>
+                        <span class="material-icons-outlined text-4xl mb-2">event_busy</span>
                         <div>No active sessions available at this time</div>
                     </div>
                 @else
@@ -136,12 +136,12 @@
                             <div class="text-xs text-gray-600 mt-2 flex items-center justify-center gap-2">
                                 @if($sess['session_type'] === 'checkin')
                                     <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded font-semibold">
-                                        <span class="material-icons text-sm">login</span>
+                                        <span class="material-icons-outlined text-sm">login</span>
                                         Check-In: {{ substr($sess['checkin_start_time'], 0, 5) }} - {{ substr($sess['checkin_end_time'], 0, 5) }}
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded font-semibold">
-                                        <span class="material-icons text-sm">logout</span>
+                                        <span class="material-icons-outlined text-sm">logout</span>
                                         Check-Out: {{ substr($sess['checkout_start_time'], 0, 5) }} - {{ substr($sess['checkout_end_time'], 0, 5) }}
                                     </span>
                                 @endif
@@ -163,7 +163,7 @@
                 <div class="mt-8 w-full max-w-lg border-t border-gray-200 pt-6">
                     <div class="text-center mb-3">
                         <h3 class="text-sm font-semibold text-gray-700 flex items-center justify-center gap-2">
-                            <span class="material-icons text-sm text-primary-DEFAULT">edit</span>
+                            <span class="material-icons-outlined text-sm text-primary-DEFAULT">edit</span>
                             Manual Check-in (IC/Passport)
                         </h3>
                         <p class="text-xs text-gray-500 mt-1">Masukkan IC atau Passport untuk check-in tanpa scan</p>
@@ -198,7 +198,7 @@
                             :disabled="searchLoading"
                             class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 flex items-center gap-1 transition-colors"
                         >
-                            <span class="material-icons text-sm" x-show="!searchLoading">search</span>
+                            <span class="material-icons-outlined text-sm" x-show="!searchLoading">search</span>
                             <span x-show="searchLoading" class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                             <span x-text="searchLoading ? 'Searching...' : 'Search'"></span>
                         </button>
@@ -215,13 +215,13 @@
 
                 <!-- Modal for Participant Details & History (MOVED INSIDE #qrCard) -->
                 <div x-show="showModal" style="display:none" x-transition>
-                    <div class="absolute inset-0 bg-black bg-opacity-50" style="z-index: 1000;" @click="showModal=false"></div>
+                    <div class="absolute inset-0 modal-backdrop-glass" style="z-index: 1000;" @click="showModal=false"></div>
                     <div class="absolute inset-0 flex items-center justify-center p-4" style="z-index: 1001; pointer-events: none;">
                         <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto pointer-events-auto">
                 <div class="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
                     <h3 class="font-semibold text-sm">Participant Info & Attendance History</h3>
                     <button @click="showModal=false" class="text-gray-500 hover:text-gray-700">
-                        <span class="material-icons text-sm">close</span>
+                        <span class="material-icons-outlined text-sm">close</span>
                     </button>
                 </div>
 
@@ -323,7 +323,7 @@
                             :disabled="searchLoading"
                             class="flex-1 px-4 py-2 bg-green-600 text-white rounded text-xs font-semibold hover:bg-green-700 flex items-center justify-center gap-1 transition-colors"
                         >
-                            <span class="material-icons text-sm">check_circle</span>
+                            <span class="material-icons-outlined text-sm">check_circle</span>
                             <span>Confirm Check-in</span>
                         </button>
                         <button 

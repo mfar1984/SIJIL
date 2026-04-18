@@ -12,7 +12,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">event_note</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">event_note</span>
                         <h1 class="text-xl font-bold text-gray-800">Log Activity</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Monitor and track system activities</p>
@@ -22,30 +22,30 @@
                     @can('log_activity.delete')
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons text-xs mr-1">delete_sweep</span>
+                            <span class="material-icons-outlined text-xs mr-1">delete_sweep</span>
                             Clear Logs
-                            <span class="material-icons text-xs ml-1">arrow_drop_down</span>
+                            <span class="material-icons-outlined text-xs ml-1">arrow_drop_down</span>
                         </button>
                         <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
                             <div class="py-1">
                                 <button onclick="clearLogs('all')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">delete_forever</span>
+                                    <span class="material-icons-outlined text-xs mr-2">delete_forever</span>
                                     All Logs
                                 </button>
                                 <button onclick="clearLogs('30')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     30 Days
                                 </button>
                                 <button onclick="clearLogs('60')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     60 Days
                                 </button>
                                 <button onclick="clearLogs('90')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     90 Days
                                 </button>
                                 <button onclick="clearLogs('120')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <span class="material-icons text-xs mr-2">schedule</span>
+                                    <span class="material-icons-outlined text-xs mr-2">schedule</span>
                                     120 Days
                                 </button>
                             </div>
@@ -54,7 +54,7 @@
                     @endcan
                     @can('log_activity.export')
                     <button class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                        <span class="material-icons text-xs mr-1">file_download</span>
+                        <span class="material-icons-outlined text-xs mr-1">file_download</span>
                         Export Logs
                     </button>
                     @endcan
@@ -191,7 +191,7 @@
                                 <td class="py-3 px-4">
                                     <div class="flex justify-center">
                                         <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showActivityDetails({{ $activity->id }})">
-                                            <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                         </button>
                                     </div>
                                 </td>
@@ -200,7 +200,7 @@
                             <tr class="text-xs">
                                 <td colspan="8" class="py-8 px-4 text-center text-gray-500">
                                     <div class="flex flex-col items-center">
-                                        <span class="material-icons text-gray-400 text-4xl mb-2">event_note</span>
+                                        <span class="material-icons-outlined text-gray-400 text-4xl mb-2">event_note</span>
                                         <p class="text-sm">No activity logs found</p>
                                         <p class="text-xs text-gray-400 mt-1">Activity logs will appear here when users perform actions</p>
                                     </div>
@@ -230,7 +230,7 @@
     </div>
     
     <!-- Log Activity Details Modal -->
-    <div id="logModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+    <div id="logModal" class="fixed inset-0 modal-backdrop-glass flex items-center justify-center z-50" style="display: none;">
         <div id="logModalContent" class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <!-- Modal content will be populated by JavaScript -->
         </div>
@@ -389,7 +389,7 @@
                         // Show loading state
                         const button = event.target;
                         const originalText = button.innerHTML;
-                        button.innerHTML = '<span class="material-icons text-xs mr-2 animate-spin">hourglass_empty</span>Clearing...';
+                        button.innerHTML = '<span class="material-icons-outlined text-xs mr-2 animate-spin">hourglass_empty</span>Clearing...';
                         button.disabled = true;
                         
                         // Make API call

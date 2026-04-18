@@ -12,14 +12,14 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-indigo-500">email</span>
+                        <span class="material-icons-outlined mr-2 text-indigo-500">email</span>
                         <h1 class="text-xl font-bold text-gray-800">PWA Email Templates</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Customize welcome and password reset emails for PWA participants</p>
                 </div>
                 @can('pwa_templates.create')
                 <a href="{{ route('pwa.templates.create') }}" class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                    <span class="material-icons text-xs mr-1">add</span>
+                    <span class="material-icons-outlined text-xs mr-1">add</span>
                     New Template
                 </a>
                 @endcan
@@ -42,11 +42,11 @@
                         <p class="text-xs text-gray-600 mb-3">Type: {{ ucfirst(str_replace('_',' ', $template->type ?? 'custom')) }}</p>
                         <div class="space-y-2 mb-3">
                             <div class="flex items-center text-xs text-gray-500">
-                                <span class="material-icons text-xs mr-1">schedule</span>
+                                <span class="material-icons-outlined text-xs mr-1">schedule</span>
                                 Last updated: {{ optional($template->updated_at)->diffForHumans() ?? 'N/A' }}
                             </div>
                             <div class="flex items-center text-xs text-gray-500">
-                                <span class="material-icons text-xs mr-1">send</span>
+                                <span class="material-icons-outlined text-xs mr-1">send</span>
                                 Times used: {{ $template->times_used ?? 0 }}
                             </div>
                         </div>
@@ -63,7 +63,7 @@
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs" title="Delete">
-                                    <span class="material-icons text-xs">delete</span>
+                                    <span class="material-icons-outlined text-xs">delete</span>
                                 </button>
                             </form>
                             @endcan
@@ -189,12 +189,12 @@
     
     <!-- Preview Modal -->
     <div id="preview-modal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black bg-opacity-40" onclick="hidePreviewModal()"></div>
+        <div class="absolute inset-0 modal-backdrop-glass" onclick="hidePreviewModal()"></div>
         <div class="relative max-w-3xl mx-auto my-12 bg-white rounded shadow-lg border border-gray-200 max-h-[85vh] flex flex-col">
             <div class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-none">
                 <h3 class="text-sm font-semibold text-gray-800">Email Preview</h3>
                 <button class="text-gray-500 hover:text-gray-700" onclick="hidePreviewModal()" aria-label="Close">
-                    <span class="material-icons text-base">close</span>
+                    <span class="material-icons-outlined text-base">close</span>
                 </button>
             </div>
             <div class="px-4 py-3 flex-1 overflow-y-auto">
@@ -215,12 +215,12 @@
 
     <!-- Send Test Modal -->
     <div id="send-test-modal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black bg-opacity-40" onclick="closeSendTestModal()"></div>
+        <div class="absolute inset-0 modal-backdrop-glass" onclick="closeSendTestModal()"></div>
         <div class="relative max-w-md mx-auto my-24 bg-white rounded shadow-lg border border-gray-200">
             <div class="flex justify-between items-center px-4 py-3 border-b border-gray-200">
                 <h3 class="text-sm font-semibold text-gray-800">Send Test Email</h3>
                 <button class="text-gray-500 hover:text-gray-700" onclick="closeSendTestModal()" aria-label="Close">
-                    <span class="material-icons text-base">close</span>
+                    <span class="material-icons-outlined text-base">close</span>
                 </button>
             </div>
             <form id="send-test-form" method="POST" action="#" class="px-4 py-4">

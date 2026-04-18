@@ -10,14 +10,14 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center">
-                        <span class="material-icons mr-2 text-primary-DEFAULT">quiz</span>
+                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">quiz</span>
                         <h1 class="text-xl font-bold text-gray-800">Survey Management</h1>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">Create and manage surveys for events and feedback</p>
                 </div>
                 @can('surveys.create')
                 <a href="{{ route('survey.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                    <span class="material-icons text-xs mr-1">add_circle</span>
+                    <span class="material-icons-outlined text-xs mr-1">add_circle</span>
                     Create New Survey
                 </a>
                 @endcan
@@ -76,7 +76,7 @@
             
             @if(session('success'))
                 <div class="bg-green-50 text-green-800 p-4 mb-4 rounded-md flex items-start text-xs">
-                    <span class="material-icons mr-2">check_circle</span>
+                    <span class="material-icons-outlined mr-2">check_circle</span>
                     <span>{{ session('success') }}</span>
                 </div>
             @endif
@@ -152,16 +152,16 @@
                                             @if($survey->status === 'published')
                                                 <div class="relative" x-data="{ shareDropdownOpen{{ $survey->id }}: false }">
                                                     <button @click="shareDropdownOpen{{ $survey->id }} = !shareDropdownOpen{{ $survey->id }}" class="p-1 bg-green-50 rounded hover:bg-green-100 border border-green-100" title="Share Options">
-                                                        <span class="material-icons text-green-600 text-xs">share</span>
+                                                        <span class="material-icons-outlined text-green-600 text-xs">share</span>
                                                     </button>
                                                     <div x-show="shareDropdownOpen{{ $survey->id }}" @click.outside="shareDropdownOpen{{ $survey->id }} = false" class="absolute right-0 mt-2 z-50 w-48 bg-white rounded-md shadow-lg">
                                                         <div class="py-1 border border-gray-200 rounded-md">
                                                             <button @click="copyLink('{{ $survey->public_url }}')" class="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                                                <span class="material-icons text-blue-600 text-xs mr-2">link</span>
+                                                                <span class="material-icons-outlined text-blue-600 text-xs mr-2">link</span>
                                                                 Copy Survey Link
                                                             </button>
-                                                            <a href="#" class="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                                                <span class="material-icons text-purple-600 text-xs mr-2">qr_code</span>
+                                                            <a href="{{ route('survey.qrcode-image', $survey) }}" class="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                                <span class="material-icons-outlined text-purple-600 text-xs mr-2">qr_code</span>
                                                                 Generate QR Code
                                                             </a>
                                                         </div>
@@ -171,18 +171,18 @@
                                             
                                             @can('surveys.read')
                                             <a href="{{ route('survey.show', $survey) }}" class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
-                                                <span class="material-icons text-primary-DEFAULT text-xs">visibility</span>
+                                                <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                             </a>
                                             @endcan
                                             @can('surveys.update')
                                             <a href="{{ route('survey.edit', $survey) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
-                                                <span class="material-icons text-yellow-600 text-xs">edit</span>
+                                                <span class="material-icons-outlined text-yellow-600 text-xs">edit</span>
                                             </a>
                                             @endcan
                                             @can('survey_responses.read')
                                             @if($survey->status === 'published')
                                             <a href="{{ route('survey.responses', $survey) }}" class="p-1 bg-purple-50 rounded hover:bg-purple-100 border border-purple-100" title="View Responses">
-                                                <span class="material-icons text-purple-600 text-xs">format_list_bulleted</span>
+                                                <span class="material-icons-outlined text-purple-600 text-xs">format_list_bulleted</span>
                                             </a>
                                             @endif
                                             @endcan
@@ -191,7 +191,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Delete">
-                                                    <span class="material-icons text-red-600 text-xs">delete</span>
+                                                    <span class="material-icons-outlined text-red-600 text-xs">delete</span>
                                                 </button>
                                             </form>
                                             @endcan
@@ -218,7 +218,7 @@
             @else
                 <div class="bg-gray-50 rounded-md p-6 text-center">
                     <div class="flex justify-center">
-                        <span class="material-icons text-gray-400 text-5xl">quiz</span>
+                        <span class="material-icons-outlined text-gray-400 text-5xl">quiz</span>
                     </div>
                     <h3 class="mt-2 text-gray-500 text-lg font-medium">No surveys found</h3>
                     <p class="mt-1 text-gray-400 text-sm">Create your first survey to get started</p>

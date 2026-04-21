@@ -292,25 +292,47 @@
     },
     // Populate state/city/postcode/country (fallback without dynamic imports)
     loadStates() {
-        const states = [
-            'Johor','Kedah','Kelantan','Melaka','Negeri Sembilan','Pahang','Perak','Perlis','Pulau Pinang','Sabah','Sarawak','Selangor','Terengganu','Wilayah Persekutuan Kuala Lumpur','Wilayah Persekutuan Labuan','Wilayah Persekutuan Putrajaya','others'
-        ];
-        const stateEl = document.getElementById('state');
-        if (!stateEl) return;
-        // clear existing
-        stateEl.innerHTML = '';
-        // placeholder
-        const ph = document.createElement('option'); ph.value = ''; ph.textContent = '-- Select State --'; stateEl.appendChild(ph);
-        states.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; stateEl.appendChild(o); });
-        // keep value if already set
-        if (this.form.state) stateEl.value = this.form.state;
+        // States will be populated by malaysia-postcodes.js for Malaysia
+        // For non-Malaysia countries, state field will be text input
+        // So this function is no longer needed
     },
     loadCountries() {
-        const countries = ['Malaysia','Singapore','Thailand','Indonesia','Brunei','Others'];
+        const countries = [
+            '-- Select Country --',
+            'Malaysia',
+            'Singapore',
+            'Thailand',
+            'Indonesia',
+            'Brunei',
+            'Philippines',
+            'Vietnam',
+            'Myanmar',
+            'Cambodia',
+            'Laos',
+            'China',
+            'Japan',
+            'South Korea',
+            'Taiwan',
+            'Hong Kong',
+            'India',
+            'Pakistan',
+            'Bangladesh',
+            'United States',
+            'United Kingdom',
+            'Australia',
+            'New Zealand',
+            'Canada',
+            'Others'
+        ];
         const countryEl = document.getElementById('country');
         if (!countryEl) return;
         countryEl.innerHTML = '';
-        countries.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; countryEl.appendChild(o); });
+        countries.forEach(c => { 
+            const o = document.createElement('option'); 
+            o.value = c === '-- Select Country --' ? '' : c; 
+            o.textContent = c; 
+            countryEl.appendChild(o); 
+        });
         // default to Malaysia if empty
         if (!this.form.country) { this.form.country = 'Malaysia'; }
         countryEl.value = this.form.country;
@@ -887,4 +909,69 @@
         </div>
     </div>
 </div>
+
+<!-- Malaysia Postcodes Script -->
+<script src="/js/malaysia-postcodes.js"></script>
+<script>
+    // Initialize Malaysia postcodes when country is Malaysia
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Wait for Alpine.js to be ready
+        await new Promise(resolve => {
+            if (window.Alpine) {
+                resolve();
+            } else {
+                document.addEventListener('alpine:init', resolve);
+            }
+        });
+        
+        // Load Malaysia data
+        await loadMalaysiaData();
+        
+        // Get country select element
+        const countrySelect = document.getElementById('country');
+        const stateSelect = document.getElementById('state');
+        const citySelect = document.getElementById('city');
+        const postcodeSelect = document.getElementById('postcode');
+        
+        // Function to initialize Malaysia dropdowns
+        function initMalaysiaDropdowns() {
+            if (!stateSelect || !citySelect || !postcodeSelect) return;
+            
+            // Populate states
+            populateStates(stateSelect);
+            
+            // Add event listeners
+            stateSelect.addEventListener('change', function() {
+                const selectedState = this.value;
+                populateCities(citySelect, selectedState);
+                postcodeSelect.innerHTML = '<option value="">-- Select Postcode --</option>';
+                postcodeSelect.disabled = true;
+                citySelect.value = '';
+                postcodeSelect.value = '';
+            });
+            
+            citySelect.addEventListener('change', function() {
+                const selectedState = stateSelect.value;
+                const selectedCity = this.value;
+                populatePostcodes(postcodeSelect, selectedState, selectedCity);
+                postcodeSelect.value = '';
+            });
+        }
+        
+        // Initialize if Malaysia is selected
+        if (countrySelect && countrySelect.value === 'Malaysia') {
+            initMalaysiaDropdowns();
+        }
+        
+        // Re-initialize when country changes to Malaysia
+        if (countrySelect) {
+            countrySelect.addEventListener('change', function() {
+                if (this.value === 'Malaysia') {
+                    initMalaysiaDropdowns();
+                }
+            });
+        }
+    });
+</script>
+
 @endsection 

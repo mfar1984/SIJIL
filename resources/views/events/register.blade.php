@@ -629,7 +629,7 @@
                 </div>
                 <div>
                     <label class="block mb-1">Email</label>
-                    <input type="email" x-model="form.email" name="email" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" required :readonly="locked.email">
+                    <input type="email" x-model="form.email" name="email" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" required :readonly="locked.email !== ''" :value="locked.email || form.email">
                 </div>
                 <div>
                     <label class="block mb-1">Phone Number</label>
@@ -649,28 +649,28 @@
                     <input type="date" x-model="form.date_of_birth" name="date_of_birth" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
                 </div>
                 <div>
-                    <label class="block mb-1">Race (Bangsa)</label>
+                    <label class="block mb-1">Race</label>
                     <select x-model="form.race" name="race" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
                         <option value="">-- Select Race --</option>
-                        <option value="Melayu (Semenanjung)">Melayu (Semenanjung)</option>
-                        <option value="Melayu (Sarawak)">Melayu (Sarawak)</option>
-                        <option value="Melayu (Sabah)">Melayu (Sabah)</option>
-                        <option value="Cina Hokkien">Cina Hokkien</option>
-                        <option value="Cina Kantonis">Cina Kantonis</option>
-                        <option value="Cina Hakka">Cina Hakka</option>
-                        <option value="Cina Teochew">Cina Teochew</option>
-                        <option value="Cina Foochow">Cina Foochow</option>
-                        <option value="Cina Hainan">Cina Hainan</option>
-                        <option value="Cina Kwongsai">Cina Kwongsai</option>
-                        <option value="Cina Henghua">Cina Henghua</option>
-                        <option value="Cina lain-lain">Cina lain-lain</option>
-                        <option value="India Tamil">India Tamil</option>
-                        <option value="India Punjabi">India Punjabi</option>
-                        <option value="India Malayalee">India Malayalee</option>
-                        <option value="India Telugu">India Telugu</option>
-                        <option value="India Gujerati">India Gujerati</option>
-                        <option value="India Bengali">India Bengali</option>
-                        <option value="India lain-lain">India lain-lain</option>
+                        <option value="Malay (Peninsular)">Malay (Peninsular)</option>
+                        <option value="Malay (Sarawak)">Malay (Sarawak)</option>
+                        <option value="Malay (Sabah)">Malay (Sabah)</option>
+                        <option value="Chinese Hokkien">Chinese Hokkien</option>
+                        <option value="Chinese Cantonese">Chinese Cantonese</option>
+                        <option value="Chinese Hakka">Chinese Hakka</option>
+                        <option value="Chinese Teochew">Chinese Teochew</option>
+                        <option value="Chinese Foochow">Chinese Foochow</option>
+                        <option value="Chinese Hainan">Chinese Hainan</option>
+                        <option value="Chinese Kwongsai">Chinese Kwongsai</option>
+                        <option value="Chinese Henghua">Chinese Henghua</option>
+                        <option value="Chinese Others">Chinese Others</option>
+                        <option value="Indian Tamil">Indian Tamil</option>
+                        <option value="Indian Punjabi">Indian Punjabi</option>
+                        <option value="Indian Malayalee">Indian Malayalee</option>
+                        <option value="Indian Telugu">Indian Telugu</option>
+                        <option value="Indian Gujerati">Indian Gujerati</option>
+                        <option value="Indian Bengali">Indian Bengali</option>
+                        <option value="Indian Others">Indian Others</option>
                         <option value="Iban">Iban</option>
                         <option value="Kadazan">Kadazan</option>
                         <option value="Dusun">Dusun</option>
@@ -684,7 +684,7 @@
                         <option value="Orang Ulu Kelabit">Orang Ulu Kelabit</option>
                         <option value="Orang Ulu Penan">Orang Ulu Penan</option>
                         <option value="Orang Ulu Lun Bawang">Orang Ulu Lun Bawang</option>
-                        <option value="Orang Ulu (lain-lain)">Orang Ulu (lain-lain)</option>
+                        <option value="Orang Ulu Others">Orang Ulu Others</option>
                         <option value="Orang Asli Temuan">Orang Asli Temuan</option>
                         <option value="Orang Asli Semai">Orang Asli Semai</option>
                         <option value="Orang Asli Jakun">Orang Asli Jakun</option>
@@ -704,7 +704,7 @@
                         <option value="Orang Asli Proto-Malay (Jakun)">Orang Asli Proto-Malay (Jakun)</option>
                         <option value="Orang Asli Proto-Malay (Kanaq)">Orang Asli Proto-Malay (Kanaq)</option>
                         <option value="Orang Asli Proto-Malay (Seletar)">Orang Asli Proto-Malay (Seletar)</option>
-                        <option value="Orang Asli (lain-lain)">Orang Asli (lain-lain)</option>
+                        <option value="Orang Asli Others">Orang Asli Others</option>
                         <option value="Sungai">Sungai</option>
                         <option value="Rungus">Rungus</option>
                         <option value="Lundayeh">Lundayeh</option>
@@ -719,7 +719,7 @@
                         <option value="Thai">Thai</option>
                         <option value="Peranakan/Baba Nyonya">Peranakan/Baba Nyonya</option>
                         <option value="Chitty">Chitty</option>
-                        <option value="Lain-lain Warganegara">Lain-lain Warganegara</option>
+                        <option value="Others">Others</option>
                     </select>
                 </div>
             </div>

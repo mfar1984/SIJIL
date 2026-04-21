@@ -331,19 +331,19 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                                 <div class="bg-gray-50 border border-gray-200 rounded p-2">
                                                     <p class="text-xs font-medium text-gray-600 mb-1">Quick Insert:</p>
                                                     <div class="flex flex-wrap gap-1">
-                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{participant_name}}')">
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '@{{participant_name}}')">
                                                             Name
                                                         </button>
-                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{event_name}}')">
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '@{{event_name}}')">
                                                             Event
                                                         </button>
-                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{event_date}}')">
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '@{{event_date}}')">
                                                             Date
                                                         </button>
-                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '{{event_time}}')">
+                                                        <button type="button" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded" @click="updateElement('content', selectedElement.content + '@{{event_time}}')">
                                                             Time
                                                         </button>
-                                                        <button type="button" class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded font-medium" @click="updateElement('content', selectedElement.content + '{{CERT-GEN}}')">
+                                                        <button type="button" class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded font-medium" @click="updateElement('content', selectedElement.content + '@{{CERT-GEN}}')">
                                                             Cert No.
                                                         </button>
                                                     </div>

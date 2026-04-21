@@ -549,50 +549,34 @@
                         <select x-model="form.country" name="country" id="country" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" @change="form.state=''; form.city=''; form.postcode=''; form.manual_state=''; form.manual_city=''; form.manual_postcode=''"></select>
                     </div>
                     <!-- Malaysia: Show dropdowns -->
-                    <template x-if="form.country === 'Malaysia'">
-                        <div>
-                            <label class="block mb-1">State</label>
-                            <select x-model="form.state" name="state" id="state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
-                                <!-- options populated by JS -->
-                            </select>
-                        </div>
-                    </template>
-                    <template x-if="form.country === 'Malaysia'">
-                        <div>
-                            <label class="block mb-1">City</label>
-                            <select x-model="form.city" name="city" id="city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.state || form.state === 'others'" x-show="form.state !== 'others'"></select>
-                        </div>
-                    </template>
-                    <template x-if="form.country === 'Malaysia'">
-                        <div>
-                            <label class="block mb-1">Postcode</label>
-                            <template x-if="form.state !== 'others'">
-                                <select x-model="form.postcode" name="postcode" id="postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.city"></select>
-                            </template>
-                            <template x-if="form.state === 'others'">
-                                <input type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode_alt" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode">
-                            </template>
-                        </div>
-                    </template>
+                    <div x-show="form.country === 'Malaysia'">
+                        <label class="block mb-1">State</label>
+                        <select x-model="form.state" name="state" id="state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
+                            <!-- options populated by JS -->
+                        </select>
+                    </div>
+                    <div x-show="form.country === 'Malaysia'">
+                        <label class="block mb-1">City</label>
+                        <select x-model="form.city" name="city" id="city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.state || form.state === 'others'" x-show="form.state !== 'others'"></select>
+                    </div>
+                    <div x-show="form.country === 'Malaysia'">
+                        <label class="block mb-1">Postcode</label>
+                        <select x-show="form.state !== 'others'" x-model="form.postcode" name="postcode" id="postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.city"></select>
+                        <input x-show="form.state === 'others'" type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode_alt" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode">
+                    </div>
                     <!-- Other Countries: Show text inputs -->
-                    <template x-if="form.country !== 'Malaysia'">
-                        <div>
-                            <label class="block mb-1">State/Province</label>
-                            <input type="text" x-model="form.manual_state" name="manual_state" id="manual_state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter state/province">
-                        </div>
-                    </template>
-                    <template x-if="form.country !== 'Malaysia'">
-                        <div>
-                            <label class="block mb-1">City</label>
-                            <input type="text" x-model="form.manual_city" name="manual_city" id="manual_city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter city">
-                        </div>
-                    </template>
-                    <template x-if="form.country !== 'Malaysia'">
-                        <div>
-                            <label class="block mb-1">Postcode/ZIP</label>
-                            <input type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode/ZIP">
-                        </div>
-                    </template>
+                    <div x-show="form.country !== 'Malaysia'">
+                        <label class="block mb-1">State/Province</label>
+                        <input type="text" x-model="form.manual_state" name="manual_state" id="manual_state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter state/province">
+                    </div>
+                    <div x-show="form.country !== 'Malaysia'">
+                        <label class="block mb-1">City</label>
+                        <input type="text" x-model="form.manual_city" name="manual_city" id="manual_city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter city">
+                    </div>
+                    <div x-show="form.country !== 'Malaysia'">
+                        <label class="block mb-1">Postcode/ZIP</label>
+                        <input type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode/ZIP">
+                    </div>
                 </div>
             </div>
             <div class="p-4 flex justify-between">

@@ -103,11 +103,11 @@ class CertificateController extends Controller
         // Get events based on user role
         if (auth()->user()->hasRole('Administrator')) {
             $events = Event::orderBy('start_date')->get(['id', 'name']);
+            $templates = CertificateTemplate::all(['id', 'name']);
         } else {
             $events = Event::where('user_id', auth()->id())->orderBy('start_date')->get(['id', 'name']);
+            $templates = CertificateTemplate::where('user_id', auth()->id())->get(['id', 'name']);
         }
-
-        $templates = CertificateTemplate::all(['id', 'name']);
         
         return view('certificates.create', compact('events', 'templates'));
     }
@@ -186,6 +186,13 @@ class CertificateController extends Controller
         
         $event = Event::findOrFail($eventId);
         $template = CertificateTemplate::findOrFail($templateId);
+        
+        // Check if user has access to this template
+        if (!auth()->user()->hasRole('Administrator')) {
+            if ($template->user_id !== auth()->id()) {
+                return back()->with('error', 'Unauthorized to use this template');
+            }
+        }
         
         // Found event and template
         
@@ -381,6 +388,13 @@ class CertificateController extends Controller
         $event = Event::findOrFail($eventId);
         $participant = Participant::findOrFail($participantId);
         $template = CertificateTemplate::findOrFail($templateId);
+        
+        // Check if user has access to this template
+        if (!auth()->user()->hasRole('Administrator')) {
+            if ($template->user_id !== auth()->id()) {
+                return response()->json(['error' => 'Unauthorized to use this template'], 403);
+            }
+        }
         
         try {
             // Generate temporary PDF certificate for preview

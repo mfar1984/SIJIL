@@ -24,6 +24,7 @@ class CertificateTemplate extends Model
         'placeholders',
         'template_data',
         'is_active',
+        'user_id',
         'created_by',
     ];
 
@@ -52,6 +53,14 @@ class CertificateTemplate extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the user who owns the template.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**

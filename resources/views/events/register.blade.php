@@ -540,7 +540,7 @@
                 <!-- IC/Passport Dropdown -->
                 <div>
                     <label class="block mb-1">Identity Card / Passport No.</label>
-                    <select x-model="form.id_type" name="id_type" id="id_type" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" @change="form.identity_card='';form.passport_no='';" :disabled="locked.identity">
+                    <select x-model="form.id_type" name="id_type" id="id_type" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" @change="form.identity_card='';form.passport_no='';" :disabled="locked.identity !== ''">
                         <option value="">-- Select IC / Passport --</option>
                         <option value="ic">Identity Card</option>
                         <option value="passport">Passport</option>
@@ -548,11 +548,11 @@
                 </div>
                 <div x-show="form.id_type === 'ic'">
                     <label class="block mb-1">Identity Card (IC)</label>
-                    <input type="text" x-model="form.identity_card" name="identity_card" id="identity_card" maxlength="14" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="000000-00-0000" @input="formatIC($event)" @blur="formatIC($event)" :readonly="locked.id_type==='ic' && locked.identity">
+                    <input type="text" x-model="form.identity_card" name="identity_card" id="identity_card" maxlength="14" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="000000-00-0000" @input="formatIC($event)" @blur="formatIC($event)" :readonly="locked.id_type==='ic' && locked.identity !== ''">
                 </div>
                 <div x-show="form.id_type === 'passport'">
                     <label class="block mb-1">Passport No.</label>
-                    <input type="text" x-model="form.passport_no" name="passport_no" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="A00000000" :readonly="locked.id_type==='passport' && locked.identity">
+                    <input type="text" x-model="form.passport_no" name="passport_no" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="A00000000" :readonly="locked.id_type==='passport' && locked.identity !== ''">
                 </div>
                 <!-- Address Section (copy from participants/create) -->
                 <div class="grid grid-cols-2 gap-2 mb-2">

@@ -545,46 +545,54 @@
                 </div>
                 <div class="grid grid-cols-4 gap-2">
                     <div>
-                        <label class="block mb-1">State</label>
-                        <select x-model="form.state" name="state" id="state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
-                            <!-- options populated by JS -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-1">City</label>
-                        <select x-model="form.city" name="city" id="city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.state || form.state === 'others'" x-show="form.state !== 'others'"></select>
-                    </div>
-                    <div>
-                        <label class="block mb-1">Postcode</label>
-                        <template x-if="form.state !== 'others'">
-                            <select x-model="form.postcode" name="postcode" id="postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.city"></select>
-                        </template>
-                        <template x-if="form.state === 'others'">
-                            <input type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode_alt" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode manually">
-                        </template>
-                    </div>
-                    <div>
                         <label class="block mb-1">Country</label>
-                        <select x-model="form.country" name="country" id="country" class="w-full border border-gray-300 rounded px-2 py-1 text-xs"></select>
+                        <select x-model="form.country" name="country" id="country" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" @change="form.state=''; form.city=''; form.postcode=''; form.manual_state=''; form.manual_city=''; form.manual_postcode=''"></select>
                     </div>
-                </div>
-                <!-- Manual address fields if state == others -->
-                <div x-show="form.state === 'others'" class="mt-2">
-                    <div class="grid grid-cols-4 gap-2">
+                    <!-- Malaysia: Show dropdowns -->
+                    <template x-if="form.country === 'Malaysia'">
                         <div>
-                            <label class="block mb-1">State (Manual)</label>
-                            <input type="text" x-model="form.manual_state" name="manual_state" id="manual_state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter state manually">
+                            <label class="block mb-1">State</label>
+                            <select x-model="form.state" name="state" id="state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
+                                <!-- options populated by JS -->
+                            </select>
                         </div>
+                    </template>
+                    <template x-if="form.country === 'Malaysia'">
                         <div>
-                            <label class="block mb-1">City (Manual)</label>
-                            <input type="text" x-model="form.manual_city" name="manual_city" id="manual_city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter city manually">
+                            <label class="block mb-1">City</label>
+                            <select x-model="form.city" name="city" id="city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.state || form.state === 'others'" x-show="form.state !== 'others'"></select>
                         </div>
+                    </template>
+                    <template x-if="form.country === 'Malaysia'">
                         <div>
-                            <label class="block mb-1">Postcode (Manual)</label>
-                            <input type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode manually">
+                            <label class="block mb-1">Postcode</label>
+                            <template x-if="form.state !== 'others'">
+                                <select x-model="form.postcode" name="postcode" id="postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" :disabled="!form.city"></select>
+                            </template>
+                            <template x-if="form.state === 'others'">
+                                <input type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode_alt" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode">
+                            </template>
                         </div>
-                        <div></div>
-                    </div>
+                    </template>
+                    <!-- Other Countries: Show text inputs -->
+                    <template x-if="form.country !== 'Malaysia'">
+                        <div>
+                            <label class="block mb-1">State/Province</label>
+                            <input type="text" x-model="form.manual_state" name="manual_state" id="manual_state" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter state/province">
+                        </div>
+                    </template>
+                    <template x-if="form.country !== 'Malaysia'">
+                        <div>
+                            <label class="block mb-1">City</label>
+                            <input type="text" x-model="form.manual_city" name="manual_city" id="manual_city" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter city">
+                        </div>
+                    </template>
+                    <template x-if="form.country !== 'Malaysia'">
+                        <div>
+                            <label class="block mb-1">Postcode/ZIP</label>
+                            <input type="text" x-model="form.manual_postcode" name="manual_postcode" id="manual_postcode" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Enter postcode/ZIP">
+                        </div>
+                    </template>
                 </div>
             </div>
             <div class="p-4 flex justify-between">
@@ -735,9 +743,9 @@
                     <div class="mb-1 flex items-start" x-show="form.id_type === 'passport'"><span class="font-semibold inline-block w-36">Passport</span><span class="mx-1">:</span><span x-text="form.passport_no"></span></div>
                     <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">Address 1</span><span class="mx-1">:</span><span x-text="form.address1"></span></div>
                     <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">Address 2</span><span class="mx-1">:</span><span x-text="form.address2"></span></div>
-                    <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">State</span><span class="mx-1">:</span><span x-text="form.state === 'others' ? form.manual_state : form.state"></span></div>
-                    <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">City</span><span class="mx-1">:</span><span x-text="form.state === 'others' ? form.manual_city : form.city"></span></div>
-                    <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">Postcode</span><span class="mx-1">:</span><span x-text="form.state === 'others' ? form.manual_postcode : form.postcode"></span></div>
+                    <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">State</span><span class="mx-1">:</span><span x-text="form.country === 'Malaysia' ? (form.state === 'others' ? form.manual_state : form.state) : form.manual_state"></span></div>
+                    <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">City</span><span class="mx-1">:</span><span x-text="form.country === 'Malaysia' ? (form.state === 'others' ? form.manual_city : form.city) : form.manual_city"></span></div>
+                    <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">Postcode</span><span class="mx-1">:</span><span x-text="form.country === 'Malaysia' ? (form.state === 'others' ? form.manual_postcode : form.postcode) : form.manual_postcode"></span></div>
                     <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">Country</span><span class="mx-1">:</span><span x-text="form.country"></span></div>
                     <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">Organization</span><span class="mx-1">:</span><span x-text="form.organization"></span></div>
                     <div class="mb-1 flex items-start"><span class="font-semibold inline-block w-36">Job Title</span><span class="mx-1">:</span><span x-text="form.job_title"></span></div>

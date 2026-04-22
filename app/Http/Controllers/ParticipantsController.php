@@ -371,4 +371,55 @@ class ParticipantsController extends Controller
         $event = Event::find($participant->event_id);
         return $event && $event->user_id == auth()->id();
     }
+
+    /**
+     * Export participants to Excel based on current filters.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function export(Request $request)
+    {
+        // Start with base query
+        $query = Participant::with('event');
+
+        // For non-Administrator users, filter by their events
+        if (!auth()->user()->hasRole('Administrator')) {
+            $userEvents = Event::where('user_id', auth()->id())->pluck('id');
+            $query->whereIn('event_id', $userEvents);
+        }
+
+        // Apply same filters as index method
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('email', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('phone', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('identity_card', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('passport_no', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('organization', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        if ($request->filled('event')) {
+            $query->where('event_id', $request->event);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Order by created_at
+        $query->orderBy('created_at', 'desc');
+
+        // Generate filename with timestamp
+        $filename = 'participants_' . date('Y-m-d_His') . '.xlsx';
+
+        // Export to Excel
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ParticipantsExport($query),
+            $filename
+        );
+    }
 } 

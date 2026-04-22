@@ -190,6 +190,10 @@ Route::post('/upload/tinymce-image', [App\Http\Controllers\UploadController::cla
 Route::get('/participants', [App\Http\Controllers\ParticipantsController::class, 'index'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':participants.read'])
     ->name('participants');
+
+Route::get('/participants/export', [App\Http\Controllers\ParticipantsController::class, 'export'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':participants.read'])
+    ->name('participants.export');
     
 Route::get('/participants/create', [App\Http\Controllers\ParticipantsController::class, 'create'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':participants.create'])

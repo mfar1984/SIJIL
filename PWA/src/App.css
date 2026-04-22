@@ -257,19 +257,20 @@ html, body {
   border-radius: var(--radius-md);
   font-size: 15px;
   transition: all var(--transition);
-  background: var(--gray-50);
+  background: white !important;
   height: 50px;
-  color: var(--gray-900);
-  caret-color: var(--gray-900);
-  -webkit-text-fill-color: var(--gray-900);
+  color: var(--gray-900) !important;
+  caret-color: var(--gray-900) !important;
+  -webkit-text-fill-color: var(--gray-900) !important;
 }
 
 .input-modern:focus {
   outline: none;
   border-color: var(--primary-DEFAULT);
-  background: white;
+  background: white !important;
   box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.1);
-  color: var(--gray-900);
+  color: var(--gray-900) !important;
+  -webkit-text-fill-color: var(--gray-900) !important;
 }
 
 .input-modern::placeholder {
@@ -287,8 +288,10 @@ input.input-modern:-webkit-autofill:focus {
 
 /* Force visible text color on WebKit while typing (not only autofill) */
 input.input-modern,
-input.input-modern:focus {
-  -webkit-text-fill-color: var(--gray-900);
+input.input-modern:focus,
+input.input-modern:active {
+  -webkit-text-fill-color: var(--gray-900) !important;
+  color: var(--gray-900) !important;
 }
 
 .password-toggle-modern {

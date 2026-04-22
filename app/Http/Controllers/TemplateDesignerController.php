@@ -141,6 +141,7 @@ class TemplateDesignerController extends Controller
             'orientation' => $request->orientation,
             'template_data' => $templateData,
             'placeholders' => [], // Keep the old placeholders field empty
+            'user_id' => auth()->id(),
             'created_by' => auth()->id(),
         ];
 

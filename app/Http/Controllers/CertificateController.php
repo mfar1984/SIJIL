@@ -562,6 +562,16 @@ class CertificateController extends Controller
                         return $this->getPlaceholderText($placeholderType, $event, $participant);
                     }, $content);
                     
+                    // Debug logging
+                    \Log::info("Rendering text element", [
+                        'content' => $content,
+                        'font' => $fontFamily,
+                        'size' => $fontSize,
+                        'color' => $color,
+                        'position' => ['x' => $xPt, 'y' => $yPt],
+                        'align' => $align ?? 'L'
+                    ]);
+                    
                     // Convert template coordinates to TCPDF points
                     // TCPDF uses top-left origin while our template may use different reference points
                     // We need to scale coordinates proportionally to the page size
@@ -604,19 +614,19 @@ class CertificateController extends Controller
                         $cellWidth = $pageWidth - $xPt;
                     }
                     
-                    // Add text - using MultiCell for better text rendering without uppercase conversion
-                    // MultiCell respects original text case better than Cell
+                    // Add text - using Cell for reliable text rendering
+                    // Cell method is more straightforward and doesn't have MultiCell's complexity
                     $pdf->SetXY($xPt, $yPt);
                     
                     if ($align === 'C') {
-                        // For centered text, use MultiCell with center alignment
-                        $pdf->MultiCell($cellWidth, 10, $content, 0, 'C', 0, 0, $xPt, $yPt, true, 0, false, true, 10, 'M');
+                        // For centered text, use Cell with center alignment
+                        $pdf->Cell($cellWidth, 10, $content, 0, 0, 'C', false, '', 0, false, 'T', 'M');
                     } else if ($align === 'R') {
                         // For right-aligned text
-                        $pdf->MultiCell($cellWidth, 10, $content, 0, 'R', 0, 0, $xPt, $yPt, true, 0, false, true, 10, 'M');
+                        $pdf->Cell($cellWidth, 10, $content, 0, 0, 'R', false, '', 0, false, 'T', 'M');
                     } else {
                         // For left-aligned text
-                        $pdf->MultiCell(0, 10, $content, 0, 'L', 0, 0, $xPt, $yPt, true, 0, false, true, 10, 'M');
+                        $pdf->Cell(0, 10, $content, 0, 0, 'L', false, '', 0, false, 'T', 'M');
                     }
                     
                     // Add a debug marker to verify position

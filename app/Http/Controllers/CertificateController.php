@@ -604,10 +604,20 @@ class CertificateController extends Controller
                         $cellWidth = $pageWidth - $xPt;
                     }
                     
-                    // Add text - using Cell with explicit height for better text rendering
-                    // Use ln=0 to avoid line breaks that cause page breaks
+                    // Add text - using MultiCell for better text rendering without uppercase conversion
+                    // MultiCell respects original text case better than Cell
                     $pdf->SetXY($xPt, $yPt);
-                    $pdf->Cell($cellWidth, 10, $content, 0, 0, $align, 0);
+                    
+                    if ($align === 'C') {
+                        // For centered text, use MultiCell with center alignment
+                        $pdf->MultiCell($cellWidth, 10, $content, 0, 'C', 0, 0, $xPt, $yPt, true, 0, false, true, 10, 'M');
+                    } else if ($align === 'R') {
+                        // For right-aligned text
+                        $pdf->MultiCell($cellWidth, 10, $content, 0, 'R', 0, 0, $xPt, $yPt, true, 0, false, true, 10, 'M');
+                    } else {
+                        // For left-aligned text
+                        $pdf->MultiCell(0, 10, $content, 0, 'L', 0, 0, $xPt, $yPt, true, 0, false, true, 10, 'M');
+                    }
                     
                     // Add a debug marker to verify position
                     if ($isPreview) {
@@ -825,6 +835,30 @@ class CertificateController extends Controller
     }
     
     /**
+     * Convert text to title case (capitalize first letter of each word)
+     * Handles Malaysian names properly (Bin, Binti, etc.)
+     */
+    private function toTitleCase($text)
+    {
+        if (empty($text)) {
+            return $text;
+        }
+        
+        // Convert to lowercase first
+        $text = mb_strtolower($text, 'UTF-8');
+        
+        // Split by spaces
+        $words = explode(' ', $text);
+        
+        // Capitalize first letter of each word
+        $words = array_map(function($word) {
+            return mb_strtoupper(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($word, 1, null, 'UTF-8');
+        }, $words);
+        
+        return implode(' ', $words);
+    }
+    
+    /**
      * Get the text for a placeholder
      */
     private function getPlaceholderText($type, Event $event, Participant $participant)
@@ -834,7 +868,8 @@ class CertificateController extends Controller
         switch (strtolower(trim($type))) {
             case 'name':
             case 'participant_name':
-                return $participant->name;
+                // Auto-capitalize name (Title Case)
+                return $this->toTitleCase($participant->name);
             case 'organization':
                 return $participant->organization;
             case 'event':

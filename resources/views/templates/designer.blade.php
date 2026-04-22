@@ -53,6 +53,28 @@ $initialIsActive = $template && $template->is_active ? true : false;
 @endphp
 
 <x-app-layout>
+    <!-- Google Fonts + Custom Amsterdam Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Pacifico&family=Great+Vibes&family=Allura&family=Sacramento&display=swap" rel="stylesheet">
+    
+    <style>
+        @font-face {
+            font-family: 'Amsterdam';
+            src: url('{{ asset('fonts/Amsterdam.ttf') }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        /* Ensure fonts are loaded for preview */
+        .font-amsterdam { font-family: 'Amsterdam', cursive; }
+        .font-dancing-script { font-family: 'Dancing Script', cursive; }
+        .font-pacifico { font-family: 'Pacifico', cursive; }
+        .font-great-vibes { font-family: 'Great Vibes', cursive; }
+        .font-allura { font-family: 'Allura', cursive; }
+        .font-sacramento { font-family: 'Sacramento', cursive; }
+    </style>
+
     <x-slot name="breadcrumb">
         <span>Certificate</span>
         <span class="mx-2 text-gray-500">/</span>
@@ -361,6 +383,12 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                                         <option value="Georgia">Georgia</option>
                                                         <option value="Tahoma">Tahoma</option>
                                                         <option value="Verdana">Verdana</option>
+                                                        <option value="Amsterdam">Amsterdam (Script)</option>
+                                                        <option value="Dancing Script">Dancing Script</option>
+                                                        <option value="Pacifico">Pacifico</option>
+                                                        <option value="Great Vibes">Great Vibes</option>
+                                                        <option value="Allura">Allura</option>
+                                                        <option value="Sacramento">Sacramento</option>
                                                     </select>
                                                 </div>
                                                 <div>

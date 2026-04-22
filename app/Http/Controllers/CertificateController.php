@@ -792,6 +792,13 @@ class CertificateController extends Controller
             "'Trebuchet MS', sans-serif" => 'helvetica',
             'Trebuchet MS' => 'helvetica',
             'Tahoma' => 'helvetica',
+            // Custom fonts - map to similar standard fonts for PDF
+            'Amsterdam' => 'times', // Script font, use Times as fallback
+            'Dancing Script' => 'times',
+            'Pacifico' => 'times',
+            'Great Vibes' => 'times',
+            'Allura' => 'times',
+            'Sacramento' => 'times',
         ];
         
         return $fontMap[$fontFamily] ?? 'helvetica';

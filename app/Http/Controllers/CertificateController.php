@@ -562,16 +562,6 @@ class CertificateController extends Controller
                         return $this->getPlaceholderText($placeholderType, $event, $participant);
                     }, $content);
                     
-                    // Debug logging
-                    \Log::info("Rendering text element", [
-                        'content' => $content,
-                        'font' => $fontFamily,
-                        'size' => $fontSize,
-                        'color' => $color,
-                        'position' => ['x' => $xPt, 'y' => $yPt],
-                        'align' => $align ?? 'L'
-                    ]);
-                    
                     // Convert template coordinates to TCPDF points
                     // TCPDF uses top-left origin while our template may use different reference points
                     // We need to scale coordinates proportionally to the page size
@@ -581,6 +571,16 @@ class CertificateController extends Controller
                     // Calculate position as percentage of template size, then apply to actual page size
                     $xPt = ($x / $template->template_data['width']) * $pageWidth;
                     $yPt = ($y / $template->template_data['height']) * $pageHeight;
+                    
+                    // Debug logging
+                    \Log::info("Rendering text element", [
+                        'content' => $content,
+                        'font' => $fontFamily,
+                        'size' => $fontSize,
+                        'color' => $color,
+                        'position' => ['x' => $xPt, 'y' => $yPt],
+                        'align' => isset($element['textAlign']) ? $element['textAlign'] : 'L'
+                    ]);
                     
                     // Set font
                     $pdf->SetFont($fontFamily, $style, $fontSize);

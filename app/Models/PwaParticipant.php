@@ -75,6 +75,14 @@ class PwaParticipant extends Authenticatable
     }
 
     /**
+     * Get the related participant (from regular participants table)
+     */
+    public function relatedParticipant(): BelongsTo
+    {
+        return $this->belongsTo(Participant::class, 'related_participant_id');
+    }
+
+    /**
      * Get the attendances of the participant
      */
     public function attendances(): HasMany

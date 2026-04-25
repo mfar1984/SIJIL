@@ -109,6 +109,25 @@
                                 </div>
                             </div>
                             
+                            <!-- Registration Type Filter -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-2">Registration Type</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="registration_filter" value="all" class="form-radio h-4 w-4 text-primary-DEFAULT" checked>
+                                        <span class="ml-2 text-sm text-gray-700">All Types</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="registration_filter" value="verified" class="form-radio h-4 w-4 text-primary-DEFAULT">
+                                        <span class="ml-2 text-sm text-gray-700">Verified Only</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="registration_filter" value="simplified" class="form-radio h-4 w-4 text-primary-DEFAULT">
+                                        <span class="ml-2 text-sm text-gray-700">Quick Registration Only</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
                             <!-- Search & Filter -->
                             <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                                 <div class="flex-1">
@@ -203,6 +222,7 @@
             const eventSelect = document.getElementById('event_id');
             const templateSelect = document.getElementById('template_id');
             const dataSourceRadios = document.querySelectorAll('input[name="data_source"]');
+            const registrationFilterRadios = document.querySelectorAll('input[name="registration_filter"]');
             const searchInput = document.getElementById('search');
             const participantsContainer = document.getElementById('participantsContainer');
             const selectAllBtn = document.getElementById('selectAll');
@@ -219,6 +239,17 @@
             let participants = [];
             
             // Load participants when event changes
+            eventSelect.addEventListener('change', loadParticipants);
+            
+            // Reload participants when data source changes
+            dataSourceRadios.forEach(radio => {
+                radio.addEventListener('change', loadParticipants);
+            });
+            
+            // Filter participants when registration type filter changes
+            registrationFilterRadios.forEach(radio => {
+                radio.addEventListener('change', renderParticipants);
+            });
             eventSelect.addEventListener('change', loadParticipants);
             
             // Reload participants when data source changes
@@ -312,33 +343,53 @@
                 }
                 
                 const searchTerm = searchInput.value.toLowerCase();
-                const filteredParticipants = searchTerm 
+                const registrationFilter = document.querySelector('input[name="registration_filter"]:checked').value;
+                
+                // Apply search filter
+                let filteredParticipants = searchTerm 
                     ? participants.filter(p => 
                         p.name.toLowerCase().includes(searchTerm) || 
-                        p.organization.toLowerCase().includes(searchTerm)
+                        (p.organization && p.organization.toLowerCase().includes(searchTerm))
                       )
                     : participants;
+                
+                // Apply registration type filter
+                if (registrationFilter === 'verified') {
+                    filteredParticipants = filteredParticipants.filter(p => p.registration_type === 'verified');
+                } else if (registrationFilter === 'simplified') {
+                    filteredParticipants = filteredParticipants.filter(p => p.registration_type === 'simplified');
+                }
                 
                 if (filteredParticipants.length === 0) {
                     participantsContainer.innerHTML = `
                         <div class="flex items-center justify-center h-20 text-gray-500">
                             <span class="material-icons-outlined text-gray-300 mr-2">search</span>
-                            No participants match your search
+                            No participants match your filters
                         </div>
                     `;
                     checkFormValidity();
                     return;
                 }
                 
-                participantsContainer.innerHTML = filteredParticipants.map(p => `
-                    <div class="flex items-center py-2 border-b border-gray-100 last:border-0">
-                        <input type="checkbox" name="participants[]" value="${p.id}" id="participant_${p.id}" class="participant-checkbox mr-2 h-4 w-4 text-primary-DEFAULT focus:ring-primary-light rounded" onchange="checkFormValidity()">
-                        <label for="participant_${p.id}" class="flex-1 text-sm">
-                            <div class="font-medium">${p.name}</div>
-                            <div class="text-xs text-gray-500">${p.organization}</div>
-                        </label>
-                    </div>
-                `).join('');
+                participantsContainer.innerHTML = filteredParticipants.map(p => {
+                    // Determine badge based on registration type
+                    const badge = p.registration_type === 'simplified' 
+                        ? '<span class="ml-2 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">Quick Registration</span>'
+                        : '<span class="ml-2 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">Verified</span>';
+                    
+                    return `
+                        <div class="flex items-center py-2 border-b border-gray-100 last:border-0">
+                            <input type="checkbox" name="participants[]" value="${p.id}" id="participant_${p.id}" class="participant-checkbox mr-2 h-4 w-4 text-primary-DEFAULT focus:ring-primary-light rounded" onchange="checkFormValidity()">
+                            <label for="participant_${p.id}" class="flex-1 text-sm">
+                                <div class="font-medium flex items-center">
+                                    ${p.name}
+                                    ${badge}
+                                </div>
+                                <div class="text-xs text-gray-500">${p.organization || '-'}</div>
+                            </label>
+                        </div>
+                    `;
+                }).join('');
                 
                 // Add event listeners to checkboxes
                 document.querySelectorAll('.participant-checkbox').forEach(checkbox => {

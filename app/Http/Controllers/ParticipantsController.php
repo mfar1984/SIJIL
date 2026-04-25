@@ -25,6 +25,16 @@ class ParticipantsController extends Controller
             $query->whereIn('event_id', $userEvents);
         }
 
+        // Filter by registration type (tab)
+        // 'verified' tab shows participants with IC/Passport verification
+        // 'simplified' tab shows participants without IC/Passport verification
+        $tab = $request->get('tab', 'verified');
+        if ($tab === 'simplified') {
+            $query->simplified();
+        } else {
+            $query->verified();
+        }
+
         // Search functionality
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -61,7 +71,8 @@ class ParticipantsController extends Controller
 
         return view('participants', [
             'participants' => $participants,
-            'events' => $events
+            'events' => $events,
+            'activeTab' => $tab
         ]);
     }
 
@@ -146,6 +157,9 @@ class ParticipantsController extends Controller
         // Handle identity card and passport fields
         $participant->identity_card = $request->identity_card;
         $participant->passport_no = $request->passport_no;
+        
+        // Set registration_type based on form input (default to 'verified' if not provided)
+        $participant->registration_type = $request->input('registration_type', 'verified');
         
         $participant->date_of_birth = $request->date_of_birth;
         $participant->race = $request->race;

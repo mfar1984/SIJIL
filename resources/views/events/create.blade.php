@@ -664,6 +664,34 @@
                                     </label>
                                 </div>
                             </div>
+                            
+                            <!-- Skip Identity Verification -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <div class="md:w-40"></div>
+                                <div class="flex-1">
+                                    <label class="flex items-center gap-1">
+                                        <input 
+                                            type="checkbox" 
+                                            name="skip_identity_verification" 
+                                            id="skip_identity_verification" 
+                                            value="1"
+                                            {{ old('skip_identity_verification') ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                        >
+                                        <span class="ml-2 text-xs text-gray-700">Skip Identity Verification</span>
+                                        <div class="tooltip-wrapper" x-data="{ show: false }">
+                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                                  @mouseenter="show = true" 
+                                                  @mouseleave="show = false">
+                                                help_outline
+                                            </span>
+                                            <div x-show="show" x-transition class="tooltip-content">
+                                                Allow simplified registration without IC/Passport
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

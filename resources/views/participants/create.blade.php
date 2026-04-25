@@ -72,6 +72,35 @@
                     
                     <div class="p-4">
                         <div class="space-y-3">
+                            <!-- Registration Type -->
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                                    Registration Type <span class="text-red-500">*</span>
+                                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
+                                              @mouseenter="show = true" 
+                                              @mouseleave="show = false">
+                                            help_outline
+                                        </span>
+                                        <div x-show="show" x-transition class="tooltip-content">
+                                            Verified: With IC/Passport | Quick: Without IC/Passport
+                                        </div>
+                                    </div>
+                                </label>
+                                <div class="flex-1">
+                                    <div class="flex space-x-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="registration_type" value="verified" class="form-radio h-4 w-4 text-primary-DEFAULT" checked onchange="toggleRegistrationType()">
+                                            <span class="ml-2 text-sm text-gray-700">Verified (With IC/Passport)</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="registration_type" value="simplified" class="form-radio h-4 w-4 text-primary-DEFAULT" onchange="toggleRegistrationType()">
+                                            <span class="ml-2 text-sm text-gray-700">Quick Registration (No IC/Passport)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Full Name -->
                             <div class="flex flex-col md:flex-row md:items-center gap-3">
                                 <label for="name" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
@@ -560,7 +589,11 @@
                                         <select name="event_id" id="event_id" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" required>
                                             <option value="">-- Select Event --</option>
                                             @foreach($events as $event)
-                                                <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
+                                                <option value="{{ $event->id }}" 
+                                                        data-skip-verification="{{ $event->skip_identity_verification ? '1' : '0' }}"
+                                                        {{ old('event_id') == $event->id ? 'selected' : '' }}>
+                                                    {{ $event->name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -644,6 +677,57 @@
     </div>
 
 <script>
+function toggleRegistrationType() {
+    const registrationType = document.querySelector('input[name="registration_type"]:checked').value;
+    const idTypeField = document.querySelector('[for="id_type"]').closest('.flex');
+    const eventSelect = document.getElementById('event_id');
+    const allOptions = Array.from(eventSelect.options);
+    
+    if (registrationType === 'simplified') {
+        // Hide IC/Passport field for simplified registration
+        idTypeField.classList.add('hidden');
+        // Clear IC/Passport values
+        document.getElementById('id_type').value = '';
+        document.getElementById('organization_ic').value = '';
+        document.getElementById('organization_passport').value = '';
+        document.getElementById('ic_field').classList.add('hidden');
+        document.getElementById('passport_field').classList.add('hidden');
+        
+        // Filter events: ONLY show events with skip_identity_verification = true
+        allOptions.forEach(option => {
+            if (option.value === '') {
+                option.style.display = ''; // Keep "-- Select Event --"
+            } else if (option.dataset.skipVerification === '1') {
+                option.style.display = ''; // Show simplified events
+            } else {
+                option.style.display = 'none'; // Hide verified events
+                // Deselect if currently selected
+                if (option.selected) {
+                    eventSelect.value = '';
+                }
+            }
+        });
+    } else {
+        // Show IC/Passport field for verified registration
+        idTypeField.classList.remove('hidden');
+        
+        // Filter events: ONLY show events with skip_identity_verification = false
+        allOptions.forEach(option => {
+            if (option.value === '') {
+                option.style.display = ''; // Keep "-- Select Event --"
+            } else if (option.dataset.skipVerification === '0') {
+                option.style.display = ''; // Show verified events
+            } else {
+                option.style.display = 'none'; // Hide simplified events
+                // Deselect if currently selected
+                if (option.selected) {
+                    eventSelect.value = '';
+                }
+            }
+        });
+    }
+}
+
 function toggleIdFields() {
     const idType = document.getElementById('id_type').value;
     const icField = document.getElementById('ic_field');

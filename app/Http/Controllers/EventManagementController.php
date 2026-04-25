@@ -108,6 +108,7 @@ class EventManagementController extends Controller
             'status' => 'required|in:active,pending,completed',
             'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'disable_auto_expiry' => 'nullable|boolean',
+            'skip_identity_verification' => 'nullable|boolean',
         ]);
         
         // Create a new event
@@ -129,6 +130,7 @@ class EventManagementController extends Controller
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
         $event->disable_auto_expiry = $request->has('disable_auto_expiry') ? true : false;
+        $event->skip_identity_verification = $request->has('skip_identity_verification') ? true : false;
         
         // Handle poster upload
         if ($request->hasFile('poster')) {
@@ -233,6 +235,7 @@ class EventManagementController extends Controller
             'status' => 'required|in:active,pending,completed',
             'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'disable_auto_expiry' => 'nullable|boolean',
+            'skip_identity_verification' => 'nullable|boolean',
         ]);
         
         // Find the event
@@ -267,6 +270,7 @@ class EventManagementController extends Controller
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
         $event->disable_auto_expiry = $request->has('disable_auto_expiry') ? true : false;
+        $event->skip_identity_verification = $request->has('skip_identity_verification') ? true : false;
         
         // Handle poster upload (replace existing)
         if ($request->hasFile('poster')) {
@@ -457,14 +461,22 @@ class EventManagementController extends Controller
     // Handle registration submission
     public function registerSubmit(Request $request, $token)
     {
-        $request->validate([
+        // Get event first to check skip_identity_verification setting
+        // This determines whether IC/Passport validation is required
+        $event = Event::where('registration_link', $token)->first();
+        if (!$event) {
+            abort(404, 'Event not found');
+        }
+        
+        // Conditional validation based on event's registration mode
+        // Simplified mode: Only name and email are required
+        // Verified mode: IC or Passport is also required
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
             'organization' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
-            'identity_card' => 'nullable|string|max:20',
-            'passport_no' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female,other',
             'date_of_birth' => 'nullable|date',
             'race' => 'nullable|string|max:100',
@@ -478,7 +490,16 @@ class EventManagementController extends Controller
             'manual_state' => 'nullable|string|max:100',
             'manual_city' => 'nullable|string|max:100',
             'manual_postcode' => 'nullable|string|max:10',
-        ]);
+        ];
+        
+        // Add IC/Passport validation only for verified registration
+        if (!$event->skip_identity_verification) {
+            $rules['identity_card'] = 'nullable|string|max:20';
+            $rules['passport_no'] = 'nullable|string|max:20';
+        }
+        
+        $request->validate($rules);
+        
         // Server-side guard: prevent changing locked email/identity after verification
         $lockedEmail = $request->input('locked_email');
         $lockedIdType = $request->input('locked_id_type');
@@ -500,11 +521,6 @@ class EventManagementController extends Controller
             }
         }
 
-        
-        $event = Event::where('registration_link', $token)->first();
-        if (!$event) {
-            abort(404, 'Event not found');
-        }
         if ($event->isRegistrationExpired()) {
             return redirect()->back()->with('error', 'Registration for this event has expired.');
         }
@@ -556,6 +572,7 @@ class EventManagementController extends Controller
             'status' => 'active',
             'registration_date' => now(),
             'event_id' => $event->id,
+            'registration_type' => $event->skip_identity_verification ? 'simplified' : 'verified',
         ]);
         $participant->save();
         
@@ -582,10 +599,19 @@ class EventManagementController extends Controller
         $globalConfig = \App\Models\GlobalConfig::getConfig();
         
         // Send email to participant if enabled
+        // Use different email template based on event's registration mode
         if ($globalConfig && $globalConfig->email_event_registration) {
             try {
                 $emailService = new \App\Services\EmailService();
-                $mailable = new \App\Mail\EventRegistrationConfirmation($event, $participant);
+                
+                // Simplified registration: no PWA portal mention
+                // Verified registration: includes PWA portal access info
+                if ($event->skip_identity_verification) {
+                    $mailable = new \App\Mail\EventRegistrationSimplified($event, $participant);
+                } else {
+                    $mailable = new \App\Mail\EventRegistrationConfirmation($event, $participant);
+                }
+                
                 $emailService->sendEmail($event->user_id, $mailable, $participant->email);
             } catch (\Exception $e) {
                 Log::error('Failed to send participant email: ' . $e->getMessage());

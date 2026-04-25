@@ -5,7 +5,7 @@
 
     <x-slot name="title">Participants</x-slot>
 
-    <div class="bg-white rounded shadow-md border border-gray-300">
+    <div class="bg-white rounded shadow-md border border-gray-300" x-data="{ activeTab: '{{ $activeTab ?? 'verified' }}' }">
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-start">
                 <div>
@@ -32,11 +32,28 @@
             </div>
         </div>
         
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200 px-6">
+            <nav class="-mb-px flex space-x-8">
+                <a href="{{ route('participants', array_merge(request()->except('tab'), ['tab' => 'verified'])) }}" 
+                   :class="activeTab === 'verified' ? 'border-primary-DEFAULT text-primary-DEFAULT' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                   class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Verified Participants
+                </a>
+                <a href="{{ route('participants', array_merge(request()->except('tab'), ['tab' => 'simplified'])) }}" 
+                   :class="activeTab === 'simplified' ? 'border-primary-DEFAULT text-primary-DEFAULT' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                   class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Quick Registration
+                </a>
+            </nav>
+        </div>
+        
         <div class="p-4">
             <!-- Search & Filter Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
                 <!-- Search & Filter Form -->
                 <form method="GET" action="{{ route('participants') }}" class="flex flex-wrap gap-2 items-center justify-between w-full">
+                    <input type="hidden" name="tab" value="{{ $activeTab ?? 'verified' }}">
                                     <!-- Show Entries Dropdown -->
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-600 font-medium">Show</span>

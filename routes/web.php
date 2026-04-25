@@ -312,6 +312,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/template-designer/{id}/show', [App\Http\Controllers\TemplateDesignerController::class, 'show'])
         ->middleware(PermissionMiddleware::class.':templates.read')
         ->name('template.show');
+    Route::get('/template-designer/{id}/preview-pdf', [App\Http\Controllers\TemplateDesignerController::class, 'generatePreview'])
+        ->middleware(PermissionMiddleware::class.':templates.read')
+        ->name('template.preview.pdf');
 });
 
 // Certificate Routes
@@ -335,6 +338,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware(PermissionMiddleware::class.':certificates.delete')
         ->name('certificates.destroy');
 });
+
+// Public certificate download for simplified participants (signed URL, valid 30 days)
+Route::get('/certificates/{certificate}/download-simplified', [App\Http\Controllers\CertificateController::class, 'downloadSimplified'])
+    ->middleware('signed')
+    ->name('certificates.download.simplified');
 
 require __DIR__.'/auth.php';
 

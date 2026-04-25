@@ -30,10 +30,27 @@ class CertificateController extends Controller
         // Query to fetch certificates with filters
         $query = Certificate::with(['event', 'participant', 'template']);
         
-        // Add access control for non-admin users
+        // Role-based access control
+        // Administrator: can see ALL certificates from ALL organizers
+        // Organizer: can ONLY see certificates from their own events
         if (!auth()->user()->hasRole('Administrator')) {
             $query->whereHas('event', function($q) {
                 $q->where('user_id', auth()->id());
+            });
+        }
+
+        // Filter by registration type (tab)
+        // Filters certificates based on participant's registration type
+        // 'verified' tab: certificates for participants with IC/Passport
+        // 'simplified' tab: certificates for participants without IC/Passport (Quick Registration)
+        $tab = $request->get('tab', 'verified');
+        if ($tab === 'simplified') {
+            $query->whereHas('participant', function($q) {
+                $q->where('registration_type', 'simplified');
+            });
+        } else {
+            $query->whereHas('participant', function($q) {
+                $q->where('registration_type', 'verified');
             });
         }
 
@@ -92,7 +109,12 @@ class CertificateController extends Controller
 
         $templates = CertificateTemplate::orderBy('name')->get();
         
-        return view('certificates.index', compact('events', 'templates', 'certificates'));
+        return view('certificates.index', [
+            'events' => $events,
+            'templates' => $templates,
+            'certificates' => $certificates,
+            'activeTab' => $tab
+        ]);
     }
     
     /**
@@ -137,18 +159,31 @@ class CertificateController extends Controller
         
         if ($source === 'attendance') {
             // Get participants from attendance records (present only)
+            // Exclude participants who already have certificates for this event
             $participants = DB::table('participants')
                 ->join('attendance_records', 'participants.id', '=', 'attendance_records.participant_id')
                 ->join('attendances', 'attendance_records.attendance_id', '=', 'attendances.id')
+                ->leftJoin('certificates', function($join) use ($eventId) {
+                    $join->on('participants.id', '=', 'certificates.participant_id')
+                         ->where('certificates.event_id', '=', $eventId);
+                })
                 ->where('attendances.event_id', $eventId)
                 ->where('attendance_records.status', 'present')
-                ->select('participants.id', 'participants.name', 'participants.organization')
+                ->whereNull('certificates.id') // Exclude participants who already have certificates
+                ->select('participants.id', 'participants.name', 'participants.organization', 'participants.registration_type')
                 ->distinct()
                 ->get();
         } else {
             // Get all participants for the event
+            // Exclude participants who already have certificates for this event
             $participants = Participant::where('event_id', $eventId)
-                ->select('id', 'name', 'organization')
+                ->whereNotExists(function($query) use ($eventId) {
+                    $query->select(DB::raw(1))
+                          ->from('certificates')
+                          ->whereColumn('certificates.participant_id', 'participants.id')
+                          ->where('certificates.event_id', $eventId);
+                })
+                ->select('id', 'name', 'organization', 'registration_type')
                 ->get();
         }
         
@@ -256,10 +291,19 @@ class CertificateController extends Controller
                 ]);
                 
                 // Send email to participant if enabled
+                // Use different email template based on participant's registration type
                 if ($globalConfig && $globalConfig->email_certificate_generated) {
                     try {
                         $emailService = new \App\Services\EmailService();
-                        $mailable = new \App\Mail\CertificateGeneratedNotification($event, $participant, $certificate);
+                        
+                        // Simplified participants get direct download link
+                        // Verified participants get PWA portal link
+                        if ($participant->registration_type === 'simplified') {
+                            $mailable = new \App\Mail\CertificateGeneratedSimplified($event, $participant, $certificate);
+                        } else {
+                            $mailable = new \App\Mail\CertificateGeneratedNotification($event, $participant, $certificate);
+                        }
+                        
                         $emailService->sendEmail($event->user_id, $mailable, $participant->email);
                     } catch (\Exception $e) {
                         Log::error('Failed to send certificate email: ' . $e->getMessage());
@@ -357,6 +401,31 @@ class CertificateController extends Controller
         }
         
         return view('certificates.show', compact('certificate'));
+    }
+    
+    /**
+     * Download certificate for simplified participants (public route with signed URL)
+     * This allows simplified participants to download their certificate directly
+     * without needing to access the PWA portal (since they don't have IC/Passport)
+     */
+    public function downloadSimplified($id)
+    {
+        $certificate = Certificate::with(['event', 'participant'])->findOrFail($id);
+        
+        // Verify this is a simplified participant
+        if ($certificate->participant->registration_type !== 'simplified') {
+            abort(403, 'This download link is only for simplified registration participants');
+        }
+        
+        // Get the PDF file path
+        $pdfPath = storage_path('app/public/' . $certificate->pdf_file);
+        
+        if (!file_exists($pdfPath)) {
+            abort(404, 'Certificate file not found');
+        }
+        
+        // Return the PDF file for download
+        return response()->download($pdfPath, 'certificate-' . $certificate->certificate_number . '.pdf');
     }
     
     /**

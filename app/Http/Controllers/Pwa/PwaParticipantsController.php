@@ -27,7 +27,8 @@ class PwaParticipantsController extends Controller
 
         // Multi-tenant data filtering based on user role
         if ($user->hasRole('Administrator')) {
-            // Administrator can see ALL participants from ALL organizers
+            // Administrator can see ALL PWA participants from ALL organizers
+            // No additional filtering needed for Administrator
         } else {
             // Organizer: show participants created by this user OR attached to their events
             $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
@@ -37,12 +38,14 @@ class PwaParticipantsController extends Controller
                       $qq->whereIn('events.id', $organizerEvents);
                   })
                   // Fallback: match via regular participants by email under this organizer's events
+                  // ONLY show verified participants (with IC/Passport)
                   ->orWhereExists(function($sub) use ($user) {
                       $sub->select(DB::raw(1))
                           ->from('participants as rp')
                           ->join('events as ev', 'rp.event_id', '=', 'ev.id')
                           ->whereColumn('rp.email', 'pwa_participants.email')
-                          ->where('ev.user_id', $user->id);
+                          ->where('ev.user_id', $user->id)
+                          ->where('rp.registration_type', 'verified'); // Filter: only verified participants
                   });
             });
         }

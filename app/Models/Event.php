@@ -46,6 +46,7 @@ class Event extends Model
         'registration_expires_at',
         'poster',
         'disable_auto_expiry',
+        'skip_identity_verification',
     ];
 
     /**
@@ -58,6 +59,7 @@ class Event extends Model
         'end_date' => 'date',
         'registration_expires_at' => 'datetime',
         'disable_auto_expiry' => 'boolean',
+        'skip_identity_verification' => 'boolean',
     ];
 
     /**

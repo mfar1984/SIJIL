@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Event Registration</title>
 </head>
-<body style="font-family: 'Poppins', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+<body style="margin: 0; padding: 0; font-family: 'Poppins', Arial, sans-serif; background-color: #f3f4f6;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px;">
+    <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
         <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">New Event Registration</h1>
     </div>
     
@@ -85,9 +89,13 @@
         </div>
     </div>
     
-    <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+    <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; background-color: #f3f4f6;">
         <p style="margin: 5px 0;">This is an automated notification from SIJIL Event Management System</p>
         <p style="margin: 5px 0;">Please do not reply to this email</p>
     </div>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

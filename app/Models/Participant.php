@@ -45,6 +45,7 @@ class Participant extends Model
         'status',
         'registration_date',
         'notes',
+        'registration_type',
     ];
 
     /**
@@ -194,5 +195,29 @@ class Participant extends Model
     public function registrations()
     {
         return $this->hasMany(Participant::class, 'related_participant_id');
+    }
+
+    /**
+     * Scope to filter verified participants (with IC/Passport verification)
+     * Used for tab filtering in participants management page
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where('registration_type', 'verified');
+    }
+
+    /**
+     * Scope to filter simplified participants (without IC/Passport verification)
+     * Used for tab filtering in participants management page
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSimplified($query)
+    {
+        return $query->where('registration_type', 'simplified');
     }
 } 

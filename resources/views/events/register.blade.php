@@ -537,6 +537,7 @@
                     <label class="block mb-1">Full Name</label>
                     <input type="text" x-model="form.name" name="name" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" required>
                 </div>
+                @if(!$event->skip_identity_verification)
                 <!-- IC/Passport Dropdown -->
                 <div>
                     <label class="block mb-1">Identity Card / Passport No.</label>
@@ -554,6 +555,7 @@
                     <label class="block mb-1">Passport No.</label>
                     <input type="text" x-model="form.passport_no" name="passport_no" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="A00000000" :readonly="locked.id_type==='passport' && locked.identity !== ''">
                 </div>
+                @endif
                 <!-- Address Section (copy from participants/create) -->
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <div>
@@ -619,6 +621,7 @@
                 </h2>
             </div>
             <div class="p-4 space-y-3">
+                @if(!$event->skip_identity_verification)
                 <div>
                     <label class="block mb-1">Company / Government</label>
                     <input type="text" x-model="form.organization" name="organization" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
@@ -627,6 +630,7 @@
                     <label class="block mb-1">Job Title</label>
                     <input type="text" x-model="form.job_title" name="job_title" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
                 </div>
+                @endif
                 <div>
                     <label class="block mb-1">Email</label>
                     <input type="email" x-model="form.email" name="email" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" required :readonly="locked.email !== ''" :value="locked.email || form.email">
@@ -797,7 +801,11 @@
                 </div>
                 @endif
                 <div class="flex justify-end">
+                    @if($event->skip_identity_verification)
+                    <button type="button" @click="next()" class="px-4 py-1 bg-blue-600 text-white rounded text-xs">Next</button>
+                    @else
                     <button type="button" @click="openAuthGate()" class="px-4 py-1 bg-blue-600 text-white rounded text-xs">Next</button>
+                    @endif
                 </div>
             </div>
         </div>

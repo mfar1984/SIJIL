@@ -86,21 +86,12 @@
                             </table>
                             @endif
                             
-                            <!-- Certificate Portal -->
-                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #004aad; border-radius: 6px; margin-bottom: 25px;">
+                            <!-- Certificate Notice -->
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6; margin-bottom: 25px;">
                                 <tr>
-                                    <td style="padding: 30px; text-align: center;">
-                                        <div style="margin-bottom: 15px;">
-                                            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: inline-block;">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" stroke="#ffffff" stroke-width="2" fill="none"/>
-                                                <path d="M8 12L11 15L16 9" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <circle cx="18" cy="6" r="3" fill="#10b981"/>
-                                            </svg>
-                                        </div>
-                                        <h3 style="color: #ffffff; font-size: 19px; margin: 0 0 8px 0; font-weight: 600;">Certificate Portal</h3>
-                                        <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0 0 20px 0; line-height: 1.5;">Access your official event certificate after completion</p>
-                                        <a href="https://user.e-certificate.com.my" style="display: inline-block; background: #ffffff; color: #004aad; padding: 12px 32px; text-decoration: none; border-radius: 5px; font-weight: 600; font-size: 14px;">Access Portal</a>
-                                        <p style="color: rgba(255,255,255,0.8); font-size: 12px; margin: 15px 0 0 0; font-family: monospace;">https://user.e-certificate.com.my</p>
+                                    <td style="padding: 20px;">
+                                        <h3 style="color: #1e40af; font-size: 15px; margin: 0 0 12px 0; font-weight: 600;">📜 Certificate Information</h3>
+                                        <p style="margin: 0; color: #1e3a8a; font-size: 13px; line-height: 1.8;">After the event, your certificate will be sent directly to your email address. Please check your inbox for the download link.</p>
                                     </td>
                                 </tr>
                             </table>

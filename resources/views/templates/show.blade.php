@@ -119,65 +119,62 @@
                             $isLandscape = strtolower(trim($template->orientation)) === 'landscape';
                             $width = $isLandscape ? '600px' : '420px';
                             $height = $isLandscape ? '420px' : '594px';
-                            $templateWidth = $isLandscape ? 297 : 210;
-                            $templateHeight = $isLandscape ? 210 : 297;
                         @endphp
                         
                         <div class="relative mx-auto overflow-hidden bg-white shadow-md" style="width: {{ $width }}; height: {{ $height }};">
-                            @if($template->background_pdf)
-                                <iframe src="{{ $template->background_pdf }}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" class="absolute top-0 left-0 w-full h-full border-0 pointer-events-none"></iframe>
-                            @endif
-                            
-                            @if($template->template_data && is_array($template->template_data) && isset($template->template_data['elements']))
-                                @foreach($template->template_data['elements'] as $element)
-                                    @if($element['type'] == 'text')
-                                        @php
-                                            $x = ($element['x'] / $templateWidth) * 100;
-                                            $y = ($element['y'] / $templateHeight) * 100;
-                                            $fontSize = $element['fontSize'] ?? 16;
-                                            $fontFamily = $element['fontFamily'] ?? 'Arial';
-                                            $fontWeight = $element['fontWeight'] ?? 'normal';
-                                            $fontStyle = $element['fontStyle'] ?? 'normal';
-                                            $textDecoration = $element['textDecoration'] ?? 'none';
-                                            $color = $element['color'] ?? '#000000';
-                                            $textAlign = $element['textAlign'] ?? 'left';
-                                            $transform = isset($element['textAlign']) && $element['textAlign'] == 'center' ? 'translateX(-50%)' : 'none';
-                                            
-                                            $content = $element['content'] ?? '';
-                                            // Simple placeholder replacement
-                                            $content = str_replace('{{participant_name}}', 'John Doe', $content);
-                                            $content = str_replace('{{event_name}}', 'Sample Event', $content);
-                                            $content = str_replace('{{event_date}}', date('d/m/Y'), $content);
-                                            $content = str_replace('{{identity_card}}', '123456789012', $content);
-                                        @endphp
-                                        
-                                        <div class="absolute" style="left: {{ $x }}%; top: {{ $y }}%; font-size: {{ $fontSize }}px; font-family: {{ $fontFamily }}; font-weight: {{ $fontWeight }}; font-style: {{ $fontStyle }}; text-decoration: {{ $textDecoration }}; color: {{ $color }}; text-align: {{ $textAlign }}; transform: {{ $transform }};">
-                                            {{ $content }}
-                                        </div>
-                                    @elseif($element['type'] == 'image' && isset($element['src']))
-                                        @php
-                                            $x = ($element['x'] / $templateWidth) * 100;
-                                            $y = ($element['y'] / $templateHeight) * 100;
-                                            $width = ($element['width'] / $templateWidth) * 100;
-                                            $height = ($element['height'] / $templateHeight) * 100;
-                                        @endphp
-                                        
-                                        <div class="absolute" style="left: {{ $x }}%; top: {{ $y }}%; width: {{ $width }}%; height: {{ $height }}%;">
-                                            <img src="{{ $element['src'] }}" class="w-full h-full" style="object-fit: contain;">
-                                        </div>
-                                    @endif
-                                @endforeach
-                            @else
-                                <div class="flex items-center justify-center h-full">
-                                    <p class="text-gray-500 text-xs">No template elements defined</p>
+                            <div id="pdf-preview-container" class="w-full h-full flex items-center justify-center">
+                                <div class="text-center">
+                                    <span class="material-icons-outlined text-gray-400 text-5xl mb-2">hourglass_empty</span>
+                                    <p class="text-gray-500 text-sm">Loading preview...</p>
                                 </div>
-                            @endif
+                            </div>
                         </div>
                         
-                        <p class="text-xs text-gray-500 mt-3 text-center">Preview showing placeholder text. Actual certificates will display participant data.</p>
+                        <p class="text-xs text-gray-500 mt-3 text-center">Preview with sample data, actual fonts and QR code.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script>
+        (function() {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+            
+            function init() {
+                const container = document.getElementById('pdf-preview-container');
+                const templateId = {{ $template->id }};
+                const url = `/template-designer/${templateId}/preview-pdf`;
+                
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        container.innerHTML = '<iframe src="' + data.preview_url + '#toolbar=0&navpanes=0&scrollbar=0&view=FitH" class="w-full h-full border-0" style="pointer-events: none;"></iframe>';
+                    } else {
+                        container.innerHTML = '<div class="text-center p-4"><span class="material-icons-outlined text-red-500 text-5xl mb-2">error_outline</span><p class="text-red-600 text-sm">' + (data.error || 'Failed to generate preview') + '</p></div>';
+                    }
+                })
+                .catch(error => {
+                    container.innerHTML = '<div class="text-center p-4"><span class="material-icons-outlined text-red-500 text-5xl mb-2">error_outline</span><p class="text-red-600 text-sm">Error: ' + error.message + '</p></div>';
+                });
+            }
+        })();
+    </script>
 </x-app-layout> 

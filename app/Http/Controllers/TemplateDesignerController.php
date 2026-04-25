@@ -168,6 +168,90 @@ class TemplateDesignerController extends Controller
         }
         return view('templates.show', compact('template'));
     }
+    
+    /**
+     * Generate PDF preview for template with dummy data
+     */
+    public function generatePreview($id)
+    {
+        try {
+            $template = CertificateTemplate::findOrFail($id);
+            
+            // Check authorization
+            if (!auth()->user()->hasRole('Administrator') && $template->created_by !== auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Unauthorized to preview this template.',
+                ], 403);
+            }
+            
+            // Create dummy event - use actual Event instance with fillable attributes
+            $dummyEvent = new \App\Models\Event();
+            $dummyEvent->fill([
+                'name' => 'Sample Event Name',
+                'organizer' => 'Sample Organizer',
+                'location' => 'Sample Location',
+                'start_date' => now()->format('Y-m-d'),
+                'end_date' => now()->format('Y-m-d'),
+                'start_time' => '09:00:00',
+                'user_id' => auth()->id(),
+            ]);
+            // Set ID manually (not fillable)
+            $dummyEvent->id = 999999;
+            
+            // Create dummy participant - use actual Participant instance
+            $dummyParticipant = new \App\Models\Participant();
+            $dummyParticipant->fill([
+                'name' => 'John Doe',
+                'email' => 'john.doe@example.com',
+                'identity_card' => '123456789012',
+                'organization' => 'Sample Organization',
+                'phone' => '60123456789',
+            ]);
+            // Set ID manually (not fillable)
+            $dummyParticipant->id = 999999;
+            
+            // Generate dummy certificate number
+            $dummyCertNumber = 'PREVIEW-' . time();
+            
+            // Call CertificateController's generateCertificatePDF method
+            $certificateController = app(\App\Http\Controllers\CertificateController::class);
+            
+            // Use reflection to access the private generateCertificatePDF method
+            $reflection = new \ReflectionClass($certificateController);
+            $method = $reflection->getMethod('generateCertificatePDF');
+            $method->setAccessible(true);
+            
+            // Generate PDF with dummy data
+            $pdfPath = $method->invoke(
+                $certificateController,
+                $dummyEvent,
+                $dummyParticipant,
+                $template,
+                true, // isPreview = true
+                $dummyCertNumber
+            );
+            
+            return response()->json([
+                'success' => true,
+                'preview_url' => asset('storage/' . $pdfPath),
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Template preview generation failed', [
+                'template_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to generate preview: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 
     /**
      * Show the form for editing the specified template.

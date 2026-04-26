@@ -768,18 +768,13 @@
                                 </div>
                                 </div>
                     @endif
-                            </div>
-                        </div>
                     </div>
                 </div>
             
             <!-- Data Tables Section -->
             @if(isset($eventPerformanceTable) || isset($monthlySummaryTable) || isset($demographicsTable))
-            <div class="mt-6">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 mt-6 flex items-center">
                     <span class="material-icons-outlined text-gray-600 mr-2">table_chart</span>
-                    Detailed Analytics Tables
-                </h2>
                     Detailed Analytics Tables
                 </h2>
                 
@@ -914,7 +909,6 @@
                     </div>
                 </div>
                 @endif
-            </div>
             @endif
         </div>
     </div>

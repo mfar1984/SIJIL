@@ -75,9 +75,8 @@
             </div>
             
             @if(session('success'))
-                <div class="bg-green-50 text-green-800 p-4 mb-4 rounded-md flex items-start text-xs">
-                    <span class="material-icons-outlined mr-2">check_circle</span>
-                    <span>{{ session('success') }}</span>
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-xs">
+                    {{ session('success') }}
                 </div>
             @endif
             
@@ -223,7 +222,8 @@
                     <h3 class="mt-2 text-gray-500 text-lg font-medium">No surveys found</h3>
                     <p class="mt-1 text-gray-400 text-sm">Create your first survey to get started</p>
                     <div class="mt-6">
-                        <a href="{{ route('survey.create') }}" class="bg-primary-DEFAULT hover:bg-primary-dark text-white px-4 py-2 rounded font-medium text-sm">
+                        <a href="{{ route('survey.create') }}" class="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2 rounded shadow-sm font-medium text-sm transition-colors duration-200 ease-in-out">
+                            <span class="material-icons-outlined text-sm mr-1">add_circle</span>
                             Create New Survey
                         </a>
                     </div>

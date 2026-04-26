@@ -12,26 +12,67 @@
                      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                 </a>
 
-                {{-- Pagination Elements --}}
-                @foreach ($elements as $element)
-                    {{-- "Three Dots" Separator --}}
-                    @if (is_string($element))
-                        <span class="px-2 py-1 text-gray-500 text-xs rounded-none">{{ $element }}</span>
-                    @endif
+                {{-- Pagination Elements with Window Logic --}}
+                @php
+                    $current = $paginator->currentPage();
+                    $last = $paginator->lastPage();
+                    $window = 2; // Pages before and after current
+                    
+                    // Calculate window range
+                    $start = max(1, $current - $window);
+                    $end = min($last, $current + $window);
+                    
+                    // Adjust if near boundaries
+                    if ($start == 1) {
+                        $end = min($last, $end + ($window - ($current - 1)));
+                    }
+                    if ($end == $last) {
+                        $start = max(1, $start - ($window - ($last - $current)));
+                    }
+                @endphp
 
-                    {{-- Array Of Links --}}
-                    @if (is_array($element))
-                        @foreach ($element as $page => $url)
-                            @if ($page == $paginator->currentPage())
-                                <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">{{ $page }}</span>
-                            @else
-                                <a href="{{ $url }}" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
-                                    {{ $page }}
-                                </a>
-                            @endif
-                        @endforeach
+                {{-- Always show page 1 --}}
+                @if ($current == 1)
+                    <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">1</span>
+                @else
+                    <a href="{{ $paginator->url(1) }}" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" aria-label="Go to page 1">
+                        1
+                    </a>
+                @endif
+
+                {{-- Gap before window --}}
+                @if ($start > 2)
+                    <span class="px-2 py-1 text-gray-500 text-xs rounded-none">...</span>
+                @endif
+
+                {{-- Window pages --}}
+                @for ($page = $start; $page <= $end; $page++)
+                    @if ($page > 1 && $page < $last)
+                        @if ($page == $current)
+                            <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">{{ $page }}</span>
+                        @else
+                            <a href="{{ $paginator->url($page) }}" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" aria-label="Go to page {{ $page }}">
+                                {{ $page }}
+                            </a>
+                        @endif
                     @endif
-                @endforeach
+                @endfor
+
+                {{-- Gap after window --}}
+                @if ($end < $last - 1)
+                    <span class="px-2 py-1 text-gray-500 text-xs rounded-none">...</span>
+                @endif
+
+                {{-- Always show last page (if more than 1 page) --}}
+                @if ($last > 1)
+                    @if ($current == $last)
+                        <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">{{ $last }}</span>
+                    @else
+                        <a href="{{ $paginator->url($last) }}" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" aria-label="Go to page {{ $last }}">
+                            {{ $last }}
+                        </a>
+                    @endif
+                @endif
                 
                 {{-- Next Page Link --}}
                 <a href="{{ $paginator->nextPageUrl() }}" class="px-2 py-1 text-gray-500 hover:text-primary-DEFAULT rounded-none text-xs ml-2 {{ !$paginator->hasMorePages() ? 'opacity-50 cursor-not-allowed' : '' }}" rel="next" aria-label="{{ __('pagination.next') }}" {{ !$paginator->hasMorePages() ? 'aria-disabled=true' : '' }}>

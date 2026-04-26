@@ -242,18 +242,28 @@
     </div>
 
     <script>
+        // Debug: Log data to console
+        console.log('Monthly Stats:', {!! json_encode($monthlyStats ?? []) !!});
+        console.log('Top Events:', {!! json_encode($topEvents ?? []) !!});
+        
         // Monthly Registrations Line Chart
         @if(isset($monthlyStats) && $monthlyStats->count() > 0)
         document.addEventListener('DOMContentLoaded', function() {
             const monthlyCtx = document.getElementById('monthlyRegistrationsChart');
             if (monthlyCtx) {
+                const monthlyData = {!! json_encode($monthlyStats) !!};
+                const labels = monthlyData.map(item => item.month);
+                const counts = monthlyData.map(item => parseInt(item.count));
+                
+                console.log('Chart Data:', { labels, counts });
+                
                 new Chart(monthlyCtx.getContext('2d'), {
                     type: 'line',
                     data: {
-                        labels: {!! json_encode($monthlyStats->pluck('month')) !!},
+                        labels: labels,
                         datasets: [{
                             label: 'PWA Registrations',
-                            data: {!! json_encode($monthlyStats->pluck('count')) !!},
+                            data: counts,
                             borderColor: 'rgb(59, 130, 246)',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             borderWidth: 2,

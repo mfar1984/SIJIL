@@ -45,16 +45,14 @@
                     <span class="px-2 py-1 text-gray-500 text-xs rounded-none">...</span>
                 @endif
 
-                {{-- Window pages --}}
-                @for ($page = $start; $page <= $end; $page++)
-                    @if ($page > 1 && $page < $last)
-                        @if ($page == $current)
-                            <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">{{ $page }}</span>
-                        @else
-                            <a href="{{ $paginator->url($page) }}" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" aria-label="Go to page {{ $page }}">
-                                {{ $page }}
-                            </a>
-                        @endif
+                {{-- Window pages (skip page 1 and last page, they're handled separately) --}}
+                @for ($page = max(2, $start); $page <= min($last - 1, $end); $page++)
+                    @if ($page == $current)
+                        <span class="w-6 h-6 flex items-center justify-center bg-primary-light text-white rounded-full shadow-sm text-xs font-medium">{{ $page }}</span>
+                    @else
+                        <a href="{{ $paginator->url($page) }}" class="px-2 py-1 text-gray-600 hover:text-primary-DEFAULT rounded-none text-xs font-medium" aria-label="Go to page {{ $page }}">
+                            {{ $page }}
+                        </a>
                     @endif
                 @endfor
 

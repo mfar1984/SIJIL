@@ -252,169 +252,180 @@
     <script>
         // Monthly Registrations Line Chart
         @if(isset($monthlyStats) && $monthlyStats->count() > 0)
-        const monthlyCtx = document.getElementById('monthlyRegistrationsChart').getContext('2d');
-        new Chart(monthlyCtx, {
-            type: 'line',
-            data: {
-                labels: {!! json_encode($monthlyStats->pluck('month')) !!},
-                datasets: [{
-                    label: 'PWA Registrations',
-                    data: {!! json_encode($monthlyStats->pluck('count')) !!},
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
+        document.addEventListener('DOMContentLoaded', function() {
+            const monthlyCtx = document.getElementById('monthlyRegistrationsChart');
+            if (monthlyCtx) {
+                new Chart(monthlyCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($monthlyStats->pluck('month')) !!},
+                        datasets: [{
+                            label: 'PWA Registrations',
+                            data: {!! json_encode($monthlyStats->pluck('count')) !!},
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
                         }
                     }
-                }
+                });
             }
         });
         @endif
 
         // Top Events Bar Chart
         @if(isset($topEvents) && $topEvents->count() > 0)
-        const eventsCtx = document.getElementById('topEventsChart').getContext('2d');
-        new Chart(eventsCtx, {
-            type: 'bar',
-            data: {
-                labels: {!! json_encode($topEvents->pluck('name')) !!},
-                datasets: [{
-                    label: 'Participants',
-                    data: {!! json_encode($topEvents->pluck('participant_count')) !!},
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(245, 158, 11, 0.8)',
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(139, 92, 246, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgb(59, 130, 246)',
-                        'rgb(16, 185, 129)',
-                        'rgb(245, 158, 11)',
-                        'rgb(239, 68, 68)',
-                        'rgb(139, 92, 246)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
+        document.addEventListener('DOMContentLoaded', function() {
+            const eventsCtx = document.getElementById('topEventsChart');
+            if (eventsCtx) {
+                new Chart(eventsCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode($topEvents->pluck('name')) !!},
+                        datasets: [{
+                            label: 'Participants',
+                            data: {!! json_encode($topEvents->pluck('participant_count')) !!},
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.8)',
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(239, 68, 68, 0.8)',
+                                'rgba(139, 92, 246, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgb(59, 130, 246)',
+                                'rgb(16, 185, 129)',
+                                'rgb(245, 158, 11)',
+                                'rgb(239, 68, 68)',
+                                'rgb(139, 92, 246)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
                         }
                     }
-                }
+                });
             }
         });
         @endif
 
         // Activity Trends Chart (2 Lines)
         @if(isset($activityTrends) && $activityTrends->count() > 0)
-        const trendsCtx = document.getElementById('activityTrendsChart').getContext('2d');
-        
-        const trendsData = {!! json_encode($activityTrends) !!};
-        const labels = trendsData.map(item => item.day);
-        const registrationData = trendsData.map(item => item.registrations);
-        const checkinData = trendsData.map(item => item.checkins);
-        
-        new Chart(trendsCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Registrations',
-                        data: registrationData,
-                        borderColor: 'rgb(59, 130, 246)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: 'rgb(59, 130, 246)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
+        document.addEventListener('DOMContentLoaded', function() {
+            const trendsCtx = document.getElementById('activityTrendsChart');
+            if (trendsCtx) {
+                const trendsData = {!! json_encode($activityTrends) !!};
+                const labels = trendsData.map(item => item.day);
+                const registrationData = trendsData.map(item => item.registrations);
+                const checkinData = trendsData.map(item => item.checkins);
+                
+                new Chart(trendsCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Registrations',
+                                data: registrationData,
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgb(59, 130, 246)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5
+                            },
+                            {
+                                label: 'Check-ins',
+                                data: checkinData,
+                                borderColor: 'rgb(16, 185, 129)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgb(16, 185, 129)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5
+                            }
+                        ]
                     },
-                    {
-                        label: 'Check-ins',
-                        data: checkinData,
-                        borderColor: 'rgb(16, 185, 129)',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: 'rgb(16, 185, 129)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
                         },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: 'rgba(255, 255, 255, 0.1)',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            }
                         }
                     }
-                }
+                });
             }
         });
         @endif

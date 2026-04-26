@@ -251,25 +251,53 @@ class PwaAnalyticsController extends Controller
      */
     private function getMonthlyStats($eventIds = null)
     {
-        $query = DB::table('pwa_participants as pp')
-            ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(DISTINCT pp.id) as count')
-            ->groupBy('year', 'month')
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
-            ->limit(12);
+        try {
+            if ($eventIds && $eventIds->isNotEmpty()) {
+                // For organizer view - use the same 3-condition pattern as PwaParticipantsController
+                $user = Auth::user();
+                $query = DB::table('pwa_participants as pp')
+                    ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(DISTINCT pp.id) as count')
+                    ->where(function($q) use ($user, $eventIds) {
+                        $q->where('pp.created_by', $user->id)
+                          ->orWhereExists(function($sub) use ($eventIds) {
+                              $sub->select(DB::raw(1))
+                                  ->from('event_pwa_participant as ep')
+                                  ->whereColumn('ep.pwa_participant_id', 'pp.id')
+                                  ->whereIn('ep.event_id', $eventIds);
+                          })
+                          ->orWhereExists(function($sub) use ($user) {
+                              $sub->select(DB::raw(1))
+                                  ->from('participants as rp')
+                                  ->join('events as ev', 'rp.event_id', '=', 'ev.id')
+                                  ->whereColumn('rp.email', 'pp.email')
+                                  ->where('ev.user_id', $user->id)
+                                  ->where('rp.registration_type', 'verified');
+                          });
+                    })
+                    ->groupBy('year', 'month')
+                    ->orderBy('year', 'desc')
+                    ->orderBy('month', 'desc')
+                    ->limit(12);
+            } else {
+                // For administrator view - query directly
+                $query = DB::table('pwa_participants as pp')
+                    ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(DISTINCT pp.id) as count')
+                    ->groupBy('year', 'month')
+                    ->orderBy('year', 'desc')
+                    ->orderBy('month', 'desc')
+                    ->limit(12);
+            }
             
-        if ($eventIds) {
-            // For organizer view, we need to join with events
-            $query->join('event_pwa_participant as ep', 'pp.id', '=', 'ep.pwa_participant_id')
-                  ->whereIn('ep.event_id', $eventIds);
+            return $query->get()->map(function($item) {
+                return [
+                    'month' => Carbon::createFromDate($item->year, $item->month, 1)->format('M Y'),
+                    'count' => $item->count
+                ];
+            });
+        } catch (\Exception $e) {
+            \Log::error('PWA Analytics - getMonthlyStats Error: ' . $e->getMessage());
+            return collect();
         }
-        
-        return $query->get()->map(function($item) {
-            return [
-                'month' => Carbon::createFromDate($item->year, $item->month, 1)->format('M Y'),
-                'count' => $item->count
-            ];
-        });
     }
 
     /**

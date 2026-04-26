@@ -780,6 +780,8 @@
                     <span class="material-icons-outlined text-gray-600 mr-2">table_chart</span>
                     Detailed Analytics Tables
                 </h2>
+                    Detailed Analytics Tables
+                </h2>
                 
                 <!-- Event Performance Table -->
                 @if(isset($eventPerformanceTable) && $eventPerformanceTable->isNotEmpty())

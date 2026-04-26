@@ -105,8 +105,20 @@ class PwaAnalyticsController extends Controller
             // Organizer sees only their own analytics
             $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
             
-            $totalParticipants = PwaParticipant::whereHas('events', function($q) use ($organizerEvents) {
-                $q->whereIn('events.id', $organizerEvents);
+            // Count participants created by this organizer OR linked to their events OR matched by email
+            $totalParticipants = PwaParticipant::where(function($query) use ($user, $organizerEvents) {
+                $query->where('created_by', $user->id)
+                      ->orWhereHas('events', function($q) use ($organizerEvents) {
+                          $q->whereIn('events.id', $organizerEvents);
+                      })
+                      ->orWhereExists(function($sub) use ($user) {
+                          $sub->select(DB::raw(1))
+                              ->from('participants as rp')
+                              ->join('events as ev', 'rp.event_id', '=', 'ev.id')
+                              ->whereColumn('rp.email', 'pwa_participants.email')
+                              ->where('ev.user_id', $user->id)
+                              ->where('rp.registration_type', 'verified');
+                      });
             })->count();
             
             $totalEvents = Event::where('user_id', $user->id)->count();
@@ -231,7 +243,7 @@ class PwaAnalyticsController extends Controller
     private function getMonthlyStats($eventIds = null)
     {
         $query = DB::table('pwa_participants as pp')
-            ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(*) as count')
+            ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(DISTINCT pp.id) as count')
             ->groupBy('year', 'month')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
@@ -312,11 +324,26 @@ class PwaAnalyticsController extends Controller
         // Get registrations for date range (scope by organizer if needed)
         $registrationsQuery = PwaParticipant::selectRaw('DATE(pwa_participants.created_at) as date, COUNT(DISTINCT pwa_participants.id) as count')
             ->whereBetween('pwa_participants.created_at', [$start, $end]);
+        
         if (!$user->hasRole('Administrator')) {
-            $registrationsQuery->whereHas('events', function($q) use ($user) {
-                $q->where('events.user_id', $user->id);
+            // For organizers, get participants created by them OR linked to their events OR matched by email
+            $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
+            $registrationsQuery->where(function($query) use ($user, $organizerEvents) {
+                $query->where('created_by', $user->id)
+                      ->orWhereHas('events', function($q) use ($organizerEvents) {
+                          $q->whereIn('events.id', $organizerEvents);
+                      })
+                      ->orWhereExists(function($sub) use ($user) {
+                          $sub->select(DB::raw(1))
+                              ->from('participants as rp')
+                              ->join('events as ev', 'rp.event_id', '=', 'ev.id')
+                              ->whereColumn('rp.email', 'pwa_participants.email')
+                              ->where('ev.user_id', $user->id)
+                              ->where('rp.registration_type', 'verified');
+                      });
             });
         }
+        
         $registrations = $registrationsQuery
             ->groupBy('date')
             ->get()

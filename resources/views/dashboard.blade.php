@@ -6,18 +6,16 @@
     <x-slot name="title">Analytics Dashboard</x-slot>
     
     <x-slot name="styles">
-        <!-- ApexCharts CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
-        
-        <!-- CountUp.js CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/countup.js@2.8.0/dist/countUp.umd.min.js"></script>
-        
         <style>
             .chart-container {
                 background-color: white;
                 border-radius: 0.5rem;
                 padding: 1rem;
                 height: 400px; 
+                position: relative;
+                border: 1px solid #e5e7eb;
+                margin-bottom: 20px;
+            } 
                 position: relative;
                 border: 1px solid #e5e7eb;
                 margin-bottom: 20px;
@@ -918,6 +916,12 @@
             @endif
         </div>
     </div>
+    
+    <!-- ApexCharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+    
+    <!-- CountUp.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/countup.js@2.8.0/dist/countUp.umd.min.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {

@@ -177,31 +177,31 @@
                     <!-- Monthly Registration Chart -->
                     <div class="bg-white border border-gray-200 rounded-lg p-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly PWA Registrations</h3>
-                        <div class="h-64">
-                            @if(isset($monthlyStats) && $monthlyStats->count() > 0)
+                        @if(isset($monthlyStats) && $monthlyStats->count() > 0)
+                            <div style="position: relative; height: 300px;">
                                 <canvas id="monthlyRegistrationsChart"></canvas>
-                            @else
-                                <div class="no-data-message">
-                                    <span class="material-icons">show_chart</span>
-                                    <p>No monthly registration data available</p>
-                                </div>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            <div class="no-data-message">
+                                <span class="material-icons">show_chart</span>
+                                <p>No monthly registration data available</p>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Top Performing Events Chart -->
                     <div class="bg-white border border-gray-200 rounded-lg p-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Performing Events</h3>
-                        <div class="h-64">
-                            @if(isset($topEvents) && $topEvents->count() > 0)
+                        @if(isset($topEvents) && $topEvents->count() > 0)
+                            <div style="position: relative; height: 300px;">
                                 <canvas id="topEventsChart"></canvas>
-                            @else
-                                <div class="no-data-message">
-                                    <span class="material-icons">bar_chart</span>
-                                    <p>No top events data available</p>
-                                </div>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            <div class="no-data-message">
+                                <span class="material-icons">bar_chart</span>
+                                <p>No top events data available</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -214,16 +214,16 @@
                         </h3>
                     </div>
                     <div class="p-4">
-                        <div class="chart-container">
-                            @if(isset($activityTrends) && $activityTrends->count() > 0)
+                        @if(isset($activityTrends) && $activityTrends->count() > 0)
+                            <div style="position: relative; height: 300px;">
                                 <canvas id="activityTrendsChart"></canvas>
-                            @else
-                                <div class="no-data-message">
-                                    <span class="material-icons">trending_up</span>
-                                    <p>No activity trends available</p>
-                                </div>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            <div class="no-data-message">
+                                <span class="material-icons">trending_up</span>
+                                <p>No activity trends available</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @else

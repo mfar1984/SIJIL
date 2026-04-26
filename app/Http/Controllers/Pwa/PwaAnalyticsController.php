@@ -162,6 +162,15 @@ class PwaAnalyticsController extends Controller
         $activityTrends = $this->getActivityTrends($user, $startDate, $endDate);
         }
         
+        // Debug: Log data to check if it's being retrieved
+        \Log::info('PWA Analytics Data', [
+            'monthlyStats_count' => $monthlyStats->count(),
+            'monthlyStats_data' => $monthlyStats->toArray(),
+            'topEvents_count' => $topEvents->count(),
+            'topEvents_data' => $topEvents->toArray(),
+            'activityTrends_count' => $activityTrends->count()
+        ]);
+        
         return view('ecertificate.analytics', compact(
             'totalParticipants',
             'totalEvents', 

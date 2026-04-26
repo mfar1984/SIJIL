@@ -123,7 +123,7 @@ class DashboardController extends Controller
         $eventTrend = $this->calculateTrend(array_values($monthlyEvents));
         
         // Calculate cumulative growth for events
-        $eventCumulativeGrowth = $this->calculateCumulativeGrowth(array_values($monthlyEvents));
+        $eventCumulativeGrowth = $this->calculateCumulativeGrowth($monthlyEvents);
         
         // Calculate comparative analysis for events (current vs previous period)
         $eventComparison = $this->calculatePeriodComparison($monthlyEvents);
@@ -150,7 +150,8 @@ class DashboardController extends Controller
         $monthlyAttendance = $this->getMonthlyData($attendanceQuery, $startDate, $endDate);
         
         // Get participant gender distribution
-        $genderDistribution = $participantsQuery->select('gender', DB::raw('count(*) as count'))
+        $genderDistribution = $participantsQuery->clone()
+            ->select('gender', DB::raw('count(*) as count'))
             ->groupBy('gender')
             ->get()
             ->mapWithKeys(function ($item) {
@@ -168,7 +169,8 @@ class DashboardController extends Controller
         // Gender distribution data
         
         // Get event status distribution
-        $eventStatusDistribution = $eventsQuery->select('status', DB::raw('count(*) as count'))
+        $eventStatusDistribution = $eventsQuery->clone()
+            ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get()
             ->mapWithKeys(function ($item) {
@@ -188,7 +190,7 @@ class DashboardController extends Controller
         // Get campaign performance data (open rates, click rates)
         $campaignPerformance = DB::table('campaigns')
             ->where('campaign_type', 'email')
-            ->where('status', 'completed')
+            ->whereIn('status', ['completed', 'running', 'scheduled'])
             ->when(!$isAdmin, function($q) {
                 $q->where('user_id', Auth::id());
             })
@@ -199,47 +201,36 @@ class DashboardController extends Controller
                 'delivered_count',
                 'opened_count',
                 'clicked_count',
-                DB::raw('CASE WHEN delivered_count > 0 THEN (opened_count / delivered_count * 100) ELSE 0 END as open_rate'),
-                DB::raw('CASE WHEN opened_count > 0 THEN (clicked_count / opened_count * 100) ELSE 0 END as click_rate')
+                DB::raw('CASE WHEN delivered_count > 0 THEN ROUND((opened_count / delivered_count * 100), 1) ELSE 0 END as open_rate'),
+                DB::raw('CASE WHEN opened_count > 0 THEN ROUND((clicked_count / opened_count * 100), 1) ELSE 0 END as click_rate')
             )
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
         
-        // Ensure we have at least some data for campaign performance
-        if ($campaignPerformance->isEmpty()) {
-            // Create a dummy campaign performance data
-            $campaignPerformance = collect([
-                [
-                    'id' => 0,
-                    'name' => 'No Campaign Data',
-                    'delivered_count' => 0,
-                    'opened_count' => 0,
-                    'clicked_count' => 0,
-                    'open_rate' => 0,
-                    'click_rate' => 0
-                ]
-            ]);
-        }
-        
         // Log campaign performance data for debugging
         // Campaign performance data
         
         // Get attendance rate by event
-        $attendanceRateByEvent = DB::table('attendances')
-            ->join('events', 'attendances.event_id', '=', 'events.id')
-            ->leftJoin('attendance_records', 'attendance_records.attendance_id', '=', 'attendances.id')
-            ->select(
-                'events.id',
-                'events.name',
-                DB::raw('COUNT(DISTINCT attendance_records.participant_id) as attendance_records_count'),
-                DB::raw('(SELECT COUNT(*) FROM participants WHERE participants.event_id = events.id) as participants_count')
-            )
-            ->groupBy('events.id', 'events.name')
-            ->orderBy('events.start_date', 'desc')
+        $attendanceRateByEvent = DB::table('events')
+            ->leftJoin('participants', 'events.id', '=', 'participants.event_id')
+            ->leftJoin('attendances', 'events.id', '=', 'attendances.event_id')
+            ->leftJoin('attendance_records', function($join) {
+                $join->on('attendance_records.attendance_id', '=', 'attendances.id')
+                     ->on('attendance_records.participant_id', '=', 'participants.id');
+            })
             ->when(!$isAdmin, function($q) {
                 $q->where('events.user_id', Auth::id());
             })
+            ->whereBetween('events.created_at', [$startDate, $endDate])
+            ->select(
+                'events.id',
+                'events.name',
+                DB::raw('COUNT(DISTINCT participants.id) as participants_count'),
+                DB::raw('COUNT(DISTINCT attendance_records.id) as attendance_records_count')
+            )
+            ->groupBy('events.id', 'events.name')
+            ->orderBy('events.start_date', 'desc')
             ->get()
             ->map(function($event) {
                 // Calculate attendance rate
@@ -259,24 +250,36 @@ class DashboardController extends Controller
                 // Filter out events with no participants
                 return $event['participants_count'] > 0;
             })
+            ->take(10) // Limit to 10 events
             ->values(); // Re-index the array
-        
-        // Ensure we have at least some data for attendance rate
-        if ($attendanceRateByEvent->isEmpty()) {
-            // Create a dummy attendance rate data
-            $attendanceRateByEvent = collect([
-                [
-                    'id' => 0,
-                    'name' => 'No Attendance Data',
-                    'participants_count' => 0,
-                    'attendance_records_count' => 0,
-                    'attendance_rate' => 0
-                ]
-            ]);
-        }
         
         // Log attendance rate data for debugging
         // Attendance rate data
+        
+        // Call all new data preparation methods
+        $registrationHeatmap = $this->getRegistrationHeatmap($participantsQuery, $startDate, $endDate);
+        $registrationTypeBreakdown = $this->getRegistrationTypeBreakdown($participantsQuery);
+        $registrationTypeByMonth = $this->getRegistrationTypeByMonth($participantsQuery, $startDate, $endDate);
+        $acquisitionFunnel = $this->getAcquisitionFunnel($startDate, $endDate, $isAdmin);
+        $certificateRate = $this->getCertificateGenerationRate($participantsQuery, $certificatesQuery);
+        $topEvents = $this->getTopEventsByParticipants($eventsQuery);
+        $eventPerformanceMatrix = $this->getEventPerformanceMatrix($startDate, $endDate, $isAdmin);
+        $ageGroupDistribution = $this->getAgeGroupDistribution($participantsQuery);
+        $eventCategoryDistribution = $this->getEventCategoryDistribution($eventsQuery);
+        $emailDeliveryStatus = $this->getEmailDeliveryStatus($campaignsQuery);
+        $monthlyComparison = $this->getMonthlyComparison($eventsQuery, $startDate, $endDate);
+        
+        // Calculate trend indicators for summary cards
+        $previousPeriodEvents = $this->getPreviousPeriodData($eventsQuery, $startDate, $endDate);
+        $previousPeriodParticipants = $this->getPreviousPeriodData($participantsQuery, $startDate, $endDate);
+        $previousPeriodCertificates = $this->getPreviousPeriodData($certificatesQuery, $startDate, $endDate);
+        $previousPeriodAttendance = $this->getPreviousPeriodData($attendanceQuery, $startDate, $endDate);
+        $previousPeriodCampaigns = $this->getPreviousPeriodData($campaignsQuery, $startDate, $endDate);
+        
+        // Get table data
+        $eventPerformanceTable = $this->getEventPerformanceTable($startDate, $endDate, $isAdmin);
+        $monthlySummaryTable = $this->getMonthlySummaryTable($startDate, $endDate, $isAdmin);
+        $demographicsTable = $this->getParticipantDemographicsTable($participantsQuery);
         
         return view('dashboard', [
             'isAdmin' => $isAdmin,
@@ -300,6 +303,31 @@ class DashboardController extends Controller
             'eventTrend' => $eventTrend,
             'eventCumulativeGrowth' => $eventCumulativeGrowth,
             'eventComparison' => $eventComparison,
+            
+            // New visualization data
+            'registrationHeatmap' => $registrationHeatmap,
+            'registrationTypeBreakdown' => $registrationTypeBreakdown,
+            'registrationTypeByMonth' => $registrationTypeByMonth,
+            'acquisitionFunnel' => $acquisitionFunnel,
+            'certificateRate' => $certificateRate,
+            'topEvents' => $topEvents,
+            'eventPerformanceMatrix' => $eventPerformanceMatrix,
+            'ageGroupDistribution' => $ageGroupDistribution,
+            'eventCategoryDistribution' => $eventCategoryDistribution,
+            'emailDeliveryStatus' => $emailDeliveryStatus,
+            'monthlyComparison' => $monthlyComparison,
+            
+            // Trend data for summary cards
+            'previousPeriodEvents' => $previousPeriodEvents,
+            'previousPeriodParticipants' => $previousPeriodParticipants,
+            'previousPeriodCertificates' => $previousPeriodCertificates,
+            'previousPeriodAttendance' => $previousPeriodAttendance,
+            'previousPeriodCampaigns' => $previousPeriodCampaigns,
+            
+            // Table data
+            'eventPerformanceTable' => $eventPerformanceTable,
+            'monthlySummaryTable' => $monthlySummaryTable,
+            'demographicsTable' => $demographicsTable,
         ]);
     }
     
@@ -479,7 +507,6 @@ class DashboardController extends Controller
     {
         $cumulativeGrowth = [];
         $totalCount = 0;
-        $currentMonthCount = $monthlyData[0] ?? 0;
 
         foreach ($monthlyData as $month => $count) {
             $totalCount += $count;
@@ -519,4 +546,813 @@ class DashboardController extends Controller
 
         return $comparison;
     }
-} 
+
+    /**
+     * Apply role-based filtering to a query builder.
+     * Note: This is a helper method but role filtering is already applied in index().
+     * This method is kept for potential future use with additional queries.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  bool  $isAdmin
+     * @param  int|null  $userId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function applyRoleBasedFilter($query, $isAdmin, $userId = null)
+    {
+        if (!$isAdmin && $userId) {
+            // For Event queries
+            if (method_exists($query->getModel(), 'user_id')) {
+                $query->where('user_id', $userId);
+            }
+        }
+        
+        return $query;
+    }
+
+    /**
+     * Get registration heatmap data (day of week × hour of day).
+     * MUST respect role-based filtering from $participantsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $participantsQuery
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @return array
+     */
+    private function getRegistrationHeatmap($participantsQuery, $startDate, $endDate)
+    {
+        // Get registration data grouped by day of week and hour
+        $registrations = $participantsQuery->clone()
+            ->select(
+                DB::raw('DAYOFWEEK(created_at) as day_of_week'),
+                DB::raw('HOUR(created_at) as hour_of_day'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('day_of_week', 'hour_of_day')
+            ->get();
+
+        // Initialize heatmap structure with all days and hours
+        $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $heatmap = [];
+        
+        foreach ($days as $day) {
+            $heatmap[$day] = [];
+            for ($hour = 0; $hour < 24; $hour++) {
+                $heatmap[$day][sprintf('%02d:00', $hour)] = 0;
+            }
+        }
+
+        // Fill in actual registration counts
+        foreach ($registrations as $registration) {
+            // DAYOFWEEK returns 1=Sunday, 2=Monday, ..., 7=Saturday
+            $dayIndex = $registration->day_of_week - 1;
+            $dayName = $days[$dayIndex];
+            $hourKey = sprintf('%02d:00', $registration->hour_of_day);
+            
+            $heatmap[$dayName][$hourKey] = $registration->count;
+        }
+
+        return $heatmap;
+    }
+
+    /**
+     * Get registration type breakdown (Verified vs Simplified).
+     * MUST respect role-based filtering from $participantsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $participantsQuery
+     * @return array
+     */
+    private function getRegistrationTypeBreakdown($participantsQuery)
+    {
+        $breakdown = $participantsQuery->clone()
+            ->select('registration_type', DB::raw('COUNT(*) as count'))
+            ->groupBy('registration_type')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->registration_type => $item->count];
+            })
+            ->toArray();
+
+        $verified = $breakdown['verified'] ?? 0;
+        $simplified = $breakdown['simplified'] ?? 0;
+        $total = $verified + $simplified;
+
+        return [
+            'verified' => $verified,
+            'simplified' => $simplified,
+            'total' => $total,
+            'verified_percentage' => $total > 0 ? round(($verified / $total) * 100, 1) : 0,
+            'simplified_percentage' => $total > 0 ? round(($simplified / $total) * 100, 1) : 0,
+        ];
+    }
+
+    /**
+     * Get registration type by month (stacked data).
+     * MUST respect role-based filtering from $participantsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $participantsQuery
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @return array
+     */
+    private function getRegistrationTypeByMonth($participantsQuery, $startDate, $endDate)
+    {
+        $data = $participantsQuery->clone()
+            ->select(
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('MONTH(created_at) as month'),
+                'registration_type',
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('year', 'month', 'registration_type')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        // Initialize structure
+        $months = [];
+        $verified = [];
+        $simplified = [];
+
+        // Fill in missing months with zero counts
+        $period = Carbon::parse($startDate)->startOfMonth()->monthsUntil(Carbon::parse($endDate)->endOfMonth()->addDay());
+        
+        foreach ($period as $date) {
+            $key = $date->format('M Y');
+            $months[] = $key;
+            $verified[$key] = 0;
+            $simplified[$key] = 0;
+        }
+
+        // Fill in actual counts
+        foreach ($data as $item) {
+            $date = Carbon::createFromDate($item->year, $item->month, 1);
+            $key = $date->format('M Y');
+            
+            if ($item->registration_type === 'verified') {
+                $verified[$key] = $item->count;
+            } elseif ($item->registration_type === 'simplified') {
+                $simplified[$key] = $item->count;
+            }
+        }
+
+        return [
+            'months' => $months,
+            'verified' => array_values($verified),
+            'simplified' => array_values($simplified),
+        ];
+    }
+
+    /**
+     * Get participant acquisition funnel data.
+     * MUST apply role-based filtering: if not admin, filter by user_id.
+     *
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @param  bool  $isAdmin
+     * @return array
+     */
+    private function getAcquisitionFunnel($startDate, $endDate, $isAdmin)
+    {
+        $userId = Auth::id();
+
+        // Stage 1: Registered (from participants table)
+        $registeredQuery = Participant::whereBetween('created_at', [$startDate, $endDate]);
+        if (!$isAdmin) {
+            $registeredQuery->whereHas('event', function($q) use ($userId) {
+                $q->where('user_id', $userId);
+            });
+        }
+        $registered = $registeredQuery->distinct('id')->count('id');
+
+        // Stage 2: Attended (from attendance_records table)
+        $attendedQuery = DB::table('attendance_records')
+            ->join('participants', 'attendance_records.participant_id', '=', 'participants.id')
+            ->whereBetween('attendance_records.created_at', [$startDate, $endDate]);
+        if (!$isAdmin) {
+            $attendedQuery->join('events', 'participants.event_id', '=', 'events.id')
+                ->where('events.user_id', $userId);
+        }
+        $attended = $attendedQuery->distinct('attendance_records.participant_id')->count('attendance_records.participant_id');
+
+        // Stage 3: Completed (events with completion status)
+        // Assuming participants whose events have status 'completed'
+        $completedQuery = Participant::whereBetween('created_at', [$startDate, $endDate])
+            ->whereHas('event', function($q) use ($isAdmin, $userId) {
+                $q->where('status', 'completed');
+                if (!$isAdmin) {
+                    $q->where('user_id', $userId);
+                }
+            });
+        $completed = $completedQuery->distinct('id')->count('id');
+
+        // Stage 4: Certified (from certificates table)
+        $certifiedQuery = DB::table('certificates')
+            ->whereBetween('certificates.created_at', [$startDate, $endDate]);
+        if (!$isAdmin) {
+            $certifiedQuery->join('events', 'certificates.event_id', '=', 'events.id')
+                ->where('events.user_id', $userId);
+        }
+        $certified = $certifiedQuery->distinct('certificates.participant_id')->count('certificates.participant_id');
+
+        // Calculate percentages and drop-offs
+        $registeredPct = 100;
+        $attendedPct = $registered > 0 ? round(($attended / $registered) * 100, 1) : 0;
+        $completedPct = $registered > 0 ? round(($completed / $registered) * 100, 1) : 0;
+        $certifiedPct = $registered > 0 ? round(($certified / $registered) * 100, 1) : 0;
+
+        $dropoffAttended = $registered > 0 ? round((($registered - $attended) / $registered) * 100, 1) : 0;
+        $dropoffCompleted = $attended > 0 ? round((($attended - $completed) / $attended) * 100, 1) : 0;
+        $dropoffCertified = $completed > 0 ? round((($completed - $certified) / $completed) * 100, 1) : 0;
+
+        return [
+            'stages' => ['Registered', 'Attended', 'Completed', 'Certified'],
+            'counts' => [$registered, $attended, $completed, $certified],
+            'percentages' => [$registeredPct, $attendedPct, $completedPct, $certifiedPct],
+            'dropoff' => [0, $dropoffAttended, $dropoffCompleted, $dropoffCertified],
+        ];
+    }
+
+    /**
+     * Get certificate generation rate.
+     * MUST respect role-based filtering from queries.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $participantsQuery
+     * @param  \Illuminate\Database\Eloquent\Builder  $certificatesQuery
+     * @return float
+     */
+    private function getCertificateGenerationRate($participantsQuery, $certificatesQuery)
+    {
+        $totalParticipants = $participantsQuery->clone()->count();
+        $totalCertificates = $certificatesQuery->clone()->count();
+
+        if ($totalParticipants > 0) {
+            return round(($totalCertificates / $totalParticipants) * 100, 1);
+        }
+
+        return 0;
+    }
+
+    /**
+     * Get top N events by participant count.
+     * MUST respect role-based filtering from $eventsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $eventsQuery
+     * @param  int  $limit
+     * @return \Illuminate\Support\Collection
+     */
+    private function getTopEventsByParticipants($eventsQuery, $limit = 10)
+    {
+        return $eventsQuery->clone()
+            ->withCount('participants')
+            ->orderBy('participants_count', 'desc')
+            ->limit($limit)
+            ->get(['id', 'name'])
+            ->map(function ($event) {
+                return [
+                    'id' => $event->id,
+                    'name' => $event->name,
+                    'participant_count' => $event->participants_count,
+                ];
+            });
+    }
+
+    /**
+     * Get event performance matrix data (for bubble chart).
+     * MUST apply role-based filtering: if not admin, filter by user_id.
+     *
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @param  bool  $isAdmin
+     * @return \Illuminate\Support\Collection
+     */
+    private function getEventPerformanceMatrix($startDate, $endDate, $isAdmin)
+    {
+        $userId = Auth::id();
+
+        $query = DB::table('events')
+            ->leftJoin('participants', 'events.id', '=', 'participants.event_id')
+            ->leftJoin('attendances', 'events.id', '=', 'attendances.event_id')
+            ->leftJoin('attendance_records', function($join) {
+                $join->on('attendance_records.attendance_id', '=', 'attendances.id')
+                     ->on('attendance_records.participant_id', '=', 'participants.id');
+            })
+            ->leftJoin('certificates', function($join) {
+                $join->on('certificates.event_id', '=', 'events.id')
+                     ->on('certificates.participant_id', '=', 'participants.id');
+            })
+            ->whereBetween('events.created_at', [$startDate, $endDate]);
+
+        if (!$isAdmin) {
+            $query->where('events.user_id', $userId);
+        }
+
+        return $query->select(
+                'events.id',
+                'events.name',
+                DB::raw('COUNT(DISTINCT participants.id) as participant_count'),
+                DB::raw('COUNT(DISTINCT attendance_records.id) as attendance_count'),
+                DB::raw('COUNT(DISTINCT certificates.id) as certificate_count')
+            )
+            ->groupBy('events.id', 'events.name')
+            ->havingRaw('COUNT(DISTINCT participants.id) >= 1')
+            ->get()
+            ->map(function($event) {
+                $attendanceRate = $event->participant_count > 0 
+                    ? round(($event->attendance_count / $event->participant_count) * 100, 1)
+                    : 0;
+                
+                return [
+                    'event_id' => $event->id,
+                    'event_name' => $event->name,
+                    'participant_count' => $event->participant_count,
+                    'attendance_rate' => $attendanceRate,
+                    'certificate_count' => $event->certificate_count,
+                ];
+            });
+    }
+
+    /**
+     * Get participant age group distribution.
+     * MUST respect role-based filtering from $participantsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $participantsQuery
+     * @return array
+     */
+    private function getAgeGroupDistribution($participantsQuery)
+    {
+        $participants = $participantsQuery->clone()
+            ->select('date_of_birth')
+            ->whereNotNull('date_of_birth')
+            ->get();
+
+        $ageGroups = [
+            'Under 18' => 0,
+            '18-24' => 0,
+            '25-34' => 0,
+            '35-44' => 0,
+            '45-54' => 0,
+            '55-64' => 0,
+            '65 and above' => 0,
+            'Not Specified' => 0,
+        ];
+
+        // Count participants without date_of_birth
+        $notSpecified = $participantsQuery->clone()
+            ->whereNull('date_of_birth')
+            ->count();
+        $ageGroups['Not Specified'] = $notSpecified;
+
+        // Calculate age groups
+        foreach ($participants as $participant) {
+            $age = Carbon::now()->diffInYears(Carbon::parse($participant->date_of_birth));
+            
+            if ($age < 18) {
+                $ageGroups['Under 18']++;
+            } elseif ($age >= 18 && $age <= 24) {
+                $ageGroups['18-24']++;
+            } elseif ($age >= 25 && $age <= 34) {
+                $ageGroups['25-34']++;
+            } elseif ($age >= 35 && $age <= 44) {
+                $ageGroups['35-44']++;
+            } elseif ($age >= 45 && $age <= 54) {
+                $ageGroups['45-54']++;
+            } elseif ($age >= 55 && $age <= 64) {
+                $ageGroups['55-64']++;
+            } else {
+                $ageGroups['65 and above']++;
+            }
+        }
+
+        return $ageGroups;
+    }
+
+    /**
+     * Get event category distribution.
+     * MUST respect role-based filtering from $eventsQuery.
+     * 
+     * NOTE: The 'category' column doesn't exist in the events table yet.
+     * This method returns a placeholder until the column is added.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $eventsQuery
+     * @return array
+     */
+    private function getEventCategoryDistribution($eventsQuery)
+    {
+        // TODO: Add 'category' column to events table
+        // For now, return placeholder data
+        return [
+            'Uncategorized' => $eventsQuery->clone()->count()
+        ];
+        
+        /* Original implementation (requires 'category' column):
+        $categories = $eventsQuery->clone()
+            ->select('category', DB::raw('COUNT(*) as count'))
+            ->groupBy('category')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $categoryLabel = $item->category ?: 'Uncategorized';
+                return [$categoryLabel => $item->count];
+            })
+            ->toArray();
+
+        return $categories;
+        */
+    }
+
+    /**
+     * Get email delivery status breakdown.
+     * MUST respect role-based filtering from $campaignsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $campaignsQuery
+     * @return array
+     */
+    private function getEmailDeliveryStatus($campaignsQuery)
+    {
+        $emailCampaigns = $campaignsQuery->clone()
+            ->where('campaign_type', 'email')
+            ->select(
+                'id',
+                'name',
+                'recipients_count',
+                'delivered_count',
+                DB::raw('(recipients_count - delivered_count) as failed_count'),
+                DB::raw('0 as bounced_count')
+            )
+            ->get();
+
+        $result = [];
+        foreach ($emailCampaigns as $campaign) {
+            $result[] = [
+                'campaign_name' => $campaign->name,
+                'success' => $campaign->delivered_count,
+                'failed' => $campaign->failed_count,
+                'bounced' => $campaign->bounced_count,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get monthly comparison data (this year vs last year).
+     * MUST respect role-based filtering from $eventsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $eventsQuery
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @return array
+     */
+    private function getMonthlyComparison($eventsQuery, $startDate, $endDate)
+    {
+        $currentYear = Carbon::now()->year;
+        $previousYear = $currentYear - 1;
+
+        // Get current year data
+        $currentYearData = $eventsQuery->clone()
+            ->whereYear('start_date', $currentYear)
+            ->select(
+                DB::raw('MONTH(start_date) as month'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->month => $item->count];
+            })
+            ->toArray();
+
+        // Get previous year data
+        $previousYearData = $eventsQuery->clone()
+            ->whereYear('start_date', $previousYear)
+            ->select(
+                DB::raw('MONTH(start_date) as month'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->month => $item->count];
+            })
+            ->toArray();
+
+        // Prepare month labels and data arrays
+        $months = [];
+        $currentYearCounts = [];
+        $previousYearCounts = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $monthLabel = Carbon::createFromDate($currentYear, $month, 1)->format('M');
+            $months[] = $monthLabel;
+            $currentYearCounts[] = $currentYearData[$month] ?? 0;
+            $previousYearCounts[] = $previousYearData[$month] ?? 0;
+        }
+
+        return [
+            'months' => $months,
+            'current_year' => $currentYearCounts,
+            'previous_year' => $previousYearCounts,
+            'current_year_label' => (string)$currentYear,
+            'previous_year_label' => (string)$previousYear,
+        ];
+    }
+
+    /**
+     * Get previous period data for trend calculation.
+     * MUST respect role-based filtering from $query.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @return int
+     */
+    private function getPreviousPeriodData($query, $startDate, $endDate)
+    {
+        $diffInDays = $startDate->diffInDays($endDate);
+        
+        $previousStartDate = $startDate->copy()->subDays($diffInDays + 1);
+        $previousEndDate = $startDate->copy()->subDay();
+
+        return $query->clone()
+            ->whereBetween('created_at', [$previousStartDate, $previousEndDate])
+            ->count();
+    }
+
+    /**
+     * Get event performance table data.
+     * MUST apply role-based filtering: if not admin, filter by user_id.
+     *
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @param  bool  $isAdmin
+     * @return \Illuminate\Support\Collection
+     */
+    private function getEventPerformanceTable($startDate, $endDate, $isAdmin)
+    {
+        $userId = Auth::id();
+
+        $query = DB::table('events')
+            ->leftJoin('participants', 'events.id', '=', 'participants.event_id')
+            ->leftJoin('attendances', 'events.id', '=', 'attendances.event_id')
+            ->leftJoin('attendance_records', function($join) {
+                $join->on('attendance_records.attendance_id', '=', 'attendances.id')
+                     ->on('attendance_records.participant_id', '=', 'participants.id');
+            })
+            ->leftJoin('certificates', function($join) {
+                $join->on('certificates.event_id', '=', 'events.id')
+                     ->on('certificates.participant_id', '=', 'participants.id');
+            })
+            ->whereBetween('events.created_at', [$startDate, $endDate]);
+
+        if (!$isAdmin) {
+            $query->where('events.user_id', $userId);
+        }
+
+        return $query->select(
+                'events.id',
+                'events.name',
+                'events.status',
+                DB::raw('COUNT(DISTINCT participants.id) as participants'),
+                DB::raw('COUNT(DISTINCT certificates.id) as certificates'),
+                DB::raw('COUNT(DISTINCT attendance_records.id) as attendance_count'),
+                DB::raw('SUM(CASE WHEN participants.registration_type = "verified" THEN 1 ELSE 0 END) as verified_count'),
+                DB::raw('SUM(CASE WHEN participants.registration_type = "simplified" THEN 1 ELSE 0 END) as simplified_count')
+            )
+            ->groupBy('events.id', 'events.name', 'events.status')
+            ->orderBy('events.start_date', 'desc')
+            ->get()
+            ->map(function($event) {
+                $attendanceRate = $event->participants > 0 
+                    ? round(($event->attendance_count / $event->participants) * 100, 1)
+                    : 0;
+                
+                return [
+                    'id' => $event->id,
+                    'name' => $event->name,
+                    'participants' => $event->participants,
+                    'certificates' => $event->certificates,
+                    'attendance_rate' => $attendanceRate,
+                    'verified_count' => $event->verified_count,
+                    'simplified_count' => $event->simplified_count,
+                    'status' => $event->status,
+                ];
+            });
+    }
+
+    /**
+     * Get monthly summary table data.
+     * MUST apply role-based filtering: if not admin, filter by user_id.
+     *
+     * @param  \Carbon\Carbon  $startDate
+     * @param  \Carbon\Carbon  $endDate
+     * @param  bool  $isAdmin
+     * @return array
+     */
+    private function getMonthlySummaryTable($startDate, $endDate, $isAdmin)
+    {
+        $userId = Auth::id();
+
+        // Get monthly data for events
+        $eventsQuery = Event::query()
+            ->whereBetween('created_at', [$startDate, $endDate]);
+        if (!$isAdmin) {
+            $eventsQuery->where('user_id', $userId);
+        }
+
+        $monthlyEvents = $eventsQuery
+            ->select(
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('year', 'month')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $date = Carbon::createFromDate($item->year, $item->month, 1);
+                return [$date->format('M Y') => $item->count];
+            })
+            ->toArray();
+
+        // Get monthly data for participants
+        $participantsQuery = Participant::query()
+            ->whereBetween('created_at', [$startDate, $endDate]);
+        if (!$isAdmin) {
+            $participantsQuery->whereHas('event', function($q) use ($userId) {
+                $q->where('user_id', $userId);
+            });
+        }
+
+        $monthlyParticipants = $participantsQuery
+            ->select(
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(CASE WHEN registration_type = "verified" THEN 1 ELSE 0 END) as verified'),
+                DB::raw('SUM(CASE WHEN registration_type = "simplified" THEN 1 ELSE 0 END) as simplified')
+            )
+            ->groupBy('year', 'month')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $date = Carbon::createFromDate($item->year, $item->month, 1);
+                return [$date->format('M Y') => [
+                    'count' => $item->count,
+                    'verified' => $item->verified,
+                    'simplified' => $item->simplified,
+                ]];
+            })
+            ->toArray();
+
+        // Get monthly data for certificates
+        $certificatesQuery = Certificate::query()
+            ->whereBetween('created_at', [$startDate, $endDate]);
+        if (!$isAdmin) {
+            $certificatesQuery->whereHas('event', function($q) use ($userId) {
+                $q->where('user_id', $userId);
+            });
+        }
+
+        $monthlyCertificates = $certificatesQuery
+            ->select(
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('year', 'month')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $date = Carbon::createFromDate($item->year, $item->month, 1);
+                return [$date->format('M Y') => $item->count];
+            })
+            ->toArray();
+
+        // Get monthly attendance data
+        $attendanceQuery = DB::table('attendance_records')
+            ->join('participants', 'attendance_records.participant_id', '=', 'participants.id')
+            ->whereBetween('attendance_records.created_at', [$startDate, $endDate]);
+        if (!$isAdmin) {
+            $attendanceQuery->join('events', 'participants.event_id', '=', 'events.id')
+                ->where('events.user_id', $userId);
+        }
+
+        $monthlyAttendance = $attendanceQuery
+            ->select(
+                DB::raw('YEAR(attendance_records.created_at) as year'),
+                DB::raw('MONTH(attendance_records.created_at) as month'),
+                DB::raw('COUNT(DISTINCT attendance_records.id) as count')
+            )
+            ->groupBy('year', 'month')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $date = Carbon::createFromDate($item->year, $item->month, 1);
+                return [$date->format('M Y') => $item->count];
+            })
+            ->toArray();
+
+        // Combine all data
+        $result = [];
+        $period = Carbon::parse($startDate)->startOfMonth()->monthsUntil(Carbon::parse($endDate)->endOfMonth()->addDay());
+        
+        foreach ($period as $date) {
+            $key = $date->format('M Y');
+            $events = $monthlyEvents[$key] ?? 0;
+            $participants = $monthlyParticipants[$key]['count'] ?? 0;
+            $verified = $monthlyParticipants[$key]['verified'] ?? 0;
+            $simplified = $monthlyParticipants[$key]['simplified'] ?? 0;
+            $certificates = $monthlyCertificates[$key] ?? 0;
+            $attendance = $monthlyAttendance[$key] ?? 0;
+            
+            $attendanceRate = $participants > 0 
+                ? round(($attendance / $participants) * 100, 1)
+                : 0;
+
+            $result[$key] = [
+                'events' => $events,
+                'participants' => $participants,
+                'certificates' => $certificates,
+                'attendance_rate' => $attendanceRate,
+                'verified' => $verified,
+                'simplified' => $simplified,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get participant demographics table data.
+     * MUST respect role-based filtering from $participantsQuery.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $participantsQuery
+     * @return array
+     */
+    private function getParticipantDemographicsTable($participantsQuery)
+    {
+        $participants = $participantsQuery->clone()
+            ->select('date_of_birth', 'gender')
+            ->get();
+
+        $demographics = [
+            'Under 18' => ['male' => 0, 'female' => 0, 'total' => 0],
+            '18-24' => ['male' => 0, 'female' => 0, 'total' => 0],
+            '25-34' => ['male' => 0, 'female' => 0, 'total' => 0],
+            '35-44' => ['male' => 0, 'female' => 0, 'total' => 0],
+            '45-54' => ['male' => 0, 'female' => 0, 'total' => 0],
+            '55-64' => ['male' => 0, 'female' => 0, 'total' => 0],
+            '65 and above' => ['male' => 0, 'female' => 0, 'total' => 0],
+            'Not Specified' => ['male' => 0, 'female' => 0, 'total' => 0],
+        ];
+
+        $totalParticipants = $participants->count();
+
+        foreach ($participants as $participant) {
+            $ageGroup = 'Not Specified';
+            
+            if ($participant->date_of_birth) {
+                $age = Carbon::now()->diffInYears(Carbon::parse($participant->date_of_birth));
+                
+                if ($age < 18) {
+                    $ageGroup = 'Under 18';
+                } elseif ($age >= 18 && $age <= 24) {
+                    $ageGroup = '18-24';
+                } elseif ($age >= 25 && $age <= 34) {
+                    $ageGroup = '25-34';
+                } elseif ($age >= 35 && $age <= 44) {
+                    $ageGroup = '35-44';
+                } elseif ($age >= 45 && $age <= 54) {
+                    $ageGroup = '45-54';
+                } elseif ($age >= 55 && $age <= 64) {
+                    $ageGroup = '55-64';
+                } else {
+                    $ageGroup = '65 and above';
+                }
+            }
+
+            $demographics[$ageGroup]['total']++;
+            
+            if ($participant->gender === 'male') {
+                $demographics[$ageGroup]['male']++;
+            } elseif ($participant->gender === 'female') {
+                $demographics[$ageGroup]['female']++;
+            }
+        }
+
+        // Calculate percentages and format result
+        $result = [];
+        foreach ($demographics as $ageGroup => $data) {
+            $percentage = $totalParticipants > 0 
+                ? round(($data['total'] / $totalParticipants) * 100, 1)
+                : 0;
+
+            $result[] = [
+                'age_group' => $ageGroup,
+                'male' => $data['male'],
+                'female' => $data['female'],
+                'total' => $data['total'],
+                'percentage' => $percentage,
+            ];
+        }
+
+        return $result;
+    }
+}

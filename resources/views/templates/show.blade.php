@@ -147,8 +147,7 @@
             
             function init() {
                 const container = document.getElementById('pdf-preview-container');
-                const templateId = {{ $template->id }};
-                const url = `/template-designer/${templateId}/preview-pdf`;
+                const url = '{{ route("template.preview.pdf", $template->id) }}';
                 
                 fetch(url, {
                     method: 'GET',

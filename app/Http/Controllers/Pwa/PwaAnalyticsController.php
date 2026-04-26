@@ -253,42 +253,51 @@ class PwaAnalyticsController extends Controller
     {
         try {
             if ($eventIds && $eventIds->isNotEmpty()) {
-                // For organizer view - use the same 3-condition pattern as PwaParticipantsController
+                // For organizer view - get participants linked to their events
                 $user = Auth::user();
-                $query = DB::table('pwa_participants as pp')
-                    ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(DISTINCT pp.id) as count')
-                    ->where(function($q) use ($user, $eventIds) {
-                        $q->where('pp.created_by', $user->id)
-                          ->orWhereExists(function($sub) use ($eventIds) {
-                              $sub->select(DB::raw(1))
-                                  ->from('event_pwa_participant as ep')
-                                  ->whereColumn('ep.pwa_participant_id', 'pp.id')
-                                  ->whereIn('ep.event_id', $eventIds);
+                
+                // Get all participant IDs that match the 3 conditions
+                $participantIds = PwaParticipant::where(function($query) use ($user, $eventIds) {
+                    $query->where('created_by', $user->id)
+                          ->orWhereHas('events', function($q) use ($eventIds) {
+                              $q->whereIn('events.id', $eventIds);
                           })
                           ->orWhereExists(function($sub) use ($user) {
                               $sub->select(DB::raw(1))
                                   ->from('participants as rp')
                                   ->join('events as ev', 'rp.event_id', '=', 'ev.id')
-                                  ->whereColumn('rp.email', 'pp.email')
+                                  ->whereColumn('rp.email', 'pwa_participants.email')
                                   ->where('ev.user_id', $user->id)
                                   ->where('rp.registration_type', 'verified');
                           });
-                    })
+                })->pluck('id');
+                
+                // Now query monthly stats for these participants
+                $query = DB::table('pwa_participants')
+                    ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(id) as count')
+                    ->whereIn('id', $participantIds)
                     ->groupBy('year', 'month')
                     ->orderBy('year', 'desc')
                     ->orderBy('month', 'desc')
                     ->limit(12);
             } else {
                 // For administrator view - query directly
-                $query = DB::table('pwa_participants as pp')
-                    ->selectRaw('YEAR(pp.created_at) as year, MONTH(pp.created_at) as month, COUNT(DISTINCT pp.id) as count')
+                $query = DB::table('pwa_participants')
+                    ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(id) as count')
                     ->groupBy('year', 'month')
                     ->orderBy('year', 'desc')
                     ->orderBy('month', 'desc')
                     ->limit(12);
             }
             
-            return $query->get()->map(function($item) {
+            $results = $query->get();
+            
+            \Log::info('Monthly Stats Query Results', [
+                'count' => $results->count(),
+                'data' => $results->toArray()
+            ]);
+            
+            return $results->map(function($item) {
                 return [
                     'month' => Carbon::createFromDate($item->year, $item->month, 1)->format('M Y'),
                     'count' => $item->count
@@ -305,29 +314,42 @@ class PwaAnalyticsController extends Controller
      */
     private function getTopPerformingEvents($user)
     {
-        // Select only the columns we need to avoid ONLY_FULL_GROUP_BY issues
-        $query = Event::query()
-            ->select([
-                'events.id',
-                'events.name',
-                'events.start_date',
-                'events.end_date',
-                'events.location',
-                'events.user_id',
-                'events.created_at',
-                'events.updated_at',
-            ])
-            ->selectRaw('COUNT(DISTINCT ep.pwa_participant_id) as participant_count')
-            ->leftJoin('event_pwa_participant as ep', 'events.id', '=', 'ep.event_id')
-            ->groupBy('events.id', 'events.name', 'events.start_date', 'events.end_date', 'events.location', 'events.user_id', 'events.created_at', 'events.updated_at')
-            ->orderByDesc('participant_count')
-            ->limit(5);
+        try {
+            // Select only the columns we need to avoid ONLY_FULL_GROUP_BY issues
+            $query = Event::query()
+                ->select([
+                    'events.id',
+                    'events.name',
+                    'events.start_date',
+                    'events.end_date',
+                    'events.location',
+                    'events.user_id',
+                    'events.created_at',
+                    'events.updated_at',
+                ])
+                ->selectRaw('COUNT(DISTINCT ep.pwa_participant_id) as participant_count')
+                ->leftJoin('event_pwa_participant as ep', 'events.id', '=', 'ep.event_id')
+                ->groupBy('events.id', 'events.name', 'events.start_date', 'events.end_date', 'events.location', 'events.user_id', 'events.created_at', 'events.updated_at')
+                ->having('participant_count', '>', 0)  // Only show events with participants
+                ->orderByDesc('participant_count')
+                ->limit(5);
+                
+            if (!$user->hasRole('Administrator')) {
+                $query->where('events.user_id', $user->id);
+            }
             
-        if (!$user->hasRole('Administrator')) {
-            $query->where('events.user_id', $user->id);
+            $results = $query->get();
+            
+            \Log::info('Top Events Query Results', [
+                'count' => $results->count(),
+                'data' => $results->toArray()
+            ]);
+            
+            return $results;
+        } catch (\Exception $e) {
+            \Log::error('PWA Analytics - getTopPerformingEvents Error: ' . $e->getMessage());
+            return collect();
         }
-        
-        return $query->get();
     }
 
     /**

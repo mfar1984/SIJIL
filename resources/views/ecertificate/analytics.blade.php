@@ -177,10 +177,6 @@
                     <!-- Monthly Registration Chart -->
                     <div class="bg-white border border-gray-200 rounded-lg p-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly PWA Registrations</h3>
-                        <!-- Debug Info -->
-                        <div class="text-xs text-gray-500 mb-2">
-                            Data count: {{ isset($monthlyStats) ? $monthlyStats->count() : 'not set' }}
-                        </div>
                         <div class="h-64">
                             @if(isset($monthlyStats) && $monthlyStats->count() > 0)
                                 <canvas id="monthlyRegistrationsChart"></canvas>
@@ -196,10 +192,6 @@
                     <!-- Top Performing Events Chart -->
                     <div class="bg-white border border-gray-200 rounded-lg p-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Performing Events</h3>
-                        <!-- Debug Info -->
-                        <div class="text-xs text-gray-500 mb-2">
-                            Data count: {{ isset($topEvents) ? $topEvents->count() : 'not set' }}
-                        </div>
                         <div class="h-64">
                             @if(isset($topEvents) && $topEvents->count() > 0)
                                 <canvas id="topEventsChart"></canvas>

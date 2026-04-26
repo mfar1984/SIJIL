@@ -105,7 +105,7 @@ class PwaAnalyticsController extends Controller
             // Organizer sees only their own analytics
             $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
             
-            // Count participants created by this organizer OR linked to their events OR matched by email
+            // Count participants - EXACT same pattern as PwaParticipantsController
             $totalParticipants = PwaParticipant::where(function($query) use ($user, $organizerEvents) {
                 $query->where('created_by', $user->id)
                       ->orWhereHas('events', function($q) use ($organizerEvents) {
@@ -116,8 +116,7 @@ class PwaAnalyticsController extends Controller
                               ->from('participants as rp')
                               ->join('events as ev', 'rp.event_id', '=', 'ev.id')
                               ->whereColumn('rp.email', 'pwa_participants.email')
-                              ->where('ev.user_id', $user->id)
-                              ->where('rp.registration_type', 'verified');
+                              ->where('ev.user_id', $user->id);
                       });
             })->count();
             
@@ -164,10 +163,9 @@ class PwaAnalyticsController extends Controller
         
         // Debug: Log data to check if it's being retrieved
         \Log::info('PWA Analytics Data', [
+            'user_role' => $user->hasRole('Administrator') ? 'Administrator' : 'Organizer',
             'monthlyStats_count' => $monthlyStats->count(),
-            'monthlyStats_data' => $monthlyStats->toArray(),
             'topEvents_count' => $topEvents->count(),
-            'topEvents_data' => $topEvents->toArray(),
             'activityTrends_count' => $activityTrends->count()
         ]);
         
@@ -253,54 +251,47 @@ class PwaAnalyticsController extends Controller
     {
         try {
             if ($eventIds && $eventIds->isNotEmpty()) {
-                // For organizer view - get participants linked to their events
+                // For organizer view - use EXACT same pattern as PwaParticipantsController
                 $user = Auth::user();
                 
-                // Get all participant IDs that match the 3 conditions
-                $participantIds = PwaParticipant::where(function($query) use ($user, $eventIds) {
-                    $query->where('created_by', $user->id)
-                          ->orWhereHas('events', function($q) use ($eventIds) {
-                              $q->whereIn('events.id', $eventIds);
-                          })
-                          ->orWhereExists(function($sub) use ($user) {
-                              $sub->select(DB::raw(1))
-                                  ->from('participants as rp')
-                                  ->join('events as ev', 'rp.event_id', '=', 'ev.id')
-                                  ->whereColumn('rp.email', 'pwa_participants.email')
-                                  ->where('ev.user_id', $user->id)
-                                  ->where('rp.registration_type', 'verified');
-                          });
-                })->pluck('id');
-                
-                // Now query monthly stats for these participants
-                $query = DB::table('pwa_participants')
-                    ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(id) as count')
-                    ->whereIn('id', $participantIds)
+                $monthlyStats = DB::table('pwa_participants')
+                    ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(DISTINCT id) as count')
+                    ->where(function($query) use ($user, $eventIds) {
+                        $query->where('created_by', $user->id)
+                              ->orWhereExists(function($sub) use ($eventIds) {
+                                  $sub->select(DB::raw(1))
+                                      ->from('event_pwa_participant as ep')
+                                      ->whereColumn('ep.pwa_participant_id', 'pwa_participants.id')
+                                      ->whereIn('ep.event_id', $eventIds);
+                              })
+                              ->orWhereExists(function($sub) use ($user) {
+                                  $sub->select(DB::raw(1))
+                                      ->from('participants as rp')
+                                      ->join('events as ev', 'rp.event_id', '=', 'ev.id')
+                                      ->whereColumn('rp.email', 'pwa_participants.email')
+                                      ->where('ev.user_id', $user->id);
+                              });
+                    })
                     ->groupBy('year', 'month')
                     ->orderBy('year', 'desc')
                     ->orderBy('month', 'desc')
-                    ->limit(12);
+                    ->limit(12)
+                    ->get();
             } else {
                 // For administrator view - query directly
-                $query = DB::table('pwa_participants')
+                $monthlyStats = DB::table('pwa_participants')
                     ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(id) as count')
                     ->groupBy('year', 'month')
                     ->orderBy('year', 'desc')
                     ->orderBy('month', 'desc')
-                    ->limit(12);
+                    ->limit(12)
+                    ->get();
             }
             
-            $results = $query->get();
-            
-            \Log::info('Monthly Stats Query Results', [
-                'count' => $results->count(),
-                'data' => $results->toArray()
-            ]);
-            
-            return $results->map(function($item) {
+            return $monthlyStats->map(function($item) {
                 return [
                     'month' => Carbon::createFromDate($item->year, $item->month, 1)->format('M Y'),
-                    'count' => $item->count
+                    'count' => (int) $item->count
                 ];
             });
         } catch (\Exception $e) {
@@ -339,11 +330,6 @@ class PwaAnalyticsController extends Controller
             }
             
             $results = $query->get();
-            
-            \Log::info('Top Events Query Results', [
-                'count' => $results->count(),
-                'data' => $results->toArray()
-            ]);
             
             return $results;
         } catch (\Exception $e) {
@@ -397,8 +383,7 @@ class PwaAnalyticsController extends Controller
                               ->from('participants as rp')
                               ->join('events as ev', 'rp.event_id', '=', 'ev.id')
                               ->whereColumn('rp.email', 'pwa_participants.email')
-                              ->where('ev.user_id', $user->id)
-                              ->where('rp.registration_type', 'verified');
+                              ->where('ev.user_id', $user->id);
                       });
             });
         }

@@ -242,52 +242,73 @@
     </div>
 
     <script>
-        // Debug: Log data to console
-        console.log('Monthly Stats:', {!! json_encode($monthlyStats ?? []) !!});
-        console.log('Top Events:', {!! json_encode($topEvents ?? []) !!});
+        // Debug: Log data to console - ALWAYS run this
+        console.log('=== PWA Analytics Debug ===');
+        console.log('Monthly Stats isset:', {{ isset($monthlyStats) ? 'true' : 'false' }});
+        console.log('Monthly Stats count:', {{ isset($monthlyStats) ? $monthlyStats->count() : 0 }});
+        console.log('Monthly Stats data:', {!! json_encode($monthlyStats ?? []) !!});
+        console.log('Top Events data:', {!! json_encode($topEvents ?? []) !!});
+        console.log('=========================');
         
         // Monthly Registrations Line Chart
         @if(isset($monthlyStats) && $monthlyStats->count() > 0)
+        console.log('Initializing Monthly Chart...');
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded fired');
             const monthlyCtx = document.getElementById('monthlyRegistrationsChart');
+            console.log('Canvas element:', monthlyCtx);
+            
             if (monthlyCtx) {
                 const monthlyData = {!! json_encode($monthlyStats) !!};
                 const labels = monthlyData.map(item => item.month);
                 const counts = monthlyData.map(item => parseInt(item.count));
                 
-                console.log('Chart Data:', { labels, counts });
+                console.log('Creating chart with data:', { labels, counts });
                 
-                new Chart(monthlyCtx.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'PWA Registrations',
-                            data: counts,
-                            borderColor: 'rgb(59, 130, 246)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
+                try {
+                    new Chart(monthlyCtx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'PWA Registrations',
+                                data: counts,
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
                                 }
                             }
                         }
-                    }
+                    });
+                    console.log('Chart created successfully');
+                } catch (error) {
+                    console.error('Error creating chart:', error);
+                }
+            } else {
+                console.error('Canvas element not found!');
+            }
+        });
+        @else
+        console.log('Monthly chart NOT initialized - no data or condition failed');
+        @endif
                 });
             }
         });

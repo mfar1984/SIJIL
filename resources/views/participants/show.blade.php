@@ -59,10 +59,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->name }}
                                     </div>
                                 </div>
@@ -76,10 +73,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">alternate_email</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->email }}
                                     </div>
                                 </div>
@@ -93,10 +87,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">call</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->formatted_phone ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -110,10 +101,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">assignment_ind</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         @if($participant->identity_card)
                                             {{ $participant->identity_card }} (IC)
                                         @elseif($participant->passport_no)
@@ -135,10 +123,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->date_of_birth ? $participant->date_of_birth->format('d M Y') : 'Not specified' }}
                                     </div>
                                 </div>
@@ -195,10 +180,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">person</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         @if($participant->gender == 'male')
                                             Male
                                         @elseif($participant->gender == 'female')
@@ -220,10 +202,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">apartment</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->organization ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -237,10 +216,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->job_title ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -254,10 +230,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">groups</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->race ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -271,10 +244,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">shield</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border flex items-center">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border flex items-center">
                                         @if($participant->status === 'active')
                                             <span class="bg-status-active-bg text-status-active-text px-2 py-0.5 rounded-full text-xs">Active</span>
                                         @elseif($participant->status === 'inactive')
@@ -306,10 +276,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">event_note</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->event->name }}
                                     </div>
                                 </div>
@@ -323,10 +290,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">groups</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->event->organizer }}
                                     </div>
                                 </div>
@@ -340,10 +304,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">date_range</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->event->start_date->format('l, d M Y') }} - {{ \Carbon\Carbon::parse($participant->event->start_time)->format('h:iA') }} to {{ $participant->event->end_date->format('l, d M Y') }} - {{ \Carbon\Carbon::parse($participant->event->end_time)->format('h:iA') }}
                                     </div>
                                 </div>
@@ -357,10 +318,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">place</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $participant->event->location }}
                                     </div>
                                 </div>
@@ -388,10 +346,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         @if($participant->registration_date)
                                             {{ \Carbon\Carbon::parse($participant->registration_date)->format('d M Y - H:i') }}
                                         @else
@@ -409,10 +364,7 @@
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">fact_check</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         @php
                                             $firstAttendance = isset($attendanceRecords) ? $attendanceRecords->sortBy('checkin_time')->first() : null;
                                         @endphp

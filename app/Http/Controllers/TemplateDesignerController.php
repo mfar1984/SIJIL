@@ -110,10 +110,19 @@ class TemplateDesignerController extends Controller
         $templateData = $request->template_data;
         if (is_string($templateData)) {
             $templateData = json_decode($templateData, true);
-            
-            // Log decoded template data
-            // Template data decoded
         }
+
+        if (!is_array($templateData)) {
+            $templateData = [];
+        }
+
+        // The canvas size must follow the chosen orientation. Certificate
+        // rendering scales every element by template_data width/height, so a
+        // portrait template carrying landscape dimensions would place all text
+        // in the wrong spot.
+        $templateData['width'] = $request->orientation === 'portrait' ? 210 : 297;
+        $templateData['height'] = $request->orientation === 'portrait' ? 297 : 210;
+        $templateData['elements'] = $templateData['elements'] ?? [];
 
         $pdfPath = null;
         $backgroundPdf = null;
@@ -290,10 +299,20 @@ class TemplateDesignerController extends Controller
         $templateData = $request->template_data;
         if (is_string($templateData)) {
             $templateData = json_decode($templateData, true);
-            
-            // Log decoded template data
-            // Template data decoded for update
         }
+
+        // Only replace the design when the request actually carries one.
+        // The edit screen submits name, description, orientation and files but
+        // no template_data, so assigning it blindly used to wipe every element
+        // that had been placed in the designer.
+        if (!is_array($templateData)) {
+            $templateData = is_array($template->template_data) ? $template->template_data : [];
+        }
+
+        // Keep the canvas size in step with the orientation (see store()).
+        $templateData['width'] = $request->orientation === 'portrait' ? 210 : 297;
+        $templateData['height'] = $request->orientation === 'portrait' ? 297 : 210;
+        $templateData['elements'] = $templateData['elements'] ?? [];
 
         // Update PDF file if provided
         if ($request->hasFile('pdf_file')) {

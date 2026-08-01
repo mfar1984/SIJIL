@@ -296,6 +296,77 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+/*
+ * Malaysia address data.
+ *
+ * The authoritative source is /data/malaysia-postcodes.json, the same file the
+ * public event registration form uses. MALAYSIA_DATA below is only a fallback
+ * for when that fetch fails: it lists postcodes for 7 cities out of hundreds,
+ * which is why the backend forms used to show an empty postcode dropdown for
+ * anything other than Kuching, Miri, Sibu, Bintulu, Kota Kinabalu, Shah Alam
+ * and Petaling Jaya.
+ */
+let malaysiaDataset = null;
+let malaysiaDatasetPromise = null;
+
+async function ensureMalaysiaDataset() {
+    if (malaysiaDataset) return malaysiaDataset;
+
+    if (!malaysiaDatasetPromise) {
+        malaysiaDatasetPromise = fetch('/data/malaysia-postcodes.json')
+            .then(response => {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(data => {
+                malaysiaDataset = data;
+                return malaysiaDataset;
+            })
+            .catch(error => {
+                console.error('Falling back to the static Malaysia list:', error);
+                malaysiaDatasetPromise = null;
+                return null;
+            });
+    }
+
+    return malaysiaDatasetPromise;
+}
+
+function datasetStates() {
+    if (malaysiaDataset && Array.isArray(malaysiaDataset.state)) {
+        return malaysiaDataset.state.map(s => s.name).sort();
+    }
+    return MALAYSIA_DATA.states;
+}
+
+function datasetCities(stateName) {
+    if (!stateName) return [];
+
+    if (malaysiaDataset && Array.isArray(malaysiaDataset.state)) {
+        const state = malaysiaDataset.state.find(s => s.name === stateName);
+        if (state && Array.isArray(state.city)) {
+            return state.city.map(c => c.name).sort();
+        }
+        return [];
+    }
+
+    return MALAYSIA_DATA.cities[stateName] || [];
+}
+
+function datasetPostcodes(stateName, cityName) {
+    if (!stateName || !cityName) return [];
+
+    if (malaysiaDataset && Array.isArray(malaysiaDataset.state)) {
+        const state = malaysiaDataset.state.find(s => s.name === stateName);
+        if (!state || !Array.isArray(state.city)) return [];
+        const city = state.city.find(c => c.name === cityName);
+        if (!city || !Array.isArray(city.postcode)) return [];
+        return [...city.postcode].sort();
+    }
+
+    return MALAYSIA_DATA.postcodes[cityName] || [];
+}
+
 // Static fallback data (no dynamic imports)
 const MALAYSIA_DATA = {
     states: [
@@ -381,8 +452,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Load states into dropdown
-function loadStates() {
-    const states = MALAYSIA_DATA.states;
+async function loadStates() {
+    await ensureMalaysiaDataset();
+
+    const states = datasetStates();
     const stateSelects = [
         document.getElementById('state'),
         document.getElementById('org_state')
@@ -411,7 +484,9 @@ function loadStates() {
 }
 
 // Load cities based on selected state
-function loadCities(stateId = 'state') {
+async function loadCities(stateId = 'state') {
+    await ensureMalaysiaDataset();
+
     const stateSelect = document.getElementById(stateId);
     const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
     const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
@@ -428,7 +503,7 @@ function loadCities(stateId = 'state') {
         }
         return;
     }
-    const cities = MALAYSIA_DATA.cities[selectedState] || [];
+    const cities = datasetCities(selectedState);
     while (citySelect.options.length > 1) {
         citySelect.remove(1);
     }
@@ -442,12 +517,14 @@ function loadCities(stateId = 'state') {
     const oldCity = citySelect.getAttribute('data-old-value');
     if (oldCity) {
         citySelect.value = oldCity;
-        loadPostcodes(stateId);
+        await loadPostcodes(stateId);
     }
 }
 
 // Load postcodes based on selected state and city
-function loadPostcodes(stateId = 'state') {
+async function loadPostcodes(stateId = 'state') {
+    await ensureMalaysiaDataset();
+
     const stateSelect = document.getElementById(stateId);
     const citySelect = document.getElementById(stateId === 'state' ? 'city' : 'org_city');
     const postcodeSelect = document.getElementById(stateId === 'state' ? 'postcode' : 'org_postcode');
@@ -461,7 +538,7 @@ function loadPostcodes(stateId = 'state') {
         }
         return;
     }
-    const postcodes = MALAYSIA_DATA.postcodes[selectedCity] || [];
+    const postcodes = datasetPostcodes(selectedState, selectedCity);
     while (postcodeSelect.options.length > 1) {
         postcodeSelect.remove(1);
     }
@@ -573,3 +650,90 @@ function combineAddress() {
     // Set the value of the hidden address field
     document.getElementById('address').value = combinedAddress.trim();
 }
+
+/*
+ * Copy text to the clipboard.
+ *
+ * navigator.clipboard only exists in a secure context. Over plain HTTP on
+ * anything other than localhost - which is how this app is served at
+ * http://sijil.test - the whole object is undefined, so
+ * `navigator.clipboard.writeText(...)` throws a TypeError on the spot. Call sites
+ * that chained a .catch() onto it never saw that error, because there was no
+ * promise to reject: the throw happened while evaluating the expression. The
+ * button appeared to do nothing at all.
+ *
+ * So the availability check comes first, and the old textarea method is a real
+ * fallback rather than an unreachable one.
+ *
+ * Returns a promise resolving to true when the text reached the clipboard.
+ */
+window.copyToClipboard = async function (text) {
+    const value = String(text ?? '');
+
+    if (!value) {
+        return false;
+    }
+
+    if (window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+            await navigator.clipboard.writeText(value);
+
+            return true;
+        } catch {
+            // Permission refused or the document is not focused. Fall through.
+        }
+    }
+
+    return legacyCopy(value);
+};
+
+function legacyCopy(value) {
+    const textarea = document.createElement('textarea');
+
+    textarea.value = value;
+    textarea.setAttribute('readonly', '');
+
+    // Off-screen but still selectable. display:none or visibility:hidden would
+    // make the selection empty and the copy a no-op.
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '1px';
+    textarea.style.height = '1px';
+    textarea.style.padding = '0';
+    textarea.style.border = 'none';
+    textarea.style.opacity = '0';
+
+    document.body.appendChild(textarea);
+
+    try {
+        textarea.focus();
+        textarea.select();
+        // iOS ignores select() on a readonly field but honours a range.
+        textarea.setSelectionRange(0, value.length);
+
+        return document.execCommand('copy');
+    } catch {
+        return false;
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+/**
+ * Copy and tell the user what happened.
+ *
+ * When both methods fail there is nothing more the page can do, so the text is
+ * put in a prompt where it can be selected by hand instead of being lost.
+ */
+window.copyWithFeedback = async function (text, successMessage) {
+    if (await window.copyToClipboard(text)) {
+        alert(successMessage || 'Copied to clipboard.');
+
+        return true;
+    }
+
+    window.prompt('Copying was blocked by the browser. Copy this manually:', String(text ?? ''));
+
+    return false;
+};

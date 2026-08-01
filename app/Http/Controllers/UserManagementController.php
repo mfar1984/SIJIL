@@ -87,6 +87,19 @@ class UserManagementController extends Controller
      */
     public function store(Request $request)
     {
+        // users.email carries a database-level unique index, so an address held
+        // by a soft-deleted account cannot be reused. Say so plainly instead of
+        // showing a bare "already taken" error for an invisible record.
+        if ($request->filled('email')) {
+            $trashed = User::onlyTrashed()->where('email', $request->email)->first();
+
+            if ($trashed) {
+                return back()->withInput()->withErrors([
+                    'email' => "This email belongs to \"{$trashed->name}\", a user sitting in the Recycle Bin. Restore that user, or delete it permanently from Settings → Global Config → Recycle Bin to free up the email.",
+                ]);
+            }
+        }
+
         // Validate the request
         $request->validate([
             // Basic Information
@@ -385,11 +398,14 @@ class UserManagementController extends Controller
             ])
             ->log("User deleted: {$userName} ({$userEmail})");
         
-        // Delete the user
+        // Soft delete: the account can no longer sign in, but the record and
+        // everything it owns is kept and can be restored from the Recycle Bin.
         $user->delete();
         
-        return redirect()->route('user.management')
-            ->with('success', 'User deleted successfully!');
+        return redirect()->route('user.management')->with(
+            'success',
+            "{$userName} moved to Recycle Bin. The email {$userEmail} stays reserved until the record is permanently deleted from Settings → Global Config → Recycle Bin."
+        );
     }
     
     /**

@@ -4,17 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class HelpdeskTicket extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'ticket_id',
         'subject',
         'description',
         'user_id',
+        'pwa_participant_id',
         'category',
         'priority',
         'status',
@@ -100,10 +102,77 @@ class HelpdeskTicket extends Model
 
     /**
      * Get the user who created this ticket
+     *
+     * Null when the ticket came from the participant app. See pwaParticipant().
      */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The app participant who raised this ticket, when it did not come from the
+     * backend.
+     *
+     * A ticket carries exactly one author: either user_id or pwa_participant_id.
+     */
+    public function pwaParticipant()
+    {
+        return $this->belongsTo(PwaParticipant::class, 'pwa_participant_id');
+    }
+
+    /**
+     * Whether this ticket was raised from the participant app.
+     */
+    public function isFromApp(): bool
+    {
+        return $this->pwa_participant_id !== null;
+    }
+
+    /**
+     * Who raised the ticket, whichever table they live in.
+     *
+     * The views used to read $ticket->user->name directly, which is null for an app
+     * ticket.
+     */
+    public function getAuthorNameAttribute(): string
+    {
+        if ($this->isFromApp()) {
+            return $this->pwaParticipant->name ?? 'App participant';
+        }
+
+        return $this->user->name ?? 'Deleted account';
+    }
+
+    public function getAuthorEmailAttribute(): ?string
+    {
+        return $this->isFromApp()
+            ? ($this->pwaParticipant->email ?? null)
+            : ($this->user->email ?? null);
+    }
+
+    /**
+     * Where the ticket came from, for a badge in the list.
+     */
+    public function getAuthorSourceAttribute(): string
+    {
+        return $this->isFromApp() ? 'App' : 'Backend';
+    }
+
+    /**
+     * Tickets raised from the app.
+     */
+    public function scopeFromApp($query)
+    {
+        return $query->whereNotNull('pwa_participant_id');
+    }
+
+    /**
+     * Tickets raised from the backend by a user account.
+     */
+    public function scopeFromBackend($query)
+    {
+        return $query->whereNull('pwa_participant_id');
     }
 
     /**
@@ -135,8 +204,10 @@ class HelpdeskTicket extends Model
      */
     public function unreadMessagesCount($userId)
     {
+        // notAuthoredBy() rather than a bare `!=`, which skips app messages because
+        // their user_id is null. See HelpdeskMessage::scopeNotAuthoredBy().
         return $this->messages()
-            ->where('user_id', '!=', $userId)
+            ->notAuthoredBy($userId)
             ->where('is_read', false)
             ->count();
     }

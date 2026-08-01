@@ -16,7 +16,23 @@
                 </div>
                 <p class="text-xs text-gray-500 mt-1 ml-8">View detailed information about this campaign</p>
             </div>
-            <div class="flex space-x-3">
+            <div class="flex items-center space-x-3">
+                {{-- Send now. The process route and its permission already existed but
+                     nothing linked to them, so a draft could never be started. --}}
+                @if($campaign->isSendable())
+                    @can('campaigns.update')
+                    <form method="POST" action="{{ route('campaign.process', ['campaign' => $campaign->id]) }}"
+                          onsubmit="return confirm('Send this campaign now? This cannot be undone.')"
+                          class="inline-block">
+                        @csrf
+                        <button type="submit"
+                                class="h-9 px-3 rounded text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 inline-flex items-center shadow-sm">
+                            <span class="material-icons-outlined text-sm mr-1">send</span>
+                            Send now
+                        </button>
+                    </form>
+                    @endcan
+                @endif
                 @can('campaigns.update')
                 <a href="{{ route('campaign.edit', ['campaign' => $campaign->id]) }}" class="p-1 bg-yellow-50 rounded hover:bg-yellow-100 border border-yellow-100" title="Edit">
                     <span class="material-icons-outlined text-yellow-600 text-xs">edit</span>
@@ -183,11 +199,11 @@
                                 <div class="email-body">
                                     {!! \App\Helpers\EmailHelper::personalizeContent($campaign->content['body'] ?? '', ['name' => 'Contoh Nama', 'email' => 'contoh@email.com']) !!}
                                 </div>
-                                @if(isset($campaign->content['include_unsubscribe']) && $campaign->content['include_unsubscribe'])
-                                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
-                                    <p>If you no longer wish to receive these emails, you can <a href="#" style="color: #999; text-decoration: underline;">unsubscribe</a>.</p>
-                                </div>
-                                @endif
+                                {{-- The unsubscribe footer used to be previewed here from
+                                     content['include_unsubscribe']. The sender never added
+                                     one, so the preview showed a link recipients would
+                                     not receive. The setting is gone rather than kept as
+                                     a promise nothing keeps. --}}
                             </div>
                         </div>
                     </div>

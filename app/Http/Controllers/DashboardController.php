@@ -188,7 +188,10 @@ class DashboardController extends Controller
         // Event status distribution data
         
         // Get campaign performance data (open rates, click rates)
+        // whereNull('deleted_at'): raw query builder bypasses soft deletes, so
+        // records sitting in the Recycle Bin are excluded explicitly.
         $campaignPerformance = DB::table('campaigns')
+            ->whereNull('deleted_at')
             ->where('campaign_type', 'email')
             ->whereIn('status', ['completed', 'running', 'scheduled'])
             ->when(!$isAdmin, function($q) {
@@ -213,12 +216,19 @@ class DashboardController extends Controller
         
         // Get attendance rate by event
         $attendanceRateByEvent = DB::table('events')
-            ->leftJoin('participants', 'events.id', '=', 'participants.event_id')
-            ->leftJoin('attendances', 'events.id', '=', 'attendances.event_id')
+            ->leftJoin('participants', function($join) {
+                $join->on('events.id', '=', 'participants.event_id')
+                     ->whereNull('participants.deleted_at');
+            })
+            ->leftJoin('attendances', function($join) {
+                $join->on('events.id', '=', 'attendances.event_id')
+                     ->whereNull('attendances.deleted_at');
+            })
             ->leftJoin('attendance_records', function($join) {
                 $join->on('attendance_records.attendance_id', '=', 'attendances.id')
                      ->on('attendance_records.participant_id', '=', 'participants.id');
             })
+            ->whereNull('events.deleted_at')
             ->when(!$isAdmin, function($q) {
                 $q->where('events.user_id', Auth::id());
             })
@@ -747,9 +757,11 @@ class DashboardController extends Controller
 
         // Stage 4: Certified (from certificates table)
         $certifiedQuery = DB::table('certificates')
+            ->whereNull('certificates.deleted_at')
             ->whereBetween('certificates.created_at', [$startDate, $endDate]);
         if (!$isAdmin) {
             $certifiedQuery->join('events', 'certificates.event_id', '=', 'events.id')
+                ->whereNull('events.deleted_at')
                 ->where('events.user_id', $userId);
         }
         $certified = $certifiedQuery->distinct('certificates.participant_id')->count('certificates.participant_id');
@@ -830,16 +842,24 @@ class DashboardController extends Controller
         $userId = Auth::id();
 
         $query = DB::table('events')
-            ->leftJoin('participants', 'events.id', '=', 'participants.event_id')
-            ->leftJoin('attendances', 'events.id', '=', 'attendances.event_id')
+            ->leftJoin('participants', function($join) {
+                $join->on('events.id', '=', 'participants.event_id')
+                     ->whereNull('participants.deleted_at');
+            })
+            ->leftJoin('attendances', function($join) {
+                $join->on('events.id', '=', 'attendances.event_id')
+                     ->whereNull('attendances.deleted_at');
+            })
             ->leftJoin('attendance_records', function($join) {
                 $join->on('attendance_records.attendance_id', '=', 'attendances.id')
                      ->on('attendance_records.participant_id', '=', 'participants.id');
             })
             ->leftJoin('certificates', function($join) {
                 $join->on('certificates.event_id', '=', 'events.id')
-                     ->on('certificates.participant_id', '=', 'participants.id');
+                     ->on('certificates.participant_id', '=', 'participants.id')
+                     ->whereNull('certificates.deleted_at');
             })
+            ->whereNull('events.deleted_at')
             ->whereBetween('events.created_at', [$startDate, $endDate]);
 
         if (!$isAdmin) {
@@ -1093,16 +1113,24 @@ class DashboardController extends Controller
         $userId = Auth::id();
 
         $query = DB::table('events')
-            ->leftJoin('participants', 'events.id', '=', 'participants.event_id')
-            ->leftJoin('attendances', 'events.id', '=', 'attendances.event_id')
+            ->leftJoin('participants', function($join) {
+                $join->on('events.id', '=', 'participants.event_id')
+                     ->whereNull('participants.deleted_at');
+            })
+            ->leftJoin('attendances', function($join) {
+                $join->on('events.id', '=', 'attendances.event_id')
+                     ->whereNull('attendances.deleted_at');
+            })
             ->leftJoin('attendance_records', function($join) {
                 $join->on('attendance_records.attendance_id', '=', 'attendances.id')
                      ->on('attendance_records.participant_id', '=', 'participants.id');
             })
             ->leftJoin('certificates', function($join) {
                 $join->on('certificates.event_id', '=', 'events.id')
-                     ->on('certificates.participant_id', '=', 'participants.id');
+                     ->on('certificates.participant_id', '=', 'participants.id')
+                     ->whereNull('certificates.deleted_at');
             })
+            ->whereNull('events.deleted_at')
             ->whereBetween('events.created_at', [$startDate, $endDate]);
 
         if (!$isAdmin) {

@@ -12,118 +12,206 @@ use Illuminate\Support\Facades\DB;
 
 class ReportsController extends Controller
 {
-    public function attendanceIndex(Request $request)
+    /**
+     * Event ids this account may report on.
+     */
+    private function scopedEventIds(): array
     {
-        // Query sessions (AttendanceSession) with event
-        $sessionsQuery = AttendanceSession::with(['attendance.event']);
-        
-        // Filter by user role - administrators see all, organizers see only their events
-        if (!auth()->user()->hasRole('Administrator')) {
-            $sessionsQuery->whereHas('attendance.event', function($q) {
-                $q->where('user_id', auth()->id());
-            });
-        }
+        return Event::when(! auth()->user()->hasRole('Administrator'),
+            fn ($q) => $q->where('user_id', auth()->id())
+        )->pluck('id')->all();
+    }
 
-        // Search functionality
+    /**
+     * Sessions matching the current filters, before paging.
+     *
+     * Shared by the page and the export so the CSV cannot disagree with the screen.
+     */
+    private function sessionQuery(Request $request, array $eventIds)
+    {
+        $query = AttendanceSession::query()
+            ->whereHas('attendance', fn ($q) => $q->whereIn('event_id', $eventIds));
+
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $sessionsQuery->whereHas('attendance.event', function($q) use ($searchTerm) {
+            $query->whereHas('attendance.event', function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', "%{$searchTerm}%")
                   ->orWhere('location', 'LIKE', "%{$searchTerm}%");
             });
         }
 
-        // Filter by event
         if ($request->filled('event_filter')) {
-            $sessionsQuery->whereHas('attendance', function($q) use ($request) {
-                $q->where('event_id', $request->event_filter);
-            });
+            $query->whereHas('attendance', fn ($q) => $q->where('event_id', $request->event_filter));
         }
 
-        // Filter by date range
+        // Backwards-looking ranges. These used to count forwards from today, so
+        // "This Week" asked for the next seven days and matched nothing.
         if ($request->filled('date_filter')) {
-            $today = now()->startOfDay();
-            switch ($request->date_filter) {
-                case 'today':
-                    $sessionsQuery->where('date', $today->format('Y-m-d'));
-                    break;
-                case 'week':
-                    $sessionsQuery->whereBetween('date', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
-                    break;
-                case 'month':
-                    $sessionsQuery->whereBetween('date', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
-                    break;
-                case 'past':
-                    $sessionsQuery->where('date', '<', $today->format('Y-m-d'));
-                    break;
-            }
+            match ($request->date_filter) {
+                'today' => $query->whereDate('date', now()->toDateString()),
+                'week' => $query->whereDate('date', '>=', now()->subDays(7)->toDateString()),
+                'month' => $query->whereDate('date', '>=', now()->startOfMonth()->toDateString()),
+                'upcoming' => $query->whereDate('date', '>', now()->toDateString()),
+                'past' => $query->whereDate('date', '<', now()->toDateString()),
+                default => null,
+            };
         }
 
-        // Filter by attendance rate
-        if ($request->filled('rate_filter')) {
-            // This will be handled after getting the sessions
-        }
-        
-        // Get total count for summary statistics
-        $totalSessionsCount = $sessionsQuery->count();
-        $sessionIds = $sessionsQuery->pluck('id');
-        
-        // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
-        $sessions = $sessionsQuery->orderBy('date', 'desc')->paginate($perPage);
+        return $query;
+    }
 
-        // Get events based on user role
-        if (auth()->user()->hasRole('Administrator')) {
-            $events = Event::orderBy('name')->get();
-        } else {
-            // Organizer only sees their events
-            $events = Event::where('user_id', auth()->id())->orderBy('name')->get();
-        }
+    /**
+     * Turn sessions into report rows.
+     *
+     * The counts come from two grouped queries rather than two queries per row. The
+     * previous version issued a participant count and a record count inside the row
+     * loop, so a page of ten sessions cost twenty extra round trips.
+     */
+    private function sessionRows($sessions)
+    {
+        $sessionIds = $sessions->pluck('id')->all();
+        $eventIds = $sessions->pluck('attendance.event_id')->filter()->unique()->all();
 
-        // Summary
-        $totalSessions = $totalSessionsCount;
-        $totalAttendees = AttendanceRecord::whereIn('attendance_session_id', $sessionIds)->distinct('participant_id')->count('participant_id');
-        
-        // Filter participants by user role
-        $participantsQuery = Participant::query();
-        if (!auth()->user()->hasRole('Administrator')) {
-            $userEventIds = Event::where('user_id', auth()->id())->pluck('id');
-            $participantsQuery->whereIn('event_id', $userEventIds);
-        }
-        
-        if ($request->filled('event_filter')) {
-            $participantsQuery->where('event_id', $request->event_filter);
-        }
-        
-        $totalRegistered = $participantsQuery->count();
-        $averageAttendanceRate = $totalRegistered > 0 ? round(($totalAttendees / $totalRegistered) * 100) : 0;
+        $registeredByEvent = Participant::whereIn('event_id', $eventIds)
+            ->selectRaw('event_id, COUNT(*) as total')
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
 
-        // Table data
-        $tableRows = $sessions->map(function($session) {
+        // 'present' only, matching what the summary counts. The two used to disagree:
+        // the summary counted every record regardless of status.
+        $attendedBySession = AttendanceRecord::whereIn('attendance_session_id', $sessionIds)
+            ->where('status', 'present')
+            ->selectRaw('attendance_session_id, COUNT(DISTINCT participant_id) as total')
+            ->groupBy('attendance_session_id')
+            ->pluck('total', 'attendance_session_id');
+
+        return $sessions->map(function ($session) use ($registeredByEvent, $attendedBySession) {
             $event = $session->attendance->event ?? null;
-            $registered = Participant::where('event_id', $event->id ?? 0)->count();
-            $attended = AttendanceRecord::where('attendance_session_id', $session->id)->where('status', 'present')->distinct('participant_id')->count('participant_id');
-            $rate = $registered > 0 ? round(($attended / $registered) * 100) : 0;
+            $registered = (int) ($registeredByEvent[$session->attendance->event_id ?? 0] ?? 0);
+            $attended = (int) ($attendedBySession[$session->id] ?? 0);
+
             return [
                 'id' => $session->id,
                 'event_name' => $event->name ?? '-',
+                'event_location' => $event->location ?? null,
                 'session_date' => $session->date,
-                'start_time' => $session->checkin_start_time,
-                'end_time' => $session->checkin_end_time,
+                'checkin_from' => $session->checkin_start_time,
+                'checkin_to' => $session->checkin_end_time,
+                'checkout_from' => $session->checkout_start_time,
+                'checkout_to' => $session->checkout_end_time,
                 'registered' => $registered,
                 'attended' => $attended,
-                'rate' => $rate,
+                'rate' => $registered > 0 ? round(($attended / $registered) * 100) : 0,
             ];
         });
+    }
+
+    public function attendanceIndex(Request $request)
+    {
+        $eventIds = $this->scopedEventIds();
+        $sessionQuery = $this->sessionQuery($request, $eventIds);
+
+        // Counted before paging, so the summary describes the whole filtered set.
+        $totalSessions = (clone $sessionQuery)->count();
+        $allSessionIds = (clone $sessionQuery)->pluck('id');
+
+        $sessions = $sessionQuery->with(['attendance:id,event_id', 'attendance.event:id,name,location'])
+            ->orderByDesc('date')
+            ->paginate($request->get('per_page', 10))
+            ->withQueryString();
+
+        $rows = $this->sessionRows($sessions->getCollection());
+
+        // The rate filter was read from the request and then thrown away, with a
+        // comment saying it would be handled later. It is applied here, to the rows
+        // that are on screen.
+        if ($request->filled('rate_filter')) {
+            $rows = $rows->filter(function ($row) use ($request) {
+                return match ($request->rate_filter) {
+                    'high' => $row['rate'] >= 75,
+                    'medium' => $row['rate'] >= 40 && $row['rate'] < 75,
+                    'low' => $row['rate'] < 40,
+                    default => true,
+                };
+            })->values();
+        }
+
+        $events = Event::whereIn('id', $eventIds)->orderBy('name')->get(['id', 'name']);
+
+        $totalAttendees = AttendanceRecord::whereIn('attendance_session_id', $allSessionIds)
+            ->where('status', 'present')
+            ->distinct()
+            ->count('participant_id');
+
+        $participantsQuery = Participant::whereIn('event_id', $eventIds);
+
+        if ($request->filled('event_filter')) {
+            $participantsQuery->where('event_id', $request->event_filter);
+        }
+
+        $totalRegistered = $participantsQuery->count();
+        $averageAttendanceRate = $totalRegistered > 0
+            ? round(($totalAttendees / $totalRegistered) * 100)
+            : 0;
+
+        $tableRows = $rows;
 
         return view('reports.attendance', compact(
             'events', 
             'tableRows', 
             'totalSessions', 
             'totalAttendees', 
-            'averageAttendanceRate', 
+            'averageAttendanceRate',
+            'totalRegistered',
             'sessions' // Pass the paginated sessions to the view
         ));
+    }
+
+    /**
+     * Export the filtered attendance sessions as CSV.
+     *
+     * This returned {"success":true,"message":"Export not implemented."} as raw JSON
+     * in the browser window, from a button that said Export.
+     */
+    public function attendanceExport(Request $request)
+    {
+        $eventIds = $this->scopedEventIds();
+
+        $sessions = $this->sessionQuery($request, $eventIds)
+            ->with(['attendance:id,event_id', 'attendance.event:id,name,location'])
+            ->orderByDesc('date')
+            ->get();
+
+        $rows = $this->sessionRows($sessions);
+
+        $filename = 'attendance-sessions-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'Event', 'Location', 'Session Date',
+                'Check-in From', 'Check-in To', 'Check-out From', 'Check-out To',
+                'Registered', 'Attended', 'Attendance Rate %',
+            ]);
+
+            foreach ($rows as $row) {
+                fputcsv($handle, [
+                    $row['event_name'],
+                    $row['event_location'],
+                    $row['session_date'],
+                    $row['checkin_from'],
+                    $row['checkin_to'],
+                    $row['checkout_from'],
+                    $row['checkout_to'],
+                    $row['registered'],
+                    $row['attended'],
+                    $row['rate'],
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function attendanceShow($id)
@@ -143,12 +231,24 @@ class ReportsController extends Controller
         // Get all registered participants for this event with their attendance records (if any)
         $eventId = $session->attendance->event_id ?? 0;
         $participants = \App\Models\Participant::where('event_id', $eventId)->get();
-        
-        $records = $participants->map(function($participant) use ($id) {
-            $attendanceRecord = AttendanceRecord::where('attendance_session_id', $id)
-                ->where('participant_id', $participant->id)
-                ->first();
-            
+
+        // One query for the whole session instead of one per participant. On an event
+        // with 345 registrations that loop issued 345 round trips before the page
+        // could render.
+        $recordsByParticipant = AttendanceRecord::where('attendance_session_id', $id)
+            ->get()
+            ->keyBy('participant_id');
+
+        // Certificates for the same set, also in one query. The view used to look each
+        // one up inside its row loop.
+        $certificateByParticipant = \App\Models\Certificate::where('event_id', $eventId)
+            ->whereIn('participant_id', $participants->pluck('id'))
+            ->get()
+            ->keyBy('participant_id');
+
+        $records = $participants->map(function ($participant) use ($recordsByParticipant, $certificateByParticipant) {
+            $attendanceRecord = $recordsByParticipant->get($participant->id);
+
             // Create a unified record object
             return (object) [
                 'id' => $attendanceRecord->id ?? null,
@@ -158,6 +258,7 @@ class ReportsController extends Controller
                 'checkout_time' => $attendanceRecord->checkout_time ?? null,
                 'status' => $attendanceRecord ? $attendanceRecord->status : 'absent',
                 'scanned_by_device' => $attendanceRecord->scanned_by_device ?? null,
+                'certificate' => $certificateByParticipant->get($participant->id),
             ];
         });
         
@@ -215,6 +316,7 @@ class ReportsController extends Controller
             'total_attendees' => 0,
             'avg_age' => 0,
             'first_time' => 0,
+            'returning' => 0,
             'first_time_percent' => 0,
         ];
 
@@ -364,9 +466,31 @@ class ReportsController extends Controller
                     }
                 }
                 
-                // Estimate first-time attendees (placeholder - in real app, would check against historical data)
-                $demographics['first_time'] = round($demographics['total_attendees'] * 0.3); // Assuming 30% are first-time
-                $demographics['first_time_percent'] = round(($demographics['first_time'] / $demographics['total_attendees']) * 100);
+                // First-time attendees, counted rather than guessed. This used to be
+                // total * 0.3 with the comment "Assuming 30% are first-time", so the
+                // card always read 30% no matter who turned up.
+                //
+                // A person is new if this event is the only one their email appears
+                // against. Emails are how the same person is recognised across events
+                // everywhere else in the system.
+                $attendeeEmails = $records->where('status', 'present')
+                    ->pluck('participant.email')
+                    ->filter()
+                    ->unique();
+
+                $eventId = $session->attendance->event_id ?? 0;
+
+                $returning = $attendeeEmails->isEmpty() ? 0 : Participant::whereIn('email', $attendeeEmails)
+                    ->where('event_id', '!=', $eventId)
+                    ->distinct()
+                    ->pluck('email')
+                    ->count();
+
+                $demographics['first_time'] = max(0, $attendeeEmails->count() - $returning);
+                $demographics['returning'] = $returning;
+                $demographics['first_time_percent'] = $attendeeEmails->count() > 0
+                    ? round(($demographics['first_time'] / $attendeeEmails->count()) * 100)
+                    : 0;
             }
             
             // Calculate attendance rate
@@ -400,12 +524,6 @@ class ReportsController extends Controller
         }
         
         return view('reports.attendance-show', compact('session', 'records', 'analytics', 'timelineData', 'demographics'));
-    }
-
-    public function attendanceExport(Request $request)
-    {
-        // Export logic (CSV/Excel) - placeholder
-        return response()->json(['success' => true, 'message' => 'Export not implemented.']);
     }
 
     public function attendanceDelete($id)

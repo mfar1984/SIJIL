@@ -90,54 +90,46 @@
                 </div>
             </div>
             
-            <!-- Show Entries & Filter Row -->
-            <div class="mb-4">
-                <form method="GET" action="{{ route('settings.log-activity') }}" class="flex flex-wrap gap-2 items-center justify-between">
-                    <!-- Show Entries Dropdown -->
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-600 font-medium">Show</span>
-                        <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
-                            <option value="10" @if(request('per_page', 10) == 10) selected @endif>10</option>
-                            <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
-                            <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
-                            <option value="100" @if(request('per_page') == 100) selected @endif>100</option>
-                        </select>
-                        <span class="text-xs text-gray-600">entries per page</span>
-                    </div>
-                    
-                    <!-- Search & Filter Controls -->
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search description, log name, event..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
-                        <select name="log_name" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[140px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                            <option value="">All Log Names</option>
-                            @foreach($logNames as $logName)
-                                <option value="{{ $logName }}" @if(request('log_name') == $logName) selected @endif>{{ $logName }}</option>
-                            @endforeach
-                        </select>
-                        <select name="event" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                            <option value="">All Events</option>
-                            @foreach($events as $event)
-                                <option value="{{ $event }}" @if(request('event') == $event) selected @endif>{{ $event }}</option>
-                            @endforeach
-                        </select>
-                        <select name="date_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                            <option value="">All Dates</option>
-                            <option value="today" @if(request('date_filter') == 'today') selected @endif>Today</option>
-                            <option value="week" @if(request('date_filter') == 'week') selected @endif>This Week</option>
-                            <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
-                            <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
-                        </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
-                            </svg>
-                        </button>
-                        @if(request('search') || request('log_name') || request('event') || request('date_filter'))
-                            <a href="{{ route('settings.log-activity') }}?per_page={{ request('per_page', 10) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
-                        @endif
-                    </div>
-                </form>
-            </div>
+            {{-- Search takes the remaining space; the filters keep their own width. --}}
+            <form method="GET" action="{{ route('settings.log-activity') }}" class="flex flex-wrap items-center gap-2 mb-4">
+                <input type="text" name="search" id="searchInput" value="{{ request('search') }}"
+                       placeholder="Search description, log name, event..."
+                       class="flex-1 min-w-[12rem] h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+
+                <select name="log_name" onchange="this.form.submit()"
+                        class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[11rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                    <option value="">All Log Names</option>
+                    @foreach($logNames as $logName)
+                        <option value="{{ $logName }}" @if(request('log_name') == $logName) selected @endif>{{ $logName }}</option>
+                    @endforeach
+                </select>
+
+                <select name="event" onchange="this.form.submit()"
+                        class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[9rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                    <option value="">All Events</option>
+                    @foreach($events as $event)
+                        <option value="{{ $event }}" @if(request('event') == $event) selected @endif>{{ $event }}</option>
+                    @endforeach
+                </select>
+
+                <select name="date_filter" onchange="this.form.submit()"
+                        class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[9rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                    <option value="">All Dates</option>
+                    <option value="today" @if(request('date_filter') == 'today') selected @endif>Today</option>
+                    <option value="week" @if(request('date_filter') == 'week') selected @endif>This Week</option>
+                    <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
+                    <option value="past" @if(request('date_filter') == 'past') selected @endif>Past</option>
+                </select>
+
+                <button type="submit"
+                        class="h-9 px-3 bg-primary-DEFAULT hover:bg-primary-dark text-white rounded text-xs flex items-center shrink-0 transition-colors duration-200 ease-in-out" title="Search">
+                    <span class="material-icons-outlined text-xs">search</span>
+                </button>
+
+                @if(request('search') || request('log_name') || request('event') || request('date_filter'))
+                    <a href="{{ route('settings.log-activity') }}" class="text-xs text-gray-500 underline shrink-0">Reset</a>
+                @endif
+            </form>
             
             <!-- Search Results Summary -->
             @if(request('search') || request('log_name') || request('event') || request('date_filter'))
@@ -215,7 +207,7 @@
             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-2 sm:mb-0 text-xs text-gray-500">
                     @if($activities->total() > 0)
-                        Showing <span class="font-medium">{{ $activities->firstItem() }}</span> to <span class="font-medium">{{ $activities->lastItem() }}</span> of <span class="font-medium">{{ $activities->total() }}</span> entries ({{ request('per_page', 10) }} per page)
+                        Showing <span class="font-medium">{{ $activities->firstItem() }}</span> to <span class="font-medium">{{ $activities->lastItem() }}</span> of <span class="font-medium">{{ $activities->total() }}</span> entries
                     @else
                         Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> entries
                     @endif

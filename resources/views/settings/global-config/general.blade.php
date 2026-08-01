@@ -386,13 +386,13 @@
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center gap-1">
-                        <input type="hidden" name="enable_error_reporting" value="0">
+                        <input type="hidden" name="error_reporting" value="0">
                         <input 
                             type="checkbox" 
-                            name="enable_error_reporting"
+                            name="error_reporting"
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                            {{ (old('enable_error_reporting', $config->enable_error_reporting ?? true)) ? 'checked' : '' }}
+                            {{ (old('error_reporting', $config->error_reporting ?? true)) ? 'checked' : '' }}
                         >
                         <span class="ml-2 text-xs text-gray-700">Enable system error reporting</span>
                         <div class="tooltip-wrapper" x-data="{ show: false }">
@@ -413,13 +413,13 @@
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center gap-1">
-                        <input type="hidden" name="enable_activity_logging" value="0">
+                        <input type="hidden" name="activity_logging" value="0">
                         <input 
                             type="checkbox" 
-                            name="enable_activity_logging"
+                            name="activity_logging"
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                            {{ (old('enable_activity_logging', $config->enable_activity_logging ?? true)) ? 'checked' : '' }}
+                            {{ (old('activity_logging', $config->activity_logging ?? true)) ? 'checked' : '' }}
                         >
                         <span class="ml-2 text-xs text-gray-700">Enable activity logging</span>
                         <div class="tooltip-wrapper" x-data="{ show: false }">
@@ -560,13 +560,13 @@
                 <div class="md:w-40"></div>
                 <div class="flex-1">
                     <label class="flex items-center gap-1">
-                        <input type="hidden" name="auto_send_confirmation_emails" value="0">
+                        <input type="hidden" name="auto_confirmation_emails" value="0">
                         <input 
                             type="checkbox" 
-                            name="auto_send_confirmation_emails"
+                            name="auto_confirmation_emails"
                             value="1"
                             class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
-                            {{ (old('auto_send_confirmation_emails', $config->auto_send_confirmation_emails ?? true)) ? 'checked' : '' }}
+                            {{ (old('auto_confirmation_emails', $config->auto_confirmation_emails ?? true)) ? 'checked' : '' }}
                         >
                         <span class="ml-2 text-xs text-gray-700">Automatically send confirmation emails</span>
                     </label>

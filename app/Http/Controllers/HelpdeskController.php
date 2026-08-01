@@ -455,11 +455,14 @@ class HelpdeskController extends Controller
             }
             
             // Recent messages from tickets assigned to this admin
+            // notAuthoredBy() instead of a bare `!=`: an app participant's message has
+            // a null user_id, and NULL != 1 is NULL in SQL, so those messages were
+            // filtered out and never reached this list.
             $messages = HelpdeskMessage::whereHas('ticket', function($query) use ($user) {
                 $query->where('assigned_to', $user->id)
                       ->where('status', '!=', 'closed');
             })
-            ->where('user_id', '!=', $user->id)
+            ->notAuthoredBy($user->id)
             ->where('is_internal', false)
             ->where('created_at', '>', now()->subDays(7))
             ->latest()
@@ -487,7 +490,7 @@ class HelpdeskController extends Controller
             // User's tickets with unread messages
             $tickets = HelpdeskTicket::where('user_id', $user->id)
                 ->whereHas('messages', function($query) use ($user) {
-                    $query->where('user_id', '!=', $user->id)
+                    $query->notAuthoredBy($user->id)
                           ->where('is_read', false)
                           ->where('is_internal', false);
                 })
@@ -496,7 +499,7 @@ class HelpdeskController extends Controller
             
             foreach ($tickets as $ticket) {
                 $lastMessage = $ticket->messages()
-                    ->where('user_id', '!=', $user->id)
+                    ->notAuthoredBy($user->id)
                     ->where('is_internal', false)
                     ->latest()
                     ->first();
@@ -569,7 +572,7 @@ class HelpdeskController extends Controller
             HelpdeskMessage::whereHas('ticket', function($query) use ($user) {
                 $query->where('assigned_to', $user->id);
             })
-            ->where('user_id', '!=', $user->id)
+            ->notAuthoredBy($user->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
             
@@ -579,7 +582,7 @@ class HelpdeskController extends Controller
             HelpdeskMessage::whereHas('ticket', function($query) use ($user) {
                 $query->where('user_id', $user->id);
             })
-            ->where('user_id', '!=', $user->id)
+            ->notAuthoredBy($user->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
         }

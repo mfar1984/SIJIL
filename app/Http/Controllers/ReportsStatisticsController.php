@@ -2,684 +2,490 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Certificate;
 use App\Models\Event;
 use App\Models\Participant;
-use App\Models\Certificate;
-use App\Models\AttendanceRecord;
-use App\Models\AttendanceSession;
-use App\Models\Attendance;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
+/**
+ * Event statistics.
+ *
+ * Rewritten. The previous version had two structural problems.
+ *
+ * It called paginate() on the event query and then called count() and pluck() on
+ * that same builder afterwards, so the limit and offset were still attached: every
+ * summary card described only the rows on the current page, and "Total Events" read
+ * 0 from page two onwards.
+ *
+ * And it computed attendance with four levels of nested loops - events, then
+ * attendances, then sessions, then a count per session - repeated four times over
+ * for the current period, the previous period, five event types and a top-events
+ * list, plus twelve more count() calls for the monthly chart. Everything here is
+ * grouped aggregates instead.
+ *
+ * The date range selects events by start_date. Every figure on the page then
+ * describes that set of events, which is the only reading that stays coherent when
+ * participants, certificates and sessions all carry dates of their own.
+ */
 class ReportsStatisticsController extends Controller
 {
     /**
-     * Display the statistics dashboard
+     * Ranges offered by the filter, in days back from today.
      */
+    private const RANGES = [
+        'last_30' => 30,
+        'last_90' => 90,
+        'last_6_months' => 182,
+        'last_year' => 365,
+        'all' => null,
+    ];
+
     public function index(Request $request)
     {
-        // Get filter parameters
-        $dateFilter = $request->input('date_filter', 'last_30');
-        $eventType = $request->input('event_type');
-        $organizerId = $request->input('organizer');
-        
-        // Set date range based on filter
-        $startDate = null;
-        $endDate = Carbon::now();
-        
-        switch ($dateFilter) {
-            case 'last_30':
-                $startDate = Carbon::now()->subDays(30);
-                break;
-            case 'last_90':
-                $startDate = Carbon::now()->subDays(90);
-                break;
-            case 'last_6_months':
-                $startDate = Carbon::now()->subMonths(6);
-                break;
-            case 'last_year':
-                $startDate = Carbon::now()->subYear();
-                break;
-            case 'custom':
-                // Custom date range would be handled with additional parameters
-                if ($request->has('start_date') && $request->has('end_date')) {
-                    $startDate = Carbon::parse($request->input('start_date'));
-                    $endDate = Carbon::parse($request->input('end_date'));
-                } else {
-                    $startDate = Carbon::now()->subDays(30); // Default to last 30 days
-                }
-                break;
-            default:
-                $startDate = Carbon::now()->subDays(30);
-        }
-        
-        // Build event query with filters
-        $eventsQuery = Event::query();
-        
-        // Filter by user role - administrators see all, organizers see only their events
-        if (!auth()->user()->hasRole('Administrator')) {
-            $eventsQuery->where('user_id', auth()->id());
-            
-            // Force organizer filter to current user for non-admin users
-            $organizerId = auth()->id();
-        }
-        
-        // Search functionality
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $eventsQuery->where(function($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('location', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
-            });
-        }
-        
-        if ($startDate && $endDate) {
-            $eventsQuery->whereBetween('start_date', [$startDate, $endDate]);
-        }
-        
-        if ($eventType) {
-            // Get all keywords for the selected event type
-            $keywords = $this->getKeywordsForEventType($eventType);
-            
-            // Build a query that checks if the event name contains any of the keywords
-            $eventsQuery->where(function($query) use ($keywords) {
-                foreach ($keywords as $keyword) {
-                    $query->orWhere('name', 'like', "%{$keyword}%");
-                }
-            });
-        }
-        
-        if ($organizerId) {
-            $eventsQuery->where('user_id', $organizerId);
-        }
-        
-        // Filter by status
-        if ($request->filled('status_filter')) {
-            $eventsQuery->where('status', $request->status_filter);
-        }
-        
-        // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 5);
-        $events = $eventsQuery->orderBy('start_date', 'desc')->paginate($perPage);
-        
-        // Get previous period for comparison
-        $prevPeriodStart = (clone $startDate)->subDays($startDate->diffInDays($endDate));
-        $prevPeriodEnd = (clone $startDate)->subDay();
-        
-        // Get event count statistics
-        $totalEvents = $eventsQuery->count();
-        $prevPeriodEventsQuery = Event::whereBetween('start_date', [$prevPeriodStart, $prevPeriodEnd]);
+        [$start, $end, $rangeLabel] = $this->resolveRange($request);
 
-        // Filter previous period events by user role
-        if (!auth()->user()->hasRole('Administrator')) {
-            $prevPeriodEventsQuery->where('user_id', auth()->id());
+        $eventQuery = $this->eventQuery($request, $start, $end);
+
+        // Aggregates come from their own clone, before any paging is applied.
+        $eventIds = (clone $eventQuery)->pluck('id')->all();
+        $totals = $this->totalsFor($eventIds);
+
+        // The same measurements over the window immediately before this one, so the
+        // change is a real comparison rather than a placeholder.
+        $previous = null;
+
+        if ($start && $end) {
+            $length = $start->diffInDays($end) + 1;
+            $prevEnd = (clone $start)->subDay();
+            $prevStart = (clone $prevEnd)->subDays($length - 1);
+
+            $prevIds = $this->eventQuery($request, $prevStart, $prevEnd)->pluck('id')->all();
+            $previous = $this->totalsFor($prevIds);
+            $previous['range'] = $prevStart->format('j M Y') . ' – ' . $prevEnd->format('j M Y');
         }
 
-        if ($eventType) {
-            // Get all keywords for the selected event type
-            $keywords = $this->getKeywordsForEventType($eventType);
-            
-            // Build a query that checks if the event name contains any of the keywords
-            $prevPeriodEventsQuery->where(function($query) use ($keywords) {
-                foreach ($keywords as $keyword) {
-                    $query->orWhere('name', 'like', "%{$keyword}%");
-                }
-            });
-        }
+        $sort = in_array($request->get('sort'), ['participants', 'certificates', 'coverage', 'attendance', 'date'], true)
+            ? $request->get('sort')
+            : 'participants';
 
-        if ($organizerId) {
-            $prevPeriodEventsQuery->where('user_id', $organizerId);
-        }
-
-        $prevPeriodEventsCount = $prevPeriodEventsQuery->count();
-        
-        $eventPercentChange = $prevPeriodEventsCount > 0 
-            ? round((($totalEvents - $prevPeriodEventsCount) / $prevPeriodEventsCount) * 100) 
-            : 100;
-        
-        // Get participant count statistics
-        $eventIds = $eventsQuery->pluck('id')->toArray();
-        $totalParticipants = Participant::whereIn('event_id', $eventIds)->count();
-        
-        $prevPeriodEventIdsQuery = Event::whereBetween('start_date', [$prevPeriodStart, $prevPeriodEnd]);
-
-        // Filter previous period events by user role
-        if (!auth()->user()->hasRole('Administrator')) {
-            $prevPeriodEventIdsQuery->where('user_id', auth()->id());
-        }
-
-        if ($eventType) {
-            // Get all keywords for the selected event type
-            $keywords = $this->getKeywordsForEventType($eventType);
-            
-            // Build a query that checks if the event name contains any of the keywords
-            $prevPeriodEventIdsQuery->where(function($query) use ($keywords) {
-                foreach ($keywords as $keyword) {
-                    $query->orWhere('name', 'like', "%{$keyword}%");
-                }
-            });
-        }
-
-        if ($organizerId) {
-            $prevPeriodEventIdsQuery->where('user_id', $organizerId);
-        }
-
-        $prevPeriodEventIds = $prevPeriodEventIdsQuery->pluck('id')->toArray();
-        
-        $prevPeriodParticipantsCount = Participant::whereIn('event_id', $prevPeriodEventIds)->count();
-        
-        $participantPercentChange = $prevPeriodParticipantsCount > 0 
-            ? round((($totalParticipants - $prevPeriodParticipantsCount) / $prevPeriodParticipantsCount) * 100) 
-            : 100;
-        
-        // Get certificate count statistics
-        $totalCertificates = Certificate::whereIn('event_id', $eventIds)->count();
-        
-        $prevPeriodCertificatesCount = Certificate::whereIn('event_id', $prevPeriodEventIds)->count();
-        
-        $certificatePercentChange = $prevPeriodCertificatesCount > 0 
-            ? round((($totalCertificates - $prevPeriodCertificatesCount) / $prevPeriodCertificatesCount) * 100) 
-            : 100;
-        
-        // Calculate average attendance rate
-        $attendanceRates = [];
-        $totalAttendanceRate = 0;
-        $eventCount = 0;
-        
-        foreach ($eventIds as $eventId) {
-            $attendances = Attendance::where('event_id', $eventId)->get();
-            
-            foreach ($attendances as $attendance) {
-                $sessions = AttendanceSession::where('attendance_id', $attendance->id)->get();
-                
-                foreach ($sessions as $session) {
-                    $registered = Participant::where('event_id', $eventId)->count();
-                    $attended = AttendanceRecord::where('attendance_session_id', $session->id)
-                        ->where('status', 'present')
-                        ->distinct('participant_id')
-                        ->count('participant_id');
-                    
-                    if ($registered > 0) {
-                        $rate = round(($attended / $registered) * 100);
-                        $attendanceRates[] = $rate;
-                        $totalAttendanceRate += $rate;
-                        $eventCount++;
-                    }
-                }
-            }
-        }
-        
-        $avgAttendanceRate = $eventCount > 0 ? round($totalAttendanceRate / $eventCount) : 0;
-        
-        // Calculate previous period attendance rate
-        $prevAttendanceRates = [];
-        $prevTotalAttendanceRate = 0;
-        $prevEventCount = 0;
-        
-        foreach ($prevPeriodEventIds as $eventId) {
-            $attendances = Attendance::where('event_id', $eventId)->get();
-            
-            foreach ($attendances as $attendance) {
-                $sessions = AttendanceSession::where('attendance_id', $attendance->id)->get();
-                
-                foreach ($sessions as $session) {
-                    $registered = Participant::where('event_id', $eventId)->count();
-                    $attended = AttendanceRecord::where('attendance_session_id', $session->id)
-                        ->where('status', 'present')
-                        ->distinct('participant_id')
-                        ->count('participant_id');
-                    
-                    if ($registered > 0) {
-                        $rate = round(($attended / $registered) * 100);
-                        $prevAttendanceRates[] = $rate;
-                        $prevTotalAttendanceRate += $rate;
-                        $prevEventCount++;
-                    }
-                }
-            }
-        }
-        
-        $prevAvgAttendanceRate = $prevEventCount > 0 ? round($prevTotalAttendanceRate / $prevEventCount) : 0;
-        
-        $attendanceRatePercentChange = $prevAvgAttendanceRate > 0 
-            ? round((($avgAttendanceRate - $prevAvgAttendanceRate) / $prevAvgAttendanceRate) * 100) 
-            : 0;
-        
-        // Get events by month for chart
-        $monthlyEvents = [];
-        $currentYear = Carbon::now()->year;
-
-        for ($i = 1; $i <= 12; $i++) {
-            $monthStart = Carbon::createFromDate($currentYear, $i, 1)->startOfMonth();
-            $monthEnd = Carbon::createFromDate($currentYear, $i, 1)->endOfMonth();
-            
-            $monthlyQuery = Event::whereBetween('start_date', [$monthStart, $monthEnd]);
-            
-            // Filter monthly events by user role
-            if (!auth()->user()->hasRole('Administrator')) {
-                $monthlyQuery->where('user_id', auth()->id());
-            }
-            
-            if ($eventType) {
-                // Get all keywords for the selected event type
-                $keywords = $this->getKeywordsForEventType($eventType);
-                
-                // Build a query that checks if the event name contains any of the keywords
-                $monthlyQuery->where(function($query) use ($keywords) {
-                    foreach ($keywords as $keyword) {
-                        $query->orWhere('name', 'like', "%{$keyword}%");
-                    }
-                });
-            }
-            
-            if ($organizerId) {
-                $monthlyQuery->where('user_id', $organizerId);
-            }
-            
-            $count = $monthlyQuery->count();
-            
-            $monthlyEvents[$i] = [
-                'month' => $monthStart->format('M'),
-                'count' => $count
-            ];
-        }
-
-        // Instead of using event types from database, we'll categorize events by their name
-        // since there's no 'type' column in the events table
-        $eventTypes = ['Conference', 'Workshop', 'Training', 'Seminar', 'Gaming'];
-
-        // Get attendance rate by event category
-        $attendanceByType = [];
-
-        foreach ($eventTypes as $type) {
-            // Get all keywords for this event type
-            $keywords = $this->getKeywordsForEventType($type);
-            
-            // Find events whose names contain any of the keywords
-            $typeEventsQuery = Event::query();
-            
-            // Filter by user role
-            if (!auth()->user()->hasRole('Administrator')) {
-                $typeEventsQuery->where('user_id', auth()->id());
-            }
-            
-            if (!empty($keywords)) {
-                $typeEventsQuery->where(function($query) use ($keywords) {
-                    foreach ($keywords as $keyword) {
-                        $query->orWhere('name', 'like', "%{$keyword}%");
-                    }
-                });
-            }
-            
-            if ($startDate && $endDate) {
-                $typeEventsQuery->whereBetween('start_date', [$startDate, $endDate]);
-            }
-            
-            if ($organizerId) {
-                $typeEventsQuery->where('user_id', $organizerId);
-            }
-            
-            $typeEventIds = $typeEventsQuery->pluck('id')->toArray();
-            
-            $typeAttendanceRates = [];
-            $typeTotalAttendanceRate = 0;
-            $typeEventCount = 0;
-            
-            foreach ($typeEventIds as $eventId) {
-                $attendances = Attendance::where('event_id', $eventId)->get();
-                
-                foreach ($attendances as $attendance) {
-                    $sessions = AttendanceSession::where('attendance_id', $attendance->id)->get();
-                    
-                    foreach ($sessions as $session) {
-                        $registered = Participant::where('event_id', $eventId)->count();
-                        $attended = AttendanceRecord::where('attendance_session_id', $session->id)
-                            ->where('status', 'present')
-                            ->distinct('participant_id')
-                            ->count('participant_id');
-                        
-                        if ($registered > 0) {
-                            $rate = round(($attended / $registered) * 100);
-                            $typeAttendanceRates[] = $rate;
-                            $typeTotalAttendanceRate += $rate;
-                            $typeEventCount++;
-                        }
-                    }
-                }
-            }
-            
-            $typeAvgAttendanceRate = $typeEventCount > 0 ? round($typeTotalAttendanceRate / $typeEventCount) : 0;
-            
-            $attendanceByType[$type] = $typeAvgAttendanceRate;
-        }
-        
-        // Get top performing events
-        $topEvents = [];
-        
-        foreach ($events as $event) {
-            $registered = Participant::where('event_id', $event->id)->count();
-            $attended = 0;
-            $certificateCount = Certificate::where('event_id', $event->id)->count();
-            
-            $attendances = Attendance::where('event_id', $event->id)->get();
-            foreach ($attendances as $attendance) {
-                $sessions = AttendanceSession::where('attendance_id', $attendance->id)->get();
-                foreach ($sessions as $session) {
-                    $sessionAttended = AttendanceRecord::where('attendance_session_id', $session->id)
-                        ->where('status', 'present')
-                        ->distinct('participant_id')
-                        ->count('participant_id');
-                    $attended = max($attended, $sessionAttended); // Use highest attendance count
-                }
-            }
-            
-            $attendanceRate = $registered > 0 ? round(($attended / $registered) * 100) : 0;
-            
-            $topEvents[] = [
-                'id' => $event->id,
-                'name' => $event->name,
-                'date' => $event->start_date ? Carbon::parse($event->start_date)->format('d M Y') : 'N/A',
-                'type' => $this->determineEventType($event->name),
-                'participants' => $registered,
-                'attendance_rate' => $attendanceRate,
-                'certificates' => $certificateCount
-            ];
-        }
-        
-        // Get organizers for filter dropdown
-        // For administrators, show all organizers
-        // For organizers, only show themselves
-        if (auth()->user()->hasRole('Administrator')) {
-            $organizers = \App\Models\User::select(['id', 'name'])
-                ->whereIn('id', function($query) {
-                    $query->select('user_id')
-                        ->from('events')
-                        ->distinct();
-                })
-                ->get();
-        } else {
-            $organizers = \App\Models\User::select(['id', 'name'])
-                ->where('id', auth()->id())
-                ->get();
-        }
-
-        return view('reports.statistics', compact(
-            'events',
-            'totalEvents',
-            'eventPercentChange',
-            'totalParticipants',
-            'participantPercentChange',
-            'totalCertificates',
-            'certificatePercentChange',
-            'avgAttendanceRate',
-            'attendanceRatePercentChange',
-            'monthlyEvents',
-            'attendanceByType',
-            'topEvents',
-            'dateFilter',
-            'eventType',
-            'organizerId',
-            'organizers',
-            'eventTypes'
-        ));
+        return view('reports.statistics', [
+            'events' => $this->eventTable($eventIds, $sort, (int) $request->get('per_page', 10), $request),
+            'totals' => $totals,
+            'previous' => $previous,
+            'changes' => $this->changes($totals, $previous),
+            'registrationSeries' => $this->registrationSeries($eventIds),
+            'certificateSeries' => $this->certificateSeries($eventIds),
+            'participantsByEvent' => $this->participantsByEvent($eventIds),
+            'demographics' => $this->demographics($eventIds),
+            'coverageByEvent' => $this->coverageByEvent($eventIds),
+            'organizers' => auth()->user()->hasRole('Administrator')
+                ? User::whereIn('id', Event::distinct()->pluck('user_id'))->orderBy('name')->get(['id', 'name'])
+                : collect(),
+            'statuses' => Event::whereIn('id', $eventIds)->distinct()->pluck('status')->filter()->sort()->values(),
+            'rangeLabel' => $rangeLabel,
+            'sort' => $sort,
+        ]);
     }
 
     /**
-     * Export statistics (Top Events) as CSV using current filters
+     * The window the filter is asking for.
+     *
+     * @return array{0: ?Carbon, 1: ?Carbon, 2: string}
+     */
+    private function resolveRange(Request $request): array
+    {
+        $filter = $request->get('date_filter', 'last_year');
+
+        if ($filter === 'custom') {
+            $start = $request->filled('start_date')
+                ? Carbon::parse($request->start_date)->startOfDay()
+                : now()->subDays(30)->startOfDay();
+
+            $end = $request->filled('end_date')
+                ? Carbon::parse($request->end_date)->endOfDay()
+                : now()->endOfDay();
+
+            // A backwards range would silently match nothing.
+            if ($end->lt($start)) {
+                [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
+            }
+
+            return [$start, $end, $start->format('j M Y') . ' – ' . $end->format('j M Y')];
+        }
+
+        $days = self::RANGES[$filter] ?? 365;
+
+        if ($days === null) {
+            return [null, null, 'All time'];
+        }
+
+        $start = now()->subDays($days - 1)->startOfDay();
+        $end = now()->endOfDay();
+
+        return [$start, $end, $start->format('j M Y') . ' – ' . $end->format('j M Y')];
+    }
+
+    /**
+     * Events in scope for the current filters.
+     */
+    private function eventQuery(Request $request, ?Carbon $start, ?Carbon $end)
+    {
+        $query = Event::query();
+
+        if (! auth()->user()->hasRole('Administrator')) {
+            $query->where('user_id', auth()->id());
+        } elseif ($request->filled('organizer')) {
+            // The controller always read this parameter; the page never offered a
+            // control for it, so the filter was unreachable.
+            $query->where('user_id', $request->organizer);
+        }
+
+        if ($start && $end) {
+            $query->whereBetween('start_date', [$start->toDateString(), $end->toDateString()]);
+        }
+
+        if ($request->filled('search')) {
+            $term = $request->search;
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'LIKE', "%{$term}%")
+                    ->orWhere('location', 'LIKE', "%{$term}%")
+                    ->orWhere('description', 'LIKE', "%{$term}%");
+            });
+        }
+
+        if ($request->filled('status_filter')) {
+            $query->where('status', $request->status_filter);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Headline figures for a set of events, in four queries regardless of size.
+     */
+    private function totalsFor(array $eventIds): array
+    {
+        if (! $eventIds) {
+            return [
+                'events' => 0, 'participants' => 0, 'certificates' => 0,
+                'checked_in' => 0, 'sessions' => 0, 'attendance_rate' => 0.0,
+                'coverage_rate' => 0.0,
+            ];
+        }
+
+        $participants = Participant::whereIn('event_id', $eventIds)->count();
+        $certificates = Certificate::whereIn('event_id', $eventIds)->count();
+
+        $sessionIds = DB::table('attendance_sessions')
+            ->join('attendances', 'attendance_sessions.attendance_id', '=', 'attendances.id')
+            ->whereIn('attendances.event_id', $eventIds)
+            ->pluck('attendance_sessions.id');
+
+        $checkedIn = $sessionIds->isEmpty() ? 0 : DB::table('attendance_records')
+            ->whereIn('attendance_session_id', $sessionIds)
+            ->where('status', 'present')
+            ->distinct()
+            ->count('participant_id');
+
+        return [
+            'events' => count($eventIds),
+            'participants' => $participants,
+            'certificates' => $certificates,
+            'checked_in' => $checkedIn,
+            'sessions' => $sessionIds->count(),
+            'attendance_rate' => $participants > 0 ? round(($checkedIn / $participants) * 100, 1) : 0.0,
+            'coverage_rate' => $participants > 0 ? round(($certificates / $participants) * 100, 1) : 0.0,
+        ];
+    }
+
+    /**
+     * Percentage change per metric, or null when there is nothing to compare with.
+     *
+     * The old code fell back to a literal 100 whenever the previous period was
+     * empty, so a page with no history claimed a 100% increase in everything.
+     */
+    private function changes(array $totals, ?array $previous): array
+    {
+        $changes = [];
+
+        foreach (['events', 'participants', 'certificates'] as $metric) {
+            if ($previous === null || ($previous[$metric] ?? 0) === 0) {
+                $changes[$metric] = null;
+
+                continue;
+            }
+
+            $changes[$metric] = round((($totals[$metric] - $previous[$metric]) / $previous[$metric]) * 100, 1);
+        }
+
+        return $changes;
+    }
+
+    /**
+     * Registrations per month for these events.
+     */
+    private function registrationSeries(array $eventIds)
+    {
+        if (! $eventIds) {
+            return collect();
+        }
+
+        return Participant::whereIn('event_id', $eventIds)
+            ->selectRaw("DATE_FORMAT(COALESCE(registration_date, created_at), '%Y-%m') as bucket, COUNT(*) as total")
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => Carbon::createFromFormat('Y-m', $row->bucket)->format('M Y'),
+                'count' => (int) $row->total,
+            ]);
+    }
+
+    /**
+     * Certificates issued per month for these events.
+     */
+    private function certificateSeries(array $eventIds)
+    {
+        if (! $eventIds) {
+            return collect();
+        }
+
+        return Certificate::whereIn('event_id', $eventIds)
+            ->whereNotNull('generated_at')
+            ->selectRaw("DATE_FORMAT(generated_at, '%Y-%m') as bucket, COUNT(*) as total")
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => Carbon::createFromFormat('Y-m', $row->bucket)->format('M Y'),
+                'count' => (int) $row->total,
+            ]);
+    }
+
+    /**
+     * Participants per event, largest first.
+     */
+    private function participantsByEvent(array $eventIds)
+    {
+        if (! $eventIds) {
+            return collect();
+        }
+
+        $counts = Participant::whereIn('event_id', $eventIds)
+            ->selectRaw('event_id, COUNT(*) as total')
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
+
+        return Event::whereIn('id', $eventIds)->get(['id', 'name'])
+            ->map(fn ($event) => [
+                'label' => $event->name,
+                'count' => (int) ($counts[$event->id] ?? 0),
+            ])
+            ->sortByDesc('count')
+            ->take(10)
+            ->values();
+    }
+
+    /**
+     * Certificate coverage per event.
+     */
+    private function coverageByEvent(array $eventIds)
+    {
+        if (! $eventIds) {
+            return collect();
+        }
+
+        $participants = Participant::whereIn('event_id', $eventIds)
+            ->selectRaw('event_id, COUNT(*) as total')
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
+
+        $certificates = Certificate::whereIn('event_id', $eventIds)
+            ->selectRaw('event_id, COUNT(DISTINCT participant_id) as total')
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
+
+        return Event::whereIn('id', $eventIds)->get(['id', 'name'])
+            ->map(function ($event) use ($participants, $certificates) {
+                $registered = (int) ($participants[$event->id] ?? 0);
+                $issued = (int) ($certificates[$event->id] ?? 0);
+
+                return [
+                    'label' => $event->name,
+                    'registered' => $registered,
+                    'issued' => $issued,
+                    'percent' => $registered > 0 ? round(($issued / $registered) * 100, 1) : 0.0,
+                ];
+            })
+            ->sortByDesc('percent')
+            ->values();
+    }
+
+    /**
+     * Who the participants are.
+     *
+     * Gender, race and registration type are all recorded for the great majority of
+     * participants, so these are the demographics worth charting. A blank flag lets
+     * the view colour "Not stated" separately instead of implying it is a category.
+     */
+    private function demographics(array $eventIds): array
+    {
+        if (! $eventIds) {
+            return ['gender' => collect(), 'race' => collect(), 'type' => collect(), 'total' => 0];
+        }
+
+        $total = Participant::whereIn('event_id', $eventIds)->count();
+
+        $breakdown = function (string $column) use ($eventIds, $total) {
+            return Participant::whereIn('event_id', $eventIds)
+                ->selectRaw("COALESCE(NULLIF(TRIM({$column}), ''), '__blank__') as bucket, COUNT(*) as total")
+                ->groupBy('bucket')
+                ->orderByDesc('total')
+                ->get()
+                ->map(fn ($row) => [
+                    'label' => $row->bucket === '__blank__' ? 'Not stated' : ucwords((string) $row->bucket),
+                    'count' => (int) $row->total,
+                    'percent' => $total > 0 ? round(($row->total / $total) * 100, 1) : 0.0,
+                    'blank' => $row->bucket === '__blank__',
+                ])
+                // "Not stated" last, so it never takes the first colour.
+                ->sortBy(fn ($row) => $row['blank'] ? 1 : 0)
+                ->values();
+        };
+
+        return [
+            'gender' => $breakdown('gender'),
+            'race' => $breakdown('race'),
+            'type' => $breakdown('registration_type'),
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * The event table, sorted by a real metric.
+     *
+     * The old page called this "Top Performing Events" while showing the current
+     * page of the event list ordered by start_date, which is not a performance
+     * measure at all.
+     */
+    private function eventTable(array $eventIds, string $sort, int $perPage, Request $request)
+    {
+        if (! $eventIds) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, max(1, $perPage));
+        }
+
+        $participants = Participant::whereIn('event_id', $eventIds)
+            ->selectRaw('event_id, COUNT(*) as total')
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
+
+        $certificates = Certificate::whereIn('event_id', $eventIds)
+            ->selectRaw('event_id, COUNT(*) as total')
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
+
+        $sessionsByEvent = DB::table('attendance_sessions')
+            ->join('attendances', 'attendance_sessions.attendance_id', '=', 'attendances.id')
+            ->whereIn('attendances.event_id', $eventIds)
+            ->select('attendances.event_id', 'attendance_sessions.id')
+            ->get()
+            ->groupBy('event_id');
+
+        $presentBySession = DB::table('attendance_records')
+            ->where('status', 'present')
+            ->selectRaw('attendance_session_id, COUNT(DISTINCT participant_id) as total')
+            ->groupBy('attendance_session_id')
+            ->pluck('total', 'attendance_session_id');
+
+        $rows = Event::whereIn('id', $eventIds)
+            ->with('user:id,name')
+            ->get()
+            ->map(function ($event) use ($participants, $certificates, $sessionsByEvent, $presentBySession) {
+                $registered = (int) ($participants[$event->id] ?? 0);
+                $issued = (int) ($certificates[$event->id] ?? 0);
+
+                $sessions = $sessionsByEvent->get($event->id, collect());
+                $present = $sessions->sum(fn ($s) => (int) ($presentBySession[$s->id] ?? 0));
+                $slots = $sessions->count() * max(1, $registered);
+
+                return [
+                    'id' => $event->id,
+                    'name' => $event->name,
+                    'location' => $event->location,
+                    'organizer' => $event->user->name ?? '—',
+                    'status' => $event->status,
+                    'start_date' => $event->start_date,
+                    'participants' => $registered,
+                    'certificates' => $issued,
+                    'sessions' => $sessions->count(),
+                    'coverage' => $registered > 0 ? round(($issued / $registered) * 100, 1) : 0.0,
+                    'attendance' => $slots > 0 ? round(($present / $slots) * 100, 1) : 0.0,
+                ];
+            });
+
+        $rows = (match ($sort) {
+            'certificates' => $rows->sortByDesc('certificates'),
+            'coverage' => $rows->sortByDesc('coverage'),
+            'attendance' => $rows->sortByDesc('attendance'),
+            'date' => $rows->sortByDesc('start_date'),
+            default => $rows->sortByDesc('participants'),
+        })->values();
+
+        $page = max(1, (int) $request->get('page', 1));
+        $perPage = max(1, $perPage);
+
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+    }
+
+    /**
+     * CSV of the same rows the table shows, honouring every filter.
+     *
+     * The old export re-implemented the filters and left status_filter out, so the
+     * file could disagree with the screen.
      */
     public function export(Request $request)
     {
-        // Reuse filter logic similar to index()
-        $dateFilter = $request->input('date_filter', 'last_30');
-        $eventType = $request->input('event_type');
-        $organizerId = $request->input('organizer');
+        [$start, $end] = $this->resolveRange($request);
 
-        $endDate = Carbon::now();
-        switch ($dateFilter) {
-            case 'last_30':
-                $startDate = Carbon::now()->subDays(30); break;
-            case 'last_90':
-                $startDate = Carbon::now()->subDays(90); break;
-            case 'last_6_months':
-                $startDate = Carbon::now()->subMonths(6); break;
-            case 'last_year':
-                $startDate = Carbon::now()->subYear(); break;
-            case 'custom':
-                $startDate = $request->filled('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->subDays(30);
-                $endDate = $request->filled('end_date') ? Carbon::parse($request->input('end_date')) : $endDate;
-                break;
-            default:
-                $startDate = Carbon::now()->subDays(30);
-        }
+        $eventIds = $this->eventQuery($request, $start, $end)->pluck('id')->all();
+        $rows = $this->eventTable($eventIds, $request->get('sort', 'participants'), max(1, count($eventIds)), $request);
 
-        $eventsQuery = Event::query();
-        if (!auth()->user()->hasRole('Administrator')) {
-            $eventsQuery->where('user_id', auth()->id());
-            $organizerId = auth()->id();
-        }
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $eventsQuery->where(function($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('location', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('description', 'LIKE', "%{$searchTerm}%");
-            });
-        }
-        if ($startDate && $endDate) {
-            $eventsQuery->whereBetween('start_date', [$startDate, $endDate]);
-        }
-        if ($eventType) {
-            $keywords = $this->getKeywordsForEventType($eventType);
-            $eventsQuery->where(function($query) use ($keywords) {
-                foreach ($keywords as $keyword) {
-                    $query->orWhere('name', 'like', "%{$keyword}%");
-                }
-            });
-        }
-        if ($organizerId) {
-            $eventsQuery->where('user_id', $organizerId);
-        }
+        $filename = 'event-statistics-' . now()->format('Y-m-d-His') . '.csv';
 
-        $events = $eventsQuery->orderBy('start_date', 'desc')->get();
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
 
-        // Build rows similar to topEvents
-        $rows = [];
-        $rows[] = ['Event Name', 'Date', 'Type', 'Participants', 'Attendance Rate (%)', 'Certificates'];
-        foreach ($events as $event) {
-            $registered = Participant::where('event_id', $event->id)->count();
-            $attended = 0;
-            $certificateCount = Certificate::where('event_id', $event->id)->count();
-            $attendances = Attendance::where('event_id', $event->id)->get();
-            foreach ($attendances as $attendance) {
-                $sessions = AttendanceSession::where('attendance_id', $attendance->id)->get();
-                foreach ($sessions as $session) {
-                    $sessionAttended = AttendanceRecord::where('attendance_session_id', $session->id)
-                        ->where('status', 'present')
-                        ->distinct('participant_id')
-                        ->count('participant_id');
-                    $attended = max($attended, $sessionAttended);
-                }
-            }
-            $attendanceRate = $registered > 0 ? round(($attended / $registered) * 100) : 0;
-            $rows[] = [
-                $event->name,
-                $event->start_date ? Carbon::parse($event->start_date)->format('Y-m-d') : 'N/A',
-                $this->determineEventType($event->name),
-                (string)$registered,
-                (string)$attendanceRate,
-                (string)$certificateCount,
-            ];
-        }
+            fputcsv($handle, [
+                'Event', 'Location', 'Organizer', 'Status', 'Start Date',
+                'Participants', 'Certificates', 'Certificate Coverage %',
+                'Sessions', 'Attendance Rate %',
+            ]);
 
-        $filename = 'event_statistics_' . now()->format('Ymd_His') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ];
-
-        $callback = function() use ($rows) {
-            $out = fopen('php://output', 'w');
             foreach ($rows as $row) {
-                fputcsv($out, $row);
+                fputcsv($handle, [
+                    $row['name'],
+                    $row['location'],
+                    $row['organizer'],
+                    $row['status'],
+                    $row['start_date'] ? $row['start_date']->format('Y-m-d') : '',
+                    $row['participants'],
+                    $row['certificates'],
+                    $row['coverage'],
+                    $row['sessions'],
+                    $row['attendance'],
+                ]);
             }
-            fclose($out);
-        };
 
-        return response()->stream($callback, 200, $headers);
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
-
-    /**
-     * Determine the event type based on event name.
-     * This method handles multiple languages including English, Malay, and Chinese.
-     * 
-     * @param string $eventName
-     * @return string
-     */
-    private function determineEventType($eventName)
-    {
-        // Convert to lowercase for case-insensitive matching
-        $eventNameLower = strtolower($eventName);
-        
-        // English keywords
-        $conferenceKeywords = ['conference', 'symposium', 'congress', 'summit', 'convention'];
-        $workshopKeywords = ['workshop', 'hands-on', 'practical session', 'lab'];
-        $trainingKeywords = ['training', 'course', 'class', 'lesson', 'coaching'];
-        $seminarKeywords = ['seminar', 'webinar', 'talk', 'lecture', 'presentation'];
-        
-        // Gaming event keywords (new category)
-        $gamingKeywords = [
-            // Game titles
-            'mobile legends', 'ml', 'pubg', 'mobile pubg', 'pubgm', 'free fire', 'cod', 'call of duty', 
-            'valorant', 'dota', 'league of legends', 'lol', 'fortnite', 'apex legends', 'genshin', 
-            'esports', 'e-sports', 'gaming', 'game', 'tournament', 'competition', 'championship',
-            'cup', 'match', 'battle', 'arena', 'showdown', 'playoff', 'qualifier',
-            
-            // Competition terms
-            'pertandingan', 'kejohanan', 'turnamen', 'kompetisi', 'perlawanan', 'piala', 
-            'cabaran', 'liga', 'sukan', 'e-sukan',
-            
-            // Location-specific gaming events often use these patterns
-            'peringkat', 'level', 'wilayah', 'daerah', 'negeri', 'kebangsaan', 'antarabangsa'
-        ];
-        
-        // Malay keywords
-        $conferenceKeywords = array_merge($conferenceKeywords, ['persidangan', 'konvensyen', 'kongres']);
-        $workshopKeywords = array_merge($workshopKeywords, ['bengkel', 'latihan praktikal']);
-        $trainingKeywords = array_merge($trainingKeywords, ['latihan', 'kursus', 'kelas', 'bimbingan']);
-        $seminarKeywords = array_merge($seminarKeywords, ['seminar', 'ceramah', 'kuliah', 'syarahan']);
-        
-        // Chinese keywords
-        $conferenceKeywords = array_merge($conferenceKeywords, ['会议', '大会', '研讨会']);
-        $workshopKeywords = array_merge($workshopKeywords, ['工作坊', '实践课', '实操']);
-        $trainingKeywords = array_merge($trainingKeywords, ['培训', '训练', '课程', '教学']);
-        $seminarKeywords = array_merge($seminarKeywords, ['讲座', '讲习班', '演讲']);
-        $gamingKeywords = array_merge($gamingKeywords, ['电竞', '游戏', '比赛', '锦标赛', '联赛', '电子竞技']);
-        
-        // Check for gaming event first (highest priority)
-        foreach ($gamingKeywords as $keyword) {
-            if (mb_stripos($eventNameLower, $keyword) !== false) {
-                return 'Gaming';
-            }
-        }
-        
-        // Check for each type of keyword
-        foreach ($conferenceKeywords as $keyword) {
-            if (mb_stripos($eventNameLower, $keyword) !== false) {
-                return 'Conference';
-            }
-        }
-        
-        foreach ($workshopKeywords as $keyword) {
-            if (mb_stripos($eventNameLower, $keyword) !== false) {
-                return 'Workshop';
-            }
-        }
-        
-        foreach ($trainingKeywords as $keyword) {
-            if (mb_stripos($eventNameLower, $keyword) !== false) {
-                return 'Training';
-            }
-        }
-        
-        foreach ($seminarKeywords as $keyword) {
-            if (mb_stripos($eventNameLower, $keyword) !== false) {
-                return 'Seminar';
-            }
-        }
-        
-        // If no match is found, return 'Other'
-        return 'Other';
-    }
-
-    /**
-     * Get keywords for a specific event type.
-     * This method handles multiple languages for event type filtering.
-     * 
-     * @param string $eventType
-     * @return array
-     */
-    private function getKeywordsForEventType($eventType)
-    {
-        $keywords = [];
-
-        // English keywords
-        $conferenceKeywords = ['conference', 'symposium', 'congress', 'summit', 'convention'];
-        $workshopKeywords = ['workshop', 'hands-on', 'practical session', 'lab'];
-        $trainingKeywords = ['training', 'course', 'class', 'lesson', 'coaching'];
-        $seminarKeywords = ['seminar', 'webinar', 'talk', 'lecture', 'presentation'];
-        
-        // Gaming event keywords
-        $gamingKeywords = [
-            // Game titles
-            'mobile legends', 'ml', 'pubg', 'mobile pubg', 'pubgm', 'free fire', 'cod', 'call of duty', 
-            'valorant', 'dota', 'league of legends', 'lol', 'fortnite', 'apex legends', 'genshin', 
-            'esports', 'e-sports', 'gaming', 'game', 'tournament', 'competition', 'championship',
-            'cup', 'match', 'battle', 'arena', 'showdown', 'playoff', 'qualifier',
-            
-            // Competition terms
-            'pertandingan', 'kejohanan', 'turnamen', 'kompetisi', 'perlawanan', 'piala', 
-            'cabaran', 'liga', 'sukan', 'e-sukan',
-            
-            // Location-specific gaming events often use these patterns
-            'peringkat', 'level', 'wilayah', 'daerah', 'negeri', 'kebangsaan', 'antarabangsa'
-        ];
-
-        // Malay keywords
-        $conferenceKeywords = array_merge($conferenceKeywords, ['persidangan', 'konvensyen', 'kongres']);
-        $workshopKeywords = array_merge($workshopKeywords, ['bengkel', 'latihan praktikal']);
-        $trainingKeywords = array_merge($trainingKeywords, ['latihan', 'kursus', 'kelas', 'bimbingan']);
-        $seminarKeywords = array_merge($seminarKeywords, ['seminar', 'ceramah', 'kuliah', 'syarahan']);
-
-        // Chinese keywords
-        $conferenceKeywords = array_merge($conferenceKeywords, ['会议', '大会', '研讨会']);
-        $workshopKeywords = array_merge($workshopKeywords, ['工作坊', '实践课', '实操']);
-        $trainingKeywords = array_merge($trainingKeywords, ['培训', '训练', '课程', '教学']);
-        $seminarKeywords = array_merge($seminarKeywords, ['讲座', '讲习班', '演讲']);
-        $gamingKeywords = array_merge($gamingKeywords, ['电竞', '游戏', '比赛', '锦标赛', '联赛', '电子竞技']);
-
-        switch ($eventType) {
-            case 'Conference':
-                $keywords = $conferenceKeywords;
-                break;
-            case 'Workshop':
-                $keywords = $workshopKeywords;
-                break;
-            case 'Training':
-                $keywords = $trainingKeywords;
-                break;
-            case 'Seminar':
-                $keywords = $seminarKeywords;
-                break;
-            case 'Gaming':
-                $keywords = $gamingKeywords;
-                break;
-            default:
-                // If eventType is not one of the known types, return empty array
-                $keywords = [];
-        }
-
-        return $keywords;
-    }
-} 
+}

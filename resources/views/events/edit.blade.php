@@ -93,14 +93,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">title</span>
-                                        </div>
                                         <input 
                                             type="text" 
                                             name="name" 
                                             id="name" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('name', $event->name) }}" 
                                             required
                                         >
@@ -125,14 +122,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">group</span>
-                                        </div>
                                         <input 
                                             type="text" 
                                             name="organizer" 
                                             id="organizer" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                             value="{{ old('organizer', $event->organizer) }}"
                                             required
                                         >
@@ -223,7 +217,8 @@
                                     </div>
                                 </label>
                                 <div class="flex-1">
-                                    <textarea name="condition" id="condition" rows="12" class="w-full text-sm border-gray-300 rounded" placeholder="Write event terms & conditions here...">{{ old('condition', $event->condition) }}</textarea>
+                                    {{-- Fixed height matches the TinyMCE height below so the layout does not jump while the editor loads --}}
+                                    <textarea name="condition" id="condition" class="w-full text-sm border-gray-300 rounded" style="height: 380px;" placeholder="Write event terms & conditions here...">{{ old('condition', $event->condition) }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -258,14 +253,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">event</span>
-                                        </div>
                                         <input 
                                             type="date" 
                                             name="start_date" 
                                             id="start_date" 
-                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('start_date', $event->start_date_formatted) }}" 
                                             required
                                         >
@@ -290,14 +282,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">access_time</span>
-                                        </div>
                                         <input 
                                             type="time" 
                                             name="start_time" 
                                             id="start_time" 
-                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('start_time', $event->start_time_formatted) }}" 
                                             required
                                         >
@@ -322,14 +311,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">event</span>
-                                        </div>
                                         <input 
                                             type="date" 
                                             name="end_date" 
                                             id="end_date" 
-                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('end_date', $event->end_date_formatted) }}" 
                                             required
                                         >
@@ -354,14 +340,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">access_time</span>
-                                        </div>
                                         <input 
                                             type="time" 
                                             name="end_time" 
                                             id="end_time" 
-                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('end_time', $event->end_time_formatted) }}" 
                                             required
                                         >
@@ -400,14 +383,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">business</span>
-                                        </div>
                                         <input 
                                             type="text" 
                                             name="location" 
                                             id="location" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('location', $event->location) }}" 
                                             required
                                         >
@@ -471,14 +451,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">person_add</span>
-                                        </div>
                                         <input 
                                             type="number" 
                                             name="max_participants" 
                                             id="max_participants" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('max_participants', $event->max_participants) }}" 
                                             min="1"
                                             required
@@ -518,14 +495,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">person_outline</span>
-                                        </div>
                                         <input 
                                             type="text" 
                                             name="contact_person" 
                                             id="contact_person" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('contact_person', $event->contact_person ?? '') }}"
                                         >
                                     </div>
@@ -549,14 +523,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">alternate_email</span>
-                                        </div>
                                         <input 
                                             type="email" 
                                             name="contact_email" 
                                             id="contact_email" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('contact_email', $event->contact_email ?? '') }}"
                                         >
                                     </div>
@@ -580,14 +551,11 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">call</span>
-                                        </div>
                                         <input 
                                             type="tel" 
                                             name="contact_phone" 
                                             id="contact_phone" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             value="{{ old('contact_phone', $event->contact_phone ?? '') }}"
                                             placeholder="+60123456789"
                                         >
@@ -626,13 +594,10 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">shield</span>
-                                        </div>
                                         <select 
                                             name="status" 
                                             id="status" 
-                                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                            class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                             required
                                         >
                                             <option value="pending" {{ old('status', $event->status) == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -643,61 +608,89 @@
                                 </div>
                             </div>
                             
-                            <!-- Disable Auto Expiry -->
-                            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                <div class="md:w-40"></div>
-                                <div class="flex-1">
-                                    <label class="flex items-center gap-1">
-                                        <input 
-                                            type="checkbox" 
-                                            name="disable_auto_expiry" 
-                                            id="disable_auto_expiry" 
-                                            value="1"
-                                            {{ old('disable_auto_expiry', $event->disable_auto_expiry) ? 'checked' : '' }}
-                                            class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                        >
-                                        <span class="ml-2 text-xs text-gray-700">Disable Auto Expiry</span>
-                                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                                  @mouseenter="show = true" 
-                                                  @mouseleave="show = false">
-                                                help_outline
-                                            </span>
-                                            <div x-show="show" x-transition class="tooltip-content">
-                                                Registration remains open after event start date
-                                            </div>
-                                        </div>
-                                    </label>
+                            <!-- How registration behaves -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3 pt-1">
+                                <span class="text-xs font-medium text-gray-700 md:w-40 shrink-0 md:pt-3">
+                                    Registration
+                                </span>
+                                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <x-event-toggle
+                                        name="disable_auto_expiry"
+                                        icon="event_repeat"
+                                        label="Keep registration open"
+                                        description="The link stays usable after the event start date instead of closing automatically."
+                                        :checked="old('disable_auto_expiry', $event->disable_auto_expiry)" />
+
+                                    <x-event-toggle
+                                        name="skip_identity_verification"
+                                        icon="badge"
+                                        label="Skip identity verification"
+                                        description="Participants register with name and email only, without an IC or passport number."
+                                        :checked="old('skip_identity_verification', $event->skip_identity_verification)" />
                                 </div>
                             </div>
-                            
-                            <!-- Skip Identity Verification -->
-                            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                <div class="md:w-40"></div>
-                                <div class="flex-1">
-                                    <label class="flex items-center gap-1">
-                                        <input 
-                                            type="checkbox" 
-                                            name="skip_identity_verification" 
-                                            id="skip_identity_verification" 
-                                            value="1"
-                                            {{ old('skip_identity_verification', $event->skip_identity_verification) ? 'checked' : '' }}
-                                            class="rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                                        >
-                                        <span class="ml-2 text-xs text-gray-700">Skip Identity Verification</span>
-                                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                                  @mouseenter="show = true" 
-                                                  @mouseleave="show = false">
-                                                help_outline
-                                            </span>
-                                            <div x-show="show" x-transition class="tooltip-content">
-                                                Allow simplified registration without IC/Passport
-                                            </div>
+
+                            <!-- What happens automatically once a participant registers -->
+                            <div class="flex flex-col md:flex-row md:items-start gap-3 pt-2 border-t border-gray-100">
+                                <span class="text-xs font-medium text-gray-700 md:w-40 shrink-0 md:pt-3">
+                                    After participant register
+                                </span>
+                                <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                                    <x-event-toggle
+                                        name="auto_pwa_registration"
+                                        icon="phone_iphone"
+                                        label="Create mobile app account"
+                                        description="Creates the participant's E-Certificate app account and emails their sign-in details straight away."
+                                        note="Without this, an administrator has to create each account by hand under PWA &rsaquo; Participants."
+                                        :checked="old('auto_pwa_registration', $event->auto_pwa_registration)" />
+
+                                    <x-event-toggle
+                                        name="auto_generate_certificate"
+                                        icon="workspace_premium"
+                                        label="Issue certificate immediately"
+                                        description="Generates the certificate on registration and delivers it by email, Telegram and SMS."
+                                        note="Email and SMS follow your Delivery Configuration."
+                                        :checked="old('auto_generate_certificate', $event->auto_generate_certificate)">
+                                        {{-- Which template to use. Only relevant while the switch is on. --}}
+                                        <div x-show="on" x-transition class="mt-3 pt-3 border-t border-gray-200">
+                                            <label for="certificate_template_id" class="block text-xs font-medium text-gray-700 mb-1">
+                                                Certificate template
+                                            </label>
+                                            <select name="certificate_template_id" id="certificate_template_id"
+                                                    @click.stop
+                                                    class="w-full h-9 text-xs border-gray-300 rounded pl-3 pr-8 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                                <option value="">Use my most recent template</option>
+                                                @foreach($certificateTemplates as $template)
+                                                    <option value="{{ $template->id }}" {{ old('certificate_template_id', $event->certificate_template_id) == $template->id ? 'selected' : '' }}>
+                                                        {{ $template->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            @if($certificateTemplates->isEmpty())
+                                                <p class="text-xs text-amber-600 mt-1">
+                                                    You have no active templates yet, so nothing can be issued.
+                                                </p>
+                                            @endif
                                         </div>
-                                    </label>
+                                    </x-event-toggle>
+
+                                    @php
+                                        // One attendance setup per event, so this is either set up or it is not.
+                                        $attendanceSetup = $event->attendances()->with('sessions')->first();
+                                    @endphp
+
+                                    <x-event-toggle
+                                        name="attendance_required"
+                                        icon="how_to_reg"
+                                        label="Attendance will be taken"
+                                        description="States this in the participant's confirmation email and sends the check-in QR codes to the organizer."
+                                        :note="$attendanceSetup ? null : 'Set the scan times below, in the same pass.'"
+                                        :checked="old('attendance_required', $event->attendance_required)" />
                                 </div>
                             </div>
+
+                            {{-- Scan times: either what already exists, or a form to create it. --}}
+                            <x-attendance-picker :event="$event" :existing="$attendanceSetup" />
                         </div>
                     </div>
                 </div>
@@ -730,7 +723,7 @@
             if (window.tinymce) {
                 tinymce.init({
                     selector: '#condition',
-                    plugins: 'autolink link image lists table code help wordcount preview',
+                    plugins: 'autolink link image lists table code',
                     toolbar: [
                         'blocks fontfamily fontsize | forecolor backcolor | bold italic underline | alignleft aligncenter alignright alignjustify',
                         'bullist numlist | link image | table | code'

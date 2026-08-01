@@ -16,7 +16,13 @@ class GlobalConfigController extends Controller
     public function index()
     {
         $config = GlobalConfig::getConfig();
-        return view('settings.global-config', compact('config'));
+
+        // The Recycle Bin is rendered as one of the Global Config tabs.
+        $recycleBin = auth()->user()->can('recycle_bin.read')
+            ? \App\Http\Controllers\RecycleBinController::payload()
+            : null;
+
+        return view('settings.global-config', compact('config', 'recycleBin'));
     }
 
     /**
@@ -41,15 +47,15 @@ class GlobalConfigController extends Controller
             'debug_mode' => 'nullable|boolean',
             'cache_lifetime' => 'nullable|integer|min:0|max:1440',
             'pagination' => 'nullable|integer|min:5|max:1000',
-            'enable_error_reporting' => 'nullable|boolean',
-            'enable_activity_logging' => 'nullable|boolean',
+            'error_reporting' => 'nullable|boolean',
+            'activity_logging' => 'nullable|boolean',
             
             // Event Settings
             'event_expiry' => 'nullable|integer|min:1|max:720',
             'default_event_status' => 'nullable|string|in:draft,published,archived',
             'registration_message' => 'nullable|string|max:1000',
             'allow_multiple_registrations' => 'nullable|boolean',
-            'auto_send_confirmation_emails' => 'nullable|boolean',
+            'auto_confirmation_emails' => 'nullable|boolean',
             
             // Security Settings
             'min_password_length' => 'nullable|integer|min:6|max:32',
@@ -58,6 +64,8 @@ class GlobalConfigController extends Controller
             'require_numbers' => 'nullable|boolean',
             'require_uppercase' => 'nullable|boolean',
             'max_login_attempts' => 'nullable|integer|min:1|max:20',
+            // 0 means no limit; an hour is more than enough at the top end.
+            'pwa_reset_cooldown_seconds' => 'nullable|integer|min:0|max:3600',
             'lockout_duration' => 'nullable|integer|min:1|max:1440',
             'session_timeout' => 'nullable|integer|min:5|max:1440',
             'enable_2fa' => 'nullable|boolean',
@@ -93,9 +101,14 @@ class GlobalConfigController extends Controller
             'admin_security_alerts' => 'nullable|boolean',
             'telegram_event_registration' => 'nullable|boolean',
             'admin_notification_email' => 'required|email|max:255',
+
+            // Read by CertificateController when a certificate is generated. These were
+            // previously unvalidated and only survived because raw input was mass assigned.
+            'sms_certificate_generated' => 'nullable|boolean',
+            'telegram_certificate_generated' => 'nullable|boolean',
             
             // API Settings
-            'api_status' => 'nullable|string|in:enabled,disabled',
+            'api_enabled' => 'nullable|boolean',
             'api_rate_limit' => 'nullable|integer|min:10|max:1000',
             'enable_api_keys' => 'nullable|boolean',
             'enable_oauth' => 'nullable|boolean',
@@ -118,6 +131,14 @@ class GlobalConfigController extends Controller
             'telegram_channel_id' => 'nullable|string|max:100',
             'telegram_owner_user_id' => 'nullable|string|max:100',
             'telegram_owner_username' => 'nullable|string|max:100',
+
+            // File uploads. These land in publicly served storage, so the type and
+            // size must be constrained and the extension must never come from the client.
+            // SVG is deliberately excluded: it can carry scripts and would be served
+            // from our own origin. ICO is excluded because the image rule cannot verify it.
+            'org_logo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
+            'favicon' => 'nullable|image|mimes:png,webp|max:512',
+            'login_background' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:4096',
         ]);
 
         if ($validator->fails()) {
@@ -131,24 +152,31 @@ class GlobalConfigController extends Controller
         try {
             // GlobalConfig validation passed
             
-            // Handle checkboxes - set to 0 if not present in request
+            // Checkboxes that are absent from the payload mean "off".
+            //
+            // Only fields that actually have an input in the form belong here. The
+            // integration toggles (google_calendar_enabled, microsoft_teams_enabled,
+            // stripe_enabled, zoom_enabled) are deliberately excluded: no tab renders
+            // them, so listing them here silently reset them to 0 on every save.
             $booleanFields = [
-                'maintenance_mode', 'debug_mode', 'enable_error_reporting', 'enable_activity_logging',
-                'allow_multiple_registrations', 'auto_send_confirmation_emails',
+                'maintenance_mode', 'debug_mode', 'error_reporting', 'activity_logging',
+                'allow_multiple_registrations', 'auto_confirmation_emails',
                 'require_special_chars', 'require_numbers', 'require_uppercase', 'enable_2fa', 'force_ssl',
                 'log_failed_logins', 'log_password_changes', 'log_permission_changes', 'enable_security_alerts',
                 'allow_user_theme_choice', 'show_welcome_message', 'show_help_icons',
                 'email_new_user_registration', 'email_event_registration', 'email_event_reminder',
                 'email_certificate_generated', 'email_password_reset', 'sms_event_registration',
                 'sms_event_reminder', 'admin_system_errors', 'admin_new_registrations', 'admin_security_alerts',
-                'telegram_event_registration',
+                'telegram_event_registration', 'sms_certificate_generated', 'telegram_certificate_generated',
                 'enable_api_keys', 'enable_oauth', 'api_cors_enabled',
-                'google_calendar_enabled', 'microsoft_teams_enabled', 'stripe_enabled', 'zoom_enabled',
-                'enable_webhooks'
+                'enable_webhooks',
             ];
-            
-            // Handle file uploads
-            $data = $request->except(['org_logo', 'favicon', 'login_background']);
+
+            // Use validated data only, so unvalidated input cannot be mass assigned.
+            // File fields are handled separately below.
+            $data = collect($validator->validated())
+                ->except(['org_logo', 'favicon', 'login_background'])
+                ->all();
             
             // Set boolean fields to 0 if not present
             foreach ($booleanFields as $field) {
@@ -157,53 +185,49 @@ class GlobalConfigController extends Controller
                 }
             }
             
-            // Handle logo upload
-            if ($request->hasFile('org_logo')) {
-                $logo = $request->file('org_logo');
-                if ($logo->isValid()) {
-                    $logoName = 'logo_' . time() . '.' . $logo->getClientOriginalExtension();
-                    $logoPath = $logo->storeAs('public/logos', $logoName);
-                    $data['org_logo'] = Storage::url($logoPath);
-                    
-                    // Delete old logo if exists
-                    if ($config->org_logo && Storage::exists(str_replace('/storage/', 'public/', $config->org_logo))) {
-                        Storage::delete(str_replace('/storage/', 'public/', $config->org_logo));
-                    }
+            // Handle image uploads. The extension is derived from the verified MIME type,
+            // never from the client supplied filename.
+            $uploads = [
+                'org_logo' => ['dir' => 'logos', 'prefix' => 'logo'],
+                'favicon' => ['dir' => 'favicons', 'prefix' => 'favicon'],
+                'login_background' => ['dir' => 'backgrounds', 'prefix' => 'login_bg'],
+            ];
+
+            foreach ($uploads as $field => $meta) {
+                if (! $request->hasFile($field)) {
+                    continue;
                 }
+
+                $file = $request->file($field);
+
+                if (! $file->isValid()) {
+                    continue;
+                }
+
+                $extension = $this->safeExtensionFor($file);
+
+                if ($extension === null) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unsupported image type for ' . $field . '.',
+                    ], 422);
+                }
+
+                $filename = $meta['prefix'] . '_' . time() . '_' . Str::random(8) . '.' . $extension;
+                $path = $file->storeAs($meta['dir'], $filename, 'public');
+
+                /** @var \Illuminate\Filesystem\FilesystemAdapter $publicDisk */
+                $publicDisk = Storage::disk('public');
+                $data[$field] = $publicDisk->url($path);
+
+                // Remove the file that was previously stored for this field
+                $this->deleteStoredFile($config->{$field});
             }
             
-            // Handle favicon upload
-            if ($request->hasFile('favicon')) {
-                $favicon = $request->file('favicon');
-                if ($favicon->isValid()) {
-                    $faviconName = 'favicon_' . time() . '.' . $favicon->getClientOriginalExtension();
-                    $faviconPath = $favicon->storeAs('public/favicons', $faviconName);
-                    $data['favicon'] = Storage::url($faviconPath);
-                    
-                    // Delete old favicon if exists
-                    if ($config->favicon && Storage::exists(str_replace('/storage/', 'public/', $config->favicon))) {
-                        Storage::delete(str_replace('/storage/', 'public/', $config->favicon));
-                    }
-                }
-            }
-            
-            // Handle login background upload
-            if ($request->hasFile('login_background')) {
-                $background = $request->file('login_background');
-                if ($background->isValid()) {
-                    $bgName = 'login_bg_' . time() . '.' . $background->getClientOriginalExtension();
-                    $bgPath = $background->storeAs('public/backgrounds', $bgName);
-                    $data['login_background'] = Storage::url($bgPath);
-                    
-                    // Delete old background if exists
-                    if ($config->login_background && Storage::exists(str_replace('/storage/', 'public/', $config->login_background))) {
-                        Storage::delete(str_replace('/storage/', 'public/', $config->login_background));
-                    }
-                }
-            }
-            
-            // Generate webhook secret if not exists
-            if ($request->input('enable_webhooks') && !$config->webhook_secret) {
+            // Generate a webhook secret the first time webhooks are switched on.
+            // The secret is never taken from the request: it is only ever generated
+            // here or through regenerateWebhookSecret().
+            if (! empty($data['enable_webhooks']) && ! $config->webhook_secret) {
                 $data['webhook_secret'] = 'wh_sec_' . Str::random(32);
             }
             
@@ -224,6 +248,48 @@ class GlobalConfigController extends Controller
                 'success' => false,
                 'message' => 'Failed to update configuration: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Map a verified MIME type to a safe file extension.
+     *
+     * Returns null when the type is not one we are willing to store.
+     */
+    private function safeExtensionFor(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        return match ($file->getMimeType()) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => null,
+        };
+    }
+
+    /**
+     * Delete a file previously stored on the public disk, given its public URL.
+     *
+     * Handles both the current "/storage/logos/x.png" layout and the older
+     * "/storage/public/logos/x.png" layout produced by earlier versions.
+     */
+    private function deleteStoredFile(?string $url): void
+    {
+        if (empty($url) || ! str_contains($url, '/storage/')) {
+            return;
+        }
+
+        $path = ltrim(Str::after($url, '/storage/'), '/');
+
+        if ($path === '') {
+            return;
+        }
+
+        $disk = Storage::disk('public');
+
+        foreach ([$path, 'public/' . $path] as $candidate) {
+            if ($disk->exists($candidate)) {
+                $disk->delete($candidate);
+            }
         }
     }
 
@@ -268,19 +334,20 @@ class GlobalConfigController extends Controller
             $config = GlobalConfig::getConfig();
             
             // Delete uploaded files
-            if ($config->org_logo) {
-                Storage::delete(str_replace('/storage/', 'public/', $config->org_logo));
-            }
-            if ($config->favicon) {
-                Storage::delete(str_replace('/storage/', 'public/', $config->favicon));
-            }
-            if ($config->login_background) {
-                Storage::delete(str_replace('/storage/', 'public/', $config->login_background));
-            }
+            $this->deleteStoredFile($config->org_logo);
+            $this->deleteStoredFile($config->favicon);
+            $this->deleteStoredFile($config->login_background);
             
             // Delete the config and recreate
             $config->delete();
+
+            // The cache still holds the deleted row, so it must be dropped before
+            // the replacement is built and cached.
+            GlobalConfig::clearCache();
+
             $newConfig = GlobalConfig::createDefault();
+
+            GlobalConfig::clearCache();
             
             return response()->json([
                 'success' => true,

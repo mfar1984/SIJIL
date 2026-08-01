@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 class Event extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
     
     public function getActivitylogOptions(): LogOptions
     {
@@ -47,6 +48,10 @@ class Event extends Model
         'poster',
         'disable_auto_expiry',
         'skip_identity_verification',
+        'auto_pwa_registration',
+        'auto_generate_certificate',
+        'attendance_required',
+        'certificate_template_id',
     ];
 
     /**
@@ -60,6 +65,9 @@ class Event extends Model
         'registration_expires_at' => 'datetime',
         'disable_auto_expiry' => 'boolean',
         'skip_identity_verification' => 'boolean',
+        'auto_pwa_registration' => 'boolean',
+        'auto_generate_certificate' => 'boolean',
+        'attendance_required' => 'boolean',
     ];
 
     /**
@@ -109,6 +117,32 @@ class Event extends Model
     }
 
     /**
+     * Number of places still open for public registration.
+     *
+     * Returns null when the event has no participant limit.
+     */
+    public function spotsRemaining(): ?int
+    {
+        if (empty($this->max_participants)) {
+            return null;
+        }
+
+        return max(0, $this->max_participants - $this->participants()->count());
+    }
+
+    /**
+     * Whether the event has reached its participant limit.
+     *
+     * Events without a limit are never full.
+     */
+    public function isFull(): bool
+    {
+        $remaining = $this->spotsRemaining();
+
+        return $remaining !== null && $remaining <= 0;
+    }
+
+    /**
      * Check if the registration link is expired.
      *
      * @return bool
@@ -136,6 +170,14 @@ class Event extends Model
     /**
      * Relationship with the user who created this event.
      */
+    /**
+     * The template used when this event issues certificates automatically.
+     */
+    public function certificateTemplate()
+    {
+        return $this->belongsTo(CertificateTemplate::class, 'certificate_template_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -165,6 +207,22 @@ class Event extends Model
     public function eventRegistrations()
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    /**
+     * Relationship with certificates issued for this event.
+     */
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    /**
+     * Relationship with attendance records for this event.
+     */
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
     }
 
     /**

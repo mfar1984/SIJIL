@@ -72,37 +72,65 @@
                         <span class="material-icons-outlined text-xs mr-2">code</span>
                         API & Integrations
                     </button>
+                    @can('recycle_bin.read')
+                    <button 
+                        @click="activeTab = 'recycle-bin'" 
+                        :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'recycle-bin', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'recycle-bin'}"
+                        class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
+                    >
+                        <span class="material-icons-outlined text-xs mr-2">delete_outline</span>
+                        Recycle Bin
+                        @if(($recycleBin['total'] ?? 0) > 0)
+                            <span class="ml-2 px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] leading-none">{{ $recycleBin['total'] }}</span>
+                        @endif
+                    </button>
+                    @endcan
                 </div>
             </div>
+
+            @if(session('success'))
+                <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded mb-4 text-xs">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-4 text-xs">
+                    {{ session('error') }}
+                </div>
+            @endif
             
             @php $canUpdate = auth()->user()->can('global_config.update'); @endphp
-            <form method="POST" action="{{ route('settings.global-config.update') }}" enctype="multipart/form-data" id="globalConfigForm">
-                @csrf
-                <fieldset {{ $canUpdate ? '' : 'disabled' }}>
-                    <!-- Include Tab Content -->
-                    @include('settings.global-config.general')
-                    @include('settings.global-config.security')
-                    @include('settings.global-config.appearance')
-                    @include('settings.global-config.notifications')
-                    @include('settings.global-config.telegram')
-                    @include('settings.global-config.api')
-                    
-                    <!-- Form Submit Buttons -->
-                    <div class="mt-6 flex justify-end space-x-3">
-                        @can('global_config.update')
-                        <button 
-                            type="submit"
-                            class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
-                        >
-                            <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                <span class="material-icons-outlined text-xs mr-1">save</span>
-                                <span>Save Changes</span>
-                            </span>
-                        </button>
-                        @endcan
-                    </div>
-                </fieldset>
-            </form>
+            <div x-show="activeTab !== 'recycle-bin'">
+                <form method="POST" action="{{ route('settings.global-config.update') }}" enctype="multipart/form-data" id="globalConfigForm">
+                    @csrf
+                    <fieldset {{ $canUpdate ? '' : 'disabled' }}>
+                        <!-- Include Tab Content -->
+                        @include('settings.global-config.general')
+                        @include('settings.global-config.security')
+                        @include('settings.global-config.appearance')
+                        @include('settings.global-config.notifications')
+                        @include('settings.global-config.telegram')
+                        @include('settings.global-config.api')
+                        
+                        <!-- Form Submit Buttons -->
+                        <div class="mt-6 flex justify-end space-x-3">
+                            @can('global_config.update')
+                            <button 
+                                type="submit"
+                                class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
+                            >
+                                <span class="text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
+                                    <span class="material-icons-outlined text-xs mr-1">save</span>
+                                    <span>Save Changes</span>
+                                </span>
+                            </button>
+                            @endcan
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            @include('settings.global-config.recycle-bin')
         </div>
     </div>
     

@@ -32,8 +32,10 @@ class PwaParticipantController extends Controller
             ], 422);
         }
 
-        $participant = PwaParticipant::where('email', $request->email)
-                                    ->where('status', 'active')
+        // Not filtered on status here: a banned account must be told it is banned
+        // rather than shown "invalid credentials", which would look like a typo and
+        // send them round in circles.
+        $participant = PwaParticipant::whereRaw('LOWER(email) = ?', [strtolower(trim($request->email))])
                                     ->first();
 
         if (!$participant || !Hash::check($request->password, $participant->password)) {
@@ -43,8 +45,29 @@ class PwaParticipantController extends Controller
             ], 401);
         }
 
+        if ($participant->isBanned()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account has been suspended. Please contact the event organizer.',
+            ], 403);
+        }
+
+        if ($participant->is_active === false || $participant->status === 'inactive') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account is not active. Please contact the event organizer.',
+            ], 403);
+        }
+
         // Create token
         $token = $participant->createToken('pwa-token')->plainTextToken;
+
+        // Record the sign-in. The column already existed but nothing ever wrote
+        // to it, so the admin side could not tell who actually uses the app.
+        $participant->forceFill([
+            'last_login_at' => now(),
+            'login_attempts' => 0,
+        ])->saveQuietly();
 
         return response()->json([
             'success' => true,
@@ -61,9 +84,20 @@ class PwaParticipantController extends Controller
     }
 
     /**
-     * Participant registration
+     * Participant registration.
+     *
+     * No longer routed. Kept private so nothing can reach it while the code stays
+     * available if self-service sign-up is wanted later.
+     *
+     * Before bringing it back it needs proof that the person controls the address:
+     * events and certificates are matched by email, so creating an account for an
+     * address is the same as being handed whatever that address is entitled to see.
+     * A one-time code emailed to the address, confirmed before the account becomes
+     * usable, is the smallest thing that would make this safe. Restricting it to
+     * addresses that already exist in `participants` is not enough on its own -
+     * that makes the target set smaller, not the claim harder.
      */
-    public function register(Request $request)
+    private function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -80,6 +114,14 @@ class PwaParticipantController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
+        }
+
+        // A banned person must not be able to open a fresh account.
+        if (\App\Support\ParticipantBan::find($request->email, $request->identity_card, $request->passport_no)) {
+            return response()->json([
+                'success' => false,
+                'message' => \App\Support\ParticipantBan::message(),
+            ], 403);
         }
 
         // Ensure username is provided to satisfy NOT NULL schema
@@ -151,6 +193,10 @@ class PwaParticipantController extends Controller
                 'phone' => $participant->phone,
                 'organization' => $participant->organization,
                 'job_title' => $participant->job_title,
+                'gender' => $participant->gender,
+                'race' => $participant->race,
+                'date_of_birth' => $participant->date_of_birth,
+                'identity_card' => $participant->identity_card,
                 'address1' => $participant->address1,
                 'address2' => $participant->address2,
                 'city' => $participant->city,
@@ -173,6 +219,10 @@ class PwaParticipantController extends Controller
             'phone' => 'nullable|string|max:20',
             'organization' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
+            'gender' => 'nullable|string|in:male,female,other',
+            'race' => 'nullable|string|max:50',
+            'date_of_birth' => 'nullable|date|before:today',
+            'identity_card' => 'nullable|string|max:20',
             'address1' => 'nullable|string|max:255',
             'address2' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
@@ -191,6 +241,7 @@ class PwaParticipantController extends Controller
 
         $participant->update($request->only([
             'name', 'phone', 'organization', 'job_title',
+            'gender', 'race', 'date_of_birth', 'identity_card',
             'address1', 'address2', 'city', 'state', 'postcode', 'country'
         ]));
 
@@ -340,6 +391,11 @@ class PwaParticipantController extends Controller
                 'issued_date' => $cert->generated_at,
                 'pdf_file' => $cert->pdf_file,
                 'description' => null, // Can add description field to certificates table if needed
+                // The public page a recipient can open to confirm this certificate is
+                // real. Without it the app had no URL worth sharing and fell back to
+                // its own certificates screen, which shows the recipient their own
+                // certificates rather than this one.
+                'verify_url' => route('certificate.verify', ['number' => $cert->certificate_number]),
             ];
         });
 
@@ -574,7 +630,18 @@ class PwaParticipantController extends Controller
     /**
      * Lookup by Identity Card (IC) or Passport to prefill registration/login flow
      */
-    public function lookupByIdentity(Request $request)
+    /**
+     * No longer routed, and private so it cannot be reached.
+     *
+     * This answered any IC or passport number with a full profile - name, email,
+     * phone, IC, passport, address, date of birth, gender, race, job title - with
+     * no authentication. Malaysian IC numbers encode a birth date and a state code,
+     * so the keyspace is small enough to walk. Nothing in the app called it.
+     *
+     * If a pre-fill helper is wanted on a registration form, it should return only
+     * whether a record exists, never its contents.
+     */
+    private function lookupByIdentity(Request $request)
     {
         $request->validate([
             'ic' => 'nullable|string',
@@ -866,7 +933,7 @@ class PwaParticipantController extends Controller
         }
 
         // Find PWA participant by email
-        $participant = PwaParticipant::where('email', $request->email)->first();
+        $participant = PwaParticipant::whereRaw('LOWER(email) = ?', [strtolower(trim($request->email))])->first();
 
         if (!$participant) {
             // Email not found - return error (user-friendly feedback)
@@ -876,8 +943,16 @@ class PwaParticipantController extends Controller
             ], 404);
         }
 
-        // Generate new password
-        $newPassword = \Illuminate\Support\Str::random(12);
+        // No point issuing a password to an account that cannot sign in.
+        if ($participant->isBanned()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account has been suspended. Please contact the event organizer.',
+            ], 403);
+        }
+
+        // Generate new password using the configured length and complexity
+        $newPassword = \App\Support\PwaPassword::generate();
         
         $participant->update([
             'password' => Hash::make($newPassword),
@@ -897,53 +972,8 @@ class PwaParticipantController extends Controller
                 $config = \App\Models\DeliveryConfig::getEmailConfig($adminUser->id);
 
                 if ($config) {
-                    $settings = $config->settings ?? [];
-                    $fromName = $settings['from_name'] ?? 'SIJIL System';
-                    $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
-
-                    // Configure mailer dynamically based on provider
-                    switch ($config->provider) {
-                        case 'smtp':
-                            config([
-                                'mail.default' => 'smtp',
-                                'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
-                                'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
-                                'mail.mailers.smtp.encryption' => (($settings['encryption'] ?? null) === 'none') ? null : ($settings['encryption'] ?? null),
-                                'mail.mailers.smtp.username' => $settings['username'] ?? '',
-                                'mail.mailers.smtp.password' => $settings['password'] ?? '',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                        case 'mailgun':
-                            config([
-                                'mail.default' => 'mailgun',
-                                'services.mailgun.domain' => $settings['domain'] ?? '',
-                                'services.mailgun.secret' => $settings['secret'] ?? '',
-                                'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                        case 'ses':
-                            config([
-                                'mail.default' => 'ses',
-                                'services.ses.key' => $settings['key'] ?? '',
-                                'services.ses.secret' => $settings['secret'] ?? '',
-                                'services.ses.region' => $settings['region'] ?? 'us-east-1',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                        case 'sendmail':
-                            config([
-                                'mail.default' => 'sendmail',
-                                'mail.mailers.sendmail.path' => $settings['path'] ?? '/usr/sbin/sendmail -bs',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                    }
+                    ['from_address' => $fromAddress, 'from_name' => $fromName] =
+                        \App\Support\MailerConfig::apply($config);
 
                     // Find password reset template (global or admin scope)
                     $template = \App\Models\PwaEmailTemplate::query()

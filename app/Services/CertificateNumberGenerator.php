@@ -20,7 +20,9 @@ class CertificateNumberGenerator
         $certificateNumber = "CERT-{$timestamp}-{$random}";
         
         // Ensure uniqueness by checking database
-        while (Certificate::where('certificate_number', $certificateNumber)->exists()) {
+        // withTrashed(): certificate_number is unique in the database, so a
+        // number still sitting in the Recycle Bin must not be handed out again.
+        while (Certificate::withTrashed()->where('certificate_number', $certificateNumber)->exists()) {
             $random = strtoupper(bin2hex(random_bytes(3)));
             $certificateNumber = "CERT-{$timestamp}-{$random}";
         }

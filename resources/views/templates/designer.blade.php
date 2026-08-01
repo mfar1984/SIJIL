@@ -167,73 +167,73 @@ $initialIsActive = $template && $template->is_active ? true : false;
                             @method('PUT')
                         @endif
                         
-                        <!-- Toolbar -->
-                        <div class="border rounded-lg bg-white p-4 shadow-sm mb-4">
-                            <div class="flex flex-wrap items-center justify-between gap-4">
-                                <div class="flex items-center flex-wrap gap-3">
+                        {{-- Toolbar: one row, every control the same height, so the
+                             name field and the buttons line up on a single baseline. --}}
+                        <div class="border border-gray-200 rounded bg-white p-4 shadow-sm mb-4">
+                            <div class="flex flex-wrap items-end justify-between gap-4">
+                                <div class="flex flex-wrap items-end gap-2">
                                     <div>
-                                        <label for="name" class="block text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                            <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">title</span>
-                                            Template Name
+                                        <label for="name" class="block text-xs font-medium text-gray-700 mb-1">
+                                            Template name <span class="text-red-500">*</span>
                                         </label>
-                                        <input type="text" id="name" name="name" class="w-full border border-gray-300 rounded px-3 py-1 text-sm focus:ring focus:ring-primary-light focus:border-primary-light" x-model="name" required>
+                                        <input type="text" id="name" name="name"
+                                               class="w-56 h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                               x-model="name" required>
                                     </div>
-                                    
-                                    <div>
-                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addTextElement">
-                                            <span class="material-icons-outlined text-xs mr-1">text_fields</span>
-                                            Add Text
-                                        </button>
-                                    </div>
-                                    
-                                    <div>
-                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addImageElement">
-                                            <span class="material-icons-outlined text-xs mr-1">image</span>
-                                            Add Image
-                                        </button>
-                                        <input type="file" id="image-upload" accept="image/*" class="hidden" @change="handleImageUpload">
-                                    </div>
-                                    
-                                    <div>
-                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="addQrCodeElement">
-                                            <span class="material-icons-outlined text-xs mr-1">qr_code</span>
-                                            Add QR Code
-                                        </button>
-                                    </div>
-                                    
-                                    <div>
-                                        <button type="button" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out mt-5" @click="step = 1">
-                                            <span class="material-icons-outlined text-xs mr-1">palette</span>
-                                            Background
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <button type="submit" class="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                                        <span class="material-icons-outlined text-xs mr-1">save</span>
-                                        {{ $template ? 'Update Template' : 'Save Template' }}
+
+                                    <div class="hidden sm:block h-9 w-px bg-gray-200 mx-1"></div>
+
+                                    <button type="button" class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center shrink-0" @click="addTextElement">
+                                        <span class="material-icons-outlined text-xs mr-1">text_fields</span>
+                                        Add text
+                                    </button>
+
+                                    <button type="button" class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center shrink-0" @click="addImageElement">
+                                        <span class="material-icons-outlined text-xs mr-1">image</span>
+                                        Add image
+                                    </button>
+                                    <input type="file" id="image-upload" accept="image/*" class="hidden" @change="handleImageUpload">
+
+                                    <button type="button" class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center shrink-0" @click="addQrCodeElement">
+                                        <span class="material-icons-outlined text-xs mr-1">qr_code</span>
+                                        Add QR code
+                                    </button>
+
+                                    <button type="button" class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center shrink-0" @click="step = 1">
+                                        <span class="material-icons-outlined text-xs mr-1">palette</span>
+                                        Change background
                                     </button>
                                 </div>
+                                
+                                <button type="submit" class="h-9 px-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded shadow-sm text-xs font-medium flex items-center shrink-0 transition-colors duration-200 ease-in-out">
+                                    <span class="material-icons-outlined text-xs mr-1">save</span>
+                                    {{ $template ? 'Update template' : 'Save template' }}
+                                </button>
                             </div>
                         </div>
                         
                         <!-- Design Canvas -->
-                        <div class="border rounded-lg bg-white p-6 shadow-sm relative">
-                            <h3 class="text-xs font-medium text-gray-700 mb-3 flex items-center">
-                                <span class="material-icons-outlined text-primary-DEFAULT text-base mr-1">design_services</span>
-                                Design Canvas
-                            </h3>
-                            
-                            <p class="text-xs text-gray-500 mb-4 ml-6">Click to place elements on the canvas. Drag elements to reposition them.</p>
-                            
-                            <div class="flex flex-col lg:flex-row gap-4">
+                        <div class="border border-gray-200 rounded bg-white shadow-sm relative">
+                            <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                <h3 class="text-sm font-semibold text-gray-700 flex items-center">
+                                    <span class="material-icons-outlined text-primary-DEFAULT mr-2">design_services</span>
+                                    Design Canvas
+                                </h3>
+                                <p class="text-xs text-gray-500">Click the canvas to place an element. Drag an element to move it.</p>
+                            </div>
+
+                            {{-- Canvas on the left, tools on the right, with a real divider
+                                 between them so the two areas read as separate. --}}
+                            <div class="flex flex-col xl:flex-row">
                                 <!-- Certificate Preview Canvas -->
-                                <div class="lg:w-2/3">
+                                <div class="p-4 xl:flex-1 xl:min-w-0 overflow-auto flex justify-center items-start bg-gray-50">
+                                    {{-- Canvas is 840 px across the 297 mm edge, which makes one
+                                         PDF point almost exactly one screen pixel, so the text
+                                         size you see is the size you get. --}}
                                     <div id="design-canvas" class="mx-auto relative border border-gray-300 overflow-hidden bg-white shadow-md"
                                         :style="{
-                                            width: orientation === 'portrait' ? '420px' : '594px',
-                                            height: orientation === 'portrait' ? '594px' : '420px',
+                                            width: orientation === 'portrait' ? '594px' : '840px',
+                                            height: orientation === 'portrait' ? '840px' : '594px',
                                             cursor: draggedElement ? 'crosshair' : 'default'
                                         }"
                                         @click="handleCanvasClick">
@@ -247,22 +247,28 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                         <template x-for="element in templateData.elements" :key="element.id">
                                             <div>
                                                 <template x-if="element.type === 'text'">
+                                                    {{-- No padding, no border and no min-width here: each of
+                                                         those shifted the text a few pixels away from its real
+                                                         position. Selection uses an outline, which draws outside
+                                                         the box and so never moves the text. Whitespace is kept
+                                                         on one line so the box matches the PDF, which never wraps. --}}
                                                     <div class="absolute cursor-move"
                                                         :style="{
                                                             left: `${(element.x / templateData.width) * 100}%`,
                                                             top: `${(element.y / templateData.height) * 100}%`,
-                                                            fontSize: `${element.fontSize}px`,
+                                                            fontSize: `${ptToPx(element.fontSize)}px`,
+                                                            lineHeight: 1.25,
+                                                            whiteSpace: 'nowrap',
                                                             fontFamily: element.fontFamily || 'Arial',
                                                             fontWeight: element.fontWeight || 'normal',
                                                             fontStyle: element.fontStyle || 'normal',
                                                             textDecoration: element.textDecoration || 'none',
                                                             color: element.color || '#000000',
-                                                            textAlign: element.textAlign || 'left',
-                                                            transform: element.textAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                                            border: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : '1px dashed transparent',
-                                                            padding: '4px',
-                                                            backgroundColor: selectedElement && selectedElement.id === element.id ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-                                                            minWidth: '50px'
+                                                            transform: element.textAlign === 'center' ? 'translateX(-50%)'
+                                                                     : element.textAlign === 'right' ? 'translateX(-100%)' : 'none',
+                                                            outline: selectedElement && selectedElement.id === element.id ? '2px solid #2563eb' : 'none',
+                                                            outlineOffset: '2px',
+                                                            backgroundColor: selectedElement && selectedElement.id === element.id ? 'rgba(37, 99, 235, 0.1)' : 'transparent'
                                                         }"
                                                         @click="handleElementClick(element, $event)"
                                                         @mousedown="handleElementDrag(element, $event)">
@@ -313,34 +319,17 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                         </template>
                                     </div>
                                     
-                                    <div class="mt-4">
-                                        <div class="bg-gray-50 border border-gray-200 rounded p-3">
-                                            <p class="text-xs font-medium text-gray-700 mb-2">
-                                                <span class="material-icons-outlined text-xs align-middle mr-1">info</span>
-                                                Available Placeholders:
-                                            </p>
-                                            <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{participant_name}}</code></div>
-                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{event_name}}</code></div>
-                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{event_date}}</code></div>
-                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{event_time}}</code></div>
-                                                <div><code class="bg-white px-1 py-0.5 rounded">@{{CERT-GEN}}</code> <span class="text-green-600">✓ New</span></div>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-2">
-                                                <code class="bg-white px-1 py-0.5 rounded">@{{CERT-GEN}}</code> generates unique certificate number (e.g., CERT-20260417120000-A1B2C3)
-                                            </p>
-                                        </div>
-                                    </div>
                                 </div>
                                 
-                                <!-- Floating Element Properties Panel -->
-                                <div class="lg:w-1/3">
+                                <!-- Tools: properties, or the add panel, plus the placeholder list -->
+                                <div class="p-5 xl:w-[460px] xl:shrink-0 border-t xl:border-t-0 xl:border-l border-gray-200 space-y-4">
                                     <!-- Text Element Properties -->
-                                    <div x-show="selectedElement !== null" class="border rounded-lg bg-white p-4 shadow-md">
-                                        <h3 class="text-xs font-medium text-gray-700 mb-3 bg-primary-light text-white p-2 rounded flex items-center">
-                                            <span class="material-icons-outlined text-base mr-1">tune</span>
-                                            Element Properties
+                                    <div x-show="selectedElement !== null" class="border border-gray-200 rounded bg-white">
+                                        <h3 class="text-xs font-semibold bg-primary-light text-white px-3 py-2 rounded-t flex items-center">
+                                            <span class="material-icons-outlined text-sm mr-1">tune</span>
+                                            Element properties
                                         </h3>
+                                        <div class="p-3">
                                         
                                         <!-- Text Element Properties -->
                                         <div x-show="selectedElement && selectedElement.type === 'text'">
@@ -392,11 +381,8 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Font Size</label>
-                                                    <div class="flex items-center">
-                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" x-model="selectedElement.fontSize" @input="updateElement('fontSize', parseInt($event.target.value) || 12)">
-                                                        <span class="ml-1 text-xs text-gray-500">px</span>
-                                                    </div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Font size (pt)</label>
+                                                    <input type="number" min="4" max="200" class="w-full h-9 border border-gray-300 rounded px-3 text-xs" x-model="selectedElement.fontSize" @input="updateElement('fontSize', parseInt($event.target.value) || 12)">
                                                 </div>
                                             </div>
                                             
@@ -461,17 +447,27 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                             
                                             <!-- Position -->
                                             <div class="mb-3 border-t border-gray-200 pt-3">
-                                                <label class="block text-xs font-medium text-gray-700 mb-1">Element Position</label>
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">Position on the page</label>
                                                 <div class="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label class="block text-xs text-gray-500 mb-1">X Position</label>
-                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.x || 0)" @input="updateElement('x', parseInt($event.target.value) || 0)">
+                                                        <label class="block text-xs text-gray-500 mb-1">X (mm)</label>
+                                                        <input type="number" class="w-full h-9 border border-gray-300 rounded px-3 text-xs" x-model="Math.round(selectedElement.x || 0)" @input="updateElement('x', parseInt($event.target.value) || 0)">
                                                     </div>
                                                     <div>
-                                                        <label class="block text-xs text-gray-500 mb-1">Y Position</label>
-                                                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-1 text-sm" x-model="Math.round(selectedElement.y || 0)" @input="updateElement('y', parseInt($event.target.value) || 0)">
+                                                        <label class="block text-xs text-gray-500 mb-1">Y (mm)</label>
+                                                        <input type="number" class="w-full h-9 border border-gray-300 rounded px-3 text-xs" x-model="Math.round(selectedElement.y || 0)" @input="updateElement('y', parseInt($event.target.value) || 0)">
                                                     </div>
                                                 </div>
+                                                <button type="button"
+                                                        class="mt-2 w-full h-9 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center justify-center"
+                                                        @click="centreSelectedHorizontally()">
+                                                    <span class="material-icons-outlined text-xs mr-1">format_align_center</span>
+                                                    Centre horizontally on the page
+                                                </button>
+                                                <p class="text-xs text-gray-500 mt-2">
+                                                    Y is the top of the text. X follows the alignment: the left edge,
+                                                    the middle, or the right edge of the text.
+                                                </p>
                                             </div>
                                             
                                             <!-- Delete Button -->
@@ -576,48 +572,72 @@ $initialIsActive = $template && $template->is_active ? true : false;
                                                         QR code will contain encrypted certificate data for verification.
                                                     </p>
                                                 </div>
-                                                <div class="bg-amber-50 border border-amber-200 rounded p-3">
-                                                    <p class="text-xs text-amber-800 mb-1">
-                                                        <span class="material-icons-outlined text-xs align-middle mr-1">warning</span>
-                                                        <strong>Size and position are in millimeters (mm).</strong>
-                                                    </p>
-                                                    <p class="text-xs text-amber-800">
-                                                        For A4 portrait (210mm × 297mm): Maximum safe Y position is <strong>247mm</strong> for 30mm QR code to prevent page overflow.
-                                                    </p>
-                                                </div>
+                                                <p class="text-xs text-gray-500">
+                                                    Size and position are in millimetres. The QR code is kept inside
+                                                    the page automatically.
+                                                </p>
                                             </div>
                                             
                                             <!-- Delete Button -->
                                             <div class="mt-4">
                                                 <button type="button" class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium flex items-center justify-center" @click="deleteElement">
                                                     <span class="material-icons-outlined text-xs mr-1">delete</span>
-                                                    Delete QR Code
+                                                    Delete QR code
                                                 </button>
                                             </div>
                                         </div>
+                                        </div>
                                     </div>
                                     
-                                    <!-- Add Elements Panel when no element is selected -->
-                                    <div x-show="!selectedElement" class="border rounded-lg bg-white p-4 shadow-md">
-                                        <div class="text-center p-4">
-                                            <span class="material-icons-outlined text-primary-DEFAULT text-2xl">add_circle</span>
-                                            <p class="text-sm font-medium text-gray-700 mt-2">Add Elements</p>
-                                            <p class="text-xs text-gray-500 mb-4">Add text or images to your certificate</p>
-                                            
-                                            <div class="flex justify-center gap-2">
-                                                <button type="button" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium flex items-center" @click="addTextElement">
-                                                    <span class="material-icons-outlined text-xs mr-1">text_fields</span>
-                                                    Add Text
-                                                </button>
-                                                <button type="button" class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium flex items-center" @click="addImageElement">
-                                                    <span class="material-icons-outlined text-xs mr-1">image</span>
-                                                    Add Image
-                                                </button>
-                                                <button type="button" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-medium flex items-center" @click="addQrCodeElement">
-                                                    <span class="material-icons-outlined text-xs mr-1">qr_code</span>
-                                                    Add QR
-                                                </button>
+                                    <!-- Shown when nothing is selected -->
+                                    <div x-show="!selectedElement" class="border border-gray-200 rounded bg-white">
+                                        <h3 class="text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200 px-3 py-2 flex items-center">
+                                            <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">add_circle_outline</span>
+                                            Add an element
+                                        </h3>
+                                        <div class="p-3 space-y-2">
+                                            <p class="text-xs text-gray-500">
+                                                Pick one, then click the spot on the certificate where it should go.
+                                            </p>
+                                            <button type="button" class="w-full h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center" @click="addTextElement">
+                                                <span class="material-icons-outlined text-xs mr-2">text_fields</span>
+                                                Add text
+                                            </button>
+                                            <button type="button" class="w-full h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center" @click="addImageElement">
+                                                <span class="material-icons-outlined text-xs mr-2">image</span>
+                                                Add image
+                                            </button>
+                                            <button type="button" class="w-full h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center" @click="addQrCodeElement">
+                                                <span class="material-icons-outlined text-xs mr-2">qr_code</span>
+                                                Add QR code
+                                            </button>
+                                            <p class="text-xs text-gray-500 pt-1" x-show="templateData.elements.length > 0">
+                                                Or click an element on the certificate to edit it.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Placeholder reference -->
+                                    <div class="border border-gray-200 rounded bg-white">
+                                        <h3 class="text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200 px-3 py-2 flex items-center">
+                                            <span class="material-icons-outlined text-sm mr-1 text-primary-DEFAULT">data_object</span>
+                                            Available placeholders
+                                        </h3>
+                                        <div class="p-3">
+                                            <p class="text-xs text-gray-500 mb-2">
+                                                Type these into a text element. They are replaced per participant.
+                                            </p>
+                                            <div class="space-y-1 text-xs text-gray-600">
+                                                <div><code class="bg-gray-100 px-1 py-0.5 rounded">@{{participant_name}}</code></div>
+                                                <div><code class="bg-gray-100 px-1 py-0.5 rounded">@{{event_name}}</code></div>
+                                                <div><code class="bg-gray-100 px-1 py-0.5 rounded">@{{event_date}}</code></div>
+                                                <div><code class="bg-gray-100 px-1 py-0.5 rounded">@{{event_time}}</code></div>
+                                                <div><code class="bg-gray-100 px-1 py-0.5 rounded">@{{CERT-GEN}}</code></div>
                                             </div>
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                <code class="bg-gray-100 px-1 py-0.5 rounded">@{{CERT-GEN}}</code> becomes a unique
+                                                certificate number, for example CERT-20260417120000-A1B2C3.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -669,6 +689,38 @@ $initialIsActive = $template && $template->is_active ? true : false;
                         this.templateData.height = 210;
                     }
                 },
+
+                /**
+                 * Pixels per millimetre on the canvas as it is drawn on screen.
+                 * The long edge is always 840 px and the short edge 594 px.
+                 */
+                get pxPerMm() {
+                    const longEdgePx = 840;
+                    const longEdgeMm = 297;
+                    return longEdgePx / longEdgeMm;
+                },
+
+                /**
+                 * Font sizes are stored in points, the unit the PDF uses.
+                 * Convert to screen pixels so the canvas shows the true size.
+                 */
+                ptToPx(pt) {
+                    const mm = (Number(pt) || 0) * 25.4 / 72;
+                    return mm * this.pxPerMm;
+                },
+
+                /** Put the selected element on the horizontal centre of the page. */
+                centreSelectedHorizontally() {
+                    if (!this.selectedElement) return;
+                    const centre = Math.round(this.templateData.width / 2);
+                    if (this.selectedElement.type === 'text') {
+                        // Centre-aligned text is anchored by its middle.
+                        this.updateElement('textAlign', 'center');
+                        this.updateElement('x', centre);
+                    } else {
+                        this.updateElement('x', Math.round(centre - (this.selectedElement.width || 0) / 2));
+                    }
+                },
                 
                 proceedToDesign() {
                     if (!this.selectedBackground) {
@@ -704,6 +756,25 @@ $initialIsActive = $template && $template->is_active ? true : false;
                     this.selectedElement = element;
                 },
                 
+                /**
+                 * Keep an element on the page.
+                 *
+                 * Text is anchored by a point, not a box, so it may sit right up
+                 * against any edge. Boxed elements (images, QR codes) are held
+                 * back by their own size. The old code reserved 50 mm for text
+                 * as well, which made the right side of the page unreachable.
+                 */
+                clampPosition(element, x, y) {
+                    const isBox = element.type === 'image' || element.type === 'qrcode';
+                    const maxX = isBox ? this.templateData.width - (element.width || 0) : this.templateData.width;
+                    const maxY = isBox ? this.templateData.height - (element.height || 0) : this.templateData.height;
+
+                    return {
+                        x: Math.round(Math.max(0, Math.min(maxX, x))),
+                        y: Math.round(Math.max(0, Math.min(maxY, y))),
+                    };
+                },
+
                 handleElementDrag(element, e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -721,26 +792,15 @@ $initialIsActive = $template && $template->is_active ? true : false;
                         const deltaY = moveEvent.clientY - startY;
                         const newX = startElementX + (deltaX / rect.width) * this.templateData.width;
                         const newY = startElementY + (deltaY / rect.height) * this.templateData.height;
-                        
-                        // For QR code elements, add extra margin to prevent page overflow
-                        const safetyMargin = element.type === 'qrcode' ? 20 : 0;
-                        
-                        // Update element in template data
-                        this.templateData.elements = this.templateData.elements.map(el => 
-                            el.id === element.id ? { 
-                                ...el, 
-                                x: Math.max(0, Math.min(this.templateData.width - (el.width || 50), newX)),
-                                y: Math.max(0, Math.min(this.templateData.height - (el.height || 20) - safetyMargin, newY))
-                            } : el
+
+                        const clamped = this.clampPosition(element, newX, newY);
+
+                        this.templateData.elements = this.templateData.elements.map(el =>
+                            el.id === element.id ? { ...el, x: clamped.x, y: clamped.y } : el
                         );
-                        
-                        // Update selected element
+
                         if (this.selectedElement && this.selectedElement.id === element.id) {
-                            this.selectedElement = { 
-                                ...this.selectedElement, 
-                                x: Math.max(0, Math.min(this.templateData.width - (element.width || 50), newX)),
-                                y: Math.max(0, Math.min(this.templateData.height - (element.height || 20) - safetyMargin, newY))
-                            };
+                            this.selectedElement = { ...this.selectedElement, x: clamped.x, y: clamped.y };
                         }
                     };
                     
@@ -756,23 +816,18 @@ $initialIsActive = $template && $template->is_active ? true : false;
                 updateElement(field, value) {
                     if (!this.selectedElement) return;
                     
-                    // For QR code elements, validate position to prevent page overflow
-                    if (this.selectedElement.type === 'qrcode') {
-                        const safetyMargin = 20; // 20mm safety margin for QR codes
-                        
-                        if (field === 'y') {
-                            const maxY = this.templateData.height - (this.selectedElement.height || 30) - safetyMargin;
-                            value = Math.max(0, Math.min(maxY, value));
-                        } else if (field === 'x') {
-                            const maxX = this.templateData.width - (this.selectedElement.width || 30);
-                            value = Math.max(0, Math.min(maxX, value));
-                        } else if (field === 'height') {
-                            const maxHeight = this.templateData.height - this.selectedElement.y - safetyMargin;
-                            value = Math.max(10, Math.min(maxHeight, value));
-                        } else if (field === 'width') {
-                            const maxWidth = this.templateData.width - this.selectedElement.x;
-                            value = Math.max(10, Math.min(maxWidth, value));
-                        }
+                    // Keep positions and sizes on the page. Boxed elements are
+                    // limited by their own size; text is a single anchor point
+                    // so it can go right up to any edge.
+                    if (field === 'x' || field === 'y') {
+                        const proposed = field === 'x'
+                            ? this.clampPosition(this.selectedElement, value, this.selectedElement.y || 0)
+                            : this.clampPosition(this.selectedElement, this.selectedElement.x || 0, value);
+                        value = proposed[field];
+                    } else if (field === 'width') {
+                        value = Math.max(10, Math.min(this.templateData.width - (this.selectedElement.x || 0), value));
+                    } else if (field === 'height') {
+                        value = Math.max(10, Math.min(this.templateData.height - (this.selectedElement.y || 0), value));
                     }
                     
                     // Update element in template data

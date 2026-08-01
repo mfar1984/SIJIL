@@ -10,39 +10,19 @@
     <x-slot name="title">Survey Responses</x-slot>
 
     <div class="bg-white rounded shadow-md border border-gray-300">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-start">
-                <div>
-                    <div class="flex items-center">
-                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">format_list_bulleted</span>
-                        <h1 class="text-xl font-bold text-gray-800">Responses for: {{ $survey->title }}</h1>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1 ml-8">
-                        {{ $responses->total() }} responses collected
-                    </p>
-                </div>
-                <div class="flex space-x-3">
-                    @can('survey_responses.read')
-                    <a href="{{ route('survey.analytics', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">insights</span>
-                        View Analytics
-                    </a>
-                    @endcan
-                    @can('survey_responses.export')
-                    <button onclick="exportToCsv()" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">file_download</span>
-                        Export to CSV
-                    </button>
-                    @endcan
-                    <a href="{{ route('survey.show', $survey) }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
-                        Back to Survey
-                    </a>
-                </div>
-            </div>
-        </div>
-        
+        @include('survey.partials.workspace-header', ['active' => 'responses'])
+
         <div class="p-4">
+            @can('survey_responses.export')
+            <div class="flex justify-end mb-3">
+                <a href="{{ route('survey.responses.export', $survey) }}"
+                   class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out inline-flex items-center">
+                    <span class="material-icons-outlined text-xs mr-1">file_download</span>
+                    Export to CSV
+                </a>
+            </div>
+            @endcan
+
             @if($responses->isEmpty())
                 <div class="bg-gray-50 border border-gray-200 rounded p-6 text-center">
                     <div class="flex justify-center">
@@ -52,45 +32,36 @@
                     <p class="mt-1 text-gray-400 text-sm">There are no responses to this survey yet.</p>
                 </div>
             @else
-                <!-- Show Entries, Search & Filter Row -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                    <form method="GET" action="{{ route('survey.responses', $survey) }}" class="flex flex-wrap gap-2 items-center justify-between w-full">
-                        <!-- Show Entries Dropdown -->
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-600 font-medium">Show</span>
-                            <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
-                                <option value="10" @if(request('per_page', 10) == 10) selected @endif>10</option>
-                                <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
-                                <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
-                                <option value="100" @if(request('per_page') == 100) selected @endif>100</option>
-                            </select>
-                            <span class="text-xs text-gray-600">entries per page</span>
-                        </div>
-                        <!-- Search & Filter Controls -->
-                        <div class="flex flex-wrap gap-2 items-center">
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search respondent, email..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
-                            <select name="status" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                                <option value="">All Status</option>
-                                <option value="completed" @if(request('status') == 'completed') selected @endif>Completed</option>
-                                <option value="incomplete" @if(request('status') == 'incomplete') selected @endif>Incomplete</option>
-                            </select>
-                            <select name="source" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                                <option value="">All Source</option>
-                                <option value="user" @if(request('source') == 'user') selected @endif>Registered User</option>
-                                <option value="participant" @if(request('source') == 'participant') selected @endif>Participant</option>
-                                <option value="public" @if(request('source') == 'public') selected @endif>Public</option>
-                            </select>
-                            <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
-                                </svg>
-                            </button>
-                            @if(request('search') || request('status') || request('source'))
-                                <a href="{{ route('survey.responses', $survey) }}?per_page={{ request('per_page', 10) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
-                            @endif
-                        </div>
-                    </form>
-                </div>
+                {{-- Search takes the remaining space; the filters keep their own width. --}}
+                <form method="GET" action="{{ route('survey.responses', $survey) }}" class="flex flex-wrap items-center gap-2 mb-4">
+                    <input type="text" name="search" id="searchInput" value="{{ request('search') }}"
+                           placeholder="Search respondent, email..."
+                           class="flex-1 min-w-[12rem] h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+
+                    <select name="status" onchange="this.form.submit()"
+                            class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[9rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                        <option value="">All Status</option>
+                        <option value="completed" @if(request('status') == 'completed') selected @endif>Completed</option>
+                        <option value="incomplete" @if(request('status') == 'incomplete') selected @endif>Incomplete</option>
+                    </select>
+
+                    <select name="source" onchange="this.form.submit()"
+                            class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[11rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                        <option value="">All Source</option>
+                        <option value="user" @if(request('source') == 'user') selected @endif>Registered User</option>
+                        <option value="participant" @if(request('source') == 'participant') selected @endif>Participant</option>
+                        <option value="public" @if(request('source') == 'public') selected @endif>Public</option>
+                    </select>
+
+                    <button type="submit"
+                            class="h-9 px-3 bg-primary-DEFAULT hover:bg-primary-dark text-white rounded text-xs flex items-center shrink-0 transition-colors duration-200 ease-in-out" title="Search">
+                        <span class="material-icons-outlined text-xs">search</span>
+                    </button>
+
+                    @if(request('search') || request('status') || request('source'))
+                        <a href="{{ route('survey.responses', $survey) }}" class="text-xs text-gray-500 underline shrink-0">Reset</a>
+                    @endif
+                </form>
                 <!-- Search Results Summary -->
                 @if(request('search') || request('status') || request('source'))
                     <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-xs">
@@ -197,9 +168,6 @@
                 <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div class="mb-2 sm:mb-0 text-xs text-gray-500">
                         Showing {{ $responses->firstItem() ?? 0 }} to {{ $responses->lastItem() ?? 0 }} of {{ $responses->total() }} entries
-                        @if($responses->total() > 0)
-                            ({{ request('per_page', 10) }} per page)
-                        @endif
                     </div>
                     <div class="flex justify-end">
                         {{ $responses->appends(request()->query())->links('components.pagination-modern') }}

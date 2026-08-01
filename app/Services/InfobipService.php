@@ -75,17 +75,15 @@ class InfobipService
                 'user_id' => $userId,
             ]);
             
-            // Get the user's Infobip configuration
-            $config = DeliveryConfig::where('user_id', $userId)
-                ->where('config_type', 'sms')
-                ->where('provider', 'infobip')
-                ->where('is_active', true)
-                ->first();
-                
+            // This account's own configuration only. SMS never borrows another
+            // account's gateway. See App\Support\DeliveryAccount::smsConfig().
+            [$config] = \App\Support\DeliveryAccount::smsConfig($userId);
+
             if (!$config) {
                 return [
                     'success' => false,
-                    'message' => 'No active Infobip configuration found for this user.'
+                    'message' => 'SMS delivery is switched off for this account. Enable it under '
+                        . 'Configuration > Delivery and save an Infobip gateway.'
                 ];
             }
             
@@ -219,7 +217,8 @@ class InfobipService
         if (!$config) {
             return [
                 'success' => false,
-                'message' => 'No active Infobip configuration found for this user.'
+                'message' => 'SMS delivery is switched off for this account, or the saved gateway '
+                    . 'is not Infobip. Only Infobip can send.'
             ];
         }
         

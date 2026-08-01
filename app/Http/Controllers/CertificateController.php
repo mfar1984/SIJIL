@@ -27,15 +27,22 @@ class CertificateController extends Controller
      */
     public function index(Request $request)
     {
-        // Query to fetch certificates with filters
-        $query = Certificate::with(['event', 'participant', 'template']);
+        // Query to fetch certificates with filters.
+        // withTrashed() on the relations: a certificate is an official record, so
+        // it must keep showing its event and participant even after those have
+        // been moved to the Recycle Bin.
+        $query = Certificate::with([
+            'event' => fn($q) => $q->withTrashed(),
+            'participant' => fn($q) => $q->withTrashed(),
+            'template' => fn($q) => $q->withTrashed(),
+        ]);
         
         // Role-based access control
         // Administrator: can see ALL certificates from ALL organizers
         // Organizer: can ONLY see certificates from their own events
         if (!auth()->user()->hasRole('Administrator')) {
             $query->whereHas('event', function($q) {
-                $q->where('user_id', auth()->id());
+                $q->withTrashed()->where('user_id', auth()->id());
             });
         }
 
@@ -43,16 +50,10 @@ class CertificateController extends Controller
         // Filters certificates based on participant's registration type
         // 'verified' tab: certificates for participants with IC/Passport
         // 'simplified' tab: certificates for participants without IC/Passport (Quick Registration)
-        $tab = $request->get('tab', 'verified');
-        if ($tab === 'simplified') {
-            $query->whereHas('participant', function($q) {
-                $q->where('registration_type', 'simplified');
-            });
-        } else {
-            $query->whereHas('participant', function($q) {
-                $q->where('registration_type', 'verified');
-            });
-        }
+        $tab = $request->get('tab', 'verified') === 'simplified' ? 'simplified' : 'verified';
+        $query->whereHas('participant', function($q) use ($tab) {
+            $q->withTrashed()->where('registration_type', $tab);
+        });
 
         // Search functionality
         if ($request->filled('search')) {
@@ -77,21 +78,22 @@ class CertificateController extends Controller
             $query->where('template_id', $request->template_id);
         }
 
-        // Filter by date range
+        // Filter by date range.
+        // These windows look backwards: certificates are generated in the past,
+        // so the previous forward-looking ranges never matched anything.
         if ($request->filled('date_filter')) {
-            $today = now()->startOfDay();
             switch ($request->date_filter) {
                 case 'today':
-                    $query->whereDate('created_at', $today->format('Y-m-d'));
+                    $query->whereDate('created_at', now()->toDateString());
                     break;
                 case 'week':
-                    $query->whereBetween('created_at', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
+                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
                     break;
                 case 'month':
-                    $query->whereBetween('created_at', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
+                    $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
                     break;
                 case 'past':
-                    $query->where('created_at', '<', $today->format('Y-m-d'));
+                    $query->where('created_at', '<', now()->startOfDay());
                     break;
             }
         }
@@ -160,15 +162,22 @@ class CertificateController extends Controller
         if ($source === 'attendance') {
             // Get participants from attendance records (present only)
             // Exclude participants who already have certificates for this event
+            // Raw query builder ignores soft deletes, so deleted_at is filtered
+            // by hand: participants and attendance sessions sitting in the
+            // Recycle Bin must not appear, while a certificate in the Recycle
+            // Bin should no longer block a participant from being issued again.
             $participants = DB::table('participants')
                 ->join('attendance_records', 'participants.id', '=', 'attendance_records.participant_id')
                 ->join('attendances', 'attendance_records.attendance_id', '=', 'attendances.id')
                 ->leftJoin('certificates', function($join) use ($eventId) {
                     $join->on('participants.id', '=', 'certificates.participant_id')
-                         ->where('certificates.event_id', '=', $eventId);
+                         ->where('certificates.event_id', '=', $eventId)
+                         ->whereNull('certificates.deleted_at');
                 })
                 ->where('attendances.event_id', $eventId)
                 ->where('attendance_records.status', 'present')
+                ->whereNull('participants.deleted_at')
+                ->whereNull('attendances.deleted_at')
                 ->whereNull('certificates.id') // Exclude participants who already have certificates
                 ->select('participants.id', 'participants.name', 'participants.organization', 'participants.registration_type')
                 ->distinct()
@@ -181,7 +190,8 @@ class CertificateController extends Controller
                     $query->select(DB::raw(1))
                           ->from('certificates')
                           ->whereColumn('certificates.participant_id', 'participants.id')
-                          ->where('certificates.event_id', $eventId);
+                          ->where('certificates.event_id', $eventId)
+                          ->whereNull('certificates.deleted_at');
                 })
                 ->select('id', 'name', 'organization', 'registration_type')
                 ->get();
@@ -484,7 +494,15 @@ class CertificateController extends Controller
     /**
      * Generate a certificate PDF
      */
-    private function generateCertificatePDF(Event $event, Participant $participant, CertificateTemplate $template, bool $isPreview = false, ?string $certificateNumber = null)
+    /**
+     * Render the certificate PDF and return its path relative to the public disk.
+     *
+     * Public rather than private because CertificateIssuer needs it to issue a
+     * certificate automatically on registration. Copying this method would mean
+     * maintaining the layout, font and coordinate handling in two places, and
+     * the two copies would drift.
+     */
+    public function generateCertificatePDF(Event $event, Participant $participant, CertificateTemplate $template, bool $isPreview = false, ?string $certificateNumber = null)
     {
         // Generate certificate number if not provided
         if (!$certificateNumber) {
@@ -578,6 +596,16 @@ class CertificateController extends Controller
         // Remove default header/footer
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
+
+        // A certificate is a fixed canvas, so every default that shifts content
+        // has to go. Without these, TCPDF applied 15 mm page margins, 1.5 mm of
+        // cell padding on each side, and would push anything near the bottom
+        // onto a second page.
+        $pdf->SetMargins(0, 0, 0, true);
+        $pdf->SetAutoPageBreak(false, 0);
+        $pdf->setCellPaddings(0, 0, 0, 0);
+        $pdf->setCellMargins(0, 0, 0, 0);
+        $pdf->setCellHeightRatio(\App\Support\CertificateLayout::LINE_HEIGHT_RATIO);
         
         // Add a page
         $pdf->AddPage();
@@ -651,58 +679,32 @@ class CertificateController extends Controller
                         'align' => isset($element['textAlign']) ? $element['textAlign'] : 'L'
                     ]);
                     
-                    // Set font
-                    $pdf->SetFont($fontFamily, $style, $fontSize);
+                    // Set font. Custom fonts live outside TCPDF's own folder, so
+                    // the definition file is passed explicitly; resolve() falls
+                    // back to a built-in font when the file is not installed.
+                    [$resolvedFamily, $resolvedFile] = \App\Support\CertificateFonts::resolve($fontFamily);
+                    $pdf->SetFont($resolvedFamily, $style, $fontSize, $resolvedFile);
                     
                     // Set text color
                     $pdf->SetTextColor($color['r'], $color['g'], $color['b']);
                     
-                    // Adding text element to PDF
-                    
                     // Make sure text is visible by ensuring it's on top of all content
                     $pdf->SetAlpha(1);
-                    
-                    // Set text alignment
-                    $align = 'L'; // Default: Left
-                    if (isset($element['textAlign'])) {
-                        if ($element['textAlign'] === 'center') $align = 'C';
-                        elseif ($element['textAlign'] === 'right') $align = 'R';
-                    }
-                    
-                    // Handle text alignment with proper positioning
-                    $cellWidth = 0; // Auto-width by default
-                    
-                    // For centered text, we need to calculate width for proper centering
-                    if ($align === 'C') {
-                        // For centered text, set cell width to page width 
-                        // and position X at beginning of page
-                        $cellWidth = $pageWidth;
-                        $xPt = 0;
-                    } else if ($align === 'R') {
-                        // For right-aligned text, position from right edge
-                        $cellWidth = $pageWidth - $xPt;
-                    }
-                    
-                    // Add text - using Cell for reliable text rendering
-                    // Cell method is more straightforward and doesn't have MultiCell's complexity
-                    $pdf->SetXY($xPt, $yPt);
-                    
-                    if ($align === 'C') {
-                        // For centered text, use Cell with center alignment
-                        $pdf->Cell($cellWidth, 10, $content, 0, 0, 'C', false, '', 0, false, 'T', 'M');
-                    } else if ($align === 'R') {
-                        // For right-aligned text
-                        $pdf->Cell($cellWidth, 10, $content, 0, 0, 'R', false, '', 0, false, 'T', 'M');
-                    } else {
-                        // For left-aligned text
-                        $pdf->Cell(0, 10, $content, 0, 0, 'L', false, '', 0, false, 'T', 'M');
-                    }
-                    
-                    // Add a debug marker to verify position
-                    if ($isPreview) {
-                        $pdf->SetDrawColor(255, 0, 0);
-                        $pdf->Circle($xPt, $yPt, 1);
-                    }
+
+                    // x is an anchor, not always the left edge: measure the text
+                    // and shift left so centre and right alignment land on the
+                    // exact spot chosen in the designer. Previously centred text
+                    // ignored x and centred on the whole page, and right aligned
+                    // text was pinned to the page edge.
+                    $align = \App\Support\CertificateLayout::normaliseAlign($element['textAlign'] ?? 'left');
+                    $textWidth = $pdf->GetStringWidth($content);
+                    $drawX = \App\Support\CertificateLayout::drawX($xPt, $textWidth, $align);
+
+                    // Cell height 0 means "one line", and calign/valign 'T'
+                    // makes yPt the top of the text instead of the middle of a
+                    // fixed 10 mm box, which used to drop every element by 5 mm.
+                    $pdf->SetXY($drawX, $yPt);
+                    $pdf->Cell($textWidth, 0, $content, 0, 0, 'L', false, '', 0, false, 'T', 'T');
                 }
                 elseif ($element['type'] === 'qrcode') {
                     // Generate QR code
@@ -728,29 +730,15 @@ class CertificateController extends Controller
                     $widthMm = ($width / $template->template_data['width']) * $pageWidth;
                     $heightMm = ($height / $template->template_data['height']) * $pageHeight;
                     
-                    // Ensure QR code stays within page boundaries with safety margin
-                    // TCPDF needs extra margin to prevent page overflow
-                    $safetyMargin = 20; // 20mm safety margin from bottom
-                    
-                    // Check if QR code would extend beyond safe zone
-                    if ($yPt + $heightMm > $pageHeight - $safetyMargin) {
-                        // Adjust Y position to fit within safe zone
-                        $yPt = $pageHeight - $heightMm - $safetyMargin;
-                        \Log::warning('QR code Y position adjusted to prevent page overflow', [
-                            'original_y' => $y,
-                            'adjusted_y' => $yPt,
-                            'height' => $heightMm,
-                            'page_height' => $pageHeight
-                        ]);
-                    }
-                    
-                    if ($xPt + $widthMm > $pageWidth) {
-                        $widthMm = $pageWidth - $xPt - 5; // Leave 5mm margin from right
-                    }
-                    
-                    // Ensure minimum size
-                    $widthMm = max($widthMm, 10); // Minimum 10mm
+                    // Keep the QR code on the page without moving it away from
+                    // where it was placed. Auto page break is off now, so the
+                    // old 20 mm bottom "safety margin" is no longer needed and
+                    // only served to silently jump the code upwards.
+                    $widthMm = max($widthMm, 10);  // Minimum 10mm
                     $heightMm = max($heightMm, 10); // Minimum 10mm
+
+                    $xPt = max(0, min($xPt, $pageWidth - $widthMm));
+                    $yPt = max(0, min($yPt, $pageHeight - $heightMm));
                     
                     // Embed QR code in PDF
                     $pdf->ImageSVG('@' . $qrCodeImage, $xPt, $yPt, $widthMm, $heightMm, '', '', '', 0, false);
@@ -796,8 +784,9 @@ class CertificateController extends Controller
                 $xPt = ($x / $templateWidth) * $pageWidth;
                 $yPt = ($y / $templateHeight) * $pageHeight;
                 
-                // Set font
-                $pdf->SetFont($fontFamily, $style, $fontSize);
+                // Set font (see the note on the other SetFont call above)
+                [$resolvedFamily, $resolvedFile] = \App\Support\CertificateFonts::resolve($fontFamily);
+                $pdf->SetFont($resolvedFamily, $style, $fontSize, $resolvedFile);
                 
                 // Set text color
                 $pdf->SetTextColor($color['r'], $color['g'], $color['b']);
@@ -818,22 +807,10 @@ class CertificateController extends Controller
                 // Make sure text is visible by ensuring it's on top of all content
                 $pdf->SetAlpha(1);
                 
-                // Default alignment is left
-                $align = 'L';
-                
-                // Handle text alignment with proper positioning
-                $cellWidth = 0; // Auto-width by default
-                
-                // Add text - using Cell with explicit height for better text rendering
-                // Use ln=0 to avoid line breaks that cause page breaks
+                // Legacy placeholders are always left aligned. Same anchoring
+                // rule as the modern elements: yPt is the top of the text.
                 $pdf->SetXY($xPt, $yPt);
-                $pdf->Cell($cellWidth, 10, $text, 0, 0, $align, 0);
-                
-                // Add a debug marker to verify position
-                if ($isPreview) {
-                    $pdf->SetDrawColor(255, 0, 0);
-                    $pdf->Circle($xPt, $yPt, 1);
-                }
+                $pdf->Cell($pdf->GetStringWidth($text), 0, $text, 0, 0, 'L', false, '', 0, false, 'T', 'T');
             }
         } else {
             \Log::warning("No template elements or placeholders found in template", ['template_id' => $template->id]);
@@ -881,7 +858,9 @@ class CertificateController extends Controller
             "'Trebuchet MS', sans-serif" => 'helvetica',
             'Trebuchet MS' => 'helvetica',
             'Tahoma' => 'helvetica',
-            // Custom fonts - now using converted TCPDF fonts
+            // Custom handwriting fonts. These are not part of TCPDF, so
+            // CertificateFonts::resolve() supplies the definition file and
+            // falls back to Helvetica if it has not been installed.
             'Amsterdam' => 'amsterdam',
             'Dancing Script' => 'dancingscript',
             'Pacifico' => 'pacifico',
@@ -889,8 +868,22 @@ class CertificateController extends Controller
             'Allura' => 'allura',
             'Sacramento' => 'sacramento',
         ];
-        
-        return $fontMap[$fontFamily] ?? 'helvetica';
+
+        // Match on the raw value first, then case-insensitively, so a template
+        // storing "amsterdam" or "AMSTERDAM" resolves the same way.
+        if (isset($fontMap[$fontFamily])) {
+            return $fontMap[$fontFamily];
+        }
+
+        foreach ($fontMap as $name => $tcpdfName) {
+            if (strcasecmp($name, (string) $fontFamily) === 0) {
+                return $tcpdfName;
+            }
+        }
+
+        return \App\Support\CertificateFonts::isCustom((string) $fontFamily)
+            ? strtolower((string) $fontFamily)
+            : 'helvetica';
     }
     
     /**
@@ -968,12 +961,16 @@ class CertificateController extends Controller
     public function destroy($id)
     {
         $certificate = Certificate::findOrFail($id);
-        // Delete PDF file if exists
-        if ($certificate->pdf_file && \Storage::disk('public')->exists($certificate->pdf_file)) {
-            \Storage::disk('public')->delete($certificate->pdf_file);
-        }
+
+        // Soft delete only. The PDF is kept on disk so a restore from the
+        // Recycle Bin returns a working certificate; the file is removed only
+        // when the record is permanently deleted from the bin.
         $certificate->delete();
-        return redirect()->route('certificates.index')->with('success', 'Certificate deleted successfully.');
+
+        return redirect()->route('certificates.index')->with(
+            'success',
+            'Certificate moved to Recycle Bin. It can no longer be verified until restored from Settings → Global Config → Recycle Bin.'
+        );
     }
 
     /**

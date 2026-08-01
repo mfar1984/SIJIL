@@ -7,11 +7,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
 class PwaParticipant extends Authenticatable
 {
-    use HasFactory, HasApiTokens;
+    use HasFactory, HasApiTokens, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -33,7 +34,12 @@ class PwaParticipant extends Authenticatable
         'identity_card',
         'passport_no',
         'gender',
+        'race',
         'date_of_birth',
+        'status',
+        'banned_at',
+        'banned_by',
+        'ban_reason',
         'job_title',
         'address1',
         'address2',
@@ -51,9 +57,46 @@ class PwaParticipant extends Authenticatable
     protected $casts = [
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
+        'banned_at' => 'datetime',
         'password_changed_at' => 'datetime',
         'locked_until' => 'datetime',
     ];
+
+    /**
+     * Is this account banned?
+     *
+     * banned_at is the authority rather than the status enum, because status is
+     * also used for ordinary active/inactive states and can be changed by the
+     * edit form.
+     */
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
+    }
+
+    /**
+     * Who applied the ban.
+     */
+    public function bannedBy()
+    {
+        return $this->belongsTo(User::class, 'banned_by');
+    }
+
+    /**
+     * Banned accounts only.
+     */
+    public function scopeBanned($query)
+    {
+        return $query->whereNotNull('banned_at');
+    }
+
+    /**
+     * Accounts that are not banned.
+     */
+    public function scopeNotBanned($query)
+    {
+        return $query->whereNull('banned_at');
+    }
 
     /**
      * Get the events that the participant is registered for

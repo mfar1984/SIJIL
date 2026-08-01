@@ -60,23 +60,24 @@
                 </label>
                 <div class="flex-1">
                     <div class="flex items-center">
+                        @php $apiEnabled = (bool) old('api_enabled', $config->api_enabled ?? true); @endphp
                         <label class="inline-flex items-center mr-4">
                             <input 
                                 type="radio" 
-                                name="api_status" 
-                                value="enabled" 
+                                name="api_enabled" 
+                                value="1" 
                                 class="text-primary-DEFAULT focus:ring-primary-light" 
-                                {{ (old('api_status', $config->api_status ?? 'enabled') == 'enabled') ? 'checked' : '' }}
+                                {{ $apiEnabled ? 'checked' : '' }}
                             >
                             <span class="ml-2 text-xs text-gray-700">Enabled</span>
                         </label>
                         <label class="inline-flex items-center">
                             <input 
                                 type="radio" 
-                                name="api_status" 
-                                value="disabled" 
+                                name="api_enabled" 
+                                value="0" 
                                 class="text-primary-DEFAULT focus:ring-primary-light"
-                                {{ (old('api_status', $config->api_status ?? 'enabled') == 'disabled') ? 'checked' : '' }}
+                                {{ $apiEnabled ? '' : 'checked' }}
                             >
                             <span class="ml-2 text-xs text-gray-700">Disabled</span>
                         </label>

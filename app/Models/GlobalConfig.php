@@ -5,10 +5,27 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class GlobalConfig extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    /**
+     * Configuration changes are security relevant, so every changed attribute is
+     * recorded. Secrets are excluded from the log payload.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->dontLogIfAttributesChangedOnly(['updated_at'])
+            ->logExcept(['webhook_secret', 'telegram_bot_token'])
+            ->logOnlyDirty()
+            ->useLogName('security')
+            ->setDescriptionForEvent(fn (string $eventName) => "Global configuration {$eventName}");
+    }
 
     protected $fillable = [
         // Organization Settings
@@ -25,6 +42,7 @@ class GlobalConfig extends Model
         // Security Settings
         'min_password_length', 'password_expiry', 'require_special_chars',
         'require_numbers', 'require_uppercase', 'max_login_attempts',
+        'pwa_reset_cooldown_seconds',
         'lockout_duration', 'session_timeout', 'enable_2fa', 'force_ssl',
         'log_failed_logins', 'log_password_changes', 'log_permission_changes',
         'enable_security_alerts',

@@ -1,25 +1,28 @@
-<x-sidebar>
-    <!-- Main Navigation Items with Same Style as Categories -->
+﻿<x-sidebar>
+    {{-- Dashboard --}}
     <div class="category-header relative">
         <a href="{{ route('dashboard') }}" class="block relative">
-            <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('dashboard') ? 'bg-blue-100' : '' }} relative">
+            <div class="sidebar-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">
                 <div class="flex items-center">
-                    <span class="material-icons-outlined text-base text-blue-500 mr-3">dashboard</span>
-                    <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Dashboard</p>
+                    <span class="material-icons-outlined sidebar-icon">dashboard</span>
+                    <p class="sidebar-label">Dashboard</p>
                 </div>
             </div>
         </a>
     </div>
-    
+
+    @if(auth()->user()->can('events.read') || auth()->user()->can('participants.read') || auth()->user()->can('attendance_management.read') || auth()->user()->can('attendance.read') || auth()->user()->can('archives.read') || auth()->user()->can('certificates.read') || auth()->user()->can('certificates.create') || auth()->user()->can('templates.read'))
+    <p class="sidebar-group-label">Event Operations</p>
+    @endif
+
     @can('events.read')
-    <div class="mt-2"></div>
     <div class="category-header relative" onclick="toggleSection('event-section', event)">
-        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+        <div class="sidebar-link">
             <div class="flex items-center">
-                <span class="material-icons-outlined text-base text-green-500 mr-3">event</span>
-                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Event</p>
+                <span class="material-icons-outlined sidebar-icon">event</span>
+                <p class="sidebar-label">Event</p>
             </div>
-            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="event-section-icon">expand_more</span>
+            <svg class="sidebar-chevron" id="event-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
         </div>
     </div>
     <div id="event-section" class="hierarchical-menu" style="display: none;">
@@ -33,31 +36,29 @@
         @endcan
     </div>
     @endcan
-    
+
     @can('participants.read')
-    <div class="mt-2"></div>
     <div class="category-header relative">
         <a href="{{ route('participants') }}" class="block relative">
-            <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('participants') ? 'bg-blue-100' : '' }} relative">
+            <div class="sidebar-link {{ request()->routeIs('participants') ? 'is-active' : '' }}">
                 <div class="flex items-center">
-                    <span class="material-icons-outlined text-base text-purple-500 mr-3">people</span>
-                    <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Participants</p>
+                    <span class="material-icons-outlined sidebar-icon">people</span>
+                    <p class="sidebar-label">Participants</p>
                 </div>
             </div>
         </a>
     </div>
     @endcan
-    
-    <!-- Attendance Section -->
+
+    {{-- Attendance --}}
     @if(auth()->user()->can('attendance_management.read') || auth()->user()->can('attendance.read') || auth()->user()->can('archives.read'))
-    <div class="mt-2"></div>
     <div class="category-header relative" onclick="toggleSection('attendance-section', event)">
-        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+        <div class="sidebar-link">
             <div class="flex items-center">
-                <span class="material-icons-outlined text-base text-orange-500 mr-3">how_to_reg</span>
-                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Attendance</p>
+                <span class="material-icons-outlined sidebar-icon">how_to_reg</span>
+                <p class="sidebar-label">Attendance</p>
             </div>
-            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="attendance-section-icon">expand_more</span>
+            <svg class="sidebar-chevron" id="attendance-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
         </div>
     </div>
     <div id="attendance-section" class="hierarchical-menu" style="display: none;">
@@ -78,17 +79,16 @@
         @endcan
     </div>
     @endif
-    
-    <!-- Certificate Management -->
+
+    {{-- Certificate Management --}}
     @if(auth()->user()->can('certificates.read') || auth()->user()->can('certificates.create') || auth()->user()->can('templates.read'))
-    <div class="mt-4"></div>
     <div class="category-header relative" onclick="toggleSection('certificate-section', event)">
-        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+        <div class="sidebar-link">
             <div class="flex items-center">
-                <span class="material-icons-outlined text-base text-yellow-500 mr-3">workspace_premium</span>
-                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Certificate</p>
+                <span class="material-icons-outlined sidebar-icon">workspace_premium</span>
+                <p class="sidebar-label">Certificate</p>
             </div>
-            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="certificate-section-icon">expand_more</span>
+            <svg class="sidebar-chevron" id="certificate-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
         </div>
     </div>
     <div id="certificate-section" class="hierarchical-menu" style="display: none;">
@@ -97,9 +97,6 @@
             Manage Certificates
         </x-sidebar-submenu-item>
         @endcan
-        
-        
-        
         @can('templates.read')
         <x-sidebar-submenu-item href="{{ route('template.designer') }}" icon="design_services" :active="request()->routeIs('template.*')">
             Template Designer
@@ -107,17 +104,20 @@
         @endcan
     </div>
     @endif
-    
-    <!-- PWA Management Section -->
+
+    @if(auth()->user()->can('pwa_participants.read') || auth()->user()->can('pwa_analytics.read') || auth()->user()->can('pwa_templates.read') || auth()->user()->can('pwa_settings.read') || auth()->user()->can('campaigns.read') || auth()->user()->can('delivery.read'))
+    <p class="sidebar-group-label">Engagement</p>
+    @endif
+
+    {{-- PWA Management --}}
     @if(auth()->user()->can('pwa_participants.read') || auth()->user()->can('pwa_analytics.read') || auth()->user()->can('pwa_templates.read') || auth()->user()->can('pwa_settings.read'))
-    <div class="mt-4"></div>
     <div class="category-header relative" onclick="toggleSection('ecertificate-section', event)">
-        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+        <div class="sidebar-link">
             <div class="flex items-center">
-                <span class="material-icons-outlined text-base text-indigo-500 mr-3">smartphone</span>
-                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">PWA Management</p>
+                <span class="material-icons-outlined sidebar-icon">smartphone</span>
+                <p class="sidebar-label">PWA Management</p>
             </div>
-            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="ecertificate-section-icon">expand_more</span>
+            <svg class="sidebar-chevron" id="ecertificate-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
         </div>
     </div>
     <div id="ecertificate-section" class="hierarchical-menu" style="display: none;">
@@ -143,17 +143,42 @@
         @endcan
     </div>
     @endif
-    
-    <!-- Reports Section -->
-    @if(auth()->user()->can('attendance_reports.read') || auth()->user()->can('event_statistics.read') || auth()->user()->can('certificate_reports.read'))
-    <div class="mt-4"></div>
-    <div class="category-header relative" onclick="toggleSection('reports-section', event)">
-        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+
+    {{-- Campaign --}}
+    @if(auth()->user()->can('campaigns.read') || auth()->user()->can('delivery.read'))
+    <div class="category-header relative" onclick="toggleSection('campaign-section', event)">
+        <div class="sidebar-link">
             <div class="flex items-center">
-                <span class="material-icons-outlined text-base text-red-500 mr-3">assessment</span>
-                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Reports</p>
+                <span class="material-icons-outlined sidebar-icon">campaign</span>
+                <p class="sidebar-label">Campaign</p>
             </div>
-            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="reports-section-icon">expand_more</span>
+            <svg class="sidebar-chevron" id="campaign-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
+        </div>
+    </div>
+    <div id="campaign-section" class="hierarchical-menu" style="display: none;">
+        @can('campaigns.read')
+        <x-sidebar-submenu-item href="{{ route('campaign.index') }}" icon="campaign" :active="request()->routeIs('campaign.index')">
+            Campaign
+        </x-sidebar-submenu-item>
+        @endcan
+        @can('delivery.read')
+        <x-sidebar-submenu-item href="{{ route('config.deliver') }}" icon="settings_applications" :active="request()->routeIs('config.deliver')">
+            Config Delivery
+        </x-sidebar-submenu-item>
+        @endcan
+    </div>
+    @endif
+
+    @if(auth()->user()->can('attendance_reports.read') || auth()->user()->can('event_statistics.read') || auth()->user()->can('certificate_reports.read'))
+    <p class="sidebar-group-label">Insights</p>
+    {{-- Reports --}}
+    <div class="category-header relative" onclick="toggleSection('reports-section', event)">
+        <div class="sidebar-link">
+            <div class="flex items-center">
+                <span class="material-icons-outlined sidebar-icon">assessment</span>
+                <p class="sidebar-label">Reports</p>
+            </div>
+            <svg class="sidebar-chevron" id="reports-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
         </div>
     </div>
     <div id="reports-section" class="hierarchical-menu" style="display: none;">
@@ -174,59 +199,33 @@
         @endcan
     </div>
     @endif
-    
-    <!-- Campaign Section -->
-    @if(auth()->user()->can('campaigns.read') || auth()->user()->can('delivery.read'))
-    <div class="mt-4"></div>
-    <div class="category-header relative" onclick="toggleSection('campaign-section', event)">
-        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
-            <div class="flex items-center">
-                <span class="material-icons-outlined text-base text-pink-500 mr-3">campaign</span>
-                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Campaign</p>
-            </div>
-            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="campaign-section-icon">expand_more</span>
-        </div>
-    </div>
-    <div id="campaign-section" class="hierarchical-menu" style="display: none;">
-        @can('campaigns.read')
-        <x-sidebar-submenu-item href="{{ route('campaign.index') }}" icon="campaign" :active="request()->routeIs('campaign.index')">
-            Campaign
-        </x-sidebar-submenu-item>
-        @endcan
-        @can('delivery.read')
-        <x-sidebar-submenu-item href="{{ route('config.deliver') }}" icon="settings_applications" :active="request()->routeIs('config.deliver')">
-            Config Delivery
-        </x-sidebar-submenu-item>
-        @endcan
-    </div>
+
+    @if(auth()->user()->can('helpdesk.read') || auth()->user()->can('global_config.read') || auth()->user()->can('roles.read') || auth()->user()->can('users.read') || auth()->user()->can('log_activity.read'))
+    <p class="sidebar-group-label">System</p>
     @endif
-    
+
     @can('helpdesk.read')
-    <div class="mt-4"></div>
     <div class="category-header relative">
         <a href="{{ route('helpdesk.index') }}" class="block relative">
-            <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 {{ request()->routeIs('helpdesk.index') ? 'bg-blue-100' : '' }} relative">
+            <div class="sidebar-link {{ request()->routeIs('helpdesk.index') ? 'is-active' : '' }}">
                 <div class="flex items-center">
-                    <span class="material-icons-outlined text-base text-teal-500 mr-3">help</span>
-                    <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Helpdesk</p>
+                    <span class="material-icons-outlined sidebar-icon">help</span>
+                    <p class="sidebar-label">Helpdesk</p>
                 </div>
             </div>
         </a>
     </div>
     @endcan
-    
-    <!-- Separator line after Helpdesk -->
-    <div class="sidebar-separator"></div>
-    
-    <!-- Settings Section -->
+
+    {{-- Settings --}}
     @if(auth()->user()->can('global_config.read') || auth()->user()->can('roles.read') || auth()->user()->can('users.read') || auth()->user()->can('log_activity.read'))
     <div class="category-header relative" onclick="toggleSection('settings-section', event)">
-        <div class="px-4 py-2 flex justify-between items-center cursor-pointer hover:bg-blue-50 relative">
+        <div class="sidebar-link">
             <div class="flex items-center">
-                <span class="material-icons-outlined text-base text-cyan-600 mr-3">settings</span>
-                <p class="text-xs uppercase tracking-wider text-gray-500 font-medium">Settings</p>
+                <span class="material-icons-outlined sidebar-icon">settings</span>
+                <p class="sidebar-label">Settings</p>
             </div>
-            <span class="material-icons-outlined text-xs text-gray-500 transform transition-transform duration-200" id="settings-section-icon">expand_more</span>
+            <svg class="sidebar-chevron" id="settings-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
         </div>
     </div>
     <div id="settings-section" class="hierarchical-menu" style="display: none;">
@@ -252,22 +251,22 @@
         @endcan
         @can('security_audit.read')
         <x-sidebar-submenu-item href="{{ route('settings.security-audit') }}" icon="security" :active="request()->routeIs('settings.security-audit')">
-            Security & Audit
+            Security &amp; Audit
         </x-sidebar-submenu-item>
         @endcan
     </div>
     @endif
-    
+
     <script>
         function toggleSection(sectionId, event) {
-            // If click came from a link (submenu item), don't toggle
+            // Clicks originating from a submenu link should navigate, not collapse
             if (event && event.target.closest('a')) {
                 return;
             }
-            
+
             const section = document.getElementById(sectionId);
             const icon = document.getElementById(sectionId + '-icon');
-            
+
             if (section.style.display === 'none') {
                 section.style.display = 'block';
                 icon.style.transform = 'rotate(0deg)';
@@ -276,36 +275,27 @@
                 icon.style.transform = 'rotate(-90deg)';
             }
         }
-        
-        // Initialize sections - expand sections with active submenu
-        document.addEventListener('DOMContentLoaded', function() {
-            // All sections are already set to display:none in the HTML
-            const icons = document.querySelectorAll('.category-header .material-icons');
-            icons.forEach(icon => {
-                if (icon.id && icon.id.includes('-icon')) {
-                    icon.style.transform = 'rotate(-90deg)';
-                }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Collapse every section by default
+            document.querySelectorAll('.sidebar-chevron').forEach(icon => {
+                icon.style.transform = 'rotate(-90deg)';
             });
-            
-            // Check if any submenu is active and expand its parent section
-            const activeSubmenus = document.querySelectorAll('.sidebar-submenu-item.active');
-            activeSubmenus.forEach(submenu => {
-                // Find parent hierarchical-menu
+
+            // Expand the section containing the active page
+            document.querySelectorAll('.sidebar-submenu-item.active').forEach(submenu => {
                 const parentMenu = submenu.closest('.hierarchical-menu');
-                if (parentMenu) {
-                    // Get the section ID from the parent menu's ID
-                    const sectionId = parentMenu.id;
-                    
-                    // Show the section
-                    parentMenu.style.display = 'block';
-                    
-                    // Rotate the icon
-                    const icon = document.getElementById(sectionId + '-icon');
-                    if (icon) {
-                        icon.style.transform = 'rotate(0deg)';
-                    }
+                if (!parentMenu) {
+                    return;
+                }
+
+                parentMenu.style.display = 'block';
+
+                const icon = document.getElementById(parentMenu.id + '-icon');
+                if (icon) {
+                    icon.style.transform = 'rotate(0deg)';
                 }
             });
         });
     </script>
-</x-sidebar> 
+</x-sidebar>

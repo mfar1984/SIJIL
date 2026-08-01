@@ -9,8 +9,8 @@
 
     <x-slot name="title">Attendance Details</x-slot>
 
-    <!-- Alpine.js initialization for interactive charts -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {{-- Alpine already comes from the bundle via the layout. Loading a second copy
+         here made this page run two instances against the same DOM. --}}
 
     <div class="bg-white rounded shadow-md border border-gray-300">
         <div class="p-6 border-b border-gray-200">

@@ -70,7 +70,7 @@
                     <div class="space-y-3">
                         <!-- Name -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label for="name" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                            <label for="name" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 flex items-center gap-1">
                                 Template Name
                                 <div class="tooltip-wrapper" x-data="{ show: false }">
                                     <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
@@ -90,7 +90,7 @@
                         
                         <!-- Type -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label for="type" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                            <label for="type" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 flex items-center gap-1">
                                 Template Type
                                 <div class="tooltip-wrapper" x-data="{ show: false }">
                                     <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
@@ -115,7 +115,7 @@
                         
                         <!-- Subject -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label for="subject" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
+                            <label for="subject" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 flex items-center gap-1">
                                 Email Subject
                                 <div class="tooltip-wrapper" x-data="{ show: false }">
                                     <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
@@ -135,7 +135,7 @@
                         
                         <!-- Content -->
                         <div class="flex flex-col md:flex-row md:items-start gap-3">
-                            <label for="content" class="text-xs font-medium text-gray-700 md:w-40 pt-2 flex items-center gap-1">
+                            <label for="content" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 pt-2 flex items-center gap-1">
                                 Email Content
                                 <div class="tooltip-wrapper" x-data="{ show: false }">
                                     <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 

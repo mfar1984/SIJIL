@@ -91,11 +91,15 @@
                     
                     <div class="border-t border-gray-200 pt-4 mt-6">
                         <div class="flex gap-2">
-                            @can('templates.create')
+                            {{-- The layout editor saves over this template, so it needs the
+                                 update permission its route asks for, not create. --}}
+                            @can('templates.update')
                             <a href="{{ route('template.designer.create', ['id' => $template->id]) }}" class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
                                 <span class="material-icons-outlined text-xs mr-1">design_services</span>
                                 Edit Design
                             </a>
+                            @endcan
+                            @can('templates.create')
                             <form action="{{ route('template.duplicate', $template->id) }}" method="POST" class="inline">
                                 @csrf
                                 <button type="submit" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">

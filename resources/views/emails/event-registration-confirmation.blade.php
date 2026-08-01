@@ -69,6 +69,10 @@
                                                 <td style="padding: 10px 0; color: #111827; font-size: 14px;">{{ $event->address }}</td>
                                             </tr>
                                             @endif
+
+                                            @include('emails.partials.attendance-rows', [
+                                                'attendance' => \App\Support\AttendanceSummary::for($event),
+                                            ])
                                         </table>
                                     </td>
                                 </tr>

@@ -6,7 +6,7 @@ use App\Models\Campaign;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class CampaignController extends Controller
@@ -82,13 +82,218 @@ class CampaignController extends Controller
      */
     public function create()
     {
-        $events = Event::when(!Auth::user()->hasRole('Administrator'), function($q) {
-            return $q->where('user_id', Auth::id());
-        })->orderBy('name')->get();
-        
         return view('campaign.create', [
-            'events' => $events,
+            'events' => $this->availableEvents(),
         ]);
+    }
+
+    /**
+     * The rules for saving a campaign, whether new or existing.
+     *
+     * Create and update carried two copies of these, which is how they drifted
+     * apart: only one of them rejected an empty audience.
+     */
+    private function validateCampaign(Request $request): array
+    {
+        $rules = [
+            'campaign_name' => 'required|string|max:255',
+            'campaign_description' => 'nullable|string|max:2000',
+            'campaign_type' => ['required', Rule::in(Campaign::types())],
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'audience_type' => ['required', Rule::in(Campaign::audiences())],
+
+            // Scoped, not a bare exists check. An organizer could otherwise post
+            // any event id and mail another account's participants.
+            'event_id' => [
+                'nullable',
+                'required_if:audience_type,' . Campaign::AUDIENCE_EVENT,
+                Rule::exists('events', 'id')->where(function ($query) {
+                    if (! Auth::user()->hasRole('Administrator')) {
+                        $query->where('user_id', Auth::id());
+                    }
+                }),
+            ],
+
+            'filter_age' => ['nullable', Rule::in(['18-24', '25-34', '35-44', '45+'])],
+            'filter_gender' => ['nullable', Rule::in(['male', 'female'])],
+            'filter_attendance' => ['nullable', Rule::in(['attended', 'not_attended'])],
+
+            'schedule_type' => ['required', Rule::in(Campaign::scheduleTypes())],
+            'scheduled_date' => 'required_if:schedule_type,' . Campaign::SCHEDULE_LATER . '|nullable|date',
+            'scheduled_time' => 'required_if:schedule_type,' . Campaign::SCHEDULE_LATER . '|nullable|date_format:H:i',
+        ];
+
+        if ($request->input('campaign_type') === Campaign::TYPE_EMAIL) {
+            $rules['email_subject'] = 'required|string|max:255';
+            $rules['email_content'] = 'required|string';
+        }
+
+        if ($request->input('campaign_type') === Campaign::TYPE_SMS) {
+            $rules['sms_message'] = 'required|string|max:160';
+
+            // An address list carries no phone numbers, so this pairing can only ever
+            // send to nobody. It used to be accepted, run, and report success with
+            // zero delivered.
+            $rules['audience_type'] = [
+                'required',
+                Rule::in(array_values(array_diff(Campaign::audiences(), [Campaign::AUDIENCE_EMAILS]))),
+            ];
+        }
+
+        if ($request->input('audience_type') === Campaign::AUDIENCE_EMAILS) {
+            // Invalid addresses used to be dropped without a word, so a typo in the
+            // only address produced a campaign that reported "no recipients found".
+            $rules['custom_emails'] = ['required', 'string', function ($attribute, $value, $fail) {
+                $addresses = self::parseEmails($value);
+
+                if (! $addresses) {
+                    $fail('Enter at least one email address.');
+
+                    return;
+                }
+
+                $invalid = array_filter($addresses, fn ($email) => ! filter_var($email, FILTER_VALIDATE_EMAIL));
+
+                if ($invalid) {
+                    $fail('Not a valid email address: ' . implode(', ', $invalid));
+                }
+            }];
+        }
+
+        return $request->validate($rules, [
+            'event_id.exists' => 'Choose one of your own events.',
+            'event_id.required_if' => 'Choose the event to send to.',
+            'audience_type.in' => 'An address list has no phone numbers, so it cannot be used for SMS. '
+                . 'Pick an event or a filter instead.',
+            'end_date.after_or_equal' => 'The end date cannot be before the start date.',
+            'sms_message.max' => 'An SMS is limited to 160 characters.',
+            'scheduled_date.required_if' => 'Choose the date to send on.',
+            'scheduled_time.required_if' => 'Choose the time to send at.',
+        ]);
+    }
+
+    /**
+     * Split a comma, semicolon or newline separated list into addresses.
+     */
+    private static function parseEmails(?string $value): array
+    {
+        return array_values(array_filter(
+            array_map('trim', preg_split('/[,;\r\n]+/', (string) $value)),
+            fn ($email) => $email !== ''
+        ));
+    }
+
+    /**
+     * The column values for a campaign, minus user_id and status.
+     */
+    private function payload(Request $request): array
+    {
+        $type = $request->input('campaign_type');
+        $audience = $request->input('audience_type');
+
+        // include_unsubscribe and include_shortlink used to be stored here. Neither
+        // was ever read when sending, so the form was offering an unsubscribe link
+        // and a shortlink that never appeared. They are gone rather than left as a
+        // promise the sender does not keep.
+        $content = $type === Campaign::TYPE_EMAIL
+            ? [
+                'subject' => $request->input('email_subject'),
+                'body' => $request->input('email_content'),
+            ]
+            : [
+                'message' => $request->input('sms_message'),
+            ];
+
+        $criteria = match ($audience) {
+            Campaign::AUDIENCE_FILTER => [
+                'age' => $request->input('filter_age') ?: null,
+                'gender' => $request->input('filter_gender') ?: null,
+                'attendance' => $request->input('filter_attendance') ?: null,
+            ],
+            Campaign::AUDIENCE_EMAILS => [
+                'custom_emails' => self::parseEmails($request->input('custom_emails')),
+            ],
+            default => null,
+        };
+
+        $scheduledAt = null;
+
+        if ($request->input('schedule_type') === Campaign::SCHEDULE_LATER) {
+            $scheduledAt = Carbon::parse(
+                $request->input('scheduled_date') . ' ' . $request->input('scheduled_time')
+            );
+        }
+
+        return [
+            'name' => $request->input('campaign_name'),
+            'description' => $request->input('campaign_description'),
+            'campaign_type' => $type,
+            'audience_type' => $audience,
+            'event_id' => $audience === Campaign::AUDIENCE_EVENT ? $request->input('event_id') : null,
+            'filter_criteria' => $criteria,
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date') ?: null,
+            'content' => $content,
+            'schedule_type' => $request->input('schedule_type'),
+            'scheduled_at' => $scheduledAt,
+        ];
+    }
+
+    /**
+     * Resolve the route parameter and check the caller owns the campaign.
+     *
+     * show, edit, update and destroy each carried their own copy of this.
+     */
+    private function findCampaign($campaign): Campaign
+    {
+        $model = is_numeric($campaign)
+            ? Campaign::findOrFail($campaign)
+            // Exact match, not LIKE: a name containing % or _ would otherwise be
+            // treated as a wildcard and resolve to somebody else's campaign.
+            : Campaign::where('name', str_replace('-', ' ', $campaign))->firstOrFail();
+
+        if (! Auth::user()->hasRole('Administrator') && (int) $model->user_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return $model;
+    }
+
+    /**
+     * The status a save should leave the campaign in.
+     */
+    private function statusAfterSave(Request $request): string
+    {
+        if (! $request->has('save_send')) {
+            return Campaign::STATUS_DRAFT;
+        }
+
+        return $request->input('schedule_type') === Campaign::SCHEDULE_LATER
+            ? Campaign::STATUS_SCHEDULED
+            : Campaign::STATUS_RUNNING;
+    }
+
+    /**
+     * Where to send the user after a save, with a message that says what happened.
+     */
+    private function afterSave(Campaign $campaign, string $status, string $verb)
+    {
+        if ($status === Campaign::STATUS_RUNNING) {
+            $this->processCampaign($campaign);
+
+            return redirect()->route('campaign.show', $campaign->id)
+                ->with('success', "Campaign {$verb} and sent. The delivery figures below are from this run.");
+        }
+
+        if ($status === Campaign::STATUS_SCHEDULED) {
+            return redirect()->route('campaign.show', $campaign->id)
+                ->with('success', "Campaign {$verb} and scheduled for "
+                    . $campaign->scheduled_at->format('j M Y, H:i') . '.');
+        }
+
+        return redirect()->route('campaign.show', $campaign->id)
+            ->with('success', "Campaign {$verb} as a draft. Use Send now when you are ready.");
     }
 
     /**
@@ -96,119 +301,16 @@ class CampaignController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'campaign_name' => 'required|string|max:255',
-            'campaign_description' => 'nullable|string',
-            'campaign_type' => 'required|in:email,sms,whatsapp',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'audience_type' => 'required|in:all_participants,specific_event,custom_filter,custom_emails',
-            'event_id' => 'required_if:audience_type,specific_event|nullable|exists:events,id',
-            'custom_emails' => 'required_if:audience_type,custom_emails|nullable|string',
-            'schedule_type' => 'required|in:now,scheduled',
-            'scheduled_date' => 'required_if:schedule_type,scheduled|nullable|date',
-            'scheduled_time' => 'required_if:schedule_type,scheduled|nullable',
-        ]);
-        
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-        
-        // Prepare content based on campaign type
-        $content = [];
-        if ($request->campaign_type == 'email') {
-            $validator = Validator::make($request->all(), [
-                'email_subject' => 'required|string|max:255',
-                'email_content' => 'required|string',
-            ]);
-            
-            if ($validator->fails()) {
-                return redirect()->back()
-                    ->withErrors($validator)
-                    ->withInput();
-            }
-            
-            $content = [
-                'subject' => $request->email_subject,
-                'body' => $request->email_content,
-                'include_unsubscribe' => $request->has('include_unsubscribe'),
-            ];
-        } elseif ($request->campaign_type == 'sms') {
-            $validator = Validator::make($request->all(), [
-                'sms_message' => 'required|string|max:160',
-            ]);
-            
-            if ($validator->fails()) {
-                return redirect()->back()
-                    ->withErrors($validator)
-                    ->withInput();
-            }
-            
-            $content = [
-                'message' => $request->sms_message,
-                'include_shortlink' => $request->has('include_shortlink'),
-            ];
-        }
-        
-        // Prepare filter criteria for custom filter or custom emails
-        $filterCriteria = null;
-        if ($request->audience_type == 'custom_filter') {
-            $filterCriteria = [
-                'age' => $request->filter_age,
-                'gender' => $request->filter_gender,
-                'attendance' => $request->filter_attendance,
-            ];
-        } elseif ($request->audience_type == 'custom_emails') {
-            // Process the custom emails from textarea
-            $emails = array_map('trim', explode(',', $request->custom_emails));
-            // Filter out empty values and validate each email
-            $validEmails = array_filter($emails, function($email) {
-                return filter_var($email, FILTER_VALIDATE_EMAIL);
-            });
-            
-            $filterCriteria = [
-                'custom_emails' => $validEmails
-            ];
-        }
-        
-        // Prepare scheduled_at datetime
-        $scheduledAt = null;
-        if ($request->schedule_type == 'scheduled' && $request->scheduled_date && $request->scheduled_time) {
-            $scheduledAt = Carbon::parse($request->scheduled_date . ' ' . $request->scheduled_time);
-        }
-        
-        // Determine initial status
-        $status = 'draft';
-        if ($request->has('save_send')) {
-            $status = ($request->schedule_type == 'now') ? 'running' : 'scheduled';
-        }
-        
-        // Create the campaign
-        $campaign = Campaign::create([
+        $this->validateCampaign($request);
+
+        $status = $this->statusAfterSave($request);
+
+        $campaign = Campaign::create($this->payload($request) + [
             'user_id' => Auth::id(),
-            'name' => $request->campaign_name,
-            'description' => $request->campaign_description,
-            'campaign_type' => $request->campaign_type,
-            'audience_type' => $request->audience_type,
-            'event_id' => $request->audience_type == 'specific_event' ? $request->event_id : null,
-            'filter_criteria' => $filterCriteria,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
             'status' => $status,
-            'content' => $content,
-            'schedule_type' => $request->schedule_type,
-            'scheduled_at' => $scheduledAt,
         ]);
-        
-        // Process campaign immediately if it's set to running
-        if ($status === 'running' && $request->schedule_type === 'now') {
-            $this->processCampaign($campaign);
-        }
-        
-        return redirect()->route('campaign.index')
-            ->with('success', 'Campaign created successfully.');
+
+        return $this->afterSave($campaign, $status, 'created');
     }
     
     /**
@@ -241,18 +343,8 @@ class CampaignController extends Controller
      */
     public function show($campaign)
     {
-        // Check if $campaign is numeric (ID) or string (slug)
-        if (is_numeric($campaign)) {
-            $campaign = Campaign::findOrFail($campaign);
-        } else {
-            $campaign = Campaign::where('name', 'like', str_replace('-', ' ', $campaign))->firstOrFail();
-        }
-        
-        // Check if user has permission to view this campaign
-        if (!Auth::user()->hasRole('Administrator') && $campaign->user_id != Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-        
+        $campaign = $this->findCampaign($campaign);
+
         return view('campaign.show', [
             'campaign' => $campaign,
             'id' => $campaign->id, // For backward compatibility with the view
@@ -264,32 +356,26 @@ class CampaignController extends Controller
      */
     public function edit($campaign)
     {
-        // Check if $campaign is numeric (ID) or string (slug)
-        if (is_numeric($campaign)) {
-            $campaign = Campaign::findOrFail($campaign);
-        } else {
-            $campaign = Campaign::where('name', 'like', str_replace('-', ' ', $campaign))->firstOrFail();
-        }
-        
-        // Check if user has permission to edit this campaign
-        if (!Auth::user()->hasRole('Administrator') && $campaign->user_id != Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-        
-        $events = Event::when(!Auth::user()->hasRole('Administrator'), function($q) {
-            return $q->where('user_id', Auth::id());
-        })->orderBy('name')->get();
-        
-        // Prepare custom emails for display if applicable
-        if ($campaign->audience_type == 'custom_emails' && isset($campaign->filter_criteria['custom_emails'])) {
-            $campaign->custom_emails = implode(', ', $campaign->filter_criteria['custom_emails']);
-        }
-        
+        $campaign = $this->findCampaign($campaign);
+
+        // The form reads the address list straight out of filter_criteria. The old
+        // code assigned it to $campaign->custom_emails, a phantom attribute with no
+        // column behind it, which would have thrown on any later save().
         return view('campaign.edit', [
             'campaign' => $campaign,
-            'events' => $events,
+            'events' => $this->availableEvents(),
             'id' => $campaign->id, // For backward compatibility with the view
         ]);
+    }
+
+    /**
+     * Events this account may target.
+     */
+    private function availableEvents()
+    {
+        return Event::when(! Auth::user()->hasRole('Administrator'), function ($query) {
+            return $query->where('user_id', Auth::id());
+        })->orderBy('name')->get();
     }
 
     /**
@@ -297,118 +383,31 @@ class CampaignController extends Controller
      */
     public function update(Request $request, $campaign)
     {
-        // Check if $campaign is numeric (ID) or string (slug)
-        if (is_numeric($campaign)) {
-            $campaign = Campaign::findOrFail($campaign);
-        } else {
-            $campaign = Campaign::where('name', 'like', str_replace('-', ' ', $campaign))->firstOrFail();
+        $campaign = $this->findCampaign($campaign);
+
+        $this->validateCampaign($request);
+
+        $attributes = $this->payload($request);
+
+        // Saving and sending are separate decisions. update() never touched status
+        // before, and nothing in the interface linked to the process route, so a
+        // draft could not be sent at all once it had been saved.
+        $status = $campaign->status;
+
+        if ($request->has('save_send') && $campaign->isSendable()) {
+            $status = $this->statusAfterSave($request);
+            $attributes['status'] = $status;
         }
-        
-        // Check if user has permission to update this campaign
-        if (!Auth::user()->hasRole('Administrator') && $campaign->user_id != Auth::id()) {
-            abort(403, 'Unauthorized action.');
+
+        $campaign->update($attributes);
+
+        // A campaign that has already gone out is not sent again by saving it.
+        if (! $request->has('save_send')) {
+            return redirect()->route('campaign.show', $campaign->id)
+                ->with('success', 'Campaign updated.');
         }
-        
-        $validator = Validator::make($request->all(), [
-            'campaign_name' => 'required|string|max:255',
-            'campaign_description' => 'nullable|string',
-            'campaign_type' => 'required|in:email,sms,whatsapp',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'audience_type' => 'required|in:all_participants,specific_event,custom_filter,custom_emails',
-            'event_id' => 'required_if:audience_type,specific_event|nullable|exists:events,id',
-            'custom_emails' => 'required_if:audience_type,custom_emails|nullable|string',
-            'schedule_type' => 'required|in:now,scheduled',
-            'scheduled_date' => 'required_if:schedule_type,scheduled|nullable|date',
-            'scheduled_time' => 'required_if:schedule_type,scheduled|nullable',
-        ]);
-        
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-        
-        // Prepare content based on campaign type
-        $content = $campaign->content;
-        if ($request->campaign_type == 'email') {
-            $validator = Validator::make($request->all(), [
-                'email_subject' => 'required|string|max:255',
-                'email_content' => 'required|string',
-            ]);
-            
-            if ($validator->fails()) {
-                return redirect()->back()
-                    ->withErrors($validator)
-                    ->withInput();
-            }
-            
-            $content = [
-                'subject' => $request->email_subject,
-                'body' => $request->email_content,
-                'include_unsubscribe' => $request->has('include_unsubscribe'),
-            ];
-        } elseif ($request->campaign_type == 'sms') {
-            $validator = Validator::make($request->all(), [
-                'sms_message' => 'required|string|max:160',
-            ]);
-            
-            if ($validator->fails()) {
-                return redirect()->back()
-                    ->withErrors($validator)
-                    ->withInput();
-            }
-            
-            $content = [
-                'message' => $request->sms_message,
-                'include_shortlink' => $request->has('include_shortlink'),
-            ];
-        }
-        
-        // Prepare filter criteria for custom filter
-        $filterCriteria = $campaign->filter_criteria;
-        if ($request->audience_type == 'custom_filter') {
-            $filterCriteria = [
-                'age' => $request->filter_age,
-                'gender' => $request->filter_gender,
-                'attendance' => $request->filter_attendance,
-            ];
-        } elseif ($request->audience_type == 'custom_emails') {
-            // Process the custom emails from textarea
-            $emails = array_map('trim', explode(',', $request->custom_emails));
-            // Filter out empty values and validate each email
-            $validEmails = array_filter($emails, function($email) {
-                return filter_var($email, FILTER_VALIDATE_EMAIL);
-            });
-            
-            $filterCriteria = [
-                'custom_emails' => $validEmails
-            ];
-        }
-        
-        // Prepare scheduled_at datetime
-        $scheduledAt = $campaign->scheduled_at;
-        if ($request->schedule_type == 'scheduled' && $request->scheduled_date && $request->scheduled_time) {
-            $scheduledAt = Carbon::parse($request->scheduled_date . ' ' . $request->scheduled_time);
-        }
-        
-        // Update the campaign
-        $campaign->update([
-            'name' => $request->campaign_name,
-            'description' => $request->campaign_description,
-            'campaign_type' => $request->campaign_type,
-            'audience_type' => $request->audience_type,
-            'event_id' => $request->audience_type == 'specific_event' ? $request->event_id : null,
-            'filter_criteria' => $filterCriteria,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'content' => $content,
-            'schedule_type' => $request->schedule_type,
-            'scheduled_at' => $scheduledAt,
-        ]);
-        
-        return redirect()->route('campaign.index')
-            ->with('success', 'Campaign updated successfully.');
+
+        return $this->afterSave($campaign->refresh(), $status, 'updated');
     }
 
     /**
@@ -416,18 +415,8 @@ class CampaignController extends Controller
      */
     public function destroy($campaign)
     {
-        // Check if $campaign is numeric (ID) or string (slug)
-        if (is_numeric($campaign)) {
-            $campaign = Campaign::findOrFail($campaign);
-        } else {
-            $campaign = Campaign::where('name', 'like', str_replace('-', ' ', $campaign))->firstOrFail();
-        }
-        
-        // Check if user has permission to delete this campaign
-        if (!Auth::user()->hasRole('Administrator') && $campaign->user_id != Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-        
+        $campaign = $this->findCampaign($campaign);
+
         $campaign->delete();
         
         return redirect()->route('campaign.index')
@@ -442,18 +431,21 @@ class CampaignController extends Controller
      */
     public function process($id)
     {
-        $campaign = Campaign::findOrFail($id);
-        
-        // Check if user has permission to process this campaign
-        if (!Auth::user()->hasRole('Administrator') && $campaign->user_id != Auth::id()) {
-            abort(403, 'Unauthorized action.');
+        $campaign = $this->findCampaign($id);
+
+        // Guards against a second click resending to everyone. The processor marks a
+        // campaign completed when it finishes, so this is the honest check.
+        if (! $campaign->isSendable()) {
+            return redirect()->route('campaign.show', $campaign->id)
+                ->with('error', 'This campaign has already been sent.');
         }
-        
-        // Process the campaign
+
+        $campaign->update(['status' => Campaign::STATUS_RUNNING]);
+
         $this->processCampaign($campaign);
-        
-        return redirect()->route('campaign.show', ['campaign' => $id])
-            ->with('success', 'Campaign is being processed. Please check back shortly for results.');
+
+        return redirect()->route('campaign.show', $campaign->id)
+            ->with('success', 'Campaign sent. The delivery figures below are from this run.');
     }
 
     /**

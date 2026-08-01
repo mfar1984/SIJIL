@@ -23,32 +23,20 @@ class PwaParticipantsController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = PwaParticipant::with(['events', 'certificates']);
 
-        // Multi-tenant data filtering based on user role
-        if ($user->hasRole('Administrator')) {
-            // Administrator can see ALL PWA participants from ALL organizers
-            // No additional filtering needed for Administrator
-        } else {
-            // Organizer: show participants created by this user OR attached to their events
-            $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $query->where(function($q) use ($user, $organizerEvents) {
-                $q->where('created_by', $user->id)
-                  ->orWhereHas('events', function($qq) use ($organizerEvents) {
-                      $qq->whereIn('events.id', $organizerEvents);
-                  })
-                  // Fallback: match via regular participants by email under this organizer's events
-                  // ONLY show verified participants (with IC/Passport)
-                  ->orWhereExists(function($sub) use ($user) {
-                      $sub->select(DB::raw(1))
-                          ->from('participants as rp')
-                          ->join('events as ev', 'rp.event_id', '=', 'ev.id')
-                          ->whereColumn('rp.email', 'pwa_participants.email')
-                          ->where('ev.user_id', $user->id)
-                          ->where('rp.registration_type', 'verified'); // Filter: only verified participants
-                  });
-            });
-        }
+        // Who this account may see. Administrators see everything; an organizer
+        // sees accounts they created, accounts attached to one of their events,
+        // and accounts whose email matches a participant on one of their events.
+        //
+        // That last rule is how the same person shows up for two organizers when
+        // they registered for an event from each: the account is one row, but it
+        // is reachable from both events.
+        //
+        // This used to be a hand-rolled copy of the rule that also required
+        // registration_type = 'verified'. Almost every real participant is
+        // 'simplified', so organizers saw an empty list. It also compared emails
+        // case-sensitively and counted participants that were in the Recycle Bin.
+        $query = \App\Support\PwaLink::accountsFor($user)->with(['events', 'certificates']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -61,28 +49,55 @@ class PwaParticipantsController extends Controller
             });
         }
 
-        // Status filtering
+        // Status filtering. Active and inactive exclude banned accounts, because a
+        // ban is not a shade of active and listing it as one hides it.
         if ($request->filled('status')) {
             if ($request->status === 'active') {
-                $query->where('is_active', true);
+                $query->notBanned()->where('is_active', true);
             } elseif ($request->status === 'inactive') {
-                $query->where('is_active', false);
+                $query->notBanned()->where('is_active', false);
+            } elseif ($request->status === 'banned') {
+                $query->banned();
             }
         }
+
+        // Counts for the summary cards, taken before paginate() applies its
+        // own limit and offset to the builder.
+        $filteredTotal = (clone $query)->count();
+        $filteredActive = (clone $query)->notBanned()->where('is_active', true)->count();
+        $filteredNeverSignedIn = (clone $query)->notBanned()->whereNull('password_changed_at')->count();
+        $filteredBanned = (clone $query)->banned()->count();
 
         // Pagination
         $perPage = $request->get('per_page', 15);
         $participants = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        // Enrich listing with fallback data from regular participants (for phone/organization)
-        $participants->getCollection()->transform(function($pp) use ($user) {
-            if (empty($pp->phone) || empty($pp->organization)) {
-                $regularQuery = Participant::where('email', $pp->email);
-                if (!$user->hasRole('Administrator')) {
-                    $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-                    $regularQuery->whereIn('event_id', $organizerEvents);
-                }
-                if ($regular = $regularQuery->latest()->first()) {
+        // Enrich the listing with phone/organization from the matching regular
+        // participant. Fetched in one query keyed by email instead of one query
+        // per row, which used to add up to 15 queries per page load.
+        $emailsNeedingFallback = $participants->getCollection()
+            ->filter(fn($pp) => empty($pp->phone) || empty($pp->organization))
+            ->pluck('email')
+            ->filter()
+            ->unique();
+
+        if ($emailsNeedingFallback->isNotEmpty()) {
+            // Matched case-insensitively and keyed the same way, because a
+            // participant row can hold a differently cased version of the address.
+            $lowered = $emailsNeedingFallback->map(fn ($e) => strtolower(trim($e)))->all();
+
+            $fallbackQuery = Participant::whereIn(DB::raw('LOWER(email)'), $lowered);
+
+            if (!$user->hasRole('Administrator')) {
+                $fallbackQuery->whereIn('event_id', Event::where('user_id', $user->id)->pluck('id'));
+            }
+
+            $fallbacks = $fallbackQuery->latest()->get()->keyBy(fn ($p) => strtolower(trim($p->email)));
+
+            $participants->getCollection()->transform(function($pp) use ($fallbacks) {
+                $regular = $fallbacks->get(strtolower(trim((string) $pp->email)));
+
+                if ($regular) {
                     if (empty($pp->phone) && !empty($regular->phone)) {
                         $pp->setAttribute('phone', $regular->phone);
                     }
@@ -90,9 +105,10 @@ class PwaParticipantsController extends Controller
                         $pp->setAttribute('organization', $regular->organization);
                     }
                 }
-            }
-            return $pp;
-        });
+
+                return $pp;
+            });
+        }
 
         // Get counts for display
         if ($user->hasRole('Administrator')) {
@@ -118,7 +134,22 @@ class PwaParticipantsController extends Controller
             $totalEvents = Event::where('user_id', $user->id)->count();
         }
 
-        return view('ecertificate.participants', compact('participants', 'totalParticipants', 'totalEvents'));
+        // Summary for the cards. "Never signed in" counts accounts that still
+        // hold the generated password, which is the clearest sign that the
+        // person was never told their credentials.
+        $stats = [
+            'total' => $filteredTotal,
+            'active' => $filteredActive,
+            'never_signed_in' => $filteredNeverSignedIn,
+            'banned' => $filteredBanned,
+        ];
+
+        return view('ecertificate.participants', compact(
+            'participants',
+            'totalParticipants',
+            'totalEvents',
+            'stats'
+        ));
     }
 
     /**
@@ -162,6 +193,18 @@ class PwaParticipantsController extends Controller
      */
     private function storeManual(Request $request)
     {
+        // pwa_participants.email has a database-level unique index, so an
+        // address held by a record in the Recycle Bin cannot be reused yet.
+        if ($request->filled('email')) {
+            $trashed = PwaParticipant::onlyTrashed()->where('email', $request->email)->first();
+
+            if ($trashed) {
+                return back()->withInput()->withErrors([
+                    'email' => "This email belongs to \"{$trashed->name}\", a PWA participant sitting in the Recycle Bin. Restore that record, or delete it permanently from Settings â†’ Global Config â†’ Recycle Bin to free up the email.",
+                ]);
+            }
+        }
+
         // PWA Participant Create Request
         $request->validate([
             'name' => 'required|string|max:255',
@@ -172,6 +215,7 @@ class PwaParticipantsController extends Controller
             'identity_card' => 'nullable|string|max:255',
             'passport_no' => 'nullable|string|max:255',
             'gender' => 'nullable|in:male,female,other',
+            'race' => 'nullable|string|max:50',
             'date_of_birth' => 'nullable|date',
             'job_title' => 'nullable|string|max:255',
             'address1' => 'nullable|string|max:255',
@@ -206,7 +250,7 @@ class PwaParticipantsController extends Controller
         // Generate password if auto-generate is enabled
         $password = null;
         if ($request->boolean('auto_generate_password')) {
-            $password = Str::random(12);
+            $password = \App\Support\PwaPassword::generate($user ?? Auth::user());
         }
 
         // Combine address fields
@@ -223,6 +267,7 @@ class PwaParticipantsController extends Controller
             'identity_card' => $request->identity_card,
             'passport_no' => $request->passport_no,
             'gender' => $request->gender,
+            'race' => $request->race,
             'date_of_birth' => $request->date_of_birth,
             'job_title' => $request->job_title,
             'address1' => $request->address1,
@@ -244,15 +289,17 @@ class PwaParticipantsController extends Controller
         $participant->events()->attach($request->event_ids);
 
         // Send welcome email if enabled
+        $emailNote = '';
         if ($request->boolean('send_welcome_email') && $password) {
-            $this->sendWelcomeEmail($participant, $password);
+            $result = $this->sendWelcomeEmail($participant, $password);
+            $emailNote = ' ' . $result['message'];
         }
 
         // Also create regular participant record for consistency
         $this->createRegularParticipant($participant, $request->event_ids[0], $request);
 
         return redirect()->route('pwa.participants')
-            ->with('success', 'PWA participant created successfully.');
+            ->with('success', 'PWA participant created successfully.' . $emailNote);
     }
 
     /**
@@ -309,6 +356,8 @@ class PwaParticipantsController extends Controller
             $participantIds = json_decode($request->participant_ids, true);
             $user = Auth::user();
             $convertedCount = 0;
+            $emailedCount = 0;
+            $emailFailures = [];
 
             // Get regular participants
             $regularParticipants = \App\Models\Participant::whereIn('id', $participantIds)->get();
@@ -321,7 +370,7 @@ class PwaParticipantsController extends Controller
                 }
 
                 // Generate password
-                $password = Str::random(12);
+                $password = \App\Support\PwaPassword::generate($user ?? Auth::user());
 
                 // Generate unique username
                 $username = $this->generateUniqueUsername($regularParticipant->name, $regularParticipant->email);
@@ -365,16 +414,38 @@ class PwaParticipantsController extends Controller
 
                 // Send welcome email if enabled
                 if ($request->boolean('send_welcome_email')) {
-                    $this->sendWelcomeEmail($pwaParticipant, $password);
+                    $result = $this->sendWelcomeEmail(
+                        $pwaParticipant,
+                        $password,
+                        $regularParticipant->event->name ?? ''
+                    );
+
+                    if ($result['sent']) {
+                        $emailedCount++;
+                    } else {
+                        $emailFailures[] = $pwaParticipant->email . ': ' . $result['message'];
+                    }
                 }
 
                 $convertedCount++;
             }
 
+            $message = "Successfully converted {$convertedCount} participants to PWA users.";
+
+            if ($request->boolean('send_welcome_email')) {
+                $message .= " {$emailedCount} welcome email(s) sent.";
+
+                if ($emailFailures) {
+                    $message .= ' ' . count($emailFailures) . ' could not be emailed.';
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'converted_count' => $convertedCount,
-                'message' => "Successfully converted {$convertedCount} participants to PWA users."
+                'emailed_count' => $emailedCount,
+                'email_failures' => $emailFailures,
+                'message' => $message,
             ]);
         } catch (\Throwable $e) {
             \Log::error('Auto-assign error', [
@@ -402,6 +473,11 @@ class PwaParticipantsController extends Controller
         $user = Auth::user();
         $file = $request->file('file');
         $importedCount = 0;
+        $emailedCount = 0;
+        $sendWelcomeEmail = $request->boolean(
+            'send_welcome_email',
+            (bool) \App\Models\PwaSetting::valueFor('send_welcome_email', $user)
+        );
         $errors = [];
 
         // Check if user has permission to assign to default event
@@ -432,6 +508,7 @@ class PwaParticipantsController extends Controller
                         'identity_card' => 'nullable|string|max:255',
                         'passport_no' => 'nullable|string|max:255',
                         'gender' => 'nullable|in:male,female,other',
+                        'race' => 'nullable|string|max:50',
                         'date_of_birth' => 'nullable|date',
                         'job_title' => 'nullable|string|max:255',
                         'notes' => 'nullable|string|max:1000',
@@ -460,7 +537,7 @@ class PwaParticipantsController extends Controller
                     }
 
                     // Generate password and username
-                    $password = Str::random(12);
+                    $password = \App\Support\PwaPassword::generate($user ?? Auth::user());
                     $username = $this->generateUniqueUsername($row['name'], $row['email']);
 
                     // Create PWA participant
@@ -474,6 +551,7 @@ class PwaParticipantsController extends Controller
                         'identity_card' => $row['identity_card'] ?? null,
                         'passport_no' => $row['passport_no'] ?? null,
                         'gender' => $row['gender'] ?? null,
+                        'race' => $row['race'] ?? null,
                         'date_of_birth' => $row['date_of_birth'] ?? null,
                         'job_title' => $row['job_title'] ?? null,
                         'notes' => $row['notes'] ?? null,
@@ -496,8 +574,15 @@ class PwaParticipantsController extends Controller
                         $participant->events()->attach($eventId);
                     }
 
-                    // Send welcome email
-                    $this->sendWelcomeEmail($participant, $password);
+                    // Send welcome email. The import form has no checkbox, so
+                    // fall back to the PWA > Settings > Emails preference.
+                    if ($sendWelcomeEmail) {
+                        $result = $this->sendWelcomeEmail($participant, $password);
+
+                        if ($result['sent']) {
+                            $emailedCount++;
+                        }
+                    }
 
                     // Create regular participant record
                     $this->createRegularParticipant($participant, $eventId, $row);
@@ -517,6 +602,9 @@ class PwaParticipantsController extends Controller
         }
 
         $message = "Successfully imported {$importedCount} participants.";
+        if ($sendWelcomeEmail) {
+            $message .= " {$emailedCount} welcome email(s) sent.";
+        }
         if (!empty($errors)) {
             $message .= " Errors: " . implode('; ', array_slice($errors, 0, 5));
             if (count($errors) > 5) {
@@ -527,6 +615,7 @@ class PwaParticipantsController extends Controller
         return response()->json([
             'success' => true,
             'imported_count' => $importedCount,
+            'emailed_count' => $emailedCount,
             'message' => $message
         ]);
     }
@@ -557,28 +646,38 @@ class PwaParticipantsController extends Controller
     }
 
     /**
-     * Send welcome email to participant
+     * Email the participant their PWA login credentials.
+     *
+     * This used to be an empty stub, which is why accounts were created with a
+     * generated password that nobody ever received.
+     *
+     * @return array{sent: bool, message: string}
      */
-    private function sendWelcomeEmail($participant, $password)
+    private function sendWelcomeEmail($participant, $password, $eventName = '')
     {
-        try {
-            // You can implement your email sending logic here
-            // For now, we'll just log it
-            // Welcome email would be sent
-            
-            // Example email sending (uncomment when you have email configured):
-            /*
-            Mail::send('emails.pwa-welcome', [
-                'participant' => $participant,
-                'password' => $password
-            ], function($message) use ($participant) {
-                $message->to($participant->email)
-                        ->subject('Welcome to PWA - Your Login Credentials');
-            });
-            */
-        } catch (\Exception $e) {
-            \Log::error('Failed to send welcome email: ' . $e->getMessage());
-        }
+        return \App\Support\PwaMailer::send(
+            type: 'welcome',
+            participant: $participant,
+            vars: [
+                'password' => $password,
+                'username' => $participant->username ?? $participant->email,
+                'event_name' => $eventName,
+            ],
+            sender: Auth::user(),
+            fallback: [
+                'subject' => 'Welcome to E-Certificate - Your Login Details',
+                'content' => '<p><strong>Dear @{{name}},</strong></p>'
+                    . '<p>An account has been created for you on the E-Certificate app. '
+                    . 'You can use it to view your events, check in with a QR code and download your certificates.</p>'
+                    . '<div style="background-color:#f9fafb;padding:12px;border-radius:4px;margin:16px 0">'
+                    . '<p style="font-size:14px;margin:0 0 6px"><strong>Email:</strong> @{{email}}</p>'
+                    . '<p style="font-size:14px;margin:0"><strong>Password:</strong> @{{password}}</p>'
+                    . '</div>'
+                    . '<p>Sign in at @{{login_url}} and change your password after your first sign-in.</p>'
+                    . '<p style="margin-top:16px;font-size:12px;color:#6b7280">'
+                    . 'Need help? Contact us at @{{support_email}}</p>',
+            ]
+        );
     }
 
     /**
@@ -674,35 +773,25 @@ class PwaParticipantsController extends Controller
     /**
      * Display the specified PWA participant
      */
+    /**
+     * Stop here unless this account is one the current user may act on.
+     *
+     * There used to be a separately written check in show, edit, update, destroy
+     * and resetPassword, each with slightly different rules from the listing.
+     * They are all answered by the same query now, so what you can open always
+     * matches what you can see.
+     */
+    private function authoriseAccess(PwaParticipant $participant, string $verb): void
+    {
+        if (!\App\Support\PwaLink::canAccess(Auth::user(), $participant)) {
+            abort(403, "You can only {$verb} participants from your own events.");
+        }
+    }
+
     public function show(PwaParticipant $participant)
     {
-        $user = Auth::user();
-        // Check if user can view this participant (read-only):
-        // Allow if: Admin OR (created_by == user.id) OR (attached to user's events)
-        // OR (regular Participants with same email/IC exist under user's events)
-        if (!$user->hasRole('Administrator')) {
-            $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $participantEvents = $participant->events->pluck('id');
+        $this->authoriseAccess($participant, 'view');
 
-            $attachedToOrganizer = $participantEvents->intersect($organizerEvents)->isNotEmpty();
-            $createdByOrganizer = (int) $participant->created_by === (int) $user->id;
-
-            $fallbackMatch = DB::table('participants as rp')
-                ->join('events as ev', 'rp.event_id', '=', 'ev.id')
-                ->where(function($q) use ($participant) {
-                    $ic = preg_replace('/\D+/', '', (string) ($participant->identity_card ?? ''));
-                    $q->where('rp.email', $participant->email);
-                    if (!empty($ic)) {
-                        $q->orWhereRaw("REPLACE(rp.identity_card, '-', '') = ?", [$ic]);
-                    }
-                })
-                ->where('ev.user_id', $user->id)
-                ->exists();
-
-            if (!($attachedToOrganizer || $createdByOrganizer || $fallbackMatch)) {
-                abort(403, 'You can only view participants from your own events.');
-            }
-        }
         // Load relationships
         $participant->load(['creator', 'updater']);
 
@@ -749,7 +838,7 @@ class PwaParticipantsController extends Controller
         if ($participants->isNotEmpty()) {
             $source = $participants->first();
             $fallbackFields = [
-                'phone', 'identity_card', 'passport_no', 'gender', 'date_of_birth', 'job_title',
+                'phone', 'identity_card', 'passport_no', 'gender', 'race', 'date_of_birth', 'job_title',
                 'organization', 'address', 'address1', 'address2', 'city', 'state', 'postcode', 'country'
             ];
             foreach ($fallbackFields as $field) {
@@ -788,17 +877,9 @@ class PwaParticipantsController extends Controller
      */
     public function edit(PwaParticipant $participant)
     {
+        $this->authoriseAccess($participant, 'edit');
+
         $user = Auth::user();
-        
-        // Check if user can edit this participant
-        if (!$user->hasRole('Administrator')) {
-            $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $participantEvents = $participant->events->pluck('id');
-            
-            if ($participantEvents->intersect($organizerEvents)->isEmpty()) {
-                abort(403, 'You can only edit participants from your own events.');
-            }
-        }
 
         // Get events based on user role
         if ($user->hasRole('Administrator')) {
@@ -815,24 +896,24 @@ class PwaParticipantsController extends Controller
      */
     public function update(Request $request, PwaParticipant $participant)
     {
-        $user = Auth::user();
-        
-        // Check if user can edit this participant
-        if (!$user->hasRole('Administrator')) {
-            $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $participantEvents = $participant->events->pluck('id');
-            
-            if ($participantEvents->intersect($organizerEvents)->isEmpty()) {
-                abort(403, 'You can only edit participants from your own events.');
-            }
-        }
+        $this->authoriseAccess($participant, 'edit');
 
+        $user = Auth::user();
+
+        // The demographic fields were being saved without ever being validated,
+        // so a hand-crafted request could store any string in gender.
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:pwa_participants,email,' . $participant->id,
             'phone' => 'nullable|string|max:20',
             'organization' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
+            'identity_card' => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'gender' => 'nullable|in:male,female,other',
+            'race' => 'nullable|string|max:50',
+            'date_of_birth' => 'nullable|date|before:today',
+            'job_title' => 'nullable|string|max:255',
             'is_active' => 'boolean',
             'event_ids' => 'required|array',
             'event_ids.*' => 'exists:events,id'
@@ -859,6 +940,7 @@ class PwaParticipantsController extends Controller
             'identity_card' => $request->identity_card,
             'passport_no' => $request->passport_no,
             'gender' => $request->gender,
+            'race' => $request->race,
             'date_of_birth' => $request->date_of_birth,
             'job_title' => $request->job_title,
             'address1' => $request->address1,
@@ -883,17 +965,7 @@ class PwaParticipantsController extends Controller
      */
     public function destroy(PwaParticipant $participant)
     {
-        $user = Auth::user();
-        
-        // Check if user can delete this participant
-        if (!$user->hasRole('Administrator')) {
-            $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $participantEvents = $participant->events->pluck('id');
-            
-            if ($participantEvents->intersect($organizerEvents)->isEmpty()) {
-                abort(403, 'You can only delete participants from your own events.');
-            }
-        }
+        $this->authoriseAccess($participant, 'delete');
 
         $participant->delete();
 
@@ -901,24 +973,92 @@ class PwaParticipantsController extends Controller
     }
 
     /**
+     * Ban a participant.
+     *
+     * A ban does two things: the account can no longer sign in, and the same
+     * person cannot register again through a public link using the same email or
+     * IC. Deleting the account would not achieve the second part, because nothing
+     * would be left to recognise them by.
+     */
+    public function ban(Request $request, PwaParticipant $participant)
+    {
+        $this->authoriseAccess($participant, 'ban');
+
+        $request->validate([
+            'ban_reason' => 'nullable|string|max:500',
+        ]);
+
+        if ($participant->isBanned()) {
+            return back()->with('error', 'This participant is already banned.');
+        }
+
+        // status is an enum of active/inactive only, so the ban lives in
+        // banned_at. is_active is cleared as well so any older code that only
+        // checks that flag also stops letting them in.
+        $participant->forceFill([
+            'banned_at' => now(),
+            'banned_by' => Auth::id(),
+            'ban_reason' => $request->input('ban_reason'),
+            'is_active' => false,
+            'updated_by' => Auth::id(),
+        ])->save();
+
+        // Existing API tokens would otherwise keep working until they expire.
+        $participant->tokens()->delete();
+
+        return redirect()->route('pwa.participants')
+            ->with('success', $participant->name . ' has been banned. They can no longer sign in or register again with this email or IC.');
+    }
+
+    /**
+     * Lift a ban.
+     */
+    public function unban(PwaParticipant $participant)
+    {
+        $this->authoriseAccess($participant, 'ban');
+
+        if (!$participant->isBanned()) {
+            return back()->with('error', 'This participant is not banned.');
+        }
+
+        // Lifting a ban re-enables the account. If it was deliberately inactive
+        // before the ban, that has to be set again from the edit form: nothing
+        // recorded what it used to be, and guessing would be worse.
+        $participant->forceFill([
+            'banned_at' => null,
+            'banned_by' => null,
+            'ban_reason' => null,
+            'is_active' => true,
+            'updated_by' => Auth::id(),
+        ])->save();
+
+        return redirect()->route('pwa.participants')
+            ->with('success', 'The ban on ' . $participant->name . ' has been lifted.');
+    }
+
+    /**
      * Reset password for PWA participant
      */
     public function resetPassword(PwaParticipant $participant)
     {
+        $this->authoriseAccess($participant, 'reset passwords for');
+
         $user = Auth::user();
-        
-        // Check if user can reset password for this participant
-        if (!$user->hasRole('Administrator')) {
-            $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
-            $participantEvents = $participant->events->pluck('id');
-            
-            if ($participantEvents->intersect($organizerEvents)->isEmpty()) {
-                abort(403, 'You can only reset passwords for participants from your own events.');
-            }
+
+        // Resetting a banned account would email a password that cannot be used.
+        if ($participant->isBanned()) {
+            return back()->with('error', 'This participant is banned, so they cannot sign in. Lift the ban first.');
         }
 
-        // Generate new password
-        $newPassword = \Illuminate\Support\Str::random(12);
+        if ($wait = $this->resetCooldownRemaining($user)) {
+            return back()->with(
+                'error',
+                "Please wait {$wait} more second" . ($wait === 1 ? '' : 's') . ' before resetting another password.'
+            );
+        }
+
+        // Generate new password using the configured length and complexity
+        $newPassword = \App\Support\PwaPassword::generate($user);
         
         $participant->update([
             'password' => \Illuminate\Support\Facades\Hash::make($newPassword),
@@ -926,138 +1066,90 @@ class PwaParticipantsController extends Controller
             'updated_by' => $user->id
         ]);
 
-        // Attempt to send email using DeliveryConfig + PWA template
-        $emailSentMsg = '';
-        try {
-            // If participant has no email, skip sending
-            if (!empty($participant->email)) {
-                // Load organizer's active email config
-                $config = \App\Models\DeliveryConfig::getEmailConfig($user->id);
+        // Email the new password. PwaMailer owns the provider lookup, template
+        // resolution and logging, and applies the Administrator fallback when this
+        // account has no delivery configuration of its own.
+        $mail = \App\Support\PwaMailer::send(
+            type: 'password_reset',
+            participant: $participant,
+            vars: ['password' => $newPassword],
+            sender: $user,
+            fallback: [
+                'subject' => 'Password Reset - E-Certificate Online',
+                'content' => '<p><strong>Dear @{{name}},</strong></p>'
+                    . '<p>Your password has been reset.</p>'
+                    . '<div style="background-color:#f9fafb;padding:12px;border-radius:4px;margin:16px 0">'
+                    . '<p style="font-size:14px;margin:0"><strong>New Password:</strong> @{{password}}</p>'
+                    . '</div>'
+                    . '<p>Please sign in at @{{login_url}} and change your password.</p>',
+            ]
+        );
 
-                if ($config) {
-                    $settings = $config->settings ?? [];
-                    $fromName = $settings['from_name'] ?? 'SIJIL System';
-                    $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
+        $emailSentMsg = ' ' . $mail['message'];
 
-                    // Configure mailer dynamically based on provider
-                    switch ($config->provider) {
-                        case 'smtp':
-                            config([
-                                'mail.default' => 'smtp',
-                                'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
-                                'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
-                                'mail.mailers.smtp.encryption' => (($settings['encryption'] ?? null) === 'none') ? null : ($settings['encryption'] ?? null),
-                                'mail.mailers.smtp.username' => $settings['username'] ?? '',
-                                'mail.mailers.smtp.password' => $settings['password'] ?? '',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                        case 'mailgun':
-                            config([
-                                'mail.default' => 'mailgun',
-                                'services.mailgun.domain' => $settings['domain'] ?? '',
-                                'services.mailgun.secret' => $settings['secret'] ?? '',
-                                'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                        case 'ses':
-                            config([
-                                'mail.default' => 'ses',
-                                'services.ses.key' => $settings['key'] ?? '',
-                                'services.ses.secret' => $settings['secret'] ?? '',
-                                'services.ses.region' => $settings['region'] ?? 'us-east-1',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                        case 'sendmail':
-                            config([
-                                'mail.default' => 'sendmail',
-                                'mail.mailers.sendmail.path' => $settings['path'] ?? '/usr/sbin/sendmail -bs',
-                                'mail.from.address' => $fromAddress,
-                                'mail.from.name' => $fromName,
-                            ]);
-                            break;
-                    }
-
-                    // Find password reset template (organizer scope → fallback global → fallback default)
-                    $template = \App\Models\PwaEmailTemplate::query()
-                        ->where('type', 'password_reset')
-                        ->where(function($q) use ($user) {
-                            if ($user->hasRole('Administrator')) {
-                                $q->where('scope', 'global');
-                            } else {
-                                $q->where(function($qq) use ($user) {
-                                    $qq->where('scope', 'organizer')->where('user_id', $user->id);
-                                })->orWhere('scope', 'global');
-                            }
-                        })
-                        ->orderByRaw("CASE WHEN scope='organizer' THEN 0 ELSE 1 END")
-                        ->first();
-
-                    $subject = 'Password Reset - E-Certificate Online';
-                    $content = '<p><strong>Dear @{{name}},</strong></p><p>Your password has been reset.</p><div class="bg-gray-50 p-3 rounded my-4"><p class="text-sm"><strong>New Password:</strong> @{{password}}</p></div><p>Please login at @{{login_url}} and change your password.</p>';
-                    if ($template) {
-                        $subject = $template->subject ?: $subject;
-                        $content = $template->content ?: $content;
-                    }
-
-                    // Prepare variables
-                    $dataVars = [
-                        'name' => $participant->name,
-                        'email' => $participant->email,
-                        'password' => $newPassword,
-                        'pwa_link' => url('/pwa'),
-                        'login_url' => url('/pwa/login'),
-                        'support_email' => $fromAddress,
-                        'event_name' => '',
-                        'organization' => $user->name ?? 'Organizer',
-                    ];
-
-                    // Replace variables (follow pattern used in PWA Templates)
-                    foreach ($dataVars as $key => $val) {
-                        $subject = str_replace('@{{' . $key . '}}', $val, $subject);
-                        $content = str_replace('@{{' . $key . '}}', $val, $content);
-                    }
-
-                    // Clean + tracking helpers
-                    $html = \App\Helpers\EmailHelper::cleanHtml($content);
-                    $html = \App\Helpers\EmailHelper::replaceLinksWithTracking($html, $template->id ?? 0, $participant->email);
-                    $html = \App\Helpers\EmailHelper::appendOpenTrackingPixel($html, $template->id ?? 0, $participant->email);
-
-                    // Send the email
-                    \Illuminate\Support\Facades\Mail::html($html, function ($message) use ($participant, $subject, $fromName, $fromAddress) {
-                        $message->to($participant->email)
-                                ->subject($subject)
-                                ->from($fromAddress, $fromName);
-                    });
-
-                    // Log usage if template exists
-                    if ($template) {
-                        $template->incrementUsage();
-                        \App\Models\PwaEmailLog::create([
-                            'template_id' => $template->id,
-                            'action' => 'sent',
-                            'quantity' => 1,
-                            'meta' => ['to' => $participant->email, 'context' => 'password_reset']
-                        ]);
-                    }
-
-                    $emailSentMsg = ' Notification email has been sent to ' . $participant->email . '.';
-                } else {
-                    $emailSentMsg = ' (No active email configuration found; email was not sent)';
-                }
-            } else {
-                $emailSentMsg = ' (Participant does not have an email address)';
-            }
-        } catch (\Throwable $e) {
-            \Log::error('PWA reset password email failed', ['error' => $e->getMessage()]);
-            $emailSentMsg = ' (Email failed to send: ' . $e->getMessage() . ')';
-        }
+        $this->markResetPerformed($user);
 
         return redirect()->route('pwa.participants')->with('success', 'Password has been reset successfully.' . $emailSentMsg);
+    }
+
+    /**
+     * Seconds this user still has to wait before resetting another password.
+     *
+     * Administrators are never limited: they are the ones who sort it out when an
+     * organizer runs into the limit, and when a bulk reset genuinely is needed.
+     *
+     * The window is held in the cache rather than a table. It is a throttle, not a
+     * record: if the cache is cleared the worst outcome is one extra reset.
+     *
+     * @return int  0 when the user may go ahead
+     */
+    private function resetCooldownRemaining($user): int
+    {
+        if (!$user || $user->hasRole('Administrator')) {
+            return 0;
+        }
+
+        $cooldown = (int) (\App\Models\GlobalConfig::getConfig()->pwa_reset_cooldown_seconds ?? 60);
+
+        if ($cooldown <= 0) {
+            return 0;
+        }
+
+        $last = \Illuminate\Support\Facades\Cache::get($this->resetCooldownKey($user));
+
+        if (!$last) {
+            return 0;
+        }
+
+        $elapsed = now()->diffInSeconds(\Illuminate\Support\Carbon::parse($last), true);
+
+        return (int) max(0, $cooldown - $elapsed);
+    }
+
+    /**
+     * Start the cooldown window for this user.
+     */
+    private function markResetPerformed($user): void
+    {
+        if (!$user || $user->hasRole('Administrator')) {
+            return;
+        }
+
+        $cooldown = (int) (\App\Models\GlobalConfig::getConfig()->pwa_reset_cooldown_seconds ?? 60);
+
+        if ($cooldown <= 0) {
+            return;
+        }
+
+        \Illuminate\Support\Facades\Cache::put(
+            $this->resetCooldownKey($user),
+            now()->toIso8601String(),
+            now()->addSeconds($cooldown)
+        );
+    }
+
+    private function resetCooldownKey($user): string
+    {
+        return 'pwa-reset-cooldown:' . $user->id;
     }
 } 

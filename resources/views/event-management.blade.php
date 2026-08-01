@@ -25,49 +25,38 @@
         </div>
         
         <div class="p-4">
-            <!-- Search & Filter Row -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                <!-- Search & Filter Form -->
-                <form method="GET" action="{{ route('event.management') }}" class="flex flex-wrap gap-2 items-center justify-between w-full">
-                    <!-- Show Entries Dropdown -->
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-600 font-medium">Show</span>
-                        <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
-                            <option value="10" @if(request('per_page', 10) == 10) selected @endif>10</option>
-                            <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
-                            <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
-                            <option value="100" @if(request('per_page') == 100) selected @endif>100</option>
-                        </select>
-                        <span class="text-xs text-gray-600">entries per page</span>
-                    </div>
-                    
-                    <!-- Search & Filter Controls -->
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search event name, organizer, location..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
-                        <select name="status" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                            <option value="">All Status</option>
-                            <option value="active" @if(request('status') == 'active') selected @endif>Active</option>
-                            <option value="pending" @if(request('status') == 'pending') selected @endif>Pending</option>
-                            <option value="completed" @if(request('status') == 'completed') selected @endif>Completed</option>
-                        </select>
-                        <select name="date_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                            <option value="">All Dates</option>
-                            <option value="today" @if(request('date_filter') == 'today') selected @endif>Today</option>
-                            <option value="week" @if(request('date_filter') == 'week') selected @endif>This Week</option>
-                            <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
-                            <option value="past" @if(request('date_filter') == 'past') selected @endif>Past Events</option>
-                        </select>
-                        <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
-                            </svg>
-                        </button>
-                        @if(request('search') || request('status') || request('date_filter'))
-                            <a href="{{ route('event.management') }}?per_page={{ request('per_page', 10) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
-                        @endif
-                    </div>
-                </form>
-            </div>
+            {{-- Search takes the remaining space; the filters keep their own width. --}}
+            <form method="GET" action="{{ route('event.management') }}" class="flex flex-wrap items-center gap-2 mb-4">
+                <input type="text" name="search" id="searchInput" value="{{ request('search') }}"
+                       placeholder="Search event name, organizer, location..."
+                       class="flex-1 min-w-[12rem] h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+
+                <select name="status" onchange="this.form.submit()"
+                        class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[9rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                    <option value="">All Status</option>
+                    <option value="active" @if(request('status') == 'active') selected @endif>Active</option>
+                    <option value="pending" @if(request('status') == 'pending') selected @endif>Pending</option>
+                    <option value="completed" @if(request('status') == 'completed') selected @endif>Completed</option>
+                </select>
+
+                <select name="date_filter" onchange="this.form.submit()"
+                        class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[9rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                    <option value="">All Dates</option>
+                    <option value="today" @if(request('date_filter') == 'today') selected @endif>Today</option>
+                    <option value="week" @if(request('date_filter') == 'week') selected @endif>This Week</option>
+                    <option value="month" @if(request('date_filter') == 'month') selected @endif>This Month</option>
+                    <option value="past" @if(request('date_filter') == 'past') selected @endif>Past Events</option>
+                </select>
+
+                <button type="submit"
+                        class="h-9 px-3 bg-primary-DEFAULT hover:bg-primary-dark text-white rounded text-xs flex items-center shrink-0 transition-colors duration-200 ease-in-out" title="Search">
+                    <span class="material-icons-outlined text-xs">search</span>
+                </button>
+
+                @if(request('search') || request('status') || request('date_filter'))
+                    <a href="{{ route('event.management') }}" class="text-xs text-gray-500 underline shrink-0">Reset</a>
+                @endif
+            </form>
             
             <!-- Display success/error messages -->
             @if(session('success'))
@@ -121,7 +110,7 @@
                                 <td class="py-3 px-4">{{ \Carbon\Carbon::parse($event->start_date)->format('d M Y') }} {{ $event->start_time ? '- ' . substr($event->start_time, 0, 5) : '' }}</td>
                                 <td class="py-3 px-4">{{ \Carbon\Carbon::parse($event->end_date)->format('d M Y') }} {{ $event->end_time ? '- ' . substr($event->end_time, 0, 5) : '' }}</td>
                                 <td class="py-3 px-4">{{ $event->location }}</td>
-                                <td class="py-3 px-4">{{ $event->participants->count() ?? 0 }}</td>
+                                <td class="py-3 px-4">{{ $event->participants_count }}</td>
                                 <td class="py-3 px-4">
                                     @if($event->status === 'active')
                                         <span class="bg-status-active-bg text-status-active-text px-2 py-1 rounded-full text-xs">Active</span>
@@ -181,9 +170,6 @@
             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-2 sm:mb-0 text-xs text-gray-500">
                     Showing {{ $events->firstItem() ?? 0 }} to {{ $events->lastItem() ?? 0 }} of {{ $events->total() }} entries
-                    @if($events->total() > 0)
-                        ({{ request('per_page', 10) }} per page)
-                    @endif
                 </div>
                 <div class="flex justify-end">
                     {{ $events->appends(request()->query())->links('components.pagination-modern') }}
@@ -207,25 +193,14 @@
         }
     </script>
 
-<!-- Copy to Clipboard JavaScript -->
 <script>
-function copyRegistrationLink(url) {
-    navigator.clipboard.writeText(url)
-        .then(() => {
-            // Show alert atau notification
-            alert('Registration link copied to clipboard!');
-        })
-        .catch((error) => {
-            console.error('Could not copy text: ', error);
-            // Fallback
-            const textarea = document.createElement('textarea');
-            textarea.value = url;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            alert('Registration link copied to clipboard!');
-        });
-}
+    // window.copyWithFeedback lives in resources/js/app.js. It checks that the
+    // clipboard API is actually available before reaching for it, which the code
+    // here did not: over plain HTTP navigator.clipboard is undefined, so this
+    // button threw before any promise existed and the .catch() fallback was
+    // unreachable. Nothing happened and nothing was reported.
+    function copyRegistrationLink(url) {
+        window.copyWithFeedback(url, 'Registration link copied to clipboard.');
+    }
 </script>
 </x-app-layout> 

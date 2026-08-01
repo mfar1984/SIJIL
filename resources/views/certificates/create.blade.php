@@ -41,17 +41,20 @@
                     </div>
                     
                     <div class="p-4">
-                        <div class="space-y-3">
-                            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                <label for="event_id" class="text-xs font-medium text-gray-700 md:w-40">Event</label>
-                                <div class="flex-1">
-                                    <select id="event_id" name="event_id" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
-                                        <option value="">-- Select Event --</option>
-                                        @foreach($events as $event)
-                                            <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label for="event_id" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-2">
+                                Event <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex-1">
+                                <select id="event_id" name="event_id" class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
+                                    <option value="">-- Select Event --</option>
+                                    @foreach($events as $event)
+                                        <option value="{{ $event->id }}" {{ old('event_id') == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Participants who already hold a certificate for this event are left out of the list below.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -67,17 +70,20 @@
                     </div>
                     
                     <div class="p-4">
-                        <div class="space-y-3">
-                            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                <label for="template_id" class="text-xs font-medium text-gray-700 md:w-40">Template</label>
-                                <div class="flex-1">
-                                    <select id="template_id" name="template_id" class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
-                                        <option value="">-- Select Template --</option>
-                                        @foreach($templates as $template)
-                                            <option value="{{ $template->id }}" {{ old('template_id') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label for="template_id" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-2">
+                                Template <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex-1">
+                                <select id="template_id" name="template_id" class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
+                                    <option value="">-- Select Template --</option>
+                                    @foreach($templates as $template)
+                                        <option value="{{ $template->id }}" {{ old('template_id') == $template->id ? 'selected' : '' }}>{{ $template->name }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    The template decides the layout. You can check it with Preview before generating.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -92,61 +98,73 @@
                         </h2>
                     </div>
                     
-                    <div class="p-4">
-                        <div class="space-y-3">
-                            <!-- Data Source -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-2">Data Source</label>
-                                <div class="flex space-x-4">
-                                    <label class="inline-flex items-center">
-                                        <input type="radio" name="data_source" value="participants" class="form-radio h-4 w-4 text-primary-DEFAULT" checked>
-                                        <span class="ml-2 text-sm text-gray-700">All Participants</span>
-                                    </label>
-                                    <label class="inline-flex items-center">
-                                        <input type="radio" name="data_source" value="attendance" class="form-radio h-4 w-4 text-primary-DEFAULT">
-                                        <span class="ml-2 text-sm text-gray-700">Attendance Records (Present Only)</span>
-                                    </label>
-                                </div>
+                    <div class="p-4 space-y-4">
+                        <!-- Data Source -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-1">Who is eligible</label>
+                            <div class="flex-1 space-y-2">
+                                <label class="flex items-start gap-2 cursor-pointer">
+                                    <input type="radio" name="data_source" value="participants" class="mt-0.5 shrink-0 text-primary-DEFAULT" checked>
+                                    <span>
+                                        <span class="block text-xs text-gray-800">Everyone registered for the event</span>
+                                        <span class="block text-xs text-gray-500">Attendance is not taken into account.</span>
+                                    </span>
+                                </label>
+                                <label class="flex items-start gap-2 cursor-pointer">
+                                    <input type="radio" name="data_source" value="attendance" class="mt-0.5 shrink-0 text-primary-DEFAULT">
+                                    <span>
+                                        <span class="block text-xs text-gray-800">Only those marked present in attendance</span>
+                                        <span class="block text-xs text-gray-500">Requires an attendance session with scanned records.</span>
+                                    </span>
+                                </label>
                             </div>
-                            
-                            <!-- Registration Type Filter -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-2">Registration Type</label>
-                                <div class="flex space-x-4">
-                                    <label class="inline-flex items-center">
-                                        <input type="radio" name="registration_filter" value="all" class="form-radio h-4 w-4 text-primary-DEFAULT" checked>
-                                        <span class="ml-2 text-sm text-gray-700">All Types</span>
-                                    </label>
-                                    <label class="inline-flex items-center">
-                                        <input type="radio" name="registration_filter" value="verified" class="form-radio h-4 w-4 text-primary-DEFAULT">
-                                        <span class="ml-2 text-sm text-gray-700">Verified Only</span>
-                                    </label>
-                                    <label class="inline-flex items-center">
-                                        <input type="radio" name="registration_filter" value="simplified" class="form-radio h-4 w-4 text-primary-DEFAULT">
-                                        <span class="ml-2 text-sm text-gray-700">Quick Registration Only</span>
-                                    </label>
-                                </div>
+                        </div>
+
+                        <!-- Registration Type Filter -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-1">Registration type</label>
+                            <div class="flex-1 flex flex-wrap gap-x-6 gap-y-2">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="registration_filter" value="all" class="shrink-0 text-primary-DEFAULT" checked>
+                                    <span class="text-xs text-gray-800">All types</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="registration_filter" value="verified" class="shrink-0 text-primary-DEFAULT">
+                                    <span class="text-xs text-gray-800">Verified only</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="registration_filter" value="simplified" class="shrink-0 text-primary-DEFAULT">
+                                    <span class="text-xs text-gray-800">Quick registration only</span>
+                                </label>
                             </div>
-                            
-                            <!-- Search & Filter -->
-                            <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                                <div class="flex-1">
-                                    <input type="text" id="search" placeholder="Search participants..." class="w-full text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                                </div>
-                                <div>
-                                    <button type="button" id="selectAll" class="text-xs text-primary-DEFAULT hover:underline">Select All</button>
-                                    <button type="button" id="deselectAll" class="text-xs text-red-600 hover:underline ml-2">Deselect All</button>
-                                </div>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label for="search" class="text-xs font-medium text-gray-700 md:w-48 shrink-0">Find a participant</label>
+                            <div class="flex-1 flex flex-wrap items-center gap-2">
+                                <input type="text" id="search" placeholder="Search name or organization..."
+                                       class="flex-1 min-w-[12rem] h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                <button type="button" id="selectAll" class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 shrink-0">Select all</button>
+                                <button type="button" id="deselectAll" class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 shrink-0">Clear</button>
                             </div>
-                            
-                            <!-- Participants List -->
-                            <div class="border rounded-md overflow-hidden">
-                                <div class="max-h-60 overflow-y-auto p-2" id="participantsContainer">
-                                    <div class="flex items-center justify-center h-20 text-gray-500">
-                                        <span class="material-icons-outlined text-gray-300 mr-2">info</span>
-                                        Please select an event first
+                        </div>
+
+                        <!-- Participants List -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-2">
+                                Participants <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex-1">
+                                <div class="border border-gray-200 rounded overflow-hidden">
+                                    <div class="max-h-60 overflow-y-auto divide-y divide-gray-100" id="participantsContainer">
+                                        <div class="flex items-center justify-center h-20 text-xs text-gray-500">
+                                            <span class="material-icons-outlined text-gray-300 mr-2 text-sm">info</span>
+                                            Select an event first
+                                        </div>
                                     </div>
                                 </div>
+                                <p class="text-xs text-gray-500 mt-1" id="selectionSummary">No participant selected yet.</p>
                             </div>
                         </div>
                     </div>
@@ -162,14 +180,17 @@
                     </div>
                     
                     <div class="p-4">
-                        <div class="space-y-3">
-                            <div>
-                                <button type="button" id="previewBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-xs flex items-center" disabled>
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <span class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-1">Check the layout</span>
+                            <div class="flex-1 space-y-3">
+                                <button type="button" id="previewBtn" class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                                     <span class="material-icons-outlined text-xs mr-1">visibility</span>
-                                    Preview Certificate
+                                    Preview certificate
                                 </button>
-                                <p class="text-xs text-gray-500 mt-2">Select an event, template, and at least one participant to preview</p>
-                            </div>
+                                <p class="text-xs text-gray-500">
+                                    Uses the first selected participant. Choose an event, a template and at least one
+                                    participant to enable this.
+                                </p>
                             <div id="previewContainer" class="hidden">
                                 <div class="border rounded-md p-4 bg-gray-50">
                                     <div class="flex justify-between items-center mb-2">
@@ -197,6 +218,7 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -238,7 +260,9 @@
             
             let participants = [];
             
-            // Load participants when event changes
+            // Load participants when event changes.
+            // These listeners used to be registered twice, which fired two
+            // requests for every change.
             eventSelect.addEventListener('change', loadParticipants);
             
             // Reload participants when data source changes
@@ -249,12 +273,6 @@
             // Filter participants when registration type filter changes
             registrationFilterRadios.forEach(radio => {
                 radio.addEventListener('change', renderParticipants);
-            });
-            eventSelect.addEventListener('change', loadParticipants);
-            
-            // Reload participants when data source changes
-            dataSourceRadios.forEach(radio => {
-                radio.addEventListener('change', loadParticipants);
             });
             
             // Filter participants on search
@@ -282,10 +300,19 @@
             function checkFormValidity() {
                 const eventSelected = eventSelect.value !== '';
                 const templateSelected = templateSelect.value !== '';
-                const participantsSelected = document.querySelectorAll('input[name="participants[]"]:checked').length > 0;
-                
-                previewBtn.disabled = !(eventSelected && templateSelected && participantsSelected);
-                generateBtn.disabled = !(eventSelected && templateSelected && participantsSelected);
+                const checkedCount = document.querySelectorAll('input[name="participants[]"]:checked').length;
+                const ready = eventSelected && templateSelected && checkedCount > 0;
+
+                previewBtn.disabled = !ready;
+                generateBtn.disabled = !ready;
+
+                const summary = document.getElementById('selectionSummary');
+                if (summary) {
+                    const total = document.querySelectorAll('input[name="participants[]"]').length;
+                    summary.textContent = checkedCount === 0
+                        ? (total === 0 ? 'No participant selected yet.' : `0 of ${total} selected.`)
+                        : `${checkedCount} of ${total} selected — ${checkedCount} certificate${checkedCount === 1 ? '' : 's'} will be generated.`;
+                }
             }
             
             // Load participants based on selected event and data source
@@ -293,9 +320,9 @@
                 const eventId = eventSelect.value;
                 if (!eventId) {
                     participantsContainer.innerHTML = `
-                        <div class="flex items-center justify-center h-20 text-gray-500">
-                            <span class="material-icons-outlined text-gray-300 mr-2">info</span>
-                            Please select an event first
+                        <div class="flex items-center justify-center h-20 text-xs text-gray-500">
+                            <span class="material-icons-outlined text-gray-300 mr-2 text-sm">info</span>
+                            Select an event first
                         </div>
                     `;
                     participants = [];
@@ -307,8 +334,8 @@
                 
                 participantsContainer.innerHTML = `
                     <div class="flex items-center justify-center h-20">
-                        <div class="inline-block animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary-DEFAULT"></div>
-                        <span class="ml-2 text-sm text-gray-600">Loading participants...</span>
+                        <div class="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary-DEFAULT"></div>
+                        <span class="ml-2 text-xs text-gray-600">Loading participants...</span>
                     </div>
                 `;
                 
@@ -321,9 +348,9 @@
                     .catch(error => {
                         console.error('Error loading participants:', error);
                         participantsContainer.innerHTML = `
-                            <div class="flex items-center justify-center h-20 text-red-500">
-                                <span class="material-icons-outlined text-red-400 mr-2">error</span>
-                                Error loading participants
+                            <div class="flex items-center justify-center h-20 text-xs text-red-600">
+                                <span class="material-icons-outlined text-red-400 mr-2 text-sm">error</span>
+                                Could not load participants. Please try again.
                             </div>
                         `;
                     });
@@ -332,10 +359,14 @@
             // Render participants list
             function renderParticipants() {
                 if (participants.length === 0) {
+                    const source = document.querySelector('input[name="data_source"]:checked').value;
+                    const hint = source === 'attendance'
+                        ? 'Nobody has been marked present for this event yet.'
+                        : 'Everyone in this event already has a certificate, or the event has no participants.';
                     participantsContainer.innerHTML = `
-                        <div class="flex items-center justify-center h-20 text-gray-500">
-                            <span class="material-icons-outlined text-gray-300 mr-2">people</span>
-                            No participants found
+                        <div class="flex flex-col items-center justify-center h-20 text-xs text-gray-500 text-center px-4">
+                            <span class="material-icons-outlined text-gray-300 text-sm mb-1">people</span>
+                            ${hint}
                         </div>
                     `;
                     checkFormValidity();
@@ -362,8 +393,8 @@
                 
                 if (filteredParticipants.length === 0) {
                     participantsContainer.innerHTML = `
-                        <div class="flex items-center justify-center h-20 text-gray-500">
-                            <span class="material-icons-outlined text-gray-300 mr-2">search</span>
+                        <div class="flex items-center justify-center h-20 text-xs text-gray-500">
+                            <span class="material-icons-outlined text-gray-300 mr-2 text-sm">search</span>
                             No participants match your filters
                         </div>
                     `;
@@ -374,20 +405,20 @@
                 participantsContainer.innerHTML = filteredParticipants.map(p => {
                     // Determine badge based on registration type
                     const badge = p.registration_type === 'simplified' 
-                        ? '<span class="ml-2 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">Quick Registration</span>'
+                        ? '<span class="ml-2 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">Quick registration</span>'
                         : '<span class="ml-2 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">Verified</span>';
                     
                     return `
-                        <div class="flex items-center py-2 border-b border-gray-100 last:border-0">
-                            <input type="checkbox" name="participants[]" value="${p.id}" id="participant_${p.id}" class="participant-checkbox mr-2 h-4 w-4 text-primary-DEFAULT focus:ring-primary-light rounded" onchange="checkFormValidity()">
-                            <label for="participant_${p.id}" class="flex-1 text-sm">
-                                <div class="font-medium flex items-center">
+                        <label for="participant_${p.id}" class="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                            <input type="checkbox" name="participants[]" value="${p.id}" id="participant_${p.id}" class="participant-checkbox shrink-0 h-4 w-4 text-primary-DEFAULT focus:ring-primary-light rounded">
+                            <span class="flex-1 min-w-0">
+                                <span class="block text-xs font-medium text-gray-800 truncate">
                                     ${p.name}
                                     ${badge}
-                                </div>
-                                <div class="text-xs text-gray-500">${p.organization || '-'}</div>
-                            </label>
-                        </div>
+                                </span>
+                                <span class="block text-xs text-gray-500 truncate">${p.organization || '—'}</span>
+                            </span>
+                        </label>
                     `;
                 }).join('');
                 
@@ -435,8 +466,8 @@
                 
                 previewBtn.disabled = true;
                 previewBtn.innerHTML = `
-                    <div class="inline-block animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-white mr-1"></div>
-                    Generating Preview...
+                    <div class="inline-block animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-gray-500 mr-1"></div>
+                    Generating preview...
                 `;
                 
                 fetch('/certificates/preview', {
@@ -472,7 +503,7 @@
                     previewBtn.disabled = false;
                     previewBtn.innerHTML = `
                         <span class="material-icons-outlined text-xs mr-1">visibility</span>
-                        Preview Certificate
+                        Preview certificate
                     `;
                 });
             }

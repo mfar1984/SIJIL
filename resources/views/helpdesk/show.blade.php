@@ -136,7 +136,18 @@
                             <span class="material-icons-outlined text-gray-400 text-xs mr-1">person</span>
                             Submitted By
                         </p>
-                        <p class="text-xs mt-1">{{ $ticket->user->name }}</p>
+                        {{-- author_name, not user->name: a ticket raised from the
+                             participant app has no users row behind it. --}}
+                        <p class="text-xs mt-1">{{ $ticket->author_name }}</p>
+                        @if($ticket->author_email)
+                            <p class="text-[11px] text-gray-500">{{ $ticket->author_email }}</p>
+                        @endif
+                        @if($ticket->isFromApp())
+                            <span class="inline-flex items-center mt-1.5 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-[11px]">
+                                <span class="material-icons-outlined text-[11px] mr-1">smartphone</span>
+                                From the participant app
+                            </span>
+                        @endif
                     </div>
                     
                     <div class="bg-gray-50 rounded-md p-4 border border-gray-200">
@@ -172,10 +183,10 @@
                         <div class="flex justify-between items-start">
                             <div class="flex items-start">
                                 <div class="bg-blue-200 rounded-full w-8 h-8 flex items-center justify-center text-blue-800 font-bold text-sm">
-                                    {{ substr($ticket->user->name, 0, 1) }}
+                                    {{ substr($ticket->author_name, 0, 1) }}
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-xs font-medium">{{ $ticket->user->name }}</p>
+                                    <p class="text-xs font-medium">{{ $ticket->author_name }}</p>
                                     <p class="text-xs text-gray-500">{{ $ticket->created_at->format('d M Y H:i') }}</p>
                                 </div>
                             </div>
@@ -194,10 +205,10 @@
                                 <div class="flex justify-between items-start">
                                     <div class="flex items-start">
                                         <div class="bg-yellow-200 rounded-full w-8 h-8 flex items-center justify-center text-yellow-800 font-bold text-sm">
-                                            {{ substr($message->user->name, 0, 1) }}
+                                            {{ substr($message->author_name, 0, 1) }}
                                         </div>
                                         <div class="ml-3">
-                                            <p class="text-xs font-medium">{{ $message->user->name }}</p>
+                                            <p class="text-xs font-medium">{{ $message->author_name }}</p>
                                             <p class="text-xs text-gray-500">{{ $message->created_at->format('d M Y H:i') }}</p>
                                         </div>
                                     </div>
@@ -209,19 +220,27 @@
                             </div>
                         @elseif(!$message->is_internal)
                             <!-- Regular Message -->
-                            <div class="bg-gray-50 rounded-md p-4 border border-gray-200 {{ $message->user_id === $ticket->user_id ? '' : 'bg-blue-50 border-blue-100' }}">
+                            {{-- isFromTicketAuthor() rather than comparing user_id to
+                                 user_id. On an app ticket both sides are null, so that
+                                 comparison labelled every staff reply "Requester".
+
+                                 Classes are written out in full: Tailwind cannot see a
+                                 class name that is assembled from pieces at runtime, so
+                                 bg-{{ ... }}-200 produced no colour at all. --}}
+                            @php $fromRequester = $message->isFromTicketAuthor(); @endphp
+                            <div class="rounded-md p-4 border {{ $fromRequester ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-100' }}">
                                 <div class="flex justify-between items-start">
                                     <div class="flex items-start">
-                                        <div class="bg-{{ $message->user_id === $ticket->user_id ? 'gray' : 'blue' }}-200 rounded-full w-8 h-8 flex items-center justify-center text-{{ $message->user_id === $ticket->user_id ? 'gray' : 'blue' }}-800 font-bold text-sm">
-                                            {{ substr($message->user->name, 0, 1) }}
+                                        <div class="rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm {{ $fromRequester ? 'bg-gray-200 text-gray-800' : 'bg-blue-200 text-blue-800' }}">
+                                            {{ substr($message->author_name, 0, 1) }}
                                         </div>
                                         <div class="ml-3">
-                                            <p class="text-xs font-medium">{{ $message->user->name }}</p>
+                                            <p class="text-xs font-medium">{{ $message->author_name }}</p>
                                             <p class="text-xs text-gray-500">{{ $message->created_at->format('d M Y H:i') }}</p>
                                         </div>
                                     </div>
-                                    <span class="px-2 py-0.5 bg-{{ $message->user_id === $ticket->user_id ? 'gray' : 'blue' }}-100 text-{{ $message->user_id === $ticket->user_id ? 'gray' : 'blue' }}-800 rounded-full text-xs">
-                                        {{ $message->user_id === $ticket->user_id ? 'Requester' : 'Support' }}
+                                    <span class="px-2 py-0.5 rounded-full text-xs {{ $fromRequester ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800' }}">
+                                        {{ $fromRequester ? 'Requester' : 'Support' }}
                                     </span>
                                 </div>
                                 <div class="mt-3 text-xs">

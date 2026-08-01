@@ -16,10 +16,19 @@ class ParticipantSearchController extends Controller
     public function search(Request $request)
     {
         $user = Auth::user();
-        $query = Participant::with('event');
+
+        // The route now guarantees a signed-in user, but the guard stays: this
+        // controller was previously reachable without one, and the tenant filter
+        // below was written as `if ($user && ...)` so it simply did not run.
+        // Returning nothing is the safe reading of "no user".
+        if (! $user) {
+            abort(401);
+        }
+
+        $query = Participant::with('event:id,name');
 
         // Multi-tenant data filtering based on user role
-        if ($user && !$user->hasRole('Administrator')) {
+        if (! $user->hasRole('Administrator')) {
             // Organizer can only see participants from their own events
             $organizerEvents = Event::where('user_id', $user->id)->pluck('id');
             $query->whereIn('event_id', $organizerEvents);
@@ -48,10 +57,20 @@ class ParticipantSearchController extends Controller
               ->whereRaw('pwa_participants.email = participants.email');
         });
 
-        // Get results with pagination
-        $participants = $query->orderBy('name')
-                             ->limit(50) // Limit to 50 results for performance
-                             ->get();
+        // Only the columns the picker renders. This used to return whole Participant
+        // models, so every response also carried IC, passport, address, date of
+        // birth, gender and race - none of which the interface shows.
+        $participants = $query->select(['id', 'name', 'email', 'organization', 'event_id'])
+            ->orderBy('name')
+            ->limit(50) // Limit to 50 results for performance
+            ->get()
+            ->map(fn ($participant) => [
+                'id' => $participant->id,
+                'name' => $participant->name,
+                'email' => $participant->email,
+                'organization' => $participant->organization,
+                'event' => $participant->event ? ['name' => $participant->event->name] : null,
+            ]);
 
         return response()->json([
             'success' => true,

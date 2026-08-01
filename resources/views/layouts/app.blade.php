@@ -4,30 +4,46 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        @php
+            // Expose Firebase public config to the service worker.
+            // Sourced from config(), not env(), so it keeps working once the
+            // configuration is cached in production.
+            $firebasePublicConfig = [
+                'apiKey' => config('services.firebase.web.api_key'),
+                'authDomain' => config('services.firebase.web.auth_domain'),
+                'projectId' => config('services.firebase.web.project_id'),
+                'storageBucket' => config('services.firebase.web.storage_bucket'),
+                'messagingSenderId' => config('services.firebase.web.messaging_sender_id'),
+                'appId' => config('services.firebase.web.app_id'),
+                'measurementId' => config('services.firebase.web.measurement_id'),
+            ];
+        @endphp
         <script>
-            // Expose Firebase public config to SW if needed
-            window.FIREBASE_PUBLIC_CONFIG = {
-                apiKey: '{{ env('VITE_FIREBASE_API_KEY') }}',
-                authDomain: '{{ env('VITE_FIREBASE_AUTH_DOMAIN') }}',
-                projectId: '{{ env('VITE_FIREBASE_PROJECT_ID') }}',
-                storageBucket: '{{ env('VITE_FIREBASE_STORAGE_BUCKET') }}',
-                messagingSenderId: '{{ env('VITE_FIREBASE_MESSAGING_SENDER_ID') }}',
-                appId: '{{ env('VITE_FIREBASE_APP_ID') }}',
-                measurementId: '{{ env('VITE_FIREBASE_MEASUREMENT_ID') }}',
-            };
+            window.FIREBASE_PUBLIC_CONFIG = {!! json_encode($firebasePublicConfig, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) !!};
         </script>
 
         <title>{{ isset($title) ? $title . ' - ' . config('app.name', 'SIJIL') : config('app.name', 'SIJIL') }}</title>
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+        {{-- display=block keeps ligature names (e.g. "dashboard") hidden until the icon font is ready --}}
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons&display=block" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined&display=block" rel="stylesheet">
         
-        <!-- Alpine.js -->
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        {{--
+            Alpine comes from the bundle in resources/js/app.js, which sets
+            window.Alpine and calls Alpine.start().
+
+            A second copy used to be pulled from the CDN here as well. Two Alpine
+            instances both scanning the same DOM is undefined behaviour: the browser
+            logs "Detected multiple instances of Alpine running" and whichever one
+            binds a directive first wins, so a handler could silently belong to the
+            instance that is not the one evaluating it. The CDN tag also floated on
+            3.x.x, so a patch release could change behaviour without any change here,
+            and every page needed the network before it became interactive.
+        --}}
 
         <!-- Alpine.js x-cloak CSS -->
         <style>
@@ -349,8 +365,9 @@
                     });
                 
                 // Real-time handled by Firebase Messaging (onMessage in resources/js/fcm.js)
-                // Fallback polling: refresh bell every 30s, play sound on increase
+                // Fallback polling only; skip while the tab is hidden to avoid needless requests
                 setInterval(() => {
+                    if (document.hidden) return;
                     fetch('/notifications')
                         .then(r => {
                             if (!r.ok) return null;
@@ -378,7 +395,7 @@
                             } catch(_) {}
                         })
                         .catch(() => {});
-                }, 10000);
+                }, 60000);
                 
                 // Notification system initialization complete
             });

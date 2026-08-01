@@ -15,6 +15,9 @@
 /node_modules
 /public/hot
 /public/storage
+# Snapshot taken when public/storage was converted back into a real symlink.
+# Safe to delete once the site has been verified.
+/public/storage.pre-symlink-backup
 /storage/*.key
 /storage/pail
 /vendor
@@ -56,3 +59,9 @@ design.html
 *.sqlite
 *.sqlite-journal
 database.sqlite
+
+# Third-party admin tools. A full phpMyAdmin install (thousands of files) does not
+# belong in this repo, and shipping it to a public web root is a known attack
+# surface - it gives anyone who finds the path a login prompt straight to MySQL.
+# If a server needs it, install it separately from the deployed codebase.
+/phpmyadmin/

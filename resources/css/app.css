@@ -7,10 +7,18 @@
     /* Font Family */
     --font-sans: 'Poppins', 'Figtree', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     
-    /* Primary Colors */
+    /* Primary Colors
+     *
+     * primary-DEFAULT is the name used throughout the Blade views (717 times).
+     * Tailwind v4 derives utility names straight from these variable names, so
+     * without this entry every bg/text/border/ring-primary-DEFAULT silently
+     * produced no CSS at all: invisible table headers, uncoloured icons and
+     * unhighlighted active tabs. */
     --color-primary: #063c96;
+    --color-primary-DEFAULT: #063c96;
     --color-primary-light: #5170ff;
     --color-primary-accent: #2281c5;
+    --color-primary-dark: #04266b;
     
     /* Status Colors */
     --color-status-active-bg: #dcfce7;
@@ -28,6 +36,11 @@
     --font-size-base: 1rem;
     --font-size-lg: 1.125rem;
     --font-size-xl: 1.25rem;
+}
+
+/* Alpine: hide elements until Alpine has initialised */
+[x-cloak] {
+    display: none !important;
 }
 
 /* Phone input custom styling */
@@ -103,60 +116,135 @@ select {
         @apply absolute left-0 top-0 h-full w-1 bg-blue-600 rounded-r;
     }
     
+    /* ------------------------------------------------------------------
+       Sidebar navigation
+       Monochrome icons, light font weights, compact spacing.
+       ------------------------------------------------------------------ */
+
+    /* Top level row (both plain links and collapsible section headers) */
+    .sidebar-link {
+        @apply flex items-center justify-between px-4 py-[11px] relative cursor-pointer;
+        transition: background-color 150ms ease, color 150ms ease;
+    }
+
+    .sidebar-link:hover {
+        @apply bg-gray-50;
+    }
+
+    .sidebar-link.is-active {
+        @apply bg-blue-50;
+    }
+
+    .sidebar-link.is-active::after {
+        content: '';
+        @apply absolute right-0 top-0 h-full bg-blue-600;
+        width: 3px;
+    }
+
+    .sidebar-label {
+        @apply text-[13px] font-normal text-gray-600 normal-case tracking-normal;
+    }
+
+    .sidebar-link:hover .sidebar-label {
+        @apply text-gray-900;
+    }
+
+    .sidebar-link.is-active .sidebar-label {
+        @apply text-blue-700 font-medium;
+    }
+
+    /* Section grouping caption, e.g. "HUMAN RESOURCES" */
+    .sidebar-group-label {
+        @apply px-4 pt-6 pb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-gray-400;
+    }
+
     .sidebar-submenu-item {
-        @apply flex items-center py-2 px-4 hover:bg-blue-50 text-sm relative;
-        border-top-left-radius: 9999px;
-        border-bottom-left-radius: 9999px;
+        @apply flex items-center py-[9px] px-4 relative text-[12.5px] font-normal text-gray-500;
+        transition: background-color 150ms ease, color 150ms ease;
     }
-    
+
+    .sidebar-submenu-item:hover {
+        @apply bg-gray-50 text-gray-900;
+    }
+
     .sidebar-submenu-item.active {
-        @apply bg-blue-50 text-blue-700;
-        border-top-left-radius: 9999px;
-        border-bottom-left-radius: 9999px;
+        @apply text-blue-700 font-medium;
     }
-    
-    .sidebar-submenu-item:hover::after,
-    .sidebar-submenu-item.active::after {
-        content: '';
-        @apply absolute right-0 top-0 h-full w-1 bg-blue-500;
-    }
-    
+
     .hierarchical-menu {
-        @apply pl-6 border-l border-gray-200 ml-4 mt-1;
+        @apply pl-6 border-l border-gray-200 ml-4 mt-1 mb-2;
     }
-    
-    .hierarchical-menu-item::before {
-        content: '';
-        @apply absolute h-px bg-gray-200;
-        width: 16px;
-        top: 50%;
-        left: -16px;
-        transform: translateY(-50%);
-    }
-    
+
+    /* Small dot marker sitting on the vertical guide line */
     .sidebar-submenu-item::before {
         content: '';
-        @apply absolute h-px bg-gray-200;
-        width: 16px;
+        @apply absolute rounded-full bg-gray-300;
+        width: 5px;
+        height: 5px;
         top: 50%;
-        left: -16px;
+        left: -27px;
         transform: translateY(-50%);
     }
-    
+
+    .sidebar-submenu-item:hover::before {
+        @apply bg-gray-400;
+    }
+
+    .sidebar-submenu-item.active::before {
+        @apply bg-blue-600;
+    }
+
     .sidebar-separator {
         @apply h-px bg-gray-200 my-2 mx-4;
     }
-    
-    .category-header > a:hover > div,
-    .category-header.active > a > div {
-        @apply bg-blue-50;
-    }
-    
-    .category-header > a:hover::after,
-    .category-header.active > a::after {
-        content: '';
-        @apply absolute right-0 top-0 h-full w-1 bg-blue-600 rounded-l;
-    }
+}
+
+/* Sidebar icon sizing, overriding the global Material Icons rule below */
+.sidebar-icon {
+    @apply text-gray-400 mr-3;
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    line-height: 18px !important;
+    transition: color 150ms ease;
+}
+
+.sidebar-link:hover .sidebar-icon {
+    @apply text-gray-600;
+}
+
+.sidebar-link.is-active .sidebar-icon {
+    @apply text-blue-600;
+}
+
+.sidebar-submenu-icon {
+    @apply text-gray-400 mr-2.5;
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    line-height: 16px !important;
+    transition: color 150ms ease;
+}
+
+.sidebar-submenu-item:hover .sidebar-submenu-icon {
+    @apply text-gray-600;
+}
+
+.sidebar-submenu-item.active .sidebar-submenu-icon {
+    @apply text-blue-600;
+}
+
+/* Chevron is an inline SVG so the stroke weight stays thin and adjustable.
+   Material icon fonts render at a fixed weight and cannot be thinned. */
+.sidebar-chevron {
+    @apply text-gray-400 shrink-0;
+    width: 14px;
+    height: 14px;
+    transition: transform 200ms ease, color 150ms ease;
+}
+
+.sidebar-link:hover .sidebar-chevron {
+    @apply text-gray-600;
 }
 
 /* Material Icons fix */

@@ -52,15 +52,12 @@
                     <div class="space-y-3">
                         <!-- Name -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Full Name
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         {{ $participant->name }}
                                     </div>
                                 </div>
@@ -69,15 +66,12 @@
 
                         <!-- Email -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Email Address
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">alternate_email</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         {{ $participant->email }}
                                     </div>
                                 </div>
@@ -86,15 +80,12 @@
 
                         <!-- Phone -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Phone Number
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">call</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         {{ $participant->phone ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -103,15 +94,12 @@
 
                         <!-- Identity Card / Passport No. -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Identity Card / Passport No.
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">assignment_ind</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         @if($participant->identity_card)
                                             {{ $participant->identity_card }} (IC)
                                         @elseif($participant->passport_no)
@@ -126,15 +114,12 @@
 
                         <!-- Date of Birth -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Date of Birth
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         {{ $participant->date_of_birth ? \Carbon\Carbon::parse($participant->date_of_birth)->format('d M Y') : 'Not specified' }}
                                     </div>
                                 </div>
@@ -143,7 +128,7 @@
 
                         <!-- Address -->
                         <div class="flex flex-col md:flex-row md:items-start gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0 pt-2">
                                 Address
                             </label>
                             <div class="flex-1">
@@ -185,15 +170,12 @@
                     <div class="space-y-3">
                         <!-- Gender -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Gender
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">person</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         @if($participant->gender == 'male')
                                             Male
                                         @elseif($participant->gender == 'female')
@@ -208,17 +190,26 @@
                             </div>
                         </div>
 
+                        <!-- Race -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
+                                Race
+                            </label>
+                            <div class="flex-1">
+                                <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
+                                    {{ $participant->race ?: 'Not specified' }}
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Organization/Company -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Organization/Company
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">apartment</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         {{ $participant->organization ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -227,15 +218,12 @@
 
                         <!-- Job Title -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Job Title
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border">
                                         {{ $participant->job_title ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -244,15 +232,12 @@
 
                         <!-- Status -->
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <label class="text-xs font-medium text-gray-700 md:w-40">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
                                 Status
                             </label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">shield</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border flex items-center">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border flex items-center">
                                         @if($status === 'active')
                                             <span class="bg-status-active-bg text-status-active-text px-2 py-0.5 rounded-full text-xs">Active</span>
                                         @else
@@ -325,13 +310,8 @@
                 </div>
                 
                 <div class="p-4">
-                    <div class="relative">
-                        <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">notes</span>
-                        </div>
-                        <div class="w-full text-xs border-gray-200 bg-gray-50 rounded pl-12 py-2 border">
-                            {{ $participant->notes }}
-                        </div>
+                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded px-3 py-2 border whitespace-pre-line">
+                        {{ $participant->notes }}
                     </div>
                 </div>
             </div>

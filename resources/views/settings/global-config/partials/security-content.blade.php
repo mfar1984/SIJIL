@@ -78,6 +78,46 @@
                 </div>
             </div>
             
+            <!-- PWA password reset cooldown -->
+            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                <label for="pwa_reset_cooldown_seconds" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1 md:pt-2">
+                    PWA Reset Cooldown
+                    <div class="tooltip-wrapper" x-data="{ show: false }">
+                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help"
+                              @mouseenter="show = true"
+                              @mouseleave="show = false">
+                            help_outline
+                        </span>
+                        <div x-show="show" x-transition class="tooltip-content">
+                            Seconds an organizer must wait between PWA password resets
+                        </div>
+                    </div>
+                </label>
+                <div class="flex-1">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="material-icons-outlined text-[#004aad] text-base">timer</span>
+                        </div>
+                        <input
+                            type="number"
+                            id="pwa_reset_cooldown_seconds"
+                            name="pwa_reset_cooldown_seconds"
+                            value="{{ old('pwa_reset_cooldown_seconds', $config->pwa_reset_cooldown_seconds ?? 60) }}"
+                            min="0"
+                            max="3600"
+                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                            :class="{'bg-gray-50': !isEditing}"
+                            :disabled="!isEditing"
+                        >
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Each reset emails a newly generated password, so this stops a whole list being reset in one
+                        sitting. Applies to organizers only &mdash; Administrators are never limited.
+                        Set to <span class="font-medium">0</span> to remove the limit.
+                    </p>
+                </div>
+            </div>
+
             <!-- Password Expiry -->
             <div class="flex flex-col md:flex-row md:items-center gap-3">
                 <label for="password_expiry" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">

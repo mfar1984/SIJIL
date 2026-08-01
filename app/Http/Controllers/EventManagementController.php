@@ -17,14 +17,42 @@ use BaconQrCode\Writer;
 class EventManagementController extends Controller
 {
     /**
+     * Whether the current user may act on the given event.
+     *
+     * Administrators may act on any event; everyone else is limited to events
+     * they created.
+     */
+    private function canManage(Event $event): bool
+    {
+        return auth()->user()->hasRole('Administrator') || $event->user_id == auth()->id();
+    }
+
+    /**
+     * Delete a poster file from the public disk, given the stored relative path.
+     */
+    private function deletePoster(?string $path): void
+    {
+        if (empty($path)) {
+            return;
+        }
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+
+        if ($disk->exists($path)) {
+            $disk->delete($path);
+        }
+    }
+
+    /**
      * Display the event management page.
      *
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        // Start with base query
-        $query = Event::with('participants');
+        // Only the participant count is rendered, so avoid loading every
+        // participant row for every event on the page.
+        $query = Event::withCount('participants');
 
         // For non-Administrator users, filter by their events
         if (!auth()->user()->hasRole('Administrator')) {
@@ -82,7 +110,115 @@ class EventManagementController extends Controller
      */
     public function create()
     {
-        return view('events.create');
+        return view('events.create', [
+            'certificateTemplates' => $this->availableTemplates(),
+        ]);
+    }
+
+    /**
+     * Create the attendance session that was set up on the event form.
+     *
+     * Doing it here means the operator sets the event and its scan times in one
+     * pass. The standalone attendance form still exists for changing them later,
+     * and both paths keep the one-session-per-event rule.
+     *
+     * @return string  a note for the flash message, empty when nothing was created
+     */
+    private function createAttendanceFromRequest(Request $request, Event $event): string
+    {
+        if (!$event->attendance_required) {
+            return '';
+        }
+
+        // One setup per event; never a second.
+        if ($event->attendances()->exists()) {
+            return '';
+        }
+
+        $sessions = $request->input('attendance_sessions', []);
+
+        if (!is_array($sessions) || $sessions === []) {
+            return ' Attendance is on but no scan times were set, so no QR code exists yet.';
+        }
+
+        // Drop anything without a date rather than storing a broken session.
+        $sessions = array_values(array_filter(
+            $sessions,
+            fn ($s) => is_array($s) && !empty($s['date']) && !empty($s['checkin_start_time'])
+        ));
+
+        if ($sessions === []) {
+            return ' Attendance is on but no scan times were set, so no QR code exists yet.';
+        }
+
+        $type = $request->input('attendance_type', 'single');
+
+        if (!in_array($type, ['single', 'daily', 'custom'], true)) {
+            $type = 'single';
+        }
+
+        // Check-out is only offered in the manual mode.
+        $wantsCheckout = $type === 'custom' && $request->boolean('attendance_enable_checkout');
+
+        $first = $sessions[0];
+
+        $attendance = \App\Models\Attendance::create([
+            'event_id' => $event->id,
+            'status' => 'active',
+            'attendance_type' => $type,
+            'unique_code' => \Illuminate\Support\Str::random(32),
+            'created_by' => auth()->id(),
+            'date' => $first['date'],
+            'start_time' => $first['checkin_start_time'],
+            'end_time' => $first['checkin_end_time'] ?? $first['checkin_start_time'],
+        ]);
+
+        $codes = 0;
+
+        foreach ($sessions as $session) {
+            $attendance->sessions()->create([
+                'unique_code' => \Illuminate\Support\Str::random(32),
+                'session_type' => 'checkin',
+                'date' => $session['date'],
+                'checkin_start_time' => $session['checkin_start_time'],
+                'checkin_end_time' => $session['checkin_end_time'] ?? $session['checkin_start_time'],
+                'checkout_start_time' => null,
+                'checkout_end_time' => null,
+            ]);
+            $codes++;
+
+            if ($wantsCheckout && !empty($session['checkout_start_time'])) {
+                $attendance->sessions()->create([
+                    'unique_code' => \Illuminate\Support\Str::random(32),
+                    'session_type' => 'checkout',
+                    'date' => $session['date'],
+                    'checkin_start_time' => null,
+                    'checkin_end_time' => null,
+                    'checkout_start_time' => $session['checkout_start_time'],
+                    'checkout_end_time' => $session['checkout_end_time'] ?? $session['checkout_start_time'],
+                ]);
+                $codes++;
+            }
+        }
+
+        return " Attendance set up with {$codes} QR code" . ($codes === 1 ? '' : 's') . '.';
+    }
+
+    /**
+     * Templates this user may pick for automatic certificate issuing.
+     * Administrators see every active template; an organizer sees their own.
+     */
+    private function availableTemplates()
+    {
+        $user = auth()->user();
+
+        return \App\Models\CertificateTemplate::where('is_active', true)
+            ->when(
+                $user && !$user->hasRole('Administrator'),
+                fn ($q) => $q->where('user_id', $user->id)
+            )
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
     
     /**
@@ -104,11 +240,19 @@ class EventManagementController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'end_time' => 'required',
             'location' => 'required|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'contact_person' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
+            'contact_phone' => 'nullable|string|max:30',
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:active,pending,completed',
             'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'disable_auto_expiry' => 'nullable|boolean',
             'skip_identity_verification' => 'nullable|boolean',
+            'auto_pwa_registration' => 'nullable|boolean',
+            'auto_generate_certificate' => 'nullable|boolean',
+            'attendance_required' => 'nullable|boolean',
+            'certificate_template_id' => 'nullable|exists:certificate_templates,id',
         ]);
         
         // Create a new event
@@ -129,8 +273,16 @@ class EventManagementController extends Controller
         $event->contact_person = $request->contact_person;
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
-        $event->disable_auto_expiry = $request->has('disable_auto_expiry') ? true : false;
-        $event->skip_identity_verification = $request->has('skip_identity_verification') ? true : false;
+        $event->disable_auto_expiry = $request->boolean('disable_auto_expiry');
+        $event->skip_identity_verification = $request->boolean('skip_identity_verification');
+        $event->auto_pwa_registration = $request->boolean('auto_pwa_registration');
+        $event->auto_generate_certificate = $request->boolean('auto_generate_certificate');
+        $event->attendance_required = $request->boolean('attendance_required');
+        // Only meaningful when certificates are issued automatically; clearing it
+        // otherwise keeps the stored data honest.
+        $event->certificate_template_id = $request->boolean('auto_generate_certificate')
+            ? $request->input('certificate_template_id')
+            : null;
         
         // Handle poster upload
         if ($request->hasFile('poster')) {
@@ -144,9 +296,12 @@ class EventManagementController extends Controller
         // Generate the registration link and save again
         $event->generateRegistrationLink();
         $event->save();
-        
+
+        // Scan times were set on the same form, so create them now.
+        $attendanceNote = $this->createAttendanceFromRequest($request, $event);
+
         return redirect()->route('event.management')
-            ->with('success', 'Event created successfully!');
+            ->with('success', 'Event created successfully!' . $attendanceNote);
     }
     
     /**
@@ -167,7 +322,7 @@ class EventManagementController extends Controller
         }
         
         // Check if user has permission to view this event
-        if (!auth()->user()->hasRole('Administrator') && $event->user_id != auth()->id()) {
+        if (!$this->canManage($event)) {
             return redirect()->route('event.management')
                 ->with('error', 'You do not have permission to view this event.');
         }
@@ -195,7 +350,7 @@ class EventManagementController extends Controller
         }
         
         // Check if user has permission to edit this event
-        if (!auth()->user()->hasRole('Administrator') && $event->user_id != auth()->id()) {
+        if (!$this->canManage($event)) {
             return redirect()->route('event.management')
                 ->with('error', 'You do not have permission to edit this event.');
         }
@@ -207,7 +362,8 @@ class EventManagementController extends Controller
         $event->end_time_formatted = $event->end_time;
         
         return view('events.edit', [
-            'event' => $event
+            'event' => $event,
+            'certificateTemplates' => $this->availableTemplates(),
         ]);
     }
     
@@ -231,11 +387,19 @@ class EventManagementController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'end_time' => 'required',
             'location' => 'required|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'contact_person' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
+            'contact_phone' => 'nullable|string|max:30',
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:active,pending,completed',
             'poster' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
             'disable_auto_expiry' => 'nullable|boolean',
             'skip_identity_verification' => 'nullable|boolean',
+            'auto_pwa_registration' => 'nullable|boolean',
+            'auto_generate_certificate' => 'nullable|boolean',
+            'attendance_required' => 'nullable|boolean',
+            'certificate_template_id' => 'nullable|exists:certificate_templates,id',
         ]);
         
         // Find the event
@@ -248,7 +412,7 @@ class EventManagementController extends Controller
         }
         
         // Check if user has permission to update this event
-        if (!auth()->user()->hasRole('Administrator') && $event->user_id != auth()->id()) {
+        if (!$this->canManage($event)) {
             return redirect()->route('event.management')
                 ->with('error', 'You do not have permission to update this event.');
         }
@@ -269,20 +433,34 @@ class EventManagementController extends Controller
         $event->contact_person = $request->contact_person;
         $event->contact_email = $request->contact_email;
         $event->contact_phone = $request->contact_phone;
-        $event->disable_auto_expiry = $request->has('disable_auto_expiry') ? true : false;
-        $event->skip_identity_verification = $request->has('skip_identity_verification') ? true : false;
+        $event->disable_auto_expiry = $request->boolean('disable_auto_expiry');
+        $event->skip_identity_verification = $request->boolean('skip_identity_verification');
+        $event->auto_pwa_registration = $request->boolean('auto_pwa_registration');
+        $event->auto_generate_certificate = $request->boolean('auto_generate_certificate');
+        $event->attendance_required = $request->boolean('attendance_required');
+        $event->certificate_template_id = $request->boolean('auto_generate_certificate')
+            ? $request->input('certificate_template_id')
+            : null;
         
         // Handle poster upload (replace existing)
         if ($request->hasFile('poster')) {
-            $path = $request->file('poster')->store('events/posters', 'public');
-            $event->poster = $path;
+            $previousPoster = $event->poster;
+            $event->poster = $request->file('poster')->store('events/posters', 'public');
+            
+            // Only remove the old file once the replacement is in place
+            $this->deletePoster($previousPoster);
         }
         
         // Save the event
         $event->save();
+
+        // Attendance may have just been switched on, with the scan times set on
+        // this same form. Existing setups are left alone: changing those belongs
+        // on the attendance form, which owns the QR codes.
+        $attendanceNote = $this->createAttendanceFromRequest($request, $event);
         
         return redirect()->route('event.management')
-            ->with('success', 'Event updated successfully!');
+            ->with('success', 'Event updated successfully!' . $attendanceNote);
     }
     
     /**
@@ -302,16 +480,37 @@ class EventManagementController extends Controller
         }
         
         // Check if user has permission to delete this event
-        if (!auth()->user()->hasRole('Administrator') && $event->user_id != auth()->id()) {
+        if (!$this->canManage($event)) {
             return redirect()->route('event.management')
                 ->with('error', 'You do not have permission to delete this event.');
         }
         
-        // Delete the event
+        // Soft delete keeps the row in the database, so the ON DELETE CASCADE
+        // foreign keys never fire: participants, attendance records and issued
+        // certificates all stay intact. The poster is kept too, so a restore
+        // from the Recycle Bin brings the event back complete.
+        $certificateCount = $event->certificates()->count();
+        $participantCount = $event->participants()->count();
+
         $event->delete();
-        
-        return redirect()->route('event.management')
-            ->with('success', 'Event deleted successfully!');
+
+        $kept = [];
+
+        if ($participantCount > 0) {
+            $kept[] = "{$participantCount} participant(s)";
+        }
+
+        if ($certificateCount > 0) {
+            $kept[] = "{$certificateCount} certificate(s)";
+        }
+
+        $message = 'Event moved to Recycle Bin. You can restore it from Settings → Global Config → Recycle Bin.';
+
+        if ($kept) {
+            $message .= ' ' . implode(' and ', $kept) . ' were kept.';
+        }
+
+        return redirect()->route('event.management')->with('success', $message);
     }
     
     /**
@@ -328,6 +527,13 @@ class EventManagementController extends Controller
         if (!$event) {
             return redirect()->route('event.management')
                 ->with('error', 'Event not found.');
+        }
+        
+        // The QR code embeds the registration token, so it must be restricted to
+        // the event owner in the same way as show() and edit().
+        if (!$this->canManage($event)) {
+            return redirect()->route('event.management')
+                ->with('error', 'You do not have permission to view this event.');
         }
         
         // Generate registration link
@@ -387,16 +593,16 @@ class EventManagementController extends Controller
                     <tr>
                         <td style="width: 33.3%; padding: 8px 4px; vertical-align: top; text-align: left;">
                             <span style="font-size: 13px; color: #6366f1; font-weight: bold;">Date:</span><br>
-                            <span style="font-size: 16px;">📅</span> <span style="font-size: 12px; color: #22223b;">' . $event->start_date->format('l, d F Y') .
+                            <span style="font-size: 16px;">ðŸ“…</span> <span style="font-size: 12px; color: #22223b;">' . $event->start_date->format('l, d F Y') .
                             ($event->start_date != $event->end_date ? '<br>to<br>' . $event->end_date->format('l, d F Y') : '') . '</span>
                         </td>
                         <td style="width: 33.3%; padding: 8px 4px; vertical-align: top; text-align: left;">
                             <span style="font-size: 13px; color: #6366f1; font-weight: bold;">Time:</span><br>
-                            <span style="font-size: 16px;">⏰</span> <span style="font-size: 12px; color: #22223b;">' . ($event->start_time ? substr($event->start_time,0,5) : '-') . ' - ' . ($event->end_time ? substr($event->end_time,0,5) : '-') . '</span>
+                            <span style="font-size: 16px;">â°</span> <span style="font-size: 12px; color: #22223b;">' . ($event->start_time ? substr($event->start_time,0,5) : '-') . ' - ' . ($event->end_time ? substr($event->end_time,0,5) : '-') . '</span>
                         </td>
                         <td style="width: 33.3%; padding: 8px 4px; vertical-align: top; text-align: left;">
                             <span style="font-size: 13px; color: #6366f1; font-weight: bold;">Location:</span><br>
-                            <span style="font-size: 16px;">📍</span> <span style="font-size: 12px; color: #22223b;">' . htmlspecialchars($event->location) . '</span>
+                            <span style="font-size: 16px;">ðŸ“</span> <span style="font-size: 12px; color: #22223b;">' . htmlspecialchars($event->location) . '</span>
                         </td>
                     </tr>
                 </table>
@@ -426,6 +632,12 @@ class EventManagementController extends Controller
     public function downloadQrCodeImage($id)
     {
         $event = Event::findOrFail($id);
+
+        if (!$this->canManage($event)) {
+            return redirect()->route('event.management')
+                ->with('error', 'You do not have permission to view this event.');
+        }
+
         $registrationLink = route('event.register', ['token' => $event->registration_link]);
 
         // Generate QR code SVG (BaconQrCode v2.x, set size via RendererStyle)
@@ -451,6 +663,12 @@ class EventManagementController extends Controller
         
         if ($event->isRegistrationExpired()) {
             return view('events.registration-expired', compact('event'));
+        }
+        
+        // The event page already advertises "spots remaining", so the limit is
+        // enforced here rather than letting the form be submitted and rejected.
+        if ($event->isFull()) {
+            return view('events.registration-full', compact('event'));
         }
         
         return view('events.register', [
@@ -521,8 +739,22 @@ class EventManagementController extends Controller
             }
         }
 
+        // A banned person must not be able to come back under the same email or
+        // identity number. Checked before anything is written.
+        if (\App\Support\ParticipantBan::find($request->email, $request->identity_card, $request->passport_no)) {
+            return redirect()->back()
+                ->withInput($request->except(['identity_card', 'passport_no']))
+                ->with('error', \App\Support\ParticipantBan::message());
+        }
+
         if ($event->isRegistrationExpired()) {
             return redirect()->back()->with('error', 'Registration for this event has expired.');
+        }
+        // Re-check capacity at submit time: the event may have filled up while
+        // this form was open.
+        if ($event->isFull()) {
+            return redirect()->back()
+                ->with('error', 'This event has reached its maximum number of participants.');
         }
         // Check if already registered with same email
         $existingRegistration = Participant::where('event_id', $event->id)
@@ -651,7 +883,11 @@ class EventManagementController extends Controller
                 Log::error('Failed to send Telegram notification: ' . $e->getMessage());
             }
         }
-        
+
+        // Per-event automation. Each step is isolated so a failure in one does
+        // not cost the participant their registration, which is already saved.
+        \App\Services\EventAutomation::runAfterRegistration($event, $participant);
+
         return redirect()->route('event.register.thankyou', $event->registration_link);
     }
 
@@ -667,120 +903,4 @@ class EventManagementController extends Controller
         ]);
     }
     
-    /**
-     * Get sample events for demo purposes.
-     *
-     * @return array
-     */
-    private function getSampleEvents()
-    {
-        $events = [
-            [
-                'id' => 1,
-                'name' => 'Annual Leadership Conference 2025',
-                'organizer' => 'Human Resource Division',
-                'description' => 'A three-day leadership development conference focusing on emerging leadership skills, team building, and organizational management strategies.',
-                'start_date' => '21 Jul 2025 - 09:00:00',
-                'end_date' => '23 Jul 2025 - 17:00:00',
-                'start_date_formatted' => '2025-07-21',
-                'start_time_formatted' => '09:00',
-                'end_date_formatted' => '2025-07-23',
-                'end_time_formatted' => '17:00',
-                'location' => 'Kuala Lumpur Convention Center',
-                'address' => 'Kuala Lumpur City Centre, 50088 Kuala Lumpur, Malaysia',
-                'max_participants' => 200,
-                'participants' => 150,
-                'status' => 'active',
-                'created_at' => '21 Jun 2025 - 10:15:00',
-                'created_by' => 'Administrator',
-                'user_id' => 1, // Admin user ID
-                'contact_person' => 'Sarah Johnson',
-                'contact_email' => 'sarah.johnson@example.com',
-                'contact_phone' => '+60123456789',
-                'registration_link' => base64_encode('event_1_' . time()),
-            ],
-            [
-                'id' => 2,
-                'name' => 'Digital Transformation Workshop',
-                'organizer' => 'IT Department',
-                'description' => 'Hands-on workshop exploring digital tools, automation, and technology adoption strategies for organizational efficiency.',
-                'start_date' => '15 Aug 2025 - 10:00:00',
-                'end_date' => '16 Aug 2025 - 16:30:00',
-                'start_date_formatted' => '2025-08-15',
-                'start_time_formatted' => '10:00',
-                'end_date_formatted' => '2025-08-16',
-                'end_time_formatted' => '16:30',
-                'location' => 'RISDA Training Center',
-                'address' => '123 Jalan RISDA, 50000 Kuala Lumpur, Malaysia',
-                'max_participants' => 100,
-                'participants' => 75,
-                'status' => 'active',
-                'created_at' => '25 Jun 2025 - 14:30:00',
-                'created_by' => 'John Tech',
-                'user_id' => 2, // Organizer user ID
-                'contact_person' => 'Michael Lee',
-                'contact_email' => 'michael.lee@example.com',
-                'contact_phone' => '+60129876543',
-                'registration_link' => base64_encode('event_2_' . time()),
-            ],
-            [
-                'id' => 3,
-                'name' => 'Sustainable Agriculture Seminar',
-                'organizer' => 'Agriculture Division',
-                'description' => 'Seminar on modern sustainable farming practices, renewable resources, and eco-friendly agricultural methods.',
-                'start_date' => '10 Sep 2025 - 08:30:00',
-                'end_date' => '10 Sep 2025 - 17:00:00',
-                'start_date_formatted' => '2025-09-10',
-                'start_time_formatted' => '08:30',
-                'end_date_formatted' => '2025-09-10',
-                'end_time_formatted' => '17:00',
-                'location' => 'Putrajaya International Convention Centre',
-                'address' => 'Dataran Gemilang, Presint 5, 62000 Putrajaya, Malaysia',
-                'max_participants' => 250,
-                'participants' => 200,
-                'status' => 'pending',
-                'created_at' => '30 Jun 2025 - 09:45:00',
-                'created_by' => 'Ahmad Kassim',
-                'user_id' => 1, // Admin user ID
-                'contact_person' => 'David Wong',
-                'contact_email' => 'david.wong@example.com',
-                'contact_phone' => '+60132345678',
-                'registration_link' => base64_encode('event_3_' . time()),
-            ],
-            [
-                'id' => 4,
-                'name' => 'Financial Management Course',
-                'organizer' => 'Finance Department',
-                'description' => 'Comprehensive course covering budgeting, financial planning, investment strategies, and financial risk management.',
-                'start_date' => '05 Oct 2025 - 09:00:00',
-                'end_date' => '07 Oct 2025 - 16:00:00',
-                'start_date_formatted' => '2025-10-05',
-                'start_time_formatted' => '09:00',
-                'end_date_formatted' => '2025-10-07',
-                'end_time_formatted' => '16:00',
-                'location' => 'RISDA Headquarters',
-                'address' => '123 Jalan RISDA, 50000 Kuala Lumpur, Malaysia',
-                'max_participants' => 50,
-                'participants' => 50,
-                'status' => 'completed',
-                'created_at' => '15 Jul 2025 - 11:20:00',
-                'created_by' => 'Lisa Tan',
-                'user_id' => 2, // Organizer user ID
-                'contact_person' => 'Robert Chen',
-                'contact_email' => 'robert.chen@example.com',
-                'contact_phone' => '+60145678901',
-                'registration_link' => base64_encode('event_4_' . time()),
-            ]
-        ];
-        
-        // If user is Organizer, filter events to show only their own
-        if (auth()->user()->hasRole('Organizer')) {
-            return array_filter($events, function($event) {
-                return $event['user_id'] == auth()->id();
-            });
-        }
-        
-        // For Administrator, return all events
-        return $events;
-    }
 } 

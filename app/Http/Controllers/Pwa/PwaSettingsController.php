@@ -55,36 +55,40 @@ class PwaSettingsController extends Controller
     /**
      * Update PWA settings
      */
+    /**
+     * Settings stored as true/false. An unchecked box is simply absent from the
+     * request, so each one has to be resolved explicitly, otherwise turning a
+     * toggle off used to drop the key instead of storing false.
+     */
+    private const BOOLEAN_KEYS = [
+        'auto_create_accounts',
+        'force_password_change',
+        'include_uppercase',
+        'include_lowercase',
+        'include_numbers',
+        'include_special_chars',
+        'send_welcome_email',
+        'include_app_link',
+    ];
+
     public function update(Request $request)
     {
         $user = Auth::user();
-        
-        $request->validate([
-            'enable_pwa_access' => 'boolean',
-            'auto_create_accounts' => 'boolean',
-            'force_password_change' => 'boolean',
-            'default_pwa_access' => 'required|in:enabled,disabled,ask',
+
+        $validated = $request->validate([
+            'auto_create_accounts' => 'nullable|boolean',
+            'force_password_change' => 'nullable|boolean',
             'checkbox_label' => 'required|string|max:255',
             'checkbox_default_state' => 'required|in:checked,unchecked',
             'password_length' => 'required|integer|min:6|max:16',
-            'include_uppercase' => 'boolean',
-            'include_lowercase' => 'boolean',
-            'include_numbers' => 'boolean',
-            'include_special_chars' => 'boolean',
-            'password_expiry' => 'required|in:never,30,60,90,180',
-            'send_welcome_email' => 'boolean',
-            'include_app_link' => 'boolean',
+            'include_uppercase' => 'nullable|boolean',
+            'include_lowercase' => 'nullable|boolean',
+            'include_numbers' => 'nullable|boolean',
+            'include_special_chars' => 'nullable|boolean',
+            'send_welcome_email' => 'nullable|boolean',
+            'include_app_link' => 'nullable|boolean',
             'pwa_app_link' => 'required|url',
             'support_email' => 'required|email',
-            'real_time_sync' => 'boolean',
-            'sync_name' => 'boolean',
-            'sync_email' => 'boolean',
-            'sync_phone' => 'boolean',
-            'sync_organization' => 'boolean',
-            'sync_address' => 'boolean',
-            'session_timeout' => 'required|in:30,60,120,240,480,1440',
-            'max_login_attempts' => 'required|integer|min:3|max:10',
-            'lockout_duration' => 'required|in:15,30,60,120,1440,manual'
         ]);
 
         // Multi-tenant settings update based on user role
@@ -113,13 +117,24 @@ class PwaSettingsController extends Controller
             }
         }
 
-        // Update settings
+        // Only validated keys are stored. $request->all() used to be saved
+        // wholesale, which wrote the CSRF token into the settings payload.
+        foreach (self::BOOLEAN_KEYS as $key) {
+            $validated[$key] = $request->boolean($key);
+        }
+
+        $validated['password_length'] = (int) $validated['password_length'];
+
+        // Merge over what is already stored so a setting handled elsewhere is
+        // never wiped by this form.
+        $existing = is_array($settings->settings) ? $settings->settings : [];
+
         $settings->update([
-            'settings' => $request->all(),
-            'updated_by' => $user->id
+            'settings' => array_merge($existing, $validated),
+            'updated_by' => $user->id,
         ]);
 
-        return redirect()->route('pwa.settings')->with('success', 'PWA settings updated successfully.');
+        return redirect()->route('pwa.settings')->with('success', 'PWA settings updated.');
     }
 
     /**
@@ -127,33 +142,8 @@ class PwaSettingsController extends Controller
      */
     private function getDefaultSettings()
     {
-        return [
-            'enable_pwa_access' => true,
-            'auto_create_accounts' => true,
-            'force_password_change' => true,
-            'default_pwa_access' => 'enabled',
-            'checkbox_label' => 'Enable E-Certificate Online mobile access',
-            'checkbox_default_state' => 'checked',
-            'password_length' => 8,
-            'include_uppercase' => true,
-            'include_lowercase' => true,
-            'include_numbers' => true,
-            'include_special_chars' => false,
-            'password_expiry' => 'never',
-            'send_welcome_email' => true,
-            'include_app_link' => true,
-            'pwa_app_link' => 'https://apps.e-certificate.com.my',
-            'support_email' => 'support@e-certificate.com.my',
-            'real_time_sync' => true,
-            'sync_name' => true,
-            'sync_email' => true,
-            'sync_phone' => true,
-            'sync_organization' => true,
-            'sync_address' => false,
-            'session_timeout' => '60',
-            'max_login_attempts' => 5,
-            'lockout_duration' => '30'
-        ];
+        // Single source of truth, shared with everything that reads a setting.
+        return PwaSetting::DEFAULTS;
     }
 
     /**

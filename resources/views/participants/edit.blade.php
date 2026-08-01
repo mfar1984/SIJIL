@@ -89,10 +89,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
-                                        </div>
-                                        <input type="text" name="name" id="name" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('name', $participant->name) }}" required>
+                                        <input type="text" name="name" id="name" class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('name', $participant->name) }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -114,10 +111,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">alternate_email</span>
-                                        </div>
-                                        <input type="email" name="email" id="email" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('email', $participant->email) }}" required>
+                                        <input type="email" name="email" id="email" class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('email', $participant->email) }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -166,16 +160,10 @@
                                         </select>
                                     </div>
                                     <div id="ic_field" class="relative hidden">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">assignment_ind</span>
-                                        </div>
-                                        <input type="text" name="identity_card" id="organization_ic" placeholder="000000-00-0000" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('identity_card', $participant->identity_card ?: $participant->id_passport) }}" maxlength="14" oninput="formatIC(this)">
+                                        <input type="text" name="identity_card" id="organization_ic" placeholder="000000-00-0000" class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('identity_card', $participant->identity_card ?: $participant->id_passport) }}" maxlength="14" oninput="formatIC(this)">
                                     </div>
                                     <div id="passport_field" class="relative hidden">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">assignment_ind</span>
-                                        </div>
-                                        <input type="text" name="passport_no" id="organization_passport" placeholder="A00000000" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('passport_no', $participant->passport_no ?: $participant->id_passport) }}">
+                                        <input type="text" name="passport_no" id="organization_passport" placeholder="A00000000" class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('passport_no', $participant->passport_no ?: $participant->id_passport) }}">
                                     </div>
                                 </div>
                             </div>
@@ -197,10 +185,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
-                                        </div>
-                                        <input type="date" name="date_of_birth" id="date_of_birth" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('date_of_birth', $participant->date_of_birth ? $participant->date_of_birth->format('Y-m-d') : '') }}">
+                                        <input type="date" name="date_of_birth" id="date_of_birth" class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('date_of_birth', $participant->date_of_birth ? $participant->date_of_birth->format('Y-m-d') : '') }}">
                                     </div>
                                 </div>
                             </div>
@@ -291,21 +276,15 @@
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <!-- Address 1 -->
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">location_on</span>
-                                    </div>
                                     <input type="text" name="address1" id="address1" placeholder="Address Line 1" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                         value="{{ old('address1', $participant->address1) }}">
                                 </div>
                                 
                                 <!-- Address 2 -->
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">location_on</span>
-                                    </div>
                                     <input type="text" name="address2" id="address2" placeholder="Address Line 2" 
-                                        class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
+                                        class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" 
                                         value="{{ old('address2', $participant->address2) }}">
                                 </div>
                             </div>
@@ -360,11 +339,8 @@
                                     <div>
                                         <label for="manual_state" class="block text-xs font-medium text-gray-700 mb-1">State (Manual)</label>
                                         <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="material-icons-outlined text-[#004aad] text-base">edit_location</span>
-                                            </div>
                                             <input type="text" name="manual_state" id="manual_state" 
-                                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                                class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                                 placeholder="Enter state manually" value="{{ old('manual_state', $participant->state) }}">
                                         </div>
                                     </div>
@@ -373,11 +349,8 @@
                                     <div>
                                         <label for="manual_city" class="block text-xs font-medium text-gray-700 mb-1">City (Manual)</label>
                                         <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="material-icons-outlined text-[#004aad] text-base">edit_location</span>
-                                            </div>
                                             <input type="text" name="manual_city" id="manual_city" 
-                                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                                class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                                 placeholder="Enter city manually" value="{{ old('manual_city', $participant->city) }}">
                                         </div>
                                     </div>
@@ -386,11 +359,8 @@
                                     <div>
                                         <label for="manual_postcode" class="block text-xs font-medium text-gray-700 mb-1">Postcode (Manual)</label>
                                         <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="material-icons-outlined text-[#004aad] text-base">edit_location</span>
-                                            </div>
                                             <input type="text" name="manual_postcode" id="manual_postcode" 
-                                                class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                                                class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                                                 placeholder="Enter postcode manually" value="{{ old('manual_postcode', $participant->postcode) }}">
                                         </div>
                                     </div>
@@ -437,10 +407,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">person</span>
-                                        </div>
-                                        <select name="gender" id="gender" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]">
+                                        <select name="gender" id="gender" class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]">
                                             <option value="">-- Select Gender --</option>
                                             <option value="male" {{ old('gender', $participant->gender) == 'male' ? 'selected' : '' }}>Male</option>
                                             <option value="female" {{ old('gender', $participant->gender) == 'female' ? 'selected' : '' }}>Female</option>
@@ -467,10 +434,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">apartment</span>
-                                        </div>
-                                        <input type="text" name="organization" id="organization" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('organization', $participant->organization) }}">
+                                        <input type="text" name="organization" id="organization" class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('organization', $participant->organization) }}">
                                     </div>
                                 </div>
                             </div>
@@ -492,10 +456,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
-                                        </div>
-                                        <input type="text" name="job_title" id="job_title" class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('job_title', $participant->job_title) }}">
+                                        <input type="text" name="job_title" id="job_title" class="w-full text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('job_title', $participant->job_title) }}">
                                     </div>
                                 </div>
                             </div>
@@ -607,10 +568,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">shield</span>
-                                        </div>
-                                        <select name="status" id="status" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]">
+                                        <select name="status" id="status" class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]">
                                             <option value="active" {{ old('status', $participant->status) == 'active' ? 'selected' : '' }}>Active</option>
                                             <option value="inactive" {{ old('status', $participant->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
                                         </select>
@@ -649,10 +607,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">event_note</span>
-                                        </div>
-                                        <select name="event_id" id="event_id" class="w-full h-9 text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" required>
+                                        <select name="event_id" id="event_id" class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 text-left leading-[1rem]" required>
                                             <option value="">-- Select Event --</option>
                                             @foreach($events as $event)
                                                 <option value="{{ $event->id }}" {{ old('event_id', $participant->event_id) == $event->id ? 'selected' : '' }}>{{ $event->name }}</option>
@@ -679,10 +634,7 @@
                                 </label>
                                 <div class="flex-1">
                                     <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="material-icons-outlined text-[#004aad] text-base">groups</span>
-                                        </div>
-                                        <input type="text" id="event_organizer" class="w-full text-xs border-gray-300 bg-gray-50 rounded-[1px] pl-12 py-2 border" value="{{ $participant->event ? $participant->event->organizer : '' }}" readonly>
+                                        <input type="text" id="event_organizer" class="w-full text-xs border-gray-300 bg-gray-50 rounded-[1px] px-3 py-2 border" value="{{ $participant->event ? $participant->event->organizer : '' }}" readonly>
                                     </div>
                                 </div>
                             </div>

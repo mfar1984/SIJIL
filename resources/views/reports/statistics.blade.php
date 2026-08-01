@@ -7,336 +7,527 @@
 
     <x-slot name="title">Event Statistics</x-slot>
 
-    <div class="bg-white rounded shadow-md border border-gray-300">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-start">
-                <div>
-                    <div class="flex items-center">
-                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">insights</span>
-                        <h1 class="text-xl font-bold text-gray-800">Event Statistics</h1>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    @php
+        $filters = ['search', 'date_filter', 'start_date', 'end_date', 'organizer', 'status_filter', 'sort'];
+        $hasFilters = collect($filters)->contains(fn ($f) => request()->filled($f));
+        $isCustom = request('date_filter') === 'custom';
+
+        // Reused by every card so a missing comparison reads the same way each time.
+        $changeBadge = function (?float $change) {
+            if ($change === null) {
+                return ['text-gray-400', 'remove', 'no earlier data'];
+            }
+
+            if ($change > 0) {
+                return ['text-green-600', 'trending_up', '+' . $change . '% vs previous period'];
+            }
+
+            if ($change < 0) {
+                return ['text-red-600', 'trending_down', $change . '% vs previous period'];
+            }
+
+            return ['text-gray-500', 'trending_flat', 'unchanged'];
+        };
+    @endphp
+
+    <div class="space-y-3">
+        <div class="bg-white rounded shadow-md border border-gray-300">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex flex-wrap justify-between items-start gap-3">
+                    <div>
+                        <div class="flex items-center">
+                            <span class="material-icons-outlined mr-2 text-primary-DEFAULT">insights</span>
+                            <h1 class="text-xl font-bold text-gray-800">Event Statistics</h1>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 ml-8">
+                            Events starting {{ $rangeLabel }}. Every figure below describes that set of events.
+                        </p>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1 ml-8">Analyze event performance and trends</p>
-                </div>
-                <div>
+
                     @can('event_statistics.export')
-                    <form id="statsExportForm" method="POST" action="{{ route('reports.statistics.export') }}" class="ml-2">
-                        @csrf
-                        <input type="hidden" name="date_filter" value="{{ request('date_filter', 'last_30') }}">
-                        <input type="hidden" name="start_date" value="{{ request('start_date') }}">
-                        <input type="hidden" name="end_date" value="{{ request('end_date') }}">
-                        <input type="hidden" name="search" value="{{ request('search') }}">
-                        <input type="hidden" name="event_type" value="{{ request('event_type') }}">
-                        <input type="hidden" name="status_filter" value="{{ request('status_filter') }}">
-                        <button type="submit" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-3 h-[36px] rounded shadow-sm font-medium flex items-center text-xs transition-colors duration-200 ease-in-out">
-                            <span class="material-icons-outlined text-xs mr-1">file_download</span>
-                            Export Statistics
-                        </button>
-                    </form>
+                        <form method="POST" action="{{ route('reports.statistics.export') }}">
+                            @csrf
+                            @foreach($filters as $carry)
+                                <input type="hidden" name="{{ $carry }}" value="{{ request($carry) }}">
+                            @endforeach
+                            <button type="submit"
+                                    class="h-9 px-3 rounded text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 inline-flex items-center shadow-sm">
+                                <span class="material-icons-outlined text-sm mr-1">file_download</span>
+                                Export CSV
+                            </button>
+                        </form>
                     @endcan
                 </div>
             </div>
+
+            <div class="p-4">
+                {{-- The range select no longer submits on change: doing so reloaded the
+                     page the instant "Custom range" was picked, before the two date
+                     inputs could be revealed, which made the custom range unusable. --}}
+                <form method="GET" action="{{ route('reports.statistics') }}" class="space-y-2 mb-4"
+                      x-data="{ custom: {{ $isCustom ? 'true' : 'false' }} }">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="text" name="search" value="{{ request('search') }}"
+                               placeholder="Search event name, location, description..."
+                               class="flex-1 min-w-[12rem] h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+
+                        <select name="date_filter" x-model="custom" x-init="$el.value = '{{ request('date_filter', 'last_year') }}'"
+                                @change="custom = ($event.target.value === 'custom')"
+                                class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[11rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <option value="last_30" @selected(request('date_filter') === 'last_30')>Last 30 days</option>
+                            <option value="last_90" @selected(request('date_filter') === 'last_90')>Last 90 days</option>
+                            <option value="last_6_months" @selected(request('date_filter') === 'last_6_months')>Last 6 months</option>
+                            <option value="last_year" @selected(request('date_filter', 'last_year') === 'last_year')>Last 12 months</option>
+                            <option value="all" @selected(request('date_filter') === 'all')>All time</option>
+                            <option value="custom" @selected($isCustom)>Custom range</option>
+                        </select>
+
+                        @if($organizers->isNotEmpty())
+                            <select name="organizer"
+                                    class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[12rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                <option value="">All organizers</option>
+                                @foreach($organizers as $organizer)
+                                    <option value="{{ $organizer->id }}" @selected(request('organizer') == $organizer->id)>{{ $organizer->name }}</option>
+                                @endforeach
+                            </select>
+                        @endif
+
+                        <select name="status_filter"
+                                class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[10rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <option value="">Any status</option>
+                            @foreach($statuses as $status)
+                                <option value="{{ $status }}" @selected(request('status_filter') === $status)>{{ ucfirst($status) }}</option>
+                            @endforeach
+                        </select>
+
+                        <select name="sort"
+                                class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[13rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <option value="participants" @selected($sort === 'participants')>Sort: most participants</option>
+                            <option value="certificates" @selected($sort === 'certificates')>Sort: most certificates</option>
+                            <option value="coverage" @selected($sort === 'coverage')>Sort: best coverage</option>
+                            <option value="attendance" @selected($sort === 'attendance')>Sort: best attendance</option>
+                            <option value="date" @selected($sort === 'date')>Sort: newest first</option>
+                        </select>
+
+                        <button type="submit"
+                                class="h-9 px-3 bg-primary-DEFAULT hover:bg-primary-dark text-white rounded text-xs flex items-center shrink-0">
+                            <span class="material-icons-outlined text-xs mr-1">filter_alt</span>
+                            Apply
+                        </button>
+
+                        @if($hasFilters)
+                            <a href="{{ route('reports.statistics') }}" class="text-xs text-gray-500 underline shrink-0">Reset</a>
+                        @endif
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2" x-show="custom" x-cloak>
+                        <label class="text-xs text-gray-600">From</label>
+                        <input type="date" name="start_date" value="{{ request('start_date') }}"
+                               class="h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                        <label class="text-xs text-gray-600">to</label>
+                        <input type="date" name="end_date" value="{{ request('end_date') }}"
+                               class="h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                        <span class="text-[11px] text-gray-500">Press Apply to use this range.</span>
+                    </div>
+                </form>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    @foreach([
+                        ['Events', $totals['events'], 'event', $changes['events'] ?? null, null],
+                        ['Participants', $totals['participants'], 'groups', $changes['participants'] ?? null, null],
+                        ['Certificates', $totals['certificates'], 'card_membership', $changes['certificates'] ?? null, $totals['coverage_rate'] . '% of participants'],
+                        ['Checked in', $totals['checked_in'], 'how_to_reg', null, $totals['attendance_rate'] . '% of participants'],
+                    ] as [$label, $value, $icon, $change, $note])
+                        @php [$colour, $arrow, $changeText] = $changeBadge($change); @endphp
+                        <div class="border border-gray-200 rounded p-4">
+                            <div class="flex items-start justify-between">
+                                <p class="text-xs text-gray-500">{{ $label }}</p>
+                                <span class="material-icons-outlined text-gray-300 text-base">{{ $icon }}</span>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800 mt-0.5">{{ number_format($value) }}</p>
+
+                            @if($note)
+                                <p class="text-[11px] text-gray-500 mt-1">{{ $note }}</p>
+                            @else
+                                <p class="text-[11px] {{ $colour }} mt-1 flex items-center">
+                                    <span class="material-icons-outlined text-xs mr-0.5">{{ $arrow }}</span>
+                                    {{ $changeText }}
+                                </p>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+
+                @if($totals['sessions'] > 0 && $totals['checked_in'] === 0)
+                    <div class="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded mt-3 text-xs">
+                        {{ $totals['sessions'] }} check-in {{ $totals['sessions'] === 1 ? 'session exists' : 'sessions exist' }}
+                        for these events but no scan has been recorded yet, so the attendance figures are 0.
+                    </div>
+                @endif
+
+                @if($previous)
+                    <p class="text-[11px] text-gray-500 mt-3">
+                        Compared against {{ $previous['range'] }}:
+                        {{ number_format($previous['events']) }} events,
+                        {{ number_format($previous['participants']) }} participants,
+                        {{ number_format($previous['certificates']) }} certificates.
+                    </p>
+                @endif
+            </div>
         </div>
-        
-        <div class="p-4">
-            
-            <!-- Summary Cards -->
-            <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-blue-100 rounded-full mr-4">
-                            <span class="material-icons-outlined text-blue-600">event</span>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs">Total Events</p>
-                            <p class="text-xl font-bold text-gray-800">{{ number_format($totalEvents) }}</p>
-                        </div>
+
+        @if($totals['events'] === 0)
+            <div class="bg-white rounded shadow-md border border-gray-300 p-10 text-center">
+                <span class="material-icons-outlined text-4xl text-gray-300">query_stats</span>
+                <p class="text-sm text-gray-600 mt-2">No events start in this range.</p>
+                <p class="text-xs text-gray-500 mt-1">Widen the range or clear the filters to see more.</p>
+            </div>
+        @else
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div class="bg-white rounded shadow-md border border-gray-300">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h2 class="text-sm font-semibold text-gray-700">Registrations and certificates over time</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">By the month each was recorded.</p>
                     </div>
-                    <div class="mt-2 text-xs {{ $eventPercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">{{ $eventPercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
-                        <span>{{ abs($eventPercentChange) }}% {{ $eventPercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-green-100 rounded-full mr-4">
-                            <span class="material-icons-outlined text-green-600">groups</span>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs">Total Participants</p>
-                            <p class="text-xl font-bold text-gray-800">{{ number_format($totalParticipants) }}</p>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-xs {{ $participantPercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">{{ $participantPercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
-                        <span>{{ abs($participantPercentChange) }}% {{ $participantPercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
+                    <div class="p-4">
+                        @if($registrationSeries->isNotEmpty() || $certificateSeries->isNotEmpty())
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="timelineChart"></canvas>
+                            </div>
+                        @else
+                            <div class="flex flex-col items-center justify-center h-[260px] text-gray-400">
+                                <span class="material-icons-outlined text-3xl mb-1">show_chart</span>
+                                <p class="text-xs">No registrations recorded yet</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
-                
-                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-amber-100 rounded-full mr-4">
-                            <span class="material-icons-outlined text-amber-600">emoji_events</span>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs">Certificates Issued</p>
-                            <p class="text-xl font-bold text-gray-800">{{ number_format($totalCertificates) }}</p>
-                        </div>
+
+                <div class="bg-white rounded shadow-md border border-gray-300">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h2 class="text-sm font-semibold text-gray-700">Participants by event</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">Ten largest in this range.</p>
                     </div>
-                    <div class="mt-2 text-xs {{ $certificatePercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">{{ $certificatePercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
-                        <span>{{ abs($certificatePercentChange) }}% {{ $certificatePercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-purple-100 rounded-full mr-4">
-                            <span class="material-icons-outlined text-purple-600">trending_up</span>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs">Avg. Attendance Rate</p>
-                            <p class="text-xl font-bold text-gray-800">{{ $avgAttendanceRate }}%</p>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-xs {{ $attendanceRatePercentChange >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">{{ $attendanceRatePercentChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
-                        <span>{{ abs($attendanceRatePercentChange) }}% {{ $attendanceRatePercentChange >= 0 ? 'increase' : 'decrease' }} from previous period</span>
+                    <div class="p-4">
+                        @if($participantsByEvent->isNotEmpty())
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="participantsChart"></canvas>
+                            </div>
+                        @else
+                            <div class="flex flex-col items-center justify-center h-[260px] text-gray-400">
+                                <span class="material-icons-outlined text-3xl mb-1">bar_chart</span>
+                                <p class="text-xs">No participants yet</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-            
-            <!-- Charts Row -->
-            <div class="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Events by Month Chart -->
-                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-700 mb-4">Events by Month</h3>
-                    <div class="h-64">
-                        <canvas id="eventsChart"></canvas>
-                    </div>
+
+            <div class="bg-white rounded shadow-md border border-gray-300">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-sm font-semibold text-gray-700">Who registered</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">
+                        {{ number_format($demographics['total']) }} participants across these events.
+                    </p>
                 </div>
-                
-                <!-- Attendance Rate Chart -->
-                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-700 mb-4">Attendance Rate by Event Type</h3>
-                    <div class="h-64 px-4">
-                        @foreach($attendanceByType as $type => $rate)
-                            <div class="h-8 flex items-center mb-2">
-                                <p class="w-24 text-xs">{{ ucfirst($type) }}</p>
-                                <div class="flex-1 h-6 bg-gray-200 rounded-full">
-                                    <div class="h-6 bg-green-600 rounded-full" style="width: {{ $rate }}%"></div>
+
+                <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    @foreach([
+                        ['Gender', 'genderChart', $demographics['gender']],
+                        ['Race', 'raceChart', $demographics['race']],
+                        ['Registration type', 'typeChart', $demographics['type']],
+                    ] as [$title, $canvasId, $series])
+                        <div>
+                            <p class="text-xs font-medium text-gray-700 mb-3">{{ $title }}</p>
+                            @if($series->count() > 0)
+                                <div style="position: relative; height: 200px;">
+                                    <canvas id="{{ $canvasId }}"></canvas>
                                 </div>
-                                <p class="ml-2 w-8 text-xs font-medium">{{ $rate }}%</p>
+                            @else
+                                <div class="flex flex-col items-center justify-center h-[200px] text-gray-400">
+                                    <span class="material-icons-outlined text-3xl mb-1">pie_chart</span>
+                                    <p class="text-xs">Nothing recorded</p>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            @if($coverageByEvent->isNotEmpty())
+                <div class="bg-white rounded shadow-md border border-gray-300">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h2 class="text-sm font-semibold text-gray-700">Certificate coverage</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            Share of each event's participants who hold a certificate.
+                        </p>
+                    </div>
+                    <div class="p-4 space-y-2.5">
+                        @foreach($coverageByEvent as $row)
+                            <div>
+                                <div class="flex items-center justify-between text-xs mb-1">
+                                    <span class="text-gray-700 truncate pr-2">{{ $row['label'] }}</span>
+                                    <span class="text-gray-500 shrink-0">
+                                        {{ number_format($row['issued']) }} of {{ number_format($row['registered']) }}
+                                        ({{ $row['percent'] }}%)
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                    <div class="h-2 rounded-full {{ $row['percent'] >= 90 ? 'bg-green-600' : ($row['percent'] >= 50 ? 'bg-amber-500' : 'bg-red-500') }}"
+                                         style="width: {{ min(100, $row['percent']) }}%"></div>
+                                </div>
                             </div>
                         @endforeach
                     </div>
                 </div>
-            </div>
-            
-            <!-- Top Events Table -->
-            <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
-                <div class="p-4 border-b border-gray-200">
-                    <h3 class="text-sm font-medium text-gray-700">Top Performing Events</h3>
-                </div>
-                
-                <!-- Show Entries & Filter Row -->
-                <div class="p-4 border-b border-gray-200">
-                    <form method="GET" action="{{ route('reports.statistics') }}" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <!-- Show Entries Dropdown (Left) -->
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-600 font-medium">Show</span>
-                            <select name="per_page" onchange="this.form.submit()" class="appearance-none px-2 py-1 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[60px] font-medium" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.25rem center; background-size: 0.75em;">
-                                <option value="5" @if(request('per_page', 5) == 5) selected @endif>5</option>
-                                <option value="10" @if(request('per_page') == 10) selected @endif>10</option>
-                                <option value="25" @if(request('per_page') == 25) selected @endif>25</option>
-                                <option value="50" @if(request('per_page') == 50) selected @endif>50</option>
-                            </select>
-                            <span class="text-xs text-gray-600">entries per page</span>
-                        </div>
-                        
-                        <!-- Search & Filter Controls (Right) -->
-                        <div class="flex flex-wrap gap-2 items-center">
-                            <select name="date_filter" id="dateFilter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[150px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                                <option value="last_30" @if(request('date_filter','last_30')=='last_30') selected @endif>Last 30 days</option>
-                                <option value="last_90" @if(request('date_filter')=='last_90') selected @endif>Last 90 days</option>
-                                <option value="last_6_months" @if(request('date_filter')=='last_6_months') selected @endif>Last 6 months</option>
-                                <option value="last_year" @if(request('date_filter')=='last_year') selected @endif>Last year</option>
-                                <option value="custom" @if(request('date_filter')=='custom') selected @endif>Custom range</option>
-                            </select>
-                            <input type="date" name="start_date" id="startDate" value="{{ request('start_date') }}" class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light @if(request('date_filter')!='custom') hidden @endif" />
-                            <input type="date" name="end_date" id="endDate" value="{{ request('end_date') }}" class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light @if(request('date_filter')!='custom') hidden @endif" />
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search event name, location..." class="border border-gray-300 rounded px-2 py-1 text-xs focus:ring focus:ring-primary-light focus:border-primary-light" id="searchInput" />
-                            <select name="event_type" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                                <option value="">All Types</option>
-                                <option value="Conference" @if(request('event_type') == 'Conference') selected @endif>Conference</option>
-                                <option value="Workshop" @if(request('event_type') == 'Workshop') selected @endif>Workshop</option>
-                                <option value="Training" @if(request('event_type') == 'Training') selected @endif>Training</option>
-                                <option value="Seminar" @if(request('event_type') == 'Seminar') selected @endif>Seminar</option>
-                                <option value="Gaming" @if(request('event_type') == 'Gaming') selected @endif>Gaming</option>
-                            </select>
-                            <select name="status_filter" onchange="this.form.submit()" class="appearance-none px-3 py-1.5 pr-8 text-xs border border-gray-300 rounded focus:ring focus:ring-primary-light focus:border-primary-light bg-white bg-no-repeat bg-right w-[120px]" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>'); background-position: right 0.75rem center; background-size: 1em;">
-                                <option value="">All Status</option>
-                                <option value="active" @if(request('status_filter') == 'active') selected @endif>Active</option>
-                                <option value="completed" @if(request('status_filter') == 'completed') selected @endif>Completed</option>
-                                <option value="cancelled" @if(request('status_filter') == 'cancelled') selected @endif>Cancelled</option>
-                            </select>
-                            <button type="submit" class="bg-primary-light text-white px-3 py-1 h-[36px] rounded text-xs font-medium flex items-center justify-center" title="Search">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4-4m0 0A7 7 0 104 4a7 7 0 0013 13z" />
-                                </svg>
-                            </button>
-                            @if(request('search') || request('event_type') || request('status_filter'))
-                                <a href="{{ route('reports.statistics') }}?per_page={{ request('per_page', 5) }}" class="text-xs text-gray-500 underline ml-2">Reset</a>
-                            @endif
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Search Results Summary -->
-                @if(request('search') || request('event_type') || request('status_filter'))
-                    <div class="px-4 py-2 bg-blue-50 border-b border-blue-200 text-blue-700 text-xs">
-                        <span class="font-medium">Search Results:</span>
-                        @if(request('search'))
-                            <span class="ml-2">Searching for "{{ request('search') }}"</span>
-                        @endif
-                        @if(request('event_type'))
-                            <span class="ml-2">Type: {{ request('event_type') }}</span>
-                        @endif
-                        @if(request('status_filter'))
-                            <span class="ml-2">Status: {{ ucfirst(request('status_filter')) }}</span>
-                        @endif
-                        <span class="ml-2">({{ $events->total() }} results)</span>
+            @endif
+
+            <div class="bg-white rounded shadow-md border border-gray-300">
+                <div class="px-4 py-3 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-700">Events</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            {{-- This card used to be titled "Top Performing Events" while
+                                 listing the current page ordered by start date. It is
+                                 sorted by the metric chosen above. --}}
+                            Sorted by {{ str_replace('_', ' ', $sort) }}.
+                        </p>
                     </div>
-                @endif
+                </div>
+
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-primary-light text-white">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium uppercase">Event Name</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium uppercase">Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium uppercase">Type</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium uppercase">Participants</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium uppercase">Attendance Rate</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium uppercase">Certificates</th>
+                    <table class="min-w-full border-collapse">
+                        <thead>
+                            <tr class="bg-primary-light text-white text-xs uppercase">
+                                <th class="py-3 px-4 text-left">Event</th>
+                                @if($organizers->isNotEmpty())
+                                    <th class="py-3 px-4 text-left">Organizer</th>
+                                @endif
+                                <th class="py-3 px-4 text-left">Starts</th>
+                                <th class="py-3 px-4 text-left">Status</th>
+                                <th class="py-3 px-4 text-right">Participants</th>
+                                <th class="py-3 px-4 text-right">Certificates</th>
+                                <th class="py-3 px-4 text-left">Coverage</th>
+                                <th class="py-3 px-4 text-left">Attendance</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200 text-xs">
-                            @forelse($topEvents as $event)
-                                <tr>
-                                    <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-800">{{ $event['name'] }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap">{{ $event['date'] }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap">{{ ucfirst($event['type']) }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap">{{ number_format($event['participants']) }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap">
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach($events as $row)
+                                <tr class="text-xs hover:bg-gray-50">
+                                    <td class="py-3 px-4">
+                                        <div class="font-medium text-gray-800">{{ $row['name'] }}</div>
+                                        @if($row['location'])
+                                            <div class="text-gray-500">{{ $row['location'] }}</div>
+                                        @endif
+                                    </td>
+                                    @if($organizers->isNotEmpty())
+                                        <td class="py-3 px-4">{{ $row['organizer'] }}</td>
+                                    @endif
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        {{ $row['start_date'] ? $row['start_date']->format('d M Y') : '—' }}
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <span class="px-2 py-1 rounded-full text-[11px] {{ $row['status'] === 'completed' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700' }}">
+                                            {{ ucfirst($row['status'] ?? '—') }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-right">{{ number_format($row['participants']) }}</td>
+                                    <td class="py-3 px-4 text-right">{{ number_format($row['certificates']) }}</td>
+                                    <td class="py-3 px-4">
                                         <div class="flex items-center">
-                                            <span class="text-green-600 font-medium">{{ $event['attendance_rate'] }}%</span>
+                                            <div class="w-14 bg-gray-200 rounded-full h-1.5 shrink-0">
+                                                <div class="bg-primary-DEFAULT h-1.5 rounded-full" style="width: {{ min(100, $row['coverage']) }}%"></div>
+                                            </div>
+                                            <span class="ml-2">{{ $row['coverage'] }}%</span>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap">{{ number_format($event['certificates']) }}</td>
+                                    <td class="py-3 px-4">
+                                        @if($row['sessions'] === 0)
+                                            <span class="text-gray-400">No sessions</span>
+                                        @else
+                                            <div class="flex items-center">
+                                                <div class="w-14 bg-gray-200 rounded-full h-1.5 shrink-0">
+                                                    <div class="bg-teal-600 h-1.5 rounded-full" style="width: {{ min(100, $row['attendance']) }}%"></div>
+                                                </div>
+                                                <span class="ml-2">{{ $row['attendance'] }}%</span>
+                                            </div>
+                                        @endif
+                                    </td>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="px-4 py-3 text-center text-gray-500">No events found</td>
-                                </tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- Pagination -->
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                        <div class="mb-2 sm:mb-0 text-xs text-gray-500">
-                            @if($events->total() > 0)
-                                Showing <span class="font-medium">{{ $events->firstItem() }}</span> to <span class="font-medium">{{ $events->lastItem() }}</span> of <span class="font-medium">{{ $events->total() }}</span> entries
-                            @else
-                                Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> entries
-                            @endif
-                        </div>
-                        <div class="flex justify-end">
-                            {{ $events->appends(request()->query())->links('components.pagination-modern') }}
-                        </div>
+
+                <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between border-t border-gray-200">
+                    <div class="mb-2 sm:mb-0 text-xs text-gray-500">
+                        Showing {{ $events->count() }} of {{ number_format($events->total()) }} events
+                    </div>
+                    <div class="flex justify-end">
+                        {{ $events->links('components.pagination-modern') }}
                     </div>
                 </div>
             </div>
-        </div>
+        @endif
     </div>
 
-    <!-- JavaScript for the page -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Initialize monthly events chart
-        const eventsChartCtx = document.getElementById('eventsChart').getContext('2d');
-        const eventsChart = new Chart(eventsChartCtx, {
-            type: 'bar',
-            data: {
-                labels: [
-                    @foreach($monthlyEvents as $month)
-                        '{{ $month['month'] }}',
-                    @endforeach
-                ],
-                datasets: [{
-                    label: 'Events',
-                    data: [
-                        @foreach($monthlyEvents as $month)
-                            {{ $month['count'] }},
-                        @endforeach
-                    ],
-                    backgroundColor: '#3b82f6',
-                    borderColor: '#2563eb',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        padding: 10,
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
-                            size: 13
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
+        document.addEventListener('DOMContentLoaded', function () {
+            const gridColour = 'rgba(0, 0, 0, 0.06)';
+
+            // A fixed palette so a category keeps its colour between loads.
+            const palette = [
+                '#4f46e5', '#0d9488', '#f59e0b', '#ef4444', '#8b5cf6',
+                '#06b6d4', '#65a30d', '#db2777', '#0284c7', '#ea580c',
+                '#7c3aed', '#059669', '#c026d3', '#475569'
+            ];
+
+            function doughnut(canvasId, rows) {
+                const canvas = document.getElementById(canvasId);
+
+                if (!canvas || !rows.length) {
+                    return;
                 }
+
+                let next = 0;
+                const colours = rows.map(r => r.blank ? '#d1d5db' : palette[next++ % palette.length]);
+
+                new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: rows.map(r => r.label),
+                        datasets: [{
+                            data: rows.map(r => r.count),
+                            backgroundColor: colours,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '55%',
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => {
+                                        const row = rows[ctx.dataIndex];
+                                        return ' ' + row.label + ': ' + row.count + ' (' + row.percent + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
+
+            @if($totals['events'] > 0)
+            const timelineCanvas = document.getElementById('timelineChart');
+
+            if (timelineCanvas) {
+                // Series come through json encoding rather than being written into an
+                // array literal by a Blade loop. The old page built them with a loop
+                // that emitted trailing commas straight into the JavaScript.
+                const registrations = @json($registrationSeries);
+                const certificates = @json($certificateSeries);
+
+                // One axis for both series, so the months line up.
+                const labels = [...new Set([
+                    ...registrations.map(r => r.label),
+                    ...certificates.map(r => r.label)
+                ])];
+
+                const byLabel = (rows) => {
+                    const map = Object.fromEntries(rows.map(r => [r.label, r.count]));
+                    return labels.map(l => map[l] ?? 0);
+                };
+
+                new Chart(timelineCanvas.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Registrations',
+                                data: byLabel(registrations),
+                                borderColor: '#4f46e5',
+                                backgroundColor: 'rgba(79, 70, 229, 0.12)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: labels.length > 24 ? 0 : 3
+                            },
+                            {
+                                label: 'Certificates',
+                                data: byLabel(certificates),
+                                borderColor: '#0d9488',
+                                backgroundColor: 'rgba(13, 148, 136, 0.12)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: labels.length > 24 ? 0 : 3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColour } },
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+
+            const participantsCanvas = document.getElementById('participantsChart');
+
+            if (participantsCanvas) {
+                const rows = @json($participantsByEvent);
+
+                new Chart(participantsCanvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: rows.map(r => r.label),
+                        datasets: [{
+                            label: 'Participants',
+                            data: rows.map(r => r.count),
+                            backgroundColor: 'rgba(79, 70, 229, 0.75)',
+                            borderRadius: 3,
+                            maxBarThickness: 22
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColour } },
+                            y: {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 10 },
+                                    callback: function (value) {
+                                        const label = this.getLabelForValue(value);
+                                        return label.length > 28 ? label.slice(0, 27) + '…' : label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            doughnut('genderChart', @json($demographics['gender']));
+            doughnut('raceChart', @json($demographics['race']));
+            doughnut('typeChart', @json($demographics['type']));
+            @endif
         });
-        
-        // Debounce search input
-        let searchTimeout;
-        const searchInput = document.getElementById('searchInput');
-        
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    this.form.submit();
-                }, 500); // Wait 500ms after user stops typing
-            });
-        }
-        
-        // Toggle custom date inputs visibility based on selection
-        const dateFilterSelect = document.getElementById('dateFilter');
-        if (dateFilterSelect) {
-            dateFilterSelect.addEventListener('change', function(){
-                const isCustom = this.value === 'custom';
-                document.getElementById('startDate').classList.toggle('hidden', !isCustom);
-                document.getElementById('endDate').classList.toggle('hidden', !isCustom);
-            });
-        }
     </script>
-</x-app-layout> 
+</x-app-layout>

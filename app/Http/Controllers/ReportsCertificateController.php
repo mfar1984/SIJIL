@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Certificate;
 use App\Models\CertificateTemplate;
 use App\Models\Event;
+use App\Models\Participant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,134 +14,203 @@ class ReportsCertificateController extends Controller
     /**
      * Display a listing of certificates for reporting.
      */
-    public function index(Request $request)
+    /**
+     * Event ids this account may see certificates for.
+     *
+     * Administrators see everything; an organizer sees the events it owns.
+     */
+    private function scopedEventIds(): array
     {
-        // Query to fetch certificates with filters
-        $query = Certificate::with(['event', 'participant', 'template']);
-        
-        // Filter by user role - administrators see all, organizers see only their events' certificates
-        if (!auth()->user()->hasRole('Administrator')) {
-            $query->whereHas('event', function($q) {
-                $q->where('user_id', auth()->id());
-            });
-        }
+        return Event::when(! auth()->user()->hasRole('Administrator'),
+            fn ($q) => $q->where('user_id', auth()->id())
+        )->pluck('id')->all();
+    }
 
-        // Search functionality
+    /**
+     * The certificate list for the current filters.
+     *
+     * Shared by the page and the export so the CSV can never disagree with what
+     * is on screen.
+     */
+    private function filteredQuery(Request $request, array $eventIds)
+    {
+        $query = Certificate::query()->whereIn('event_id', $eventIds);
+
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->whereHas('participant', function($participantQuery) use ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereHas('participant', function ($participantQuery) use ($searchTerm) {
                     $participantQuery->where('name', 'LIKE', "%{$searchTerm}%")
-                                    ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+                        ->orWhere('email', 'LIKE', "%{$searchTerm}%");
                 })
-                ->orWhereHas('event', function($eventQuery) use ($searchTerm) {
+                ->orWhereHas('event', function ($eventQuery) use ($searchTerm) {
                     $eventQuery->where('name', 'LIKE', "%{$searchTerm}%");
                 })
                 ->orWhere('certificate_number', 'LIKE', "%{$searchTerm}%");
             });
         }
-        
-        // Apply filters
+
         if ($request->filled('event_filter')) {
             $query->where('event_id', $request->event_filter);
         }
-        
+
         if ($request->filled('template_filter')) {
             $query->where('template_id', $request->template_filter);
         }
 
-        // Filter by date range
+        // The old ranges counted forwards from today - 'week' meant "the next seven
+        // days" - so they matched nothing, because certificates are issued in the
+        // past. These look backwards, which is what the labels say.
         if ($request->filled('date_filter')) {
-            $today = now()->startOfDay();
-            switch ($request->date_filter) {
-                case 'today':
-                    $query->whereDate('generated_at', $today->format('Y-m-d'));
-                    break;
-                case 'week':
-                    $query->whereBetween('generated_at', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
-                    break;
-                case 'month':
-                    $query->whereBetween('generated_at', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
-                    break;
-                case 'past':
-                    $query->where('generated_at', '<', $today->format('Y-m-d'));
-                    break;
-            }
+            match ($request->date_filter) {
+                'today' => $query->whereDate('generated_at', now()->toDateString()),
+                'week' => $query->where('generated_at', '>=', now()->subDays(7)),
+                'month' => $query->where('generated_at', '>=', now()->startOfMonth()),
+                'year' => $query->where('generated_at', '>=', now()->startOfYear()),
+                default => null,
+            };
         }
-        
-        // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
-        $certificates = $query->orderBy('generated_at', 'desc')->paginate($perPage);
 
-        // Get events for filter dropdown based on user role
-        if (auth()->user()->hasRole('Administrator')) {
-            $events = Event::orderBy('name')->get();
-        } else {
-            $events = Event::where('user_id', auth()->id())->orderBy('name')->get();
-        }
-        
-        $templates = CertificateTemplate::orderBy('name')->get();
-        
-        // Get summary statistics based on user role
-        if (auth()->user()->hasRole('Administrator')) {
-            $totalCertificates = Certificate::count();
-            $totalTemplates = CertificateTemplate::count();
-            $newTemplatesThisMonth = CertificateTemplate::whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
-        } else {
-            // For organizers, only count certificates from their events
-            $userEventIds = Event::where('user_id', auth()->id())->pluck('id')->toArray();
-            $totalCertificates = Certificate::whereIn('event_id', $userEventIds)->count();
-            
-            // Templates might be shared across organizers, so we'll count templates used in their events
-            $templateIds = Certificate::whereIn('event_id', $userEventIds)
-                ->distinct('template_id')
-                ->pluck('template_id')
-                ->toArray();
-            $totalTemplates = count($templateIds);
-            
-            $newTemplatesThisMonth = CertificateTemplate::whereIn('id', $templateIds)
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
-        }
-        
-        // Calculate email delivery rate (placeholder - in a real app this would be tracked)
-        $emailDeliveryRate = 98.5; // Placeholder value
-        $emailsDelivered = round(($totalCertificates * $emailDeliveryRate) / 100);
-        
-        return view('reports.certificates', compact(
-            'events',
-            'templates',
-            'certificates',
-            'totalCertificates',
-            'totalTemplates',
-            'newTemplatesThisMonth',
-            'emailDeliveryRate',
-            'emailsDelivered'
-        ));
+        return $query;
+    }
+
+    /**
+     * Display a listing of certificates for reporting.
+     */
+    public function index(Request $request)
+    {
+        $eventIds = $this->scopedEventIds();
+
+        $certificates = $this->filteredQuery($request, $eventIds)
+            ->with(['event:id,name', 'participant:id,name,email', 'template:id,name'])
+            ->orderByDesc('generated_at')
+            ->paginate($request->get('per_page', 10))
+            ->withQueryString();
+
+        $events = Event::whereIn('id', $eventIds)->orderBy('name')->get(['id', 'name']);
+
+        // Only the templates this account has actually issued with. The dropdown
+        // used to list every template in the system, so an organizer read the names
+        // of other organizers' templates.
+        $templateIds = Certificate::whereIn('event_id', $eventIds)
+            ->whereNotNull('template_id')
+            ->distinct()
+            ->pluck('template_id');
+
+        $templates = CertificateTemplate::whereIn('id', $templateIds)->orderBy('name')->get(['id', 'name']);
+
+        // Real figures. The page used to show a hardcoded 98.5% "email delivery
+        // rate" and a recipient count derived from it; nothing tracks certificate
+        // email delivery, so both numbers were invented. These are all counted.
+        $scoped = Certificate::whereIn('event_id', $eventIds);
+
+        $totalCertificates = (clone $scoped)->count();
+        $issuedThisMonth = (clone $scoped)->where('generated_at', '>=', now()->startOfMonth())->count();
+        $issuedLast7Days = (clone $scoped)->where('generated_at', '>=', now()->subDays(7))->count();
+        $eventsCovered = (clone $scoped)->distinct()->count('event_id');
+        $missingFile = (clone $scoped)->where(function ($q) {
+            $q->whereNull('pdf_file')->orWhere('pdf_file', '');
+        })->count();
+
+        // How many participants are still waiting. This is the number an organizer
+        // actually wants from a certificate report.
+        $participantsInScope = Participant::whereIn('event_id', $eventIds)->count();
+        $participantsWithCertificate = Certificate::whereIn('event_id', $eventIds)
+            ->distinct()
+            ->count('participant_id');
+
+        return view('reports.certificates', [
+            'events' => $events,
+            'templates' => $templates,
+            'certificates' => $certificates,
+            'totalCertificates' => $totalCertificates,
+            'issuedThisMonth' => $issuedThisMonth,
+            'issuedLast7Days' => $issuedLast7Days,
+            'eventsCovered' => $eventsCovered,
+            'totalEvents' => count($eventIds),
+            'templatesInUse' => $templates->count(),
+            'missingFile' => $missingFile,
+            'participantsInScope' => $participantsInScope,
+            'participantsWithCertificate' => $participantsWithCertificate,
+            'participantsWaiting' => max(0, $participantsInScope - $participantsWithCertificate),
+            'coverageRate' => $participantsInScope > 0
+                ? round(($participantsWithCertificate / $participantsInScope) * 100, 1)
+                : 0.0,
+        ]);
+    }
+
+    /**
+     * Export the filtered certificates as CSV.
+     *
+     * The button used to call alert('This feature will be implemented in a future
+     * update.') while certificate_reports.export existed and was granted, so the
+     * control was visible and did nothing.
+     */
+    public function export(Request $request)
+    {
+        $eventIds = $this->scopedEventIds();
+
+        $certificates = $this->filteredQuery($request, $eventIds)
+            ->with(['event:id,name', 'participant:id,name,email', 'template:id,name'])
+            ->orderByDesc('generated_at')
+            ->get();
+
+        $filename = 'certificates-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($certificates) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'Certificate Number', 'Participant', 'Email', 'Event',
+                'Template', 'Issued At', 'File Present',
+            ]);
+
+            foreach ($certificates as $certificate) {
+                fputcsv($handle, [
+                    $certificate->certificate_number,
+                    $certificate->participant->name ?? '',
+                    $certificate->participant->email ?? '',
+                    $certificate->event->name ?? '',
+                    $certificate->template->name ?? '',
+                    $certificate->generated_at ? $certificate->generated_at->format('Y-m-d H:i') : '',
+                    $certificate->pdf_file ? 'yes' : 'no',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
     
+    /**
+     * Resolve a certificate the caller is allowed to see.
+     *
+     * The four actions below each built this themselves as
+     * `where('certificate_number', $id)->orWhere('id', $id)`, an ungrouped OR that
+     * combines badly with any further condition, and each then checked ownership
+     * only after loading the row. Scoping the lookup itself means a certificate the
+     * caller may not see simply does not resolve.
+     */
+    private function findCertificate($id, array $relations = []): Certificate
+    {
+        return Certificate::with($relations)
+            ->whereIn('event_id', $this->scopedEventIds())
+            ->where(function ($q) use ($id) {
+                $q->where('certificate_number', $id);
+
+                if (is_numeric($id)) {
+                    $q->orWhere('id', $id);
+                }
+            })
+            ->firstOrFail();
+    }
+
     /**
      * Display the specified certificate.
      */
     public function show($id)
     {
-        $certificate = Certificate::with(['event', 'participant', 'template', 'generator'])
-            ->where('certificate_number', $id)
-            ->orWhere('id', $id)
-            ->firstOrFail();
-        
-        // Check if user has permission to view this certificate
-        if (!auth()->user()->hasRole('Administrator')) {
-            $event = $certificate->event;
-            if (!$event || $event->user_id != auth()->id()) {
-                return redirect()->route('reports.certificates')
-                    ->with('error', 'You do not have permission to view this certificate.');
-            }
-        }
-        
+        $certificate = $this->findCertificate($id, ['event', 'participant', 'template', 'generator']);
+
         return view('reports.certificates-show', compact('certificate'));
     }
     
@@ -149,20 +219,8 @@ class ReportsCertificateController extends Controller
      */
     public function download($id)
     {
-        $certificate = Certificate::with('event')
-            ->where('certificate_number', $id)
-            ->orWhere('id', $id)
-            ->firstOrFail();
-        
-        // Check if user has permission to download this certificate
-        if (!auth()->user()->hasRole('Administrator')) {
-            $event = $certificate->event;
-            if (!$event || $event->user_id != auth()->id()) {
-                return redirect()->route('reports.certificates')
-                    ->with('error', 'You do not have permission to download this certificate.');
-            }
-        }
-        
+        $certificate = $this->findCertificate($id, ['event']);
+
         if (!$certificate->pdf_file || !Storage::disk('public')->exists($certificate->pdf_file)) {
             return back()->with('error', 'Certificate PDF file not found.');
         }
@@ -178,20 +236,8 @@ class ReportsCertificateController extends Controller
      */
     public function destroy($id)
     {
-        $certificate = Certificate::with('event')
-            ->where('certificate_number', $id)
-            ->orWhere('id', $id)
-            ->firstOrFail();
-        
-        // Check if user has permission to delete this certificate
-        if (!auth()->user()->hasRole('Administrator')) {
-            $event = $certificate->event;
-            if (!$event || $event->user_id != auth()->id()) {
-                return redirect()->route('reports.certificates')
-                    ->with('error', 'You do not have permission to delete this certificate.');
-            }
-        }
-        
+        $certificate = $this->findCertificate($id, ['event']);
+
         // Delete PDF file if exists
         if ($certificate->pdf_file && Storage::disk('public')->exists($certificate->pdf_file)) {
             Storage::disk('public')->delete($certificate->pdf_file);
@@ -207,73 +253,28 @@ class ReportsCertificateController extends Controller
      */
     public function sendEmail(Request $request, $id)
     {
-        $certificate = \App\Models\Certificate::with(['participant', 'event', 'template'])
-            ->where('certificate_number', $id)
-            ->orWhere('id', $id)
-            ->firstOrFail();
-
-        // Check permission
-        if (!auth()->user()->hasRole('Administrator')) {
-            $event = $certificate->event;
-            if (!$event || $event->user_id != auth()->id()) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to send this certificate.'], 403);
-            }
-        }
+        $certificate = $this->findCertificate($id, ['participant', 'event', 'template']);
 
         $email = $certificate->participant->email ?? null;
         if (!$email) {
             return response()->json(['success' => false, 'message' => 'No email address available for this participant.'], 422);
         }
 
-        // Ambil config delivery aktif untuk user ini
-        $userId = auth()->id();
-        $config = \App\Models\DeliveryConfig::where('user_id', $userId)
-            ->where('config_type', 'email')
-            ->where('is_active', true)
-            ->first();
-        if (!$config) {
-            return response()->json(['success' => false, 'message' => 'No active email delivery configuration found.'], 422);
-        }
-        $settings = $config->settings;
-        $provider = $config->provider;
-        $fromName = $settings['from_name'] ?? 'SIJIL System';
-        $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
+        // Own config first, the Administrator's as the fallback - the same rule every
+        // other email in the system follows. This used to look at the caller's own
+        // config only, so an organizer who never opened the delivery page could not
+        // resend a certificate at all. Sendmail was also missing from the switch.
+        [$config] = \App\Support\DeliveryAccount::emailConfig(auth()->id());
 
-        // Set konfigurasi mail dinamis
-        switch ($provider) {
-            case 'smtp':
-                config([
-                    'mail.default' => 'smtp',
-                    'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
-                    'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
-                    'mail.mailers.smtp.encryption' => $settings['encryption'] === 'none' ? null : $settings['encryption'],
-                    'mail.mailers.smtp.username' => $settings['username'] ?? '',
-                    'mail.mailers.smtp.password' => $settings['password'] ?? '',
-                    'mail.from.address' => $fromAddress,
-                    'mail.from.name' => $fromName,
-                ]);
-                break;
-            case 'mailgun':
-                config([
-                    'mail.default' => 'mailgun',
-                    'services.mailgun.domain' => $settings['domain'] ?? '',
-                    'services.mailgun.secret' => $settings['secret'] ?? '',
-                    'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
-                    'mail.from.address' => $fromAddress,
-                    'mail.from.name' => $fromName,
-                ]);
-                break;
-            case 'ses':
-                config([
-                    'mail.default' => 'ses',
-                    'services.ses.key' => $settings['key'] ?? '',
-                    'services.ses.secret' => $settings['secret'] ?? '',
-                    'services.ses.region' => $settings['region'] ?? 'us-east-1',
-                    'mail.from.address' => $fromAddress,
-                    'mail.from.name' => $fromName,
-                ]);
-                break;
+        if (! $config) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No email configuration for this account or the Administrator.',
+            ], 422);
         }
+
+        ['from_address' => $fromAddress, 'from_name' => $fromName] =
+            \App\Support\MailerConfig::apply($config);
 
         // Compose email
         $event = $certificate->event;

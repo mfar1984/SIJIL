@@ -271,9 +271,22 @@ Route::get('/attendance-list', [AttendanceController::class, 'list'])
     ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance.read'])
     ->name('attendance.list');
 
-// API endpoints for dynamic attendance list
-Route::get('/api/attendance-sessions', [AttendanceController::class, 'apiSessions'])->name('api.attendance.sessions');
-Route::get('/api/attendance-participants', [AttendanceController::class, 'apiParticipants'])->name('api.attendance.participants');
+/*
+| API endpoints for the dynamic attendance list.
+|
+| These had no middleware at all. /api/attendance-participants answered any
+| session id with participant names, check-in and check-out times, and its search
+| matched on IC, so it could be used to confirm whether a given person attended a
+| given session. /api/attendance-sessions listed session windows for any event id.
+| Both are called only from the attendance list page, which itself requires
+| attendance.read, so that is what they ask for now.
+*/
+Route::get('/api/attendance-sessions', [AttendanceController::class, 'apiSessions'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance.read'])
+    ->name('api.attendance.sessions');
+Route::get('/api/attendance-participants', [AttendanceController::class, 'apiParticipants'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance.read'])
+    ->name('api.attendance.participants');
 
 // Profile routes
 Route::middleware('auth')->group(function () {
@@ -339,6 +352,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('certificates.destroy');
 });
 
+/*
+| Public certificate verification.
+|
+| Open by design: a holder shares the link and the recipient confirms the award
+| without needing an account, the same way a diploma number is checked. It answers
+| with a page either way rather than a 404, so a mistyped number reads as "cannot
+| verify" instead of a broken link.
+|
+| Rate limited because the only thing an attacker could do here is walk the number
+| space looking for hits. Numbers carry a random suffix, so that is already slow, and
+| the page never returns contact details or the PDF.
+*/
+Route::middleware('throttle:20,1')->group(function () {
+    Route::get('/verify', [App\Http\Controllers\CertificateVerifyController::class, 'form'])
+        ->name('certificate.verify.form');
+
+    Route::post('/verify', [App\Http\Controllers\CertificateVerifyController::class, 'lookup'])
+        ->name('certificate.verify.lookup');
+
+    Route::get('/verify/{number}', [App\Http\Controllers\CertificateVerifyController::class, 'show'])
+        ->name('certificate.verify');
+});
+
 // Public certificate download for simplified participants (signed URL, valid 30 days)
 Route::get('/certificates/{certificate}/download-simplified', [App\Http\Controllers\CertificateController::class, 'downloadSimplified'])
     ->middleware('signed')
@@ -346,14 +382,17 @@ Route::get('/certificates/{certificate}/download-simplified', [App\Http\Controll
 
 require __DIR__.'/auth.php';
 
-// Debug route
-Route::get('/debug-alpine', function() {
-    return view('templates.debug-alpine');
-})->name('debug.alpine');
-
-Route::get('/debug-template', function() {
-    return view('debug-template');
-})->name('debug.template');
+/*
+| Participant search for the PWA account form.
+|
+| Deliberately declared here rather than in routes/api.php. The controller filters
+| by the signed-in organizer, and that filter only works where a session exists;
+| in the API group it silently matched nothing and the endpoint was open to anyone.
+| The path keeps the /api prefix so the form's fetch call is unchanged.
+*/
+Route::get('/api/participants/search', [App\Http\Controllers\Api\ParticipantSearchController::class, 'search'])
+    ->middleware(['auth', 'verified', PermissionMiddleware::class.':pwa_participants.create'])
+    ->name('api.participants.search');
 
 // Reports Routes (permission-gated)
 Route::prefix('reports')->middleware(['auth', 'verified'])->group(function () {
@@ -392,14 +431,21 @@ Route::prefix('reports')->middleware(['auth', 'verified'])->group(function () {
         ->middleware(PermissionMiddleware::class.':certificate_reports.read')
         ->name('reports.certificates.download');
     
-    Route::delete('/certificates/{id}', [App\Http\Controllers\ReportsCertificateController::class, 'destroy'])
-        ->middleware(PermissionMiddleware::class.':certificate_reports.read')
-        ->name('reports.certificates.delete');
-});
+    Route::post('/certificates/export', [App\Http\Controllers\ReportsCertificateController::class, 'export'])
+        ->middleware(PermissionMiddleware::class.':certificate_reports.export')
+        ->name('reports.certificates.export');
 
-Route::post('/reports/certificates/{id}/send-email', [App\Http\Controllers\ReportsCertificateController::class, 'sendEmail'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':certificate_reports.read'])
-    ->name('reports.certificates.sendEmail');
+    // Deleting a certificate asked only for read. The button in the view was gated
+    // on certificate_reports.delete, which was never seeded, so the control was
+    // invisible to everyone while the route stayed open to any reader.
+    Route::delete('/certificates/{id}', [App\Http\Controllers\ReportsCertificateController::class, 'destroy'])
+        ->middleware(PermissionMiddleware::class.':certificate_reports.delete')
+        ->name('reports.certificates.delete');
+
+    Route::post('/certificates/{id}/send-email', [App\Http\Controllers\ReportsCertificateController::class, 'sendEmail'])
+        ->middleware(PermissionMiddleware::class.':certificate_reports.send')
+        ->name('reports.certificates.sendEmail');
+});
 
 // Campaign Routes
 Route::prefix('campaign')->group(function () {
@@ -545,23 +591,31 @@ Route::prefix('settings')->group(function () {
         ->middleware(['auth', 'verified', PermissionMiddleware::class.':global_config.update'])
         ->name('settings.global-config.reset');
         
+    // Recycle Bin lives inside the Global Config page as its own tab.
+    Route::post('/recycle-bin/{type}/{id}/restore', [App\Http\Controllers\RecycleBinController::class, 'restore'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':recycle_bin.restore'])
+        ->name('settings.recycle-bin.restore');
+
+    Route::delete('/recycle-bin/{type}/{id}', [App\Http\Controllers\RecycleBinController::class, 'destroy'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':recycle_bin.delete'])
+        ->name('settings.recycle-bin.destroy');
+
+    Route::post('/recycle-bin/empty', [App\Http\Controllers\RecycleBinController::class, 'empty'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':recycle_bin.delete'])
+        ->name('settings.recycle-bin.empty');
+
     Route::get('/global-config/api', [App\Http\Controllers\GlobalConfigController::class, 'getConfig'])
         ->middleware(['auth', 'verified', PermissionMiddleware::class.':global_config.read'])
         ->name('settings.global-config.api');
 });
 
-Route::get('/reports/attendance', [App\Http\Controllers\ReportsController::class, 'attendanceIndex'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance_reports.read'])
-    ->name('reports.attendance.index');
-Route::get('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceShow'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance_reports.read'])
-    ->name('reports.attendance.show');
-Route::post('/reports/attendance/export', [App\Http\Controllers\ReportsController::class, 'attendanceExport'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance_reports.export'])
-    ->name('reports.attendance.export');
-Route::delete('/reports/attendance/{id}', [App\Http\Controllers\ReportsController::class, 'attendanceDelete'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance_reports.read'])
-    ->name('reports.attendance.delete');
+/*
+| The attendance report routes were declared a second time here, outside the
+| reports group above. Laravel keeps the last registration for a given URI and
+| method, so this block was the one in effect - and its DELETE guard asked for
+| attendance_reports.read instead of .delete. Anyone who could view a report could
+| delete a session. Removed; the group above is authoritative.
+*/
 
 // Survey Routes - Admin
 Route::middleware(['auth'])->prefix('survey')->name('survey.')->group(function () {
@@ -645,6 +699,7 @@ Route::middleware(['auth'])->prefix('survey')->name('survey.')->group(function (
 // Public Survey Routes
 Route::prefix('s')->name('public.survey.')->group(function () {
     Route::get('/{slug}', [App\Http\Controllers\PublicSurveyController::class, 'show'])->name('show');
+    Route::post('/{slug}/identify', [App\Http\Controllers\PublicSurveyController::class, 'identify'])->name('identify');
     Route::post('/{slug}/submit', [App\Http\Controllers\PublicSurveyController::class, 'submit'])->name('submit');
     Route::get('/{slug}/thankyou', [App\Http\Controllers\PublicSurveyController::class, 'thankYou'])->name('thankyou');
     Route::get('/{slug}/expired', [App\Http\Controllers\PublicSurveyController::class, 'expired'])->name('expired');
@@ -691,9 +746,19 @@ Route::middleware(['auth', 'verified'])->prefix('pwa')->name('pwa.')->group(func
         ->middleware(PermissionMiddleware::class.':pwa_participants.read')
         ->name('participants.show');
     
+    // Its own permission rather than piggybacking on update: handing out a new
+    // password is a different kind of act from editing a name.
     Route::post('/participants/{participant}/reset-password', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'resetPassword'])
-        ->middleware(PermissionMiddleware::class.':pwa_participants.update')
+        ->middleware(PermissionMiddleware::class.':pwa_participants.reset_password')
         ->name('participants.reset-password');
+
+    Route::post('/participants/{participant}/ban', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'ban'])
+        ->middleware(PermissionMiddleware::class.':pwa_participants.ban')
+        ->name('participants.ban');
+
+    Route::post('/participants/{participant}/unban', [App\Http\Controllers\Pwa\PwaParticipantsController::class, 'unban'])
+        ->middleware(PermissionMiddleware::class.':pwa_participants.ban')
+        ->name('participants.unban');
     
     Route::get('/templates', [App\Http\Controllers\Pwa\PwaTemplatesController::class, 'index'])
         ->middleware(PermissionMiddleware::class.':pwa_templates.read')

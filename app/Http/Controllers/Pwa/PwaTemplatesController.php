@@ -307,59 +307,14 @@ class PwaTemplatesController extends Controller
         $html = EmailHelper::replaceLinksWithTracking($html, $template->id, $recipientEmail);
         $html = EmailHelper::appendOpenTrackingPixel($html, $template->id, $recipientEmail);
 
-        // Load active email config for this user
-        $config = DeliveryConfig::getEmailConfig(Auth::id());
+        // This account's own config, or the Administrator's when it has none.
+        [$config, ] = \App\Support\DeliveryAccount::emailConfig(Auth::id());
         if (!$config) {
-            return redirect()->route('pwa.templates')->with('error', 'No active email configuration found. Configure it at Config → Deliver.');
+            return redirect()->route('pwa.templates')->with('error', 'No active email configuration found for your account or the Administrator. Configure it at Config → Deliver.');
         }
 
-        // Configure mailer based on provider
-        $settings = $config->settings ?? [];
-        $fromName = $settings['from_name'] ?? 'SIJIL System';
-        $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
-
-        switch ($config->provider) {
-            case 'smtp':
-                config([
-                    'mail.default' => 'smtp',
-                    'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
-                    'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
-                    'mail.mailers.smtp.encryption' => ($settings['encryption'] ?? null) === 'none' ? null : ($settings['encryption'] ?? null),
-                    'mail.mailers.smtp.username' => $settings['username'] ?? '',
-                    'mail.mailers.smtp.password' => $settings['password'] ?? '',
-                    'mail.from.address' => $fromAddress,
-                    'mail.from.name' => $fromName,
-                ]);
-                break;
-            case 'mailgun':
-                config([
-                    'mail.default' => 'mailgun',
-                    'services.mailgun.domain' => $settings['domain'] ?? '',
-                    'services.mailgun.secret' => $settings['secret'] ?? '',
-                    'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
-                    'mail.from.address' => $fromAddress,
-                    'mail.from.name' => $fromName,
-                ]);
-                break;
-            case 'ses':
-                config([
-                    'mail.default' => 'ses',
-                    'services.ses.key' => $settings['key'] ?? '',
-                    'services.ses.secret' => $settings['secret'] ?? '',
-                    'services.ses.region' => $settings['region'] ?? 'us-east-1',
-                    'mail.from.address' => $fromAddress,
-                    'mail.from.name' => $fromName,
-                ]);
-                break;
-            case 'sendmail':
-                config([
-                    'mail.default' => 'sendmail',
-                    'mail.mailers.sendmail.path' => $settings['path'] ?? '/usr/sbin/sendmail -bs',
-                    'mail.from.address' => $fromAddress,
-                    'mail.from.name' => $fromName,
-                ]);
-                break;
-        }
+        ['from_address' => $fromAddress, 'from_name' => $fromName] =
+            \App\Support\MailerConfig::apply($config);
 
         try {
             Mail::html($html, function ($message) use ($recipientEmail, $subject, $fromName, $fromAddress) {

@@ -58,52 +58,52 @@
                         </h2>
                     </div>
                     
-                    <div class="p-4">
-                        <div class="space-y-3">
-                            <!-- Template Name -->
-                            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                <label for="name" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
-                                    Template Name
-                                    <div class="tooltip-wrapper" x-data="{ show: false }">
-                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                              @mouseenter="show = true" 
-                                              @mouseleave="show = false">
-                                            help_outline
-                                        </span>
-                                        <div x-show="show" x-transition class="tooltip-content">
-                                            Enter a descriptive name for the template
-                                        </div>
-                                    </div>
-                                </label>
-                                <div class="flex-1">
-                                    <input type="text" name="name" id="name" value="{{ old('name', $template->name) }}" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
-                                    @error('name')
-                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                    <div class="p-4 space-y-4">
+                        <!-- Template Name -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label for="name" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-2">
+                                Template name <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex-1">
+                                <input type="text" name="name" id="name" value="{{ old('name', $template->name) }}"
+                                       class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" required>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    This is the name you will pick from when generating certificates.
+                                </p>
+                                @error('name')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
-                            
-                            <!-- Description -->
-                            <div class="flex flex-col md:flex-row md:items-start gap-3">
-                                <label for="description" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1 md:pt-2">
-                                    Description
-                                    <div class="tooltip-wrapper" x-data="{ show: false }">
-                                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                              @mouseenter="show = true" 
-                                              @mouseleave="show = false">
-                                            help_outline
-                                        </span>
-                                        <div x-show="show" x-transition class="tooltip-content">
-                                            Describe the template for your reference
-                                        </div>
-                                    </div>
-                                </label>
-                                <div class="flex-1">
-                                    <textarea name="description" id="description" rows="3" class="w-full text-xs border-gray-300 rounded-[1px] focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">{{ old('description', $template->description) }}</textarea>
-                                    @error('description')
-                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <label for="description" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-2">
+                                Description
+                            </label>
+                            <div class="flex-1">
+                                <textarea name="description" id="description" rows="3"
+                                          class="w-full text-xs border-gray-300 rounded px-3 py-2 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">{{ old('description', $template->description) }}</textarea>
+                                <p class="text-xs text-gray-500 mt-1">Optional. Helps you tell similar templates apart.</p>
+                                @error('description')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- The placed text lives in template_data, which this screen does
+                             not touch. Editing here only changes the details above. --}}
+                        <div class="flex flex-col md:flex-row md:items-start gap-3">
+                            <span class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-1">Certificate layout</span>
+                            <div class="flex-1">
+                                <a href="{{ route('template.designer.create', $template->id) }}"
+                                   class="h-9 px-3 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50 inline-flex items-center">
+                                    <span class="material-icons-outlined text-xs mr-1">design_services</span>
+                                    Open in designer
+                                </a>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Text positions are edited in the designer. Saving this form leaves them untouched.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -133,8 +133,8 @@
                                                 <span class="material-icons-outlined text-gray-400 text-3xl">cloud_upload</span>
                                             @endif
                                         </div>
-                                        <p class="text-sm text-gray-500 mb-2">Drag and drop your image here, or click to browse</p>
-                                        <p class="text-xs text-gray-400">PNG, JPG, GIF up to 2MB</p>
+                                        <p class="text-xs text-gray-500 mb-2">Drag and drop your image here, or click to browse</p>
+                                        <p class="text-xs text-gray-400">PNG, JPG or GIF, up to 2 MB</p>
                                         <input type="file" name="preview_image" id="preview_image" class="hidden" accept="image/*">
                                         <button type="button" onclick="document.getElementById('preview_image').click()" class="mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-xs">Select File</button>
                                         <div id="preview-container" class="hidden mt-4">
@@ -161,8 +161,8 @@
                                                 <span class="material-icons-outlined text-gray-400 text-3xl">picture_as_pdf</span>
                                             @endif
                                         </div>
-                                        <p class="text-sm text-gray-500 mb-2">Upload your certificate PDF file here</p>
-                                        <p class="text-xs text-gray-400">PDF up to 5MB</p>
+                                        <p class="text-xs text-gray-500 mb-2">Upload your certificate PDF background here</p>
+                                        <p class="text-xs text-gray-400">PDF only, up to 10 MB. Leave empty to keep the current file.</p>
                                         <input type="file" name="pdf_file" id="pdf_file" class="hidden" accept="application/pdf">
                                         <button type="button" onclick="document.getElementById('pdf_file').click()" class="mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-xs">Select PDF</button>
                                         <div id="pdf-preview-container" class="hidden mt-4">
@@ -187,20 +187,39 @@
                     </div>
                     
                     <div class="p-4">
-                        <div class="space-y-3">
-                            <div class="flex space-x-4">
-                                <label class="flex items-center">
-                                    <input type="radio" name="orientation" value="portrait" class="mr-2" {{ old('orientation', $template->orientation) === 'portrait' ? 'checked' : '' }} required>
-                                    <span class="text-sm">Portrait</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="orientation" value="landscape" class="mr-2" {{ old('orientation', $template->orientation) === 'landscape' ? 'checked' : '' }}>
-                                    <span class="text-sm">Landscape</span>
-                                </label>
+                        <div class="flex flex-col md:flex-row md:items-start gap-3"
+                             x-data="{ orientation: '{{ old('orientation', $template->orientation) }}' }">
+                            <label class="text-xs font-medium text-gray-700 md:w-48 shrink-0 md:pt-1">
+                                Page orientation <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex-1">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label class="cursor-pointer border rounded p-3 flex gap-3 transition-colors duration-150"
+                                           :class="orientation === 'landscape' ? 'border-primary-DEFAULT bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+                                        <input type="radio" name="orientation" value="landscape" x-model="orientation"
+                                               class="mt-0.5 shrink-0 text-primary-DEFAULT" required>
+                                        <span>
+                                            <span class="block text-xs font-medium text-gray-800">Landscape</span>
+                                            <span class="block text-xs text-gray-500 mt-1">297 &times; 210 mm (A4 sideways)</span>
+                                        </span>
+                                    </label>
+                                    <label class="cursor-pointer border rounded p-3 flex gap-3 transition-colors duration-150"
+                                           :class="orientation === 'portrait' ? 'border-primary-DEFAULT bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+                                        <input type="radio" name="orientation" value="portrait" x-model="orientation"
+                                               class="mt-0.5 shrink-0 text-primary-DEFAULT">
+                                        <span>
+                                            <span class="block text-xs font-medium text-gray-800">Portrait</span>
+                                            <span class="block text-xs text-gray-500 mt-1">210 &times; 297 mm (A4 upright)</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Changing this resizes the design canvas, so check the layout in the designer afterwards.
+                                </p>
+                                @error('orientation')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
-                            @error('orientation')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>

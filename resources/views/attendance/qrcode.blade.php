@@ -8,37 +8,32 @@
         <span class="text-gray-500">QR Code</span>
     </x-slot>
     <div class="min-h-screen flex flex-col justify-center items-center bg-gray-50 py-8" x-data="{
-        idType: 'ic',
-        manualIc: '',
-        manualPassport: '',
+        keyword: '',
         searchLoading: false,
         participant: null,
         participantHistory: [],
+        matches: [],
         showModal: false,
         message: '',
         messageType: '',
-        async searchParticipant() {
-            if (this.idType === 'ic' && !this.manualIc) {
-                this.message = 'Please enter IC.';
-                this.messageType = 'error';
-                return;
-            }
-            if (this.idType === 'passport' && !this.manualPassport) {
-                this.message = 'Please enter Passport.';
+        async searchParticipant(participantId = null) {
+            if (!participantId && !this.keyword.trim()) {
+                this.message = 'Masukkan IC, passport, nama, emel atau nombor telefon.';
                 this.messageType = 'error';
                 return;
             }
             this.searchLoading = true;
             this.message = '';
             this.participant = null;
+            if (!participantId) {
+                this.matches = [];
+            }
             try {
                 const params = new URLSearchParams();
-                params.append('id_type', this.idType);
-                if (this.idType === 'ic') {
-                    const normalized = this.manualIc.replace(/\D/g, '');
-                    params.append('ic', normalized);
+                if (participantId) {
+                    params.append('participant_id', participantId);
                 } else {
-                    params.append('passport', this.manualPassport.trim());
+                    params.append('keyword', this.keyword.trim());
                 }
                 const res = await fetch(`/attendance/{{ $attendance->id }}/search-participant?${params.toString()}`);
                 const data = await res.json();
@@ -47,6 +42,14 @@
                     this.messageType = 'error';
                     return;
                 }
+                if (data.data.matches) {
+                    // More than one participant matched, let the operator choose.
+                    this.matches = data.data.matches;
+                    this.message = data.data.matches.length + ' peserta sepadan. Pilih satu.';
+                    this.messageType = 'success';
+                    return;
+                }
+                this.matches = [];
                 this.participant = data.data.participant;
                 this.participantHistory = data.data.history || [];
                 this.showModal = true;
@@ -82,31 +85,14 @@
                 this.showModal = false;
                 this.participant = null;
                 this.participantHistory = [];
-                this.manualIc = '';
-                this.manualPassport = '';
+                this.matches = [];
+                this.keyword = '';
             } catch (e) {
                 this.message = 'Network error during check-in.';
                 this.messageType = 'error';
             } finally {
                 this.searchLoading = false;
             }
-        },
-        formatIC(e) {
-            let val = e.target.value.replace(/\D/g, '');
-            let formatted = '';
-            if (val.length > 6) {
-                formatted = val.substring(0, 6) + '-';
-                if (val.length > 8) {
-                    formatted += val.substring(6, 8) + '-';
-                    formatted += val.substring(8, 12);
-                } else {
-                    formatted += val.substring(6);
-                }
-            } else {
-                formatted = val;
-            }
-            e.target.value = formatted;
-            this.manualIc = formatted;
         }
     }">
         <div class="relative flex flex-col items-center">
@@ -164,31 +150,19 @@
                     <div class="text-center mb-3">
                         <h3 class="text-sm font-semibold text-gray-700 flex items-center justify-center gap-2">
                             <span class="material-icons-outlined text-sm text-primary-DEFAULT">edit</span>
-                            Manual Check-in (IC/Passport)
+                            Manual Check-in
                         </h3>
-                        <p class="text-xs text-gray-500 mt-1">Masukkan IC atau Passport untuk check-in tanpa scan</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Cari peserta guna IC, passport, nama, emel atau nombor telefon.
+                            Peserta quick registration tanpa IC boleh dicari guna nama atau emel.
+                        </p>
                     </div>
 
                     <div class="flex gap-2 mb-3">
-                        <select x-model="idType" class="px-3 py-2 border border-gray-300 rounded text-xs focus:border-primary-DEFAULT focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]">
-                            <option value="ic">IC</option>
-                            <option value="passport">Passport</option>
-                        </select>
                         <input 
                             type="text" 
-                            x-model="manualIc" 
-                            x-show="idType === 'ic'"
-                            @input="formatIC($event)"
-                            placeholder="000000-00-0000" 
-                            maxlength="14"
-                            class="flex-1 px-3 py-2 border border-gray-300 rounded text-xs focus:border-primary-DEFAULT focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                            @keyup.enter="searchParticipant()"
-                        >
-                        <input 
-                            type="text" 
-                            x-model="manualPassport" 
-                            x-show="idType === 'passport'"
-                            placeholder="A12345678" 
+                            x-model="keyword" 
+                            placeholder="IC / Passport / Nama / Emel / Telefon" 
                             class="flex-1 px-3 py-2 border border-gray-300 rounded text-xs focus:border-primary-DEFAULT focus:ring focus:ring-primary-light focus:ring-opacity-50"
                             @keyup.enter="searchParticipant()"
                         >
@@ -210,6 +184,21 @@
                         'bg-green-50 border-green-200 text-green-700': messageType === 'success'
                     }" class="px-3 py-2 border rounded text-xs mb-3" x-transition>
                         <span x-text="message"></span>
+                    </div>
+
+                    <!-- Multiple matches: pick one -->
+                    <div x-show="matches.length > 0" class="border border-gray-200 rounded divide-y divide-gray-100 mb-3" x-transition>
+                        <template x-for="match in matches" :key="match.id">
+                            <button type="button" @click="searchParticipant(match.id)"
+                                    class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between gap-2">
+                                <span>
+                                    <span class="block text-xs font-medium text-gray-800" x-text="match.name"></span>
+                                    <span class="block text-xs text-gray-500"
+                                          x-text="[match.identity_card || match.passport_no, match.email, match.phone].filter(Boolean).join(' · ')"></span>
+                                </span>
+                                <span class="material-icons-outlined text-gray-400 text-sm">chevron_right</span>
+                            </button>
+                        </template>
                     </div>
                 </div>
 
@@ -328,7 +317,7 @@
                         </button>
                         <button 
                             type="button" 
-                            @click="showModal=false; participant=null; participantHistory=[]; manualIc=''; manualPassport=''; message=''"
+                            @click="showModal=false; participant=null; participantHistory=[]; matches=[]; keyword=''; message=''"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded text-xs font-semibold hover:bg-gray-300 transition-colors"
                         >
                             Cancel

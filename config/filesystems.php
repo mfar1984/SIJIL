@@ -33,7 +33,17 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+
+            // serve => false on purpose.
+            //
+            // When true, Laravel registers a GET /storage/{path} route for this
+            // private disk. That route requires a *signed* URL, so it answered
+            // every unsigned /storage/... request with 403 (404 in production)
+            // and shadowed the public disk's own files whenever the
+            // public/storage symlink was missing. Public files are served by
+            // the web server through that symlink, so this route is not needed.
+            'serve' => false,
+
             'throw' => false,
             'report' => false,
         ],

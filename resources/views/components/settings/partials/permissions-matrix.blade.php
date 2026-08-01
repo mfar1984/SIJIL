@@ -14,7 +14,28 @@
         'manage' => 'update', // treat manage_* as update
         'archive' => 'archive',
         'unarchive' => 'archive',
+        // Actions that are not CRUD but still need a column of their own. Without
+        // these the permission fell through to the Read column, where it could not
+        // be told apart from plain view access.
+        'reset_password' => 'reset_password',
+        'ban' => 'ban',
     ];
+
+    // Columns rendered, in order. Kept in one place so the header, the body and
+    // the colspans cannot disagree.
+    $matrixColumns = [
+        'create' => 'Create',
+        'read' => 'Read',
+        'update' => 'Update',
+        'delete' => 'Delete',
+        'archive' => 'Archive',
+        'export' => 'Export',
+        'reset_password' => 'Reset Password',
+        'ban' => 'Ban',
+    ];
+
+    // +1 for the Module column.
+    $matrixColspan = count($matrixColumns) + 1;
     
     // Define sidebar order for groups
     $groupOrder = [
@@ -50,12 +71,34 @@
 @endphp
 
 <div class="overflow-x-auto" x-data="permissionsMatrix()">
-    <!-- Quick Actions Toolbar (top-right) -->
+    {{-- Bulk helpers. These only change the checkboxes; nothing is saved until the
+         form is submitted, so they are secondary buttons and not primary ones. --}}
     @if($mode !== 'show')
-    <div class="mb-2 w-full flex justify-end gap-2">
-        <button type="button" @click="checkAll()" class="px-2 py-0.5 text-[10px] bg-green-600 text-white rounded">Check All</button>
-        <button type="button" @click="uncheckAll()" class="px-2 py-0.5 text-[10px] bg-gray-500 text-white rounded">Uncheck All</button>
-        <button type="button" @click="applyOrganizer()" class="px-2 py-0.5 text-[10px] bg-indigo-600 text-white rounded">Organizer</button>
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p class="text-xs text-gray-500">
+            Tick the actions this role may perform. Nothing is saved until you submit the form.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" @click="applyOrganizer()"
+                    title="Tick the set an event organizer normally needs"
+                    class="h-9 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center shrink-0">
+                <span class="material-icons-outlined text-sm mr-1">tune</span>
+                Organizer preset
+            </button>
+
+            <button type="button" @click="checkAll()"
+                    class="h-9 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center shrink-0">
+                <span class="material-icons-outlined text-sm mr-1">done_all</span>
+                Select all
+            </button>
+
+            <button type="button" @click="uncheckAll()"
+                    class="h-9 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center shrink-0">
+                <span class="material-icons-outlined text-sm mr-1">remove_done</span>
+                Clear
+            </button>
+        </div>
     </div>
     @endif
 
@@ -63,12 +106,9 @@
         <thead class="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
             <tr>
                 <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Module</th>
-                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Create</th>
-                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Read</th>
-                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Update</th>
-                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Delete</th>
-                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Archive</th>
-                <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider">Export</th>
+                @foreach($matrixColumns as $label)
+                    <th class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider whitespace-nowrap">{{ $label }}</th>
+                @endforeach
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -83,11 +123,16 @@
                     $rows = [];
                     foreach ($group['items'] as $permName => $label) {
                         $action = null; $resourceKey = null;
+
+                        // reset_password is listed before the single words so the
+                        // alternation matches the whole action and not just "reset".
+                        $verbs = 'reset_password|create|read|view|edit|update|delete|export|generate|manage|archive|unarchive|ban';
+
                         // Patterns: action_resource, resource.action, resource-action, resource:action
-                        if (preg_match('/^(create|read|view|edit|update|delete|export|generate|manage|archive|unarchive)[_.:-](.+)$/', $permName, $m)) {
+                        if (preg_match('/^(' . $verbs . ')[_.:-](.+)$/', $permName, $m)) {
                             $action = $actionMap[$m[1]] ?? null;
                             $resourceKey = $m[2];
-                        } elseif (preg_match('/^(.+)[_.:-](create|read|view|edit|update|delete|export|generate|manage|archive|unarchive)$/', $permName, $m)) {
+                        } elseif (preg_match('/^(.+)[_.:-](' . $verbs . ')$/', $permName, $m)) {
                             $action = $actionMap[$m[2]] ?? null;
                             $resourceKey = $m[1];
                         } else {
@@ -133,6 +178,7 @@
 
                             // Prefer modern canonical permission id; fall back to original name
                             $pid = App\Models\Permission::where('name', $canonicalName)->value('id');
+                            $pidIsCanonical = (bool) $pid;
                             if (!$pid) {
                                 $pid = App\Models\Permission::where('name', $permName)->value('id');
                             }
@@ -170,8 +216,23 @@
                                     'checked' => [],
                                 ];
                             }
-                            $rows[$resourceLabel]['ids'][$action] = $pid;
-                            $rows[$resourceLabel]['checked'][$action] = $isChecked;
+                            // A legacy name and its modern twin fold into the same cell.
+                            // The modern name is the one every route and sidebar link
+                            // checks, so it has to win regardless of which of the two is
+                            // processed last. Getting this wrong is how the Template
+                            // Designer checkbox ended up granting a permission nothing
+                            // reads: the box looked ticked and the menu stayed empty.
+                            $cellSet = isset($rows[$resourceLabel]['ids'][$action]);
+                            $cellCanonical = $rows[$resourceLabel]['canonical'][$action] ?? false;
+
+                            if (!$cellSet || ($pidIsCanonical && !$cellCanonical)) {
+                                $rows[$resourceLabel]['ids'][$action] = $pid;
+                                $rows[$resourceLabel]['canonical'][$action] = $pidIsCanonical;
+                                $rows[$resourceLabel]['checked'][$action] = $isChecked;
+                            } elseif ($isChecked) {
+                                // Holding either name means the role already has the action.
+                                $rows[$resourceLabel]['checked'][$action] = true;
+                            }
                         } else {
                             // Non-CRUD permission: show under Read column for its own label
                             $normalizedKey = preg_replace('/[\-\.]+/', '_', strtolower($permName));
@@ -292,13 +353,13 @@
                 @endphp
 
                 <tr class="bg-gray-100">
-                    <td colspan="7" class="px-4 py-2 text-xs font-bold text-gray-700">{{ $groupDisplayName }}</td>
+                    <td colspan="{{ $matrixColspan }}" class="px-4 py-2 text-xs font-bold text-gray-700">{{ $groupDisplayName }}</td>
                 </tr>
 
                 @forelse($rows as $resourceLabel => $row)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-xs text-gray-900">{{ $resourceLabel }}</td>
-                        @foreach(['create','read','update','delete','archive','export'] as $col)
+                        @foreach(array_keys($matrixColumns) as $col)
                             <td class="px-4 py-3 text-center">
                                 @php
                                     $pid = $row['ids'][$col] ?? null;
@@ -322,7 +383,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-3 text-xs text-gray-500">No permissions in this group.</td>
+                        <td colspan="{{ $matrixColspan }}" class="px-4 py-3 text-xs text-gray-500">No permissions in this group.</td>
                     </tr>
                 @endforelse
             @endforeach

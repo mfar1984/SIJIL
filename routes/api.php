@@ -3,8 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PwaParticipantController;
+use App\Http\Controllers\Api\PwaHelpdeskController;
 use App\Http\Controllers\Api\EventController;
-use App\Http\Controllers\Api\ParticipantSearchController;
 use App\Http\Controllers\Api\CertificateVerificationController;
 
 /*
@@ -54,11 +54,32 @@ Route::get('/legal/terms', function() {
     ]);
 });
 
-// PWA Participant Routes (Public)
-Route::post('/participant/login', [PwaParticipantController::class, 'login']);
-Route::post('/participant/register', [PwaParticipantController::class, 'register']);
-Route::get('/participant/lookup', [PwaParticipantController::class, 'lookupByIdentity']);
-Route::post('/participant/reset-password', [PwaParticipantController::class, 'resetPassword']);
+/*
+| PWA Participant Routes (Public)
+|
+| Only these two are open, and both are rate limited. Three others used to sit
+| here and were removed because each handed out personal data to anyone who asked:
+|
+|   POST /participant/register  - created an account for any email that did not yet
+|       have one and returned a working token immediately. Since events and
+|       certificates are matched by email address, claiming an unclaimed
+|       participant's email was enough to read their certificates. Accounts are
+|       created by the organizer under Configuration > PWA Participants, which is
+|       the intended route, and the app never called this endpoint.
+|
+|   GET /participant/lookup     - returned a participant's full profile (name,
+|       email, phone, IC, passport, address, date of birth, gender, race, job
+|       title) for any IC or passport number, unauthenticated. Malaysian IC
+|       numbers are structured and therefore guessable, so this was enumerable.
+|       The app never called it either.
+|
+|   GET /debug/certificates/{email} - dumped participants and their certificates
+|       for any address. Its own comment said "remove after testing".
+*/
+Route::middleware('throttle:8,1')->group(function () {
+    Route::post('/participant/login', [PwaParticipantController::class, 'login']);
+    Route::post('/participant/reset-password', [PwaParticipantController::class, 'resetPassword']);
+});
 
 // PWA Participant Routes (Protected)
 Route::middleware('auth:sanctum')->group(function () {
@@ -77,35 +98,31 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Attendance scan (QR code check-in/out)
     Route::post('/attendance/scan', [PwaParticipantController::class, 'scanAttendance']);
+
+    /*
+    | Support tickets raised from the app. These are assigned to the Administrator on
+    | creation; an organizer never sees them, because the backend list scopes
+    | non-administrators to their own user_id and an app ticket has none.
+    */
+    Route::get('/participant/tickets', [PwaHelpdeskController::class, 'index']);
+    Route::post('/participant/tickets', [PwaHelpdeskController::class, 'store']);
+    Route::get('/participant/tickets/{ticketId}', [PwaHelpdeskController::class, 'show']);
+    Route::post('/participant/tickets/{ticketId}/reply', [PwaHelpdeskController::class, 'reply']);
 });
 
-// Regular Participants Search API (for PWA auto-assign functionality)
-Route::get('/participants/search', [ParticipantSearchController::class, 'search']); 
+/*
+| The participant search used by the PWA account form lives in routes/web.php.
+|
+| It was here, unauthenticated. Routes in this file are stateless, so the
+| Auth::user() call the controller used for its multi-tenant filter was always
+| null and the filter never ran - it looked like tenant isolation while doing
+| nothing. The endpoint returned whole Participant models, so `?search=a` handed
+| fifty complete records, IC numbers and addresses included, to anyone.
+|
+| Moving it to the web routes puts it behind the session it always assumed it had.
+| The URL is unchanged, so the form needs no edit.
+*/
 
-// Certificate verification (public, no auth required)
+// Certificate verification (public by design - anyone holding a certificate
+// number may confirm it is genuine).
 Route::post('/certificate/verify', [CertificateVerificationController::class, 'verify']);
-
-// Debug endpoint - remove after testing
-Route::get('/debug/certificates/{email}', function($email) {
-    $participants = \App\Models\Participant::where('email', $email)->get();
-    $certificates = \App\Models\Certificate::whereIn('participant_id', $participants->pluck('id'))->with('event')->get();
-    
-    return response()->json([
-        'email' => $email,
-        'participants_found' => $participants->count(),
-        'participants' => $participants->map(fn($p) => [
-            'id' => $p->id,
-            'name' => $p->name,
-            'email' => $p->email,
-            'identity_card' => $p->identity_card,
-        ]),
-        'certificates_found' => $certificates->count(),
-        'certificates' => $certificates->map(fn($c) => [
-            'id' => $c->id,
-            'certificate_number' => $c->certificate_number,
-            'event_name' => $c->event->name ?? 'N/A',
-            'participant_id' => $c->participant_id,
-            'generated_at' => $c->generated_at,
-        ]),
-    ]);
-}); 

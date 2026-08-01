@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -89,9 +90,10 @@ class AttendanceController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $events = \App\Models\Event::where('status', 'active')->orderBy('start_date')->get();
+        $events = $this->eventsAwaitingAttendance();
+
         $eventsArray = $events->map(function($e) {
             return [
                 'id' => $e->id,
@@ -103,7 +105,44 @@ class AttendanceController extends Controller
                 'location' => $e->location,
             ];
         })->values()->toArray();
-        return view('attendance.create', compact('events', 'eventsArray'));
+
+        // Arriving from an event form: preselect that event and explain why it is
+        // missing if it already has attendance.
+        $preselect = $request->integer('event_id') ?: null;
+        $alreadyHas = null;
+
+        if ($preselect && !$events->contains('id', $preselect)) {
+            $existing = Attendance::where('event_id', $preselect)->first();
+            $alreadyHas = $existing ? Event::find($preselect) : null;
+            $preselect = null;
+        }
+
+        return view('attendance.create', compact('events', 'eventsArray', 'preselect', 'alreadyHas'));
+    }
+
+    /**
+     * Active events the current user owns that do not have an attendance session yet.
+     *
+     * Two rules the dropdown used to ignore:
+     *  - an organizer could see and pick events belonging to other organizers
+     *  - events that already had attendance stayed in the list, so the same event
+     *    could be given a second, third and fourth session
+     *
+     * Soft-deleted attendance does not count: that sits in the Recycle Bin and the
+     * event genuinely has none until it is restored.
+     */
+    private function eventsAwaitingAttendance()
+    {
+        $user = Auth::user();
+
+        return Event::where('status', 'active')
+            ->when(
+                !$user->hasRole('Administrator'),
+                fn ($q) => $q->where('user_id', $user->id)
+            )
+            ->whereDoesntHave('attendances')
+            ->orderBy('start_date')
+            ->get();
     }
 
     /**
@@ -114,6 +153,9 @@ class AttendanceController extends Controller
         $request->validate([
             'event_id' => 'required|exists:events,id',
             'status' => 'required|in:active,expired,completed',
+            // Recorded so the QR email can say whether one code covers the whole
+            // event or there is one per day. It used to be discarded on submit.
+            'attendance_type' => 'nullable|in:single,daily,custom',
             'sessions' => 'required|array|min:1',
             'sessions.*.date' => 'required|date',
             'sessions.*.checkin_start_time' => 'required',
@@ -121,6 +163,25 @@ class AttendanceController extends Controller
             'sessions.*.checkout_start_time' => 'nullable',
             'sessions.*.checkout_end_time' => 'nullable',
         ]);
+
+        $event = Event::find($request->event_id);
+        $user = Auth::user();
+
+        // An organizer must not be able to attach attendance to somebody else's
+        // event by posting an id the dropdown never offered them.
+        if (!$user->hasRole('Administrator') && (int) $event->user_id !== (int) $user->id) {
+            return back()->with('error', 'You can only create attendance for your own events.');
+        }
+
+        // One attendance setup per event. Without this guard the same event could
+        // be given session after session, and nothing downstream could tell which
+        // one the QR codes belonged to.
+        if (Attendance::where('event_id', $event->id)->exists()) {
+            return back()->with(
+                'error',
+                'This event already has an attendance session. Edit the existing one instead of creating another.'
+            );
+        }
 
         // Ambil session pertama untuk field utama attendances
         $firstSession = $request->sessions[0] ?? null;
@@ -132,6 +193,7 @@ class AttendanceController extends Controller
         $attendance = Attendance::create([
             'event_id' => $request->event_id,
             'status' => $request->status,
+            'attendance_type' => $request->input('attendance_type', 'single'),
             'unique_code' => Str::random(32),
             'created_by' => Auth::id(),
             'date' => $firstSession['date'],
@@ -168,7 +230,18 @@ class AttendanceController extends Controller
             }
         }
 
-        return redirect()->route('attendance.index')->with('success', 'Attendance session(s) created successfully.');
+        // The event now takes attendance, so tick the box on the event itself.
+        // Otherwise an organizer who set attendance up here would still have to
+        // remember to go back and tick it, and participants would never be told.
+        $note = '';
+
+        if (!$event->attendance_required) {
+            $event->forceFill(['attendance_required' => true])->save();
+            $note = ' "Attendance will be taken" has been switched on for ' . $event->name . '.';
+        }
+
+        return redirect()->route('attendance.index')
+            ->with('success', 'Attendance session(s) created successfully.' . $note);
     }
 
     /**
@@ -209,6 +282,7 @@ class AttendanceController extends Controller
         $request->validate([
             'event_id' => 'required|exists:events,id',
             'status' => 'required|in:active,expired,completed',
+            'attendance_type' => 'nullable|in:single,daily,custom',
             'sessions' => 'required|array|min:1',
             'sessions.*.date' => 'required|date',
             'sessions.*.checkin_start_time' => 'required',
@@ -221,6 +295,7 @@ class AttendanceController extends Controller
         $attendance->update([
             'event_id' => $request->event_id,
             'status' => $request->status,
+            'attendance_type' => $request->input('attendance_type', $attendance->attendance_type ?? 'single'),
         ]);
 
         // Remove old sessions
@@ -263,10 +338,22 @@ class AttendanceController extends Controller
      */
     public function destroy(Attendance $attendance)
     {
-        // Delete the attendance record
+        $event = $attendance->event;
+
+        // Soft delete: this goes to the Recycle Bin and can be restored.
         $attendance->delete();
-        
-        return redirect()->route('attendance.index')->with('success', 'Attendance session deleted successfully.');
+
+        // The event no longer has anything to scan, so untick it. Leaving the flag
+        // on would keep promising participants a QR code that does not exist.
+        $note = '';
+
+        if ($event && !$event->attendances()->exists() && $event->attendance_required) {
+            $event->forceFill(['attendance_required' => false])->save();
+            $note = ' "Attendance will be taken" has been switched off for ' . $event->name . '.';
+        }
+
+        return redirect()->route('attendance.index')
+            ->with('success', 'Attendance session deleted successfully.' . $note);
     }
 
     public function qrcode(Attendance $attendance)
@@ -366,23 +453,76 @@ class AttendanceController extends Controller
     public function searchParticipant(Request $request, Attendance $attendance)
     {
         $request->validate([
+            'keyword' => 'nullable|string|max:255',
             'ic' => 'nullable|string',
             'passport' => 'nullable|string',
-            'id_type' => 'required|in:ic,passport',
+            'participant_id' => 'nullable|integer',
+            'id_type' => 'nullable|in:ic,passport,any',
         ]);
 
-        $idType = $request->id_type;
         $query = \App\Models\Participant::where('event_id', $attendance->event_id);
 
-        if ($idType === 'ic') {
-            $normalizedIc = preg_replace('/\D+/', '', $request->ic);
-            $query->whereRaw("REPLACE(identity_card, '-', '') = ?", [$normalizedIc]);
+        if ($request->filled('participant_id')) {
+            // Second step: the operator picked one row out of several matches.
+            $participant = (clone $query)->find($request->participant_id);
         } else {
-            $normalizedPass = strtolower(preg_replace('/\s+/', '', $request->passport));
-            $query->whereRaw("LOWER(REPLACE(passport_no, ' ', '')) = ?", [$normalizedPass]);
-        }
+            // Simplified registrations have no IC and no passport, so the lookup
+            // has to accept name, email and phone as well. `ic` and `passport`
+            // are still honoured for backwards compatibility.
+            $keyword = trim((string) ($request->keyword ?? $request->ic ?? $request->passport ?? ''));
 
-        $participant = $query->first();
+            if ($keyword === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Masukkan IC, passport, nama, emel atau nombor telefon.'
+                ], 422);
+            }
+
+            $digits = preg_replace('/\D+/', '', $keyword);
+            $compact = strtolower(preg_replace('/\s+/', '', $keyword));
+
+            $matches = (clone $query)
+                ->where(function ($q) use ($keyword, $digits, $compact) {
+                    if ($digits !== '') {
+                        $q->orWhereRaw("REPLACE(identity_card, '-', '') = ?", [$digits]);
+                        $q->orWhereRaw("REPLACE(REPLACE(phone, '-', ''), ' ', '') LIKE ?", ['%' . $digits]);
+                    }
+
+                    $q->orWhereRaw("LOWER(REPLACE(passport_no, ' ', '')) = ?", [$compact]);
+                    $q->orWhere('email', $keyword);
+                    $q->orWhere('name', 'LIKE', "%{$keyword}%");
+                })
+                ->orderBy('name')
+                ->limit(25)
+                ->get();
+
+            if ($matches->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Peserta tidak dijumpai untuk event ini.'
+                ], 404);
+            }
+
+            if ($matches->count() > 1) {
+                // Let the operator choose instead of guessing.
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'matches' => $matches->map(fn($p) => [
+                            'id' => $p->id,
+                            'name' => $p->name,
+                            'email' => $p->email,
+                            'phone' => $p->phone,
+                            'identity_card' => $p->identity_card,
+                            'passport_no' => $p->passport_no,
+                            'organization' => $p->organization,
+                        ])->values(),
+                    ],
+                ]);
+            }
+
+            $participant = $matches->first();
+        }
 
         if (!$participant) {
             return response()->json([
@@ -696,6 +836,12 @@ class AttendanceController extends Controller
         if ($eventId) {
             $sessions = \App\Models\AttendanceSession::whereHas('attendance', function($q) use ($eventId) {
                 $q->where('event_id', $eventId);
+
+                // Ownership follows the event. Without this an organizer could read
+                // the session windows of any event by passing its id.
+                if (! auth()->user()->hasRole('Administrator')) {
+                    $q->whereHas('event', fn ($e) => $e->where('user_id', auth()->id()));
+                }
             })->orderBy('date')->get(['id', 'date', 'checkin_start_time', 'checkin_end_time', 'checkout_start_time', 'checkout_end_time']);
         }
         $sessionsArray = collect($sessions)->map(function($s) {
@@ -728,16 +874,24 @@ class AttendanceController extends Controller
                     'attendance_records.checkout_time',
                     'attendance_records.status'
                 );
+
+            // Ownership follows the event that owns the session.
+            if (! auth()->user()->hasRole('Administrator')) {
+                $query->join('attendances', 'attendance_sessions.attendance_id', '=', 'attendances.id')
+                    ->join('events', 'attendances.event_id', '=', 'events.id')
+                    ->where('events.user_id', auth()->id());
+            }
+
             $search = $request->input('search');
             $statusFilter = $request->input('status');
             // Apply search filter
             if ($search) {
                 $query->where(function($q) use ($search) {
+                    // participants.id_passport was in this list and is not a column,
+                    // so any search here failed with a SQL error.
                     $q->where('participants.name', 'like', "%$search%")
                       ->orWhere('participants.identity_card', 'like', "%$search%")
-                      ->orWhere('participants.passport_no', 'like', "%$search%")
-                      ->orWhere('participants.id_passport', 'like', "%$search%")
-                      ;
+                      ->orWhere('participants.passport_no', 'like', "%$search%");
                 });
             }
             // Apply status filter

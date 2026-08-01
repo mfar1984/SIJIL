@@ -15,6 +15,7 @@ class Permission extends SpatiePermission
         'name',
         'display_name',
         'group',
+        'sort_order',
         'description',
         'guard_name',
     ];
@@ -29,25 +30,33 @@ class Permission extends SpatiePermission
     
     /**
      * Get permissions grouped by their group.
+     *
+     * Both the groups and the permissions inside each group are ordered by
+     * sort_order, which the seeder assigns to match the sidebar sequence.
+     * Anything without a sort_order falls to the end of its group.
      */
     public static function getGroupedPermissions()
     {
-        $permissions = self::all();
+        $permissions = self::orderBy('sort_order')->orderBy('name')->get();
         $grouped = [];
-        
+
         foreach ($permissions as $permission) {
             $group = $permission->group ?? 'other';
-            
+
             if (!isset($grouped[$group])) {
                 $grouped[$group] = [
                     'title' => ucwords(str_replace('_', ' ', $group)),
+                    'sort_order' => $permission->sort_order ?? 9999,
                     'items' => [],
                 ];
             }
-            
+
             $grouped[$group]['items'][$permission->name] = $permission->display_name ?? $permission->name;
         }
-        
+
+        // Order the groups themselves by the first permission they contain.
+        uasort($grouped, fn($a, $b) => $a['sort_order'] <=> $b['sort_order']);
+
         return $grouped;
     }
 }

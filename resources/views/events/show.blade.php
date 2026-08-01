@@ -132,10 +132,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Event Name</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">title</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->name }}
                                     </div>
                                 </div>
@@ -147,10 +144,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Organizer</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">business</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->organizer }}
                                     </div>
                                 </div>
@@ -208,10 +202,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Start Date & Time</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ \Carbon\Carbon::parse($event->start_date)->format('l, d F Y') }} - {{ \Carbon\Carbon::parse($event->start_time)->format('h:iA') }}
                                     </div>
                                 </div>
@@ -223,10 +214,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">End Date & Time</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">calendar_today</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ \Carbon\Carbon::parse($event->end_date)->format('l, d F Y') }} - {{ \Carbon\Carbon::parse($event->end_time)->format('h:iA') }}
                                     </div>
                                 </div>
@@ -252,10 +240,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Location</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">place</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->location }}
                                     </div>
                                 </div>
@@ -267,10 +252,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40 pt-2">Address</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">map</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->address ?? 'No address provided.' }}
                                     </div>
                                 </div>
@@ -296,10 +278,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Maximum Capacity</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">people_outline</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->max_participants ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -359,10 +338,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Contact Person</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">person_outline</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->contact_person ?? 'Not specified' }}
                                     </div>
                                 </div>
@@ -374,10 +350,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Contact Email</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">mail_outline</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         @if($event->contact_email)
                                         <a href="mailto:{{ $event->contact_email }}" class="text-blue-600 hover:underline">
                                             {{ $event->contact_email }}
@@ -395,10 +368,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Contact Phone</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">call</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         @if($event->contact_phone)
                                         <a href="tel:{{ $event->contact_phone }}" class="text-blue-600 hover:underline">
                                             {{ $event->contact_phone }}
@@ -430,10 +400,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Created Date</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">date_range</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->created_at->format('d M Y - H:i') }}
                                     </div>
                                 </div>
@@ -445,10 +412,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Updated Date</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">edit_calendar</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->updated_at->format('d M Y - H:i') }}
                                     </div>
                                 </div>
@@ -460,10 +424,7 @@
                             <label class="text-xs font-medium text-gray-700 md:w-40">Created By</label>
                             <div class="flex-1">
                                 <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="material-icons-outlined text-[#004aad] text-base">account_circle</span>
-                                    </div>
-                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] pl-12 py-2 border">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
                                         {{ $event->user ? $event->user->name : 'Unknown' }}
                                     </div>
                                 </div>

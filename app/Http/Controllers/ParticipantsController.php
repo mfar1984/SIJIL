@@ -6,9 +6,16 @@ use Illuminate\Http\Request;
 use App\Models\Participant;
 use App\Models\Event;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class ParticipantsController extends Controller
 {
+    /**
+     * The only two registration types the tabs know how to display.
+     * Anything else would make a participant invisible in the UI.
+     */
+    private const REGISTRATION_TYPES = ['verified', 'simplified'];
+
     /**
      * Display the participants management page with data from database.
      *
@@ -103,13 +110,24 @@ class ParticipantsController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate the request
+        // Validate the request. Email/IC/passport must be unique inside the
+        // same event; soft-deleted rows in the Recycle Bin do not block reuse.
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => [
+                'required', 'email', 'max:255',
+                $this->uniqueWithinEvent('email', $request->event_id),
+            ],
             'phone' => 'nullable|string|max:20',
-            'identity_card' => 'nullable|string|max:255',
-            'passport_no' => 'nullable|string|max:255',
+            'identity_card' => [
+                'nullable', 'string', 'max:255',
+                $this->uniqueWithinEvent('identity_card', $request->event_id),
+            ],
+            'passport_no' => [
+                'nullable', 'string', 'max:255',
+                $this->uniqueWithinEvent('passport_no', $request->event_id),
+            ],
+            'registration_type' => 'nullable|in:' . implode(',', self::REGISTRATION_TYPES),
             'date_of_birth' => 'nullable|date',
             'race' => 'nullable|string|max:100',
             'address1' => 'nullable|string|max:255',
@@ -136,6 +154,20 @@ class ParticipantsController extends Controller
                 ->with('error', 'You do not have permission to add participants to this event.');
         }
 
+        // A completed event should not keep collecting participants.
+        if ($event->status === 'completed') {
+            return back()->withInput()->withErrors([
+                'event_id' => 'This event is marked as completed. Set its status back to active before adding participants.',
+            ]);
+        }
+
+        // Respect the participant limit configured on the event.
+        if ($event->isFull()) {
+            return back()->withInput()->withErrors([
+                'event_id' => "This event is full ({$event->max_participants} participants). Increase the limit on the event before adding more.",
+            ]);
+        }
+
         // Process address fields
         $state = $request->state;
         $city = $request->city;
@@ -158,8 +190,9 @@ class ParticipantsController extends Controller
         $participant->identity_card = $request->identity_card;
         $participant->passport_no = $request->passport_no;
         
-        // Set registration_type based on form input (default to 'verified' if not provided)
-        $participant->registration_type = $request->input('registration_type', 'verified');
+        // Set registration_type based on form input (default to 'verified' if not provided).
+        // Already validated above, so it can only be one of the known tabs.
+        $participant->registration_type = $request->input('registration_type') ?: 'verified';
         
         $participant->date_of_birth = $request->date_of_birth;
         $participant->race = $request->race;
@@ -256,13 +289,24 @@ class ParticipantsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Validate the request
+        // Validate the request. Uniqueness is scoped to the target event and
+        // ignores the record being edited.
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => [
+                'required', 'email', 'max:255',
+                $this->uniqueWithinEvent('email', $request->event_id, $id),
+            ],
             'phone' => 'nullable|string|max:20',
-            'identity_card' => 'nullable|string|max:255',
-            'passport_no' => 'nullable|string|max:255',
+            'identity_card' => [
+                'nullable', 'string', 'max:255',
+                $this->uniqueWithinEvent('identity_card', $request->event_id, $id),
+            ],
+            'passport_no' => [
+                'nullable', 'string', 'max:255',
+                $this->uniqueWithinEvent('passport_no', $request->event_id, $id),
+            ],
+            'registration_type' => 'nullable|in:' . implode(',', self::REGISTRATION_TYPES),
             'date_of_birth' => 'nullable|date',
             'race' => 'nullable|string|max:100',
             'address1' => 'nullable|string|max:255',
@@ -297,6 +341,13 @@ class ParticipantsController extends Controller
                 return redirect()->route('participants')
                     ->with('error', 'You do not have permission to move participants to this event.');
             }
+
+            // Moving into another event must respect that event's limit too.
+            if ($targetEvent->isFull()) {
+                return back()->withInput()->withErrors([
+                    'event_id' => "\"{$targetEvent->name}\" is full ({$targetEvent->max_participants} participants).",
+                ]);
+            }
         }
 
         // Process address fields
@@ -319,7 +370,13 @@ class ParticipantsController extends Controller
         // Handle identity card and passport fields
         $participant->identity_card = $request->identity_card;
         $participant->passport_no = $request->passport_no;
-        
+
+        // Keep the tab in sync: a participant who now has an IC or passport
+        // belongs in Verified, otherwise in Simplified. An explicit value from
+        // the form always wins.
+        $participant->registration_type = $request->input('registration_type')
+            ?: ((filled($request->identity_card) || filled($request->passport_no)) ? 'verified' : 'simplified');
+
         $participant->date_of_birth = $request->date_of_birth;
         $participant->race = $request->race;
         
@@ -361,11 +418,19 @@ class ParticipantsController extends Controller
                 ->with('error', 'You do not have permission to delete this participant.');
         }
 
-        // Delete the participant
+        // Soft delete: the row stays in the database, so the participant's
+        // certificates and attendance records are untouched. It can be brought
+        // back from Settings > Global Config > Recycle Bin.
+        $certificateCount = \App\Models\Certificate::where('participant_id', $participant->id)->count();
         $participant->delete();
 
-        return redirect()->route('participants')
-            ->with('success', 'Participant deleted successfully!');
+        $message = 'Participant moved to Recycle Bin. You can restore it from Settings → Global Config → Recycle Bin.';
+
+        if ($certificateCount > 0) {
+            $message .= " {$certificateCount} certificate(s) belonging to this participant were kept.";
+        }
+
+        return redirect()->route('participants')->with('success', $message);
     }
 
     /**
@@ -387,6 +452,20 @@ class ParticipantsController extends Controller
     }
 
     /**
+     * Uniqueness rule for a column scoped to a single event.
+     *
+     * Blank values are skipped by Laravel's "nullable" handling, and rows
+     * sitting in the Recycle Bin never block a value from being reused.
+     */
+    private function uniqueWithinEvent(string $column, $eventId, $ignoreId = null): \Illuminate\Validation\Rules\Unique
+    {
+        $rule = Rule::unique('participants', $column)
+            ->where(fn($query) => $query->where('event_id', $eventId)->whereNull('deleted_at'));
+
+        return $ignoreId ? $rule->ignore($ignoreId) : $rule;
+    }
+
+    /**
      * Export participants to Excel based on current filters.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -401,6 +480,14 @@ class ParticipantsController extends Controller
         if (!auth()->user()->hasRole('Administrator')) {
             $userEvents = Event::where('user_id', auth()->id())->pluck('id');
             $query->whereIn('event_id', $userEvents);
+        }
+
+        // Respect the active tab, exactly like index() does. Without this the
+        // export always returned both registration types.
+        if ($request->get('tab', 'verified') === 'simplified') {
+            $query->simplified();
+        } else {
+            $query->verified();
         }
 
         // Apply same filters as index method
@@ -427,8 +514,9 @@ class ParticipantsController extends Controller
         // Order by created_at
         $query->orderBy('created_at', 'desc');
 
-        // Generate filename with timestamp
-        $filename = 'participants_' . date('Y-m-d_His') . '.xlsx';
+        // Generate filename with timestamp, naming the tab that was exported
+        $tab = $request->get('tab', 'verified') === 'simplified' ? 'simplified' : 'verified';
+        $filename = "participants_{$tab}_" . date('Y-m-d_His') . '.xlsx';
 
         // Export to Excel
         return \Maatwebsite\Excel\Facades\Excel::download(

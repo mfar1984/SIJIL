@@ -17,20 +17,59 @@ class DeliveryConfigController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
-        // Get email and SMS configurations for the current user
-        $emailConfig = DeliveryConfig::where('user_id', $user->id)
-            ->where('config_type', 'email')
-            ->first();
-            
-        $smsConfig = DeliveryConfig::where('user_id', $user->id)
-            ->where('config_type', 'sms')
-            ->first();
-            
+
+        $emailConfig = $this->currentConfig($user->id, 'email');
+        $smsConfig = $this->currentConfig($user->id, 'sms');
+
         return view('config.deliver', [
             'emailConfig' => $emailConfig,
             'smsConfig' => $smsConfig,
+            // A channel is on when its saved row is the active one. Switching a
+            // channel off keeps the credentials on the row so they are still
+            // there when it is switched back on.
+            'emailEnabled' => (bool) ($emailConfig->is_active ?? false),
+            'smsEnabled' => (bool) ($smsConfig->is_active ?? false),
         ]);
+    }
+
+    /**
+     * The row the form should show for a channel.
+     *
+     * An account can accumulate one row per provider it has ever saved. The one
+     * worth showing is the active one, and failing that the one saved last.
+     */
+    private function currentConfig(int $userId, string $configType): ?DeliveryConfig
+    {
+        return DeliveryConfig::where('user_id', $userId)
+            ->where('config_type', $configType)
+            ->orderByDesc('is_active')
+            ->orderByDesc('updated_at')
+            ->first();
+    }
+
+    /**
+     * Save the row for a channel and switch every other provider row off.
+     *
+     * `is_active` doubles as the channel's on/off switch: exactly one row per
+     * channel can be active, and none are active when the channel is off.
+     */
+    private function storeConfig(int $userId, string $configType, string $provider, array $attributes, bool $enabled): DeliveryConfig
+    {
+        $config = DeliveryConfig::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'config_type' => $configType,
+                'provider' => $provider,
+            ],
+            $attributes + ['is_active' => $enabled]
+        );
+
+        DeliveryConfig::where('user_id', $userId)
+            ->where('config_type', $configType)
+            ->where('id', '!=', $config->id)
+            ->update(['is_active' => false]);
+
+        return $config;
     }
     
     /**
@@ -38,23 +77,36 @@ class DeliveryConfigController extends Controller
      */
     public function saveEmailConfig(Request $request)
     {
-        // Validate the request
-        $validator = Validator::make($request->all(), [
+        $enabled = $request->boolean('is_enabled');
+
+        // A switched-off channel is not going to send anything, so its credentials
+        // are allowed to be incomplete. They only have to add up when it is on.
+        $rules = [
             'mail_driver' => ['required', Rule::in(['smtp', 'mailgun', 'ses', 'sendmail'])],
-            'mail_host' => 'required_if:mail_driver,smtp',
-            'mail_port' => 'required_if:mail_driver,smtp',
-            'mail_username' => 'required_if:mail_driver,smtp',
-            'mail_password' => 'required_if:mail_driver,smtp',
-            'mail_encryption' => ['required_if:mail_driver,smtp', Rule::in(['tls', 'ssl', 'none'])],
-            'mail_from_address' => 'required|email',
-            'mail_from_name' => 'required|string|max:255',
-            'mailgun_domain' => 'required_if:mail_driver,mailgun',
-            'mailgun_secret' => 'required_if:mail_driver,mailgun',
-            'mailgun_endpoint' => 'required_if:mail_driver,mailgun',
-            'ses_key' => 'required_if:mail_driver,ses',
-            'ses_secret' => 'required_if:mail_driver,ses',
-            'ses_region' => 'required_if:mail_driver,ses',
-        ]);
+            'mail_encryption' => ['nullable', Rule::in(['tls', 'ssl', 'none'])],
+            'mail_from_address' => 'nullable|email',
+            'mail_from_name' => 'nullable|string|max:255',
+        ];
+
+        if ($enabled) {
+            $rules = array_merge($rules, [
+                'mail_host' => 'required_if:mail_driver,smtp',
+                'mail_port' => 'required_if:mail_driver,smtp',
+                'mail_username' => 'required_if:mail_driver,smtp',
+                'mail_password' => 'required_if:mail_driver,smtp',
+                'mail_encryption' => ['required_if:mail_driver,smtp', Rule::in(['tls', 'ssl', 'none'])],
+                'mail_from_address' => 'required|email',
+                'mail_from_name' => 'required|string|max:255',
+                'mailgun_domain' => 'required_if:mail_driver,mailgun',
+                'mailgun_secret' => 'required_if:mail_driver,mailgun',
+                'mailgun_endpoint' => 'required_if:mail_driver,mailgun',
+                'ses_key' => 'required_if:mail_driver,ses',
+                'ses_secret' => 'required_if:mail_driver,ses',
+                'ses_region' => 'required_if:mail_driver,ses',
+            ]);
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return redirect()->back()
@@ -111,27 +163,13 @@ class DeliveryConfigController extends Controller
                 break;
         }
         
-        // Find existing config or create a new one
-        $config = DeliveryConfig::updateOrCreate(
-            [
-                'user_id' => $userId,
-                'config_type' => 'email',
-                'provider' => $provider,
-            ],
-            [
-                'settings' => $settings,
-                'is_active' => true,
-            ]
-        );
-        
-        // Deactivate other email configs for this user
-        DeliveryConfig::where('user_id', $userId)
-            ->where('config_type', 'email')
-            ->where('id', '!=', $config->id)
-            ->update(['is_active' => false]);
-        
+        $this->storeConfig($userId, 'email', $provider, ['settings' => $settings], $enabled);
+
         return redirect()->route('config.deliver')
-            ->with('success', 'Email configuration saved successfully.');
+            ->with('success', $enabled
+                ? 'Email settings saved. This account now sends its own email.'
+                : 'Email settings saved and the channel switched off. Email for this account will '
+                    . 'be sent using the Administrator configuration.');
     }
     
     /**
@@ -139,24 +177,31 @@ class DeliveryConfigController extends Controller
      */
     public function saveSmsConfig(Request $request)
     {
-        // Validate the request
-        $validator = Validator::make($request->all(), [
+        $enabled = $request->boolean('is_enabled');
+
+        $rules = [
             'sms_provider' => ['required', Rule::in(['twilio', 'nexmo', 'aws_sns', 'infobip'])],
-            'sms_region' => 'required_if:sms_provider,aws_sns',
             'sms_template' => 'nullable|string',
-            'twilio_sid' => 'required_if:sms_provider,twilio',
-            'twilio_token' => 'required_if:sms_provider,twilio',
-            'twilio_from' => 'required_if:sms_provider,twilio',
-            'nexmo_key' => 'required_if:sms_provider,nexmo',
-            'nexmo_secret' => 'required_if:sms_provider,nexmo',
-            'nexmo_from' => 'required_if:sms_provider,nexmo',
-            'aws_key' => 'required_if:sms_provider,aws_sns',
-            'aws_secret' => 'required_if:sms_provider,aws_sns',
-            'aws_region' => 'required_if:sms_provider,aws_sns',
-            'infobip_key' => 'required_if:sms_provider,infobip',
-            'infobip_base_url' => 'required_if:sms_provider,infobip',
-            'infobip_from' => 'required_if:sms_provider,infobip',
-        ]);
+        ];
+
+        if ($enabled) {
+            $rules = array_merge($rules, [
+                'twilio_sid' => 'required_if:sms_provider,twilio',
+                'twilio_token' => 'required_if:sms_provider,twilio',
+                'twilio_from' => 'required_if:sms_provider,twilio',
+                'nexmo_key' => 'required_if:sms_provider,nexmo',
+                'nexmo_secret' => 'required_if:sms_provider,nexmo',
+                'nexmo_from' => 'required_if:sms_provider,nexmo',
+                'aws_key' => 'required_if:sms_provider,aws_sns',
+                'aws_secret' => 'required_if:sms_provider,aws_sns',
+                'aws_region' => 'required_if:sms_provider,aws_sns',
+                'infobip_key' => 'required_if:sms_provider,infobip',
+                'infobip_base_url' => 'required_if:sms_provider,infobip',
+                'infobip_from' => 'required_if:sms_provider,infobip',
+            ]);
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return redirect()->back()
@@ -205,28 +250,27 @@ class DeliveryConfigController extends Controller
                 break;
         }
         
-        // Find existing config or create a new one
-        $config = DeliveryConfig::updateOrCreate(
-            [
-                'user_id' => $userId,
-                'config_type' => 'sms',
-                'provider' => $provider,
-            ],
-            [
-                'settings' => $settings,
-                'default_template' => $request->input('sms_template'),
-                'is_active' => true,
-            ]
-        );
-        
-        // Deactivate other SMS configs for this user
-        DeliveryConfig::where('user_id', $userId)
-            ->where('config_type', 'sms')
-            ->where('id', '!=', $config->id)
-            ->update(['is_active' => false]);
-        
+        $this->storeConfig($userId, 'sms', $provider, [
+            'settings' => $settings,
+            'default_template' => $request->input('sms_template'),
+        ], $enabled);
+
+        if (! $enabled) {
+            return redirect()->route('config.deliver')
+                ->with('success', 'SMS settings saved and the channel switched off. No SMS will be '
+                    . 'sent for this account.');
+        }
+
+        // Only Infobip has a service class behind it. Saying so here is better than
+        // letting the account believe SMS works and finding out when nothing arrives.
+        if ($provider !== 'infobip') {
+            return redirect()->route('config.deliver')
+                ->with('warning', 'SMS settings saved, but only Infobip can currently send. Nothing '
+                    . 'will go out while the gateway is set to ' . ucfirst(str_replace('_', ' ', $provider)) . '.');
+        }
+
         return redirect()->route('config.deliver')
-            ->with('success', 'SMS configuration saved successfully.');
+            ->with('success', 'SMS settings saved. This account now sends its own SMS.');
     }
     
     /**
@@ -267,7 +311,8 @@ class DeliveryConfigController extends Controller
         if (!$config) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active email configuration found.'
+                'message' => 'Email delivery is switched off for this account. Turn it on and save '
+                    . 'before sending a test.'
             ]);
         }
 
@@ -282,51 +327,12 @@ class DeliveryConfigController extends Controller
         }
 
         try {
-            // Configure mail settings based on provider
-            $settings = $config->settings;
             $provider = $config->provider;
-            
-            // Set mail configuration based on provider
-            $fromName = $settings['from_name'] ?? 'SIJIL System';
-            $fromAddress = $settings['from_address'] ?? 'no-reply@example.com';
-            
-            // Dynamically set mail configuration based on the provider
-            switch ($provider) {
-                case 'smtp':
-                    config([
-                        'mail.default' => 'smtp',
-                        'mail.mailers.smtp.host' => $settings['host'] ?? 'smtp.mailtrap.io',
-                        'mail.mailers.smtp.port' => $settings['port'] ?? '2525',
-                        'mail.mailers.smtp.encryption' => $settings['encryption'] === 'none' ? null : $settings['encryption'],
-                        'mail.mailers.smtp.username' => $settings['username'] ?? '',
-                        'mail.mailers.smtp.password' => $settings['password'] ?? '',
-                        'mail.from.address' => $fromAddress,
-                        'mail.from.name' => $fromName,
-                    ]);
-                    break;
-                
-                case 'mailgun':
-                    config([
-                        'mail.default' => 'mailgun',
-                        'services.mailgun.domain' => $settings['domain'] ?? '',
-                        'services.mailgun.secret' => $settings['secret'] ?? '',
-                        'services.mailgun.endpoint' => $settings['endpoint'] ?? 'api.mailgun.net',
-                        'mail.from.address' => $fromAddress,
-                        'mail.from.name' => $fromName,
-                    ]);
-                    break;
-                    
-                case 'ses':
-                    config([
-                        'mail.default' => 'ses',
-                        'services.ses.key' => $settings['key'] ?? '',
-                        'services.ses.secret' => $settings['secret'] ?? '',
-                        'services.ses.region' => $settings['region'] ?? 'us-east-1',
-                        'mail.from.address' => $fromAddress,
-                        'mail.from.name' => $fromName,
-                    ]);
-                    break;
-            }
+
+            // One shared applier. This switch was missing sendmail, so a test from a
+            // sendmail account silently used whatever mail settings were loaded.
+            ['from_address' => $fromAddress, 'from_name' => $fromName] =
+                \App\Support\MailerConfig::apply($config);
 
             // Send test email
             $subject = 'SIJIL System Test Email';
@@ -397,7 +403,8 @@ class DeliveryConfigController extends Controller
         if (!$config) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active SMS configuration found.'
+                'message' => 'SMS delivery is switched off for this account. Turn it on and save '
+                    . 'before sending a test.'
             ]);
         }
         

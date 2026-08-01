@@ -19,6 +19,18 @@ return [
     ],
 
     'firebase' => [
+        // Public client config, safe to expose to the browser. Read through config()
+        // rather than env() so it survives `php artisan config:cache`.
+        'web' => [
+            'api_key' => env('VITE_FIREBASE_API_KEY'),
+            'auth_domain' => env('VITE_FIREBASE_AUTH_DOMAIN'),
+            'project_id' => env('VITE_FIREBASE_PROJECT_ID'),
+            'storage_bucket' => env('VITE_FIREBASE_STORAGE_BUCKET'),
+            'messaging_sender_id' => env('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+            'app_id' => env('VITE_FIREBASE_APP_ID'),
+            'measurement_id' => env('VITE_FIREBASE_MEASUREMENT_ID'),
+        ],
+
         'project_id' => env('FIREBASE_PROJECT_ID', 'e-certificate-com-my'),
         'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS'),
     ],

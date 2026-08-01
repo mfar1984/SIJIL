@@ -8,186 +8,388 @@ use App\Models\SurveyQuestion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SurveyController extends Controller
 {
+    /** Tabs rendered by the survey workspace. */
+    private const WORKSPACE_TABS = ['questions', 'settings', 'share'];
+
+    /**
+     * Whether the current user may act on the given survey.
+     */
+    private function canManage(Survey $survey): bool
+    {
+        return auth()->user()->hasRole('Administrator') || $survey->user_id == auth()->id();
+    }
+
+    /**
+     * Stop the request unless the current user owns the survey.
+     */
+    private function authorizeSurvey(Survey $survey): void
+    {
+        abort_unless($this->canManage($survey), 403, 'You do not have permission to manage this survey.');
+    }
+
+    /**
+     * Events the current user is allowed to attach a survey to.
+     */
+    private function availableEvents()
+    {
+        $query = Event::orderBy('name');
+
+        if (! auth()->user()->hasRole('Administrator')) {
+            $query->where('user_id', auth()->id());
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Events that may still be linked to a survey.
+     *
+     * An event carries at most one survey. Two surveys on the same event would
+     * split its responses across two report pages with no way to tell which one
+     * participants were meant to answer, so an event that already has one is not
+     * offered here.
+     *
+     * The survey being edited keeps its own event in the list: without that, the
+     * settings tab would render with the link missing and quietly drop it on save.
+     *
+     * The lookup is deliberately not scoped to the current account. The rule is
+     * about the event, not about who is looking at it.
+     */
+    private function linkableEvents(?Survey $survey = null)
+    {
+        $taken = Survey::whereNotNull('event_id')
+            ->when($survey && $survey->exists, fn ($q) => $q->whereKeyNot($survey->getKey()))
+            ->pluck('event_id')
+            ->all();
+
+        return $this->availableEvents()
+            ->reject(fn ($event) => in_array($event->id, $taken))
+            ->values();
+    }
+
+    /**
+     * The rule that keeps one event to one survey.
+     *
+     * Soft-deleted surveys are ignored, so deleting a survey releases its event.
+     */
+    private function eventLinkRules(?Survey $survey = null): array
+    {
+        $unique = Rule::unique('surveys', 'event_id')->whereNull('deleted_at');
+
+        if ($survey && $survey->exists) {
+            $unique->ignore($survey->getKey());
+        }
+
+        return ['nullable', 'exists:events,id', $unique];
+    }
+
+    /**
+     * The chosen event, or null when the "not linked" option was picked.
+     *
+     * That option posts an empty string. Passed through as-is it reaches MySQL as
+     * '' and a strict-mode server rejects it, so it is normalised here instead of
+     * relying on the ConvertEmptyStringsToNull middleware being in the stack.
+     */
+    private function eventIdOrNull(array $validated): ?int
+    {
+        $eventId = $validated['event_id'] ?? null;
+
+        return ($eventId === null || $eventId === '') ? null : (int) $eventId;
+    }
+
     /**
      * Display a listing of the surveys.
      */
     public function index(Request $request)
     {
-        // Start with base query
-        $query = Survey::with(['event', 'questions']);
+        $query = Survey::with('event')
+            ->withCount([
+                'questions',
+                'responses as completed_responses_count' => fn ($q) => $q->where('completed', true),
+            ]);
 
-        // Non-admin users only see their own surveys
-        if (!auth()->user()->hasRole('Administrator')) {
+        if (! auth()->user()->hasRole('Administrator')) {
             $query->where('user_id', auth()->id());
         }
 
-        // Search functionality
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
                 $q->where('title', 'LIKE', "%{$searchTerm}%")
                   ->orWhere('description', 'LIKE', "%{$searchTerm}%");
             });
         }
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Filter by access type
-        if ($request->filled('access_type')) {
-            $query->where('access_type', $request->access_type);
+        if ($request->filled('audience')) {
+            $query->where('audience', $request->audience);
         }
 
-        // Filter by event
         if ($request->filled('event_id')) {
             $query->where('event_id', $request->event_id);
         }
 
-        // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
-        $surveys = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $surveys = $query->orderBy('created_at', 'desc')
+            ->paginate($request->get('per_page', 10))
+            ->withQueryString();
 
-        // Get events for filter dropdown (respect role scoping)
-        $eventsQuery = Event::orderBy('name');
-        if (!auth()->user()->hasRole('Administrator')) {
-            $eventsQuery->where('user_id', auth()->id());
-        }
-        $events = $eventsQuery->get();
-
-        return view('survey.index', compact('surveys', 'events'));
+        return view('survey.index', [
+            'surveys' => $surveys,
+            'events' => $this->availableEvents(),
+        ]);
     }
 
     /**
      * Show the form for creating a new survey.
+     *
+     * Kept deliberately short: the survey only needs a title to exist, everything
+     * else is configured in the workspace afterwards.
      */
     public function create()
     {
-        $eventsQuery = Event::orderBy('name');
-        if (!auth()->user()->hasRole('Administrator')) {
-            $eventsQuery->where('user_id', auth()->id());
-        }
-        $events = $eventsQuery->get();
-        return view('survey.create', compact('events'));
+        return view('survey.create', [
+            'events' => $this->linkableEvents(),
+            'linkedElsewhere' => $this->countEventsAlreadyLinked(),
+        ]);
     }
 
     /**
-     * Store a newly created survey in storage.
+     * How many of this account's events are missing from the dropdown because a
+     * survey is already attached. Shown as a note so the gap is explained rather
+     * than looking like events went missing.
+     */
+    private function countEventsAlreadyLinked(?Survey $survey = null): int
+    {
+        return $this->availableEvents()->count() - $this->linkableEvents($survey)->count();
+    }
+
+    /**
+     * Store a newly created survey and drop the user straight into the builder.
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'access_type' => 'required|in:public,private,registered',
-            'event_id' => 'nullable|exists:events,id',
-            'allow_anonymous' => 'nullable|boolean',
+            'description' => 'nullable|string|max:2000',
+            'event_id' => $this->eventLinkRules(),
+        ], [
+            'event_id.unique' => 'That event already has a survey. An event can only have one.',
         ]);
 
         $survey = new Survey();
-        $survey->title = $request->title;
-        $survey->description = $request->description;
+        $survey->title = $validated['title'];
+        $survey->description = $validated['description'] ?? null;
+        $survey->event_id = $this->eventIdOrNull($validated);
         $survey->user_id = auth()->id();
-        $survey->event_id = $request->event_id;
-        $survey->access_type = $request->access_type;
-        $survey->allow_anonymous = $request->has('allow_anonymous');
         $survey->status = 'draft';
-        $survey->slug = Str::slug($request->title) . '-' . Str::random(8);
+        $survey->audience = Survey::AUDIENCE_ANYONE;
         $survey->save();
 
-        return redirect()->route('survey.edit', $survey)
-            ->with('success', 'Survey created successfully. Now you can add questions.');
+        return redirect()->route('survey.show', [$survey, 'tab' => 'questions'])
+            ->with('success', 'Survey created. Add your questions next.');
     }
 
     /**
-     * Display the specified survey.
+     * The survey workspace: questions, settings and sharing in one place.
      */
-    public function show(Survey $survey)
+    public function show(Request $request, Survey $survey)
     {
-        $responsesCount = $survey->responses()->where('completed', true)->count();
-        return view('survey.show', compact('survey', 'responsesCount'));
+        $this->authorizeSurvey($survey);
+
+        $tab = $request->get('tab', 'questions');
+
+        if (! in_array($tab, self::WORKSPACE_TABS, true)) {
+            $tab = 'questions';
+        }
+
+        $survey->loadCount([
+            'questions',
+            'responses as completed_responses_count' => fn ($q) => $q->where('completed', true),
+        ]);
+
+        return view('survey.workspace', [
+            'survey' => $survey,
+            'tab' => $tab,
+            'questions' => $survey->questions()->get(),
+            'events' => $this->linkableEvents($survey),
+            'linkedElsewhere' => $this->countEventsAlreadyLinked($survey),
+            'questionTypes' => SurveyQuestion::TYPES,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified survey.
+     * The workspace replaced the separate edit screen.
      */
     public function edit(Survey $survey)
     {
-        $eventsQuery = Event::orderBy('name');
-        if (!auth()->user()->hasRole('Administrator')) {
-            $eventsQuery->where('user_id', auth()->id());
-        }
-        $events = $eventsQuery->get();
-        return view('survey.edit', compact('survey', 'events'));
+        $this->authorizeSurvey($survey);
+
+        return redirect()->route('survey.show', [$survey, 'tab' => 'settings']);
     }
 
     /**
-     * Update the specified survey in storage.
+     * Update the survey settings.
      */
     public function update(Request $request, Survey $survey)
     {
-        $request->validate([
+        $this->authorizeSurvey($survey);
+
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'access_type' => 'required|in:public,private,registered',
-            'event_id' => 'nullable|exists:events,id',
-            'allow_anonymous' => 'nullable|boolean',
+            'description' => 'nullable|string|max:2000',
+            'event_id' => $this->eventLinkRules($survey),
+            'audience' => ['required', Rule::in([Survey::AUDIENCE_ANYONE, Survey::AUDIENCE_PARTICIPANTS])],
+            'require_respondent_details' => 'nullable|boolean',
+            'allow_multiple_responses' => 'nullable|boolean',
+            'opens_at' => 'nullable|date',
+            'expires_at' => 'nullable|date|after:opens_at',
+        ], [
+            'expires_at.after' => 'The closing date must be later than the opening date.',
+            'event_id.unique' => 'That event already has a survey. An event can only have one.',
         ]);
 
-        $survey->title = $request->title;
-        $survey->description = $request->description;
-        $survey->event_id = $request->event_id;
-        $survey->access_type = $request->access_type;
-        $survey->allow_anonymous = $request->has('allow_anonymous');
-        $survey->save();
+        $eventId = $this->eventIdOrNull($validated);
 
-        return redirect()->route('survey.edit', $survey)
-            ->with('success', 'Survey updated successfully.');
+        // Answers can only be tied to participants when an event is attached.
+        if ($validated['audience'] === Survey::AUDIENCE_PARTICIPANTS && $eventId === null) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Select an event before limiting the survey to its participants.');
+        }
+
+        $survey->fill([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'event_id' => $eventId,
+            'audience' => $validated['audience'],
+            'require_respondent_details' => $request->boolean('require_respondent_details'),
+            'allow_multiple_responses' => $request->boolean('allow_multiple_responses'),
+            'opens_at' => $validated['opens_at'] ?? null,
+            'expires_at' => $validated['expires_at'] ?? null,
+        ])->save();
+
+        return redirect()->route('survey.show', [$survey, 'tab' => 'settings'])
+            ->with('success', 'Survey settings saved.');
     }
 
     /**
-     * Remove the specified survey from storage.
+     * Soft delete the survey.
+     *
+     * Questions and responses are left in place so a restore brings back a complete
+     * survey. The database cascades them only if the survey is force deleted.
      */
     public function destroy(Survey $survey)
     {
-        // Delete related questions and responses
-        $survey->questions()->delete();
-        $survey->responses()->delete();
-        
-        // Delete the survey
+        $this->authorizeSurvey($survey);
+
         $survey->delete();
 
         return redirect()->route('survey.index')
-            ->with('success', 'Survey deleted successfully.');
+            ->with('success', 'Survey deleted.');
     }
 
     /**
-     * Toggle the published status of a survey.
+     * Publish or unpublish the survey.
      */
     public function togglePublish(Survey $survey)
     {
-        if ($survey->status === 'draft') {
-            // Check if the survey has questions before publishing
-            if ($survey->questions->isEmpty()) {
-                return redirect()->back()
-                    ->with('error', 'Cannot publish a survey without questions. Please add at least one question.');
-            }
+        $this->authorizeSurvey($survey);
 
-            $survey->status = 'published';
-            $survey->published_at = now();
-        } else {
+        if ($survey->status === 'published') {
             $survey->status = 'draft';
+            $survey->save();
+
+            return redirect()->back()->with('success', 'Survey moved back to draft.');
         }
 
+        $blockers = $survey->publishBlockers();
+
+        if (! empty($blockers)) {
+            return redirect()->back()->with('error', 'Cannot publish yet: ' . implode(' ', $blockers));
+        }
+
+        $survey->status = 'published';
+        $survey->published_at = $survey->published_at ?? now();
         $survey->save();
 
-        $statusMessage = $survey->status === 'published' ? 'published' : 'unpublished';
-        return redirect()->back()
-            ->with('success', "Survey {$statusMessage} successfully.");
+        return redirect()->back()->with('success', 'Survey published. It is now accepting responses.');
+    }
+
+    /**
+     * Validation rules shared by question create and update.
+     */
+    private function questionRules(): array
+    {
+        return [
+            'question_text' => 'required|string|max:500',
+            'question_type' => ['required', Rule::in(array_keys(SurveyQuestion::TYPES))],
+            'description' => 'nullable|string|max:500',
+            'options' => 'nullable|array',
+            'options.*' => 'nullable|string|max:255',
+            'required' => 'nullable|boolean',
+            'scale_min' => 'nullable|integer|min:0|max:9',
+            'scale_max' => 'nullable|integer|min:2|max:10',
+            'scale_min_label' => 'nullable|string|max:60',
+            'scale_max_label' => 'nullable|string|max:60',
+        ];
+    }
+
+    /**
+     * Turn the submitted question payload into attributes for the model.
+     */
+    private function questionAttributes(Request $request): array
+    {
+        $type = $request->input('question_type');
+
+        $options = null;
+
+        if (in_array($type, SurveyQuestion::OPTION_TYPES, true)) {
+            $options = collect($request->input('options', []))
+                ->map(fn ($option) => trim((string) $option))
+                ->filter(fn ($option) => $option !== '')
+                ->values()
+                ->all();
+        }
+
+        $attributes = [
+            'question_text' => $request->input('question_text'),
+            'question_type' => $type,
+            'description' => $request->input('description'),
+            'options' => $options,
+            'required' => $request->boolean('required'),
+        ];
+
+        if ($type === 'rating') {
+            $min = (int) $request->input('scale_min', 1);
+            $max = (int) $request->input('scale_max', 5);
+
+            if ($max <= $min) {
+                $max = $min + 1;
+            }
+
+            $attributes['scale_min'] = $min;
+            $attributes['scale_max'] = $max;
+            $attributes['scale_min_label'] = $request->input('scale_min_label');
+            $attributes['scale_max_label'] = $request->input('scale_max_label');
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Options are mandatory for the choice based types.
+     */
+    private function optionsAreMissing(array $attributes): bool
+    {
+        return in_array($attributes['question_type'], SurveyQuestion::OPTION_TYPES, true)
+            && count($attributes['options'] ?? []) < 1;
     }
 
     /**
@@ -195,36 +397,23 @@ class SurveyController extends Controller
      */
     public function storeQuestion(Request $request, Survey $survey)
     {
-        $request->validate([
-            'question_text' => 'required|string',
-            'question_type' => 'required|in:text,textarea,multiple_choice,checkbox,dropdown,rating,date',
-            'description' => 'nullable|string',
-            'options' => 'nullable|array',
-            'options.*' => 'nullable|string',
-            'required' => 'nullable|boolean',
-        ]);
+        $this->authorizeSurvey($survey);
 
-        // Clean empty options
-        $options = null;
-        if ($request->has('options') && in_array($request->question_type, ['multiple_choice', 'checkbox', 'dropdown'])) {
-            $options = array_filter($request->options, fn($option) => !empty($option));
+        $request->validate($this->questionRules());
+
+        $attributes = $this->questionAttributes($request);
+
+        if ($this->optionsAreMissing($attributes)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Add at least one option for a ' . SurveyQuestion::TYPES[$attributes['question_type']] . ' question.');
         }
 
-        $order = $survey->questions()->max('order') + 1;
+        $attributes['order'] = (int) $survey->questions()->max('order') + 1;
 
-        $question = new SurveyQuestion([
-            'question_text' => $request->question_text,
-            'question_type' => $request->question_type,
-            'description' => $request->description,
-            'options' => $options,
-            'required' => $request->has('required'),
-            'order' => $order,
-        ]);
+        $survey->questions()->create($attributes);
 
-        $survey->questions()->save($question);
-
-        return redirect()->route('survey.edit', $survey)
-            ->with('success', 'Question added successfully.');
+        return redirect()->route('survey.show', [$survey, 'tab' => 'questions'])
+            ->with('success', 'Question added.');
     }
 
     /**
@@ -232,13 +421,14 @@ class SurveyController extends Controller
      */
     public function updateQuestionOrder(Request $request, Survey $survey)
     {
+        $this->authorizeSurvey($survey);
+
         $request->validate([
             'questions' => 'required|array',
-            'questions.*' => 'exists:survey_questions,id',
+            'questions.*' => 'integer|exists:survey_questions,id',
         ]);
 
-        $questions = $request->input('questions');
-        foreach ($questions as $index => $questionId) {
+        foreach ($request->input('questions') as $index => $questionId) {
             SurveyQuestion::where('id', $questionId)
                 ->where('survey_id', $survey->id)
                 ->update(['order' => $index + 1]);
@@ -252,35 +442,23 @@ class SurveyController extends Controller
      */
     public function updateQuestion(Request $request, Survey $survey, SurveyQuestion $question)
     {
-        // Make sure the question belongs to the survey
-        if ($question->survey_id !== $survey->id) {
-            abort(404);
+        $this->authorizeSurvey($survey);
+
+        abort_unless($question->survey_id === $survey->id, 404);
+
+        $request->validate($this->questionRules());
+
+        $attributes = $this->questionAttributes($request);
+
+        if ($this->optionsAreMissing($attributes)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Add at least one option for a ' . SurveyQuestion::TYPES[$attributes['question_type']] . ' question.');
         }
 
-        $request->validate([
-            'question_text' => 'required|string',
-            'question_type' => 'required|in:text,textarea,multiple_choice,checkbox,dropdown,rating,date',
-            'description' => 'nullable|string',
-            'options' => 'nullable|array',
-            'options.*' => 'nullable|string',
-            'required' => 'nullable|boolean',
-        ]);
+        $question->update($attributes);
 
-        // Clean empty options
-        $options = null;
-        if ($request->has('options') && in_array($request->question_type, ['multiple_choice', 'checkbox', 'dropdown'])) {
-            $options = array_filter($request->options, fn($option) => !empty($option));
-        }
-
-        $question->question_text = $request->question_text;
-        $question->question_type = $request->question_type;
-        $question->description = $request->description;
-        $question->options = $options;
-        $question->required = $request->has('required');
-        $question->save();
-
-        return redirect()->route('survey.edit', $survey)
-            ->with('success', 'Question updated successfully.');
+        return redirect()->route('survey.show', [$survey, 'tab' => 'questions'])
+            ->with('success', 'Question updated.');
     }
 
     /**
@@ -288,15 +466,14 @@ class SurveyController extends Controller
      */
     public function destroyQuestion(Survey $survey, SurveyQuestion $question)
     {
-        // Make sure the question belongs to the survey
-        if ($question->survey_id !== $survey->id) {
-            abort(404);
-        }
+        $this->authorizeSurvey($survey);
+
+        abort_unless($question->survey_id === $survey->id, 404);
 
         $question->delete();
 
-        return redirect()->route('survey.edit', $survey)
-            ->with('success', 'Question deleted successfully.');
+        return redirect()->route('survey.show', [$survey, 'tab' => 'questions'])
+            ->with('success', 'Question deleted.');
     }
 
     /**
@@ -304,10 +481,18 @@ class SurveyController extends Controller
      */
     public function showResponses(Survey $survey)
     {
+        $this->authorizeSurvey($survey);
+
         $responses = $survey->responses()
             ->with('user', 'participant')
-            ->orderBy('created_at', 'desc')
+            ->where('completed', true)
+            ->orderBy('completed_at', 'desc')
             ->paginate(20);
+
+        $survey->loadCount([
+            'questions',
+            'responses as completed_responses_count' => fn ($q) => $q->where('completed', true),
+        ]);
 
         return view('survey.responses', compact('survey', 'responses'));
     }
@@ -317,172 +502,142 @@ class SurveyController extends Controller
      */
     public function showAnalytics(Survey $survey)
     {
-        // Get statistics for each question
-        $questions = $survey->questions()->orderBy('order')->get();
-        
+        $this->authorizeSurvey($survey);
+
+        $questions = $survey->questions()->get();
+
         foreach ($questions as $question) {
-            if (in_array($question->question_type, ['multiple_choice', 'checkbox', 'dropdown', 'rating'])) {
+            if ($question->isChartable()) {
                 $question->statistics = $question->getStatistics();
             }
         }
 
-        // Get response rate over time
         $responsesByDate = $survey->responses()
             ->where('completed', true)
             ->selectRaw('DATE(completed_at) as date, COUNT(*) as count')
             ->groupBy('date')
             ->orderBy('date')
             ->get()
-            ->map(function ($item) {
-                return [
-                    'date' => Carbon::parse($item->date)->format('d M'),
-                    'count' => $item->count
-                ];
-            });
+            ->map(fn ($item) => [
+                'date' => Carbon::parse($item->date)->format('d M'),
+                'count' => $item->count,
+            ]);
+
+        $survey->loadCount([
+            'questions',
+            'responses as completed_responses_count' => fn ($q) => $q->where('completed', true),
+        ]);
 
         return view('survey.analytics', compact('survey', 'questions', 'responsesByDate'));
     }
-    
+
     /**
      * Delete a survey response.
      */
     public function destroyResponse(Survey $survey, $response)
     {
-        // Find the response and make sure it belongs to the survey
-        $surveyResponse = $survey->responses()->findOrFail($response);
-        
-        // Delete the response
-        $surveyResponse->delete();
-        
+        $this->authorizeSurvey($survey);
+
+        $survey->responses()->findOrFail($response)->delete();
+
         return redirect()->route('survey.responses', $survey)
-            ->with('success', 'Response deleted successfully.');
+            ->with('success', 'Response deleted.');
     }
-    
+
     /**
      * View a survey response detail (AJAX).
      */
     public function viewResponse(Survey $survey, $response)
     {
-        // Find the response and make sure it belongs to the survey
+        $this->authorizeSurvey($survey);
+
         $surveyResponse = $survey->responses()
             ->with('user', 'participant')
             ->findOrFail($response);
-        
-        // Get questions in correct order
-        $questions = $survey->questions()->orderBy('order')->get();
-        
-        // Format response data for display
-        $formattedResponse = [
-            'id' => $surveyResponse->id,
-            'respondent_display_name' => $surveyResponse->respondent_display_name,
-            'respondent_display_email' => $surveyResponse->respondent_display_email,
-            'completed_at' => $surveyResponse->completed_at ? $surveyResponse->completed_at->format('d M Y H:i') : null,
-            'ip_address' => $surveyResponse->ip_address,
-            'time_taken' => $surveyResponse->time_taken,
-            'user_agent' => $surveyResponse->user_agent,
-            'response_data' => $surveyResponse->response_data ?? [],
-        ];
-        
+
         return response()->json([
-            'response' => $formattedResponse,
-            'questions' => $questions
+            'response' => [
+                'id' => $surveyResponse->id,
+                'respondent_display_name' => $surveyResponse->respondent_display_name,
+                'respondent_display_email' => $surveyResponse->respondent_display_email,
+                'completed_at' => $surveyResponse->completed_at?->format('d M Y H:i'),
+                'ip_address' => $surveyResponse->ip_address,
+                'time_taken' => $surveyResponse->time_taken,
+                'user_agent' => $surveyResponse->user_agent,
+                'response_data' => $surveyResponse->response_data ?? [],
+            ],
+            'questions' => $survey->questions()->get(),
         ]);
     }
-    
+
     /**
-     * Export survey responses to CSV
+     * Export survey responses to CSV.
      */
     public function exportResponses(Survey $survey)
     {
-        // Get questions
-        $questions = $survey->questions()->orderBy('order')->get();
-        
-        // Get completed responses
+        $this->authorizeSurvey($survey);
+
+        $questions = $survey->questions()->get();
+
         $responses = $survey->responses()
             ->with('user', 'participant')
             ->where('completed', true)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('completed_at', 'desc')
             ->get();
-            
-        // Create CSV headers
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . Str::slug($survey->title) . '-responses.csv"',
-        ];
-        
-        $columns = [
-            'Respondent Name',
-            'Email',
-            'Submitted Date',
-            'Submitted Time',
-            'Source',
-            'Time Taken (minutes)',
-        ];
-        
-        // Add question text as columns
+
+        $columns = ['Respondent Name', 'Email', 'Submitted Date', 'Submitted Time', 'Source', 'Time Taken (minutes)'];
+
         foreach ($questions as $question) {
             $columns[] = $question->question_text;
         }
-        
-        $callback = function() use ($responses, $questions, $columns) {
+
+        $callback = function () use ($responses, $questions, $columns) {
             $file = fopen('php://output', 'w');
-            
-            // Add UTF-8 BOM for Excel
+
+            // UTF-8 BOM so Excel picks up the encoding
             fputs($file, "\xEF\xBB\xBF");
-            
-            // Add headers
             fputcsv($file, $columns);
-            
-            // Add data rows
+
             foreach ($responses as $response) {
                 $row = [
                     $response->respondent_display_name,
                     $response->respondent_display_email,
-                    $response->completed_at ? $response->completed_at->format('Y-m-d') : 'N/A',
-                    $response->completed_at ? $response->completed_at->format('H:i:s') : 'N/A',
-                    $response->user_id ? 'Registered User' : 
-                        ($response->participant_id ? 'Participant' : 'Public'),
-                    $response->time_taken ?? 'N/A',
+                    $response->completed_at?->format('Y-m-d'),
+                    $response->completed_at?->format('H:i:s'),
+                    $response->sourceLabel(),
+                    $response->time_taken,
                 ];
-                
-                // Add answers for each question
+
                 foreach ($questions as $question) {
-                    $answer = $response->response_data[$question->id] ?? 'No response';
-                    
-                    // Format answer based on type
-                    if ($question->question_type === 'checkbox' && is_array($answer)) {
-                        $row[] = implode(', ', $answer);
-                    } else {
-                        $row[] = $answer;
-                    }
+                    $row[] = $question->formatAnswer($response->response_data[$question->id] ?? null);
                 }
-                
+
                 fputcsv($file, $row);
             }
-            
+
             fclose($file);
         };
-        
-        return response()->stream($callback, 200, $headers);
-    }
-    
-    /**
-     * Download QR code image for survey
-     */
-    public function downloadQrCodeImage($id)
-    {
-        $survey = Survey::findOrFail($id);
-        $surveyLink = $survey->public_url;
 
-        // Generate QR code SVG (BaconQrCode v2.x, set size via RendererStyle)
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . Str::slug($survey->title) . '-responses.csv"',
+        ]);
+    }
+
+    /**
+     * Download QR code image for the survey link.
+     */
+    public function downloadQrCodeImage(Survey $survey)
+    {
+        $this->authorizeSurvey($survey);
+
         $renderer = new \BaconQrCode\Renderer\Image\SvgImageBackEnd();
         $style = new \BaconQrCode\Renderer\RendererStyle\RendererStyle(800);
         $imageRenderer = new \BaconQrCode\Renderer\ImageRenderer($style, $renderer);
         $writer = new \BaconQrCode\Writer($imageRenderer);
-        $qrSvg = $writer->writeString($surveyLink);
 
-        return response($qrSvg)
+        return response($writer->writeString($survey->public_url))
             ->header('Content-Type', 'image/svg+xml')
-            ->header('Content-Disposition', 'attachment; filename="survey-' . $id . '-qrcode.svg"');
+            ->header('Content-Disposition', 'attachment; filename="survey-' . $survey->id . '-qrcode.svg"');
     }
 }

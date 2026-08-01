@@ -100,4 +100,20 @@ class SurveyResponse extends Model
 
         return $this->started_at->diffInMinutes($this->completed_at);
     }
+
+    /**
+     * Where the response came from, for listings and exports.
+     */
+    public function sourceLabel(): string
+    {
+        if ($this->participant_id) {
+            return 'Event participant';
+        }
+
+        if ($this->user_id) {
+            return 'Staff account';
+        }
+
+        return 'Public link';
+    }
 }

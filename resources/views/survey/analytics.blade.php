@@ -10,29 +10,7 @@
     <x-slot name="title">Survey Analytics</x-slot>
 
     <div class="bg-white rounded shadow-md border border-gray-300">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-start">
-                <div>
-                    <div class="flex items-center">
-                        <span class="material-icons-outlined mr-2 text-primary-DEFAULT">insights</span>
-                        <h1 class="text-xl font-bold text-gray-800">Analytics for: {{ $survey->title }}</h1>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1 ml-8">
-                        {{ $survey->completed_responses_count }} responses collected
-                    </p>
-                </div>
-                <div class="flex space-x-3">
-                    <a href="{{ route('survey.responses', $survey) }}" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">format_list_bulleted</span>
-                        View All Responses
-                    </a>
-                    <a href="{{ route('survey.show', $survey) }}" class="bg-gradient-to-r from-gray-500 to-gray-400 hover:from-gray-600 hover:to-gray-500 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium transition-colors duration-200 ease-in-out flex items-center">
-                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
-                        Back to Survey
-                    </a>
-                </div>
-            </div>
-        </div>
+        @include('survey.partials.workspace-header', ['active' => 'analytics'])
         
         <div class="p-6 space-y-6">
             @if($survey->completed_responses_count == 0)

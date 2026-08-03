@@ -95,7 +95,7 @@ class EventManagementController extends Controller
         }
 
         // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         $events = $query->orderBy('start_date', 'desc')->paginate($perPage);
 
         return view('event-management', [
@@ -756,12 +756,23 @@ class EventManagementController extends Controller
             return redirect()->back()
                 ->with('error', 'This event has reached its maximum number of participants.');
         }
-        // Check if already registered with same email
-        $existingRegistration = Participant::where('event_id', $event->id)
-            ->where('email', $request->email)
-            ->exists();
-        if ($existingRegistration) {
-            return redirect()->back()->with('error', 'You are already registered for this event with this email address.');
+        // One person per event, identified by their IC or passport rather than by
+        // their email address. A single mailbox is expected to cover several
+        // people: a parent registering children, an office registering staff, a
+        // guardian acting for someone else. Keying this on email refused all of
+        // them after the first entry, while still letting one person register
+        // twice from two different addresses.
+        $duplicate = \App\Support\DuplicateRegistration::find($event, [
+            'name' => $request->name,
+            'email' => $request->email,
+            'identity_card' => $request->identity_card,
+            'passport_no' => $request->passport_no,
+        ]);
+
+        if ($duplicate) {
+            return redirect()->back()
+                ->withInput($request->except(['identity_card', 'passport_no']))
+                ->with('error', $duplicate['message']);
         }
         // Format phone number with country code
         $phone = $request->phone;
@@ -899,7 +910,10 @@ class EventManagementController extends Controller
             abort(404, 'Event not found');
         }
         return view('events.register-thankyou', [
-            'event' => $event
+            'event' => $event,
+            // "Registration confirmation message" on the General tab was stored and
+            // displayed nowhere, so editing it changed nothing a registrant saw.
+            'registrationMessage' => \App\Support\SystemSettings::registrationMessage(),
         ]);
     }
     

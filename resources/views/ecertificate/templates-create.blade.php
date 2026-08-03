@@ -47,10 +47,13 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex justify-between items-start">
                 <div class="flex items-center">
-                    <span class="material-icons-outlined mr-2 text-indigo-500">email</span>
+                    <span class="material-icons-outlined mr-2 text-primary-DEFAULT">email</span>
                     <h1 class="text-xl font-bold text-gray-800">Create Email Template</h1>
                 </div>
-                <a href="{{ route('pwa.templates') }}" class="bg-gray-100 text-gray-700 px-3 py-1 rounded text-xs font-medium">Back</a>
+                <a href="{{ route('pwa.templates') }}" class="h-9 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center shrink-0">
+                    <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
+                    Back
+                </a>
             </div>
         </div>
 
@@ -84,7 +87,7 @@
                                 </div>
                             </label>
                             <div class="flex-1">
-                                <input type="text" name="name" id="name" required class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" />
+                                <input type="text" name="name" id="name" required class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" />
                             </div>
                         </div>
                         
@@ -104,7 +107,7 @@
                                 </div>
                             </label>
                             <div class="flex-1">
-                                <select name="type" id="type" class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                <select name="type" id="type" class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
                                     <option value="custom">Custom</option>
                                     <option value="welcome">Welcome</option>
                                     <option value="password_reset">Password Reset</option>
@@ -129,7 +132,7 @@
                                 </div>
                             </label>
                             <div class="flex-1">
-                                <input type="text" name="subject" id="subject" required class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" />
+                                <input type="text" name="subject" id="subject" required class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" />
                             </div>
                         </div>
                         
@@ -149,7 +152,7 @@
                                 </div>
                             </label>
                             <div class="flex-1">
-                                <textarea name="content" id="content" rows="10" class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Use variables like @{{name}} @{{email}} @{{pwa_link}}"></textarea>
+                                <textarea name="content" id="content" rows="10" class="w-full text-xs border-gray-300 rounded px-3 py-2 font-mono focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" placeholder="Use variables like @{{name}} @{{email}} @{{pwa_link}}"></textarea>
                             </div>
                         </div>
                     </div>

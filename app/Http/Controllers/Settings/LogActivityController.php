@@ -58,7 +58,7 @@ class LogActivityController extends Controller
         }
 
         // Get per_page parameter with default 10
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
 
         $activities = $query->orderBy('created_at', 'desc')->paginate($perPage);
 

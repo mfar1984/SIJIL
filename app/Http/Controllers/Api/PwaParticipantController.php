@@ -21,7 +21,11 @@ class PwaParticipantController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'password' => 'required|string|min:6',
+            // No length rule. Validating the length of a password being *checked*
+            // rejects it before the credentials are compared, which both tells an
+            // attacker the minimum length and locks out anyone whose existing
+            // password is shorter than the current policy.
+            'password' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -38,7 +42,37 @@ class PwaParticipantController extends Controller
         $participant = PwaParticipant::whereRaw('LOWER(email) = ?', [strtolower(trim($request->email))])
                                     ->first();
 
+        // The lockout columns login_attempts and locked_until have existed all
+        // along, together with an isLocked() helper, and nothing ever incremented
+        // the counter or read the helper. The only protection was the route's
+        // 8 requests a minute, which does nothing against a slow attempt at one
+        // password every ten seconds.
+        if ($participant && $participant->isLocked()) {
+            \App\Support\SecurityPolicy::audit('lockout', 'Participant app login blocked - account locked', [
+                'email' => $participant->email,
+                'ip_address' => $request->ip(),
+                'locked_until' => $participant->locked_until->toDateTimeString(),
+            ], $participant);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many failed attempts. Try again in '
+                    . max(1, $participant->locked_until->diffInMinutes(now()) + 1) . ' minute(s).',
+            ], 429);
+        }
+
         if (!$participant || !Hash::check($request->password, $participant->password)) {
+            if ($participant) {
+                $this->recordFailedParticipantLogin($participant, $request);
+            }
+
+            \App\Support\SecurityPolicy::audit('failed_login', 'Participant app login failed', [
+                'email' => $request->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'account_exists' => (bool) $participant,
+            ], $participant);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials'
@@ -59,14 +93,23 @@ class PwaParticipantController extends Controller
             ], 403);
         }
 
-        // Create token
-        $token = $participant->createToken('pwa-token')->plainTextToken;
+        // Create token. The lifetime comes from the Security tab; zero keeps the
+        // original behaviour of never expiring.
+        $lifetimeDays = \App\Support\SecurityPolicy::apiTokenLifetimeDays();
 
-        // Record the sign-in. The column already existed but nothing ever wrote
-        // to it, so the admin side could not tell who actually uses the app.
+        $token = $participant->createToken(
+            'pwa-token',
+            ['*'],
+            $lifetimeDays > 0 ? now()->addDays($lifetimeDays) : null
+        )->plainTextToken;
+
+        // Record the sign-in and clear any lockout. The columns already existed
+        // but nothing ever wrote to them, so the admin side could not tell who
+        // actually uses the app.
         $participant->forceFill([
             'last_login_at' => now(),
             'login_attempts' => 0,
+            'locked_until' => null,
         ])->saveQuietly();
 
         return response()->json([
@@ -84,98 +127,49 @@ class PwaParticipantController extends Controller
     }
 
     /**
-     * Participant registration.
+     * Count a failed sign-in against a participant account and lock it once the
+     * configured number of attempts is reached.
      *
-     * No longer routed. Kept private so nothing can reach it while the code stays
-     * available if self-service sign-up is wanted later.
-     *
-     * Before bringing it back it needs proof that the person controls the address:
-     * events and certificates are matched by email, so creating an account for an
-     * address is the same as being handed whatever that address is entitled to see.
-     * A one-time code emailed to the address, confirmed before the account becomes
-     * usable, is the smallest thing that would make this safe. Restricting it to
-     * addresses that already exist in `participants` is not enough on its own -
-     * that makes the target set smaller, not the claim harder.
+     * Uses the same Max Login Attempts and Lockout Duration as the backend, so
+     * the Security tab describes both sign-in paths rather than only one.
      */
-    private function register(Request $request)
+    private function recordFailedParticipantLogin(PwaParticipant $participant, Request $request): void
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:pwa_participants',
-            'password' => 'required|string|min:6',
-            'phone' => 'nullable|string|max:20',
-            'organization' => 'nullable|string|max:255',
-            'username' => 'sometimes|string|max:255|unique:pwa_participants,username',
-        ]);
+        $attempts = (int) $participant->login_attempts + 1;
+        $limit = \App\Support\SecurityPolicy::maxLoginAttempts();
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+        $attributes = ['login_attempts' => $attempts];
+
+        if ($attempts >= $limit) {
+            $attributes['locked_until'] = now()->addSeconds(\App\Support\SecurityPolicy::lockoutSeconds());
+            $attributes['login_attempts'] = 0;
+
+            \App\Support\SecurityAlert::send('Participant account locked', [
+                'Account' => $participant->email,
+                'IP address' => (string) $request->ip(),
+                'Attempts allowed' => (string) $limit,
+            ]);
         }
 
-        // A banned person must not be able to open a fresh account.
-        if (\App\Support\ParticipantBan::find($request->email, $request->identity_card, $request->passport_no)) {
-            return response()->json([
-                'success' => false,
-                'message' => \App\Support\ParticipantBan::message(),
-            ], 403);
-        }
-
-        // Ensure username is provided to satisfy NOT NULL schema
-        $username = $request->input('username');
-        if (!$username) {
-            $emailPrefix = strstr($request->email, '@', true) ?: '';
-            $base = strtolower(preg_replace('/[^a-z0-9]/', '', $emailPrefix));
-            if (!$base) {
-                $base = strtolower(preg_replace('/[^a-z0-9]/', '', Str::slug($request->name)));
-            }
-            if (!$base) {
-                $base = 'user';
-            }
-
-            $candidate = $base;
-            $suffix = 1;
-            while (PwaParticipant::where('username', $candidate)->exists()) {
-                // avoid infinite loops in case of heavy collisions
-                if ($suffix > 50) {
-                    $candidate = $base . Str::lower(Str::random(4));
-                    break;
-                }
-                $candidate = $base . $suffix;
-                $suffix++;
-            }
-            $username = $candidate;
-        }
-
-        $participant = PwaParticipant::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'username' => $username,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'organization' => $request->organization,
-            'status' => 'active',
-        ]);
-
-        $token = $participant->createToken('pwa-token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration successful',
-            'token' => $token,
-            'user' => [
-                'id' => $participant->id,
-                'name' => $participant->name,
-                'email' => $participant->email,
-                'username' => $participant->username,
-                'phone' => $participant->phone,
-                'organization' => $participant->organization,
-            ]
-        ], 201);
+        $participant->forceFill($attributes)->saveQuietly();
     }
+
+    /*
+     * The disabled register() method that sat here has been removed.
+     *
+     * It was already unroutable, having been made private when the open sign-up
+     * endpoint was withdrawn, and its own comment set out what it would need
+     * before it could safely come back: proof that the caller controls the email
+     * address, because events and certificates are matched by address and so
+     * creating an account for one hands over whatever that address may see.
+     *
+     * That requirement is now met elsewhere. Account creation during registration
+     * lives in App\Http\Controllers\Api\EventRegistrationGateController, which
+     * refuses an address that already has an account, demands the registration
+     * token of an open event, and issues no API token at all. This copy minted a
+     * working token on the spot, carried a third private username generator, and
+     * would have been the wrong thing to reinstate.
+     */
 
     /**
      * Get participant profile
@@ -959,67 +953,41 @@ class PwaParticipantController extends Controller
             'password_changed_at' => now()
         ]);
 
-        // For PWA reset password (login page), use Administrator config
-        // For event registration reset, use organizer config
-        $adminUser = \App\Models\User::whereHas('roles', function($q) {
-            $q->where('name', 'Administrator');
-        })->first();
+        // Sent through the shared mailer. What stood here was a second copy of
+        // everything PwaMailer does - pick the delivery config, find the template,
+        // substitute @{{vars}}, send - and the copy had drifted: it addressed
+        // people to url('/pwa/login'), which is not a route in this application,
+        // and it recorded nothing in pwa_email_logs, so resets were invisible on
+        // the email reporting screens that count welcome messages.
+        //
+        // No sender is named, which makes PwaMailer use the Administrator's
+        // configuration. That is deliberate: a reset is requested from the app's
+        // own sign-in screen, where no organizer is involved.
+        $mail = \App\Support\PwaMailer::send(
+            type: 'password_reset',
+            participant: $participant,
+            vars: ['password' => $newPassword],
+            fallback: [
+                'subject' => 'Password Reset - E-Certificate',
+                'content' => '<p><strong>Dear @{{name}},</strong></p>'
+                    . '<p>Your password has been reset.</p>'
+                    . '<div style="background-color:#f9fafb;padding:12px;border-radius:4px;margin:16px 0">'
+                    . '<p style="font-size:14px;margin:0 0 6px"><strong>Email:</strong> @{{email}}</p>'
+                    . '<p style="font-size:14px;margin:0"><strong>New password:</strong> @{{password}}</p>'
+                    . '</div>'
+                    . '<p>Sign in at @{{login_url}} and change your password straight away.</p>'
+                    . '<p style="margin-top:16px;font-size:12px;color:#6b7280">'
+                    . 'If you did not request this, contact us at @{{support_email}}</p>',
+            ]
+        );
 
-        // Attempt to send email using Administrator's DeliveryConfig
-        try {
-            if (!empty($participant->email) && $adminUser) {
-                // Load Administrator's active email config
-                $config = \App\Models\DeliveryConfig::getEmailConfig($adminUser->id);
-
-                if ($config) {
-                    ['from_address' => $fromAddress, 'from_name' => $fromName] =
-                        \App\Support\MailerConfig::apply($config);
-
-                    // Find password reset template (global or admin scope)
-                    $template = \App\Models\PwaEmailTemplate::query()
-                        ->where('type', 'password_reset')
-                        ->where('scope', 'global')
-                        ->first();
-
-                    $subject = 'Password Reset - E-Certificate';
-                    $content = '<p><strong>Dear @{{name}},</strong></p><p>Your password has been reset for your PWA account.</p><div style="background-color: #f9fafb; padding: 12px; border-radius: 4px; margin: 16px 0;"><p style="font-size: 14px;"><strong>New Password:</strong> @{{password}}</p></div><p>Please login at @{{login_url}} and change your password immediately for security.</p><p style="margin-top: 16px; font-size: 12px; color: #6b7280;">If you did not request this reset, please contact us at @{{support_email}}</p>';
-                    
-                    if ($template) {
-                        $subject = $template->subject ?: $subject;
-                        $content = $template->content ?: $content;
-                    }
-
-                    // Prepare variables
-                    $dataVars = [
-                        'name' => $participant->name,
-                        'email' => $participant->email,
-                        'password' => $newPassword,
-                        'pwa_link' => url('/pwa'),
-                        'login_url' => url('/pwa/login'),
-                        'support_email' => $fromAddress,
-                        'organization' => 'E-Certificate System',
-                    ];
-
-                    // Replace variables
-                    foreach ($dataVars as $key => $val) {
-                        $subject = str_replace('@{{' . $key . '}}', $val, $subject);
-                        $content = str_replace('@{{' . $key . '}}', $val, $content);
-                    }
-
-                    // Send email
-                    \Illuminate\Support\Facades\Mail::html($content, function($message) use ($participant, $subject) {
-                        $message->to($participant->email, $participant->name)
-                                ->subject($subject);
-                    });
-                }
-            }
-        } catch (\Exception $e) {
-            // Silent fail for security
-        }
-
+        // Failures are logged inside PwaMailer rather than surfaced. The password
+        // has already been changed by this point, so reporting a delivery problem
+        // to an unauthenticated caller would tell them the address exists without
+        // helping the person who actually owns it.
         return response()->json([
             'success' => true,
-            'message' => 'If the email exists, a password reset has been sent.'
+            'message' => 'If the email exists, a password reset has been sent.',
         ]);
     }
 }

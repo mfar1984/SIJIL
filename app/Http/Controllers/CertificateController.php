@@ -99,7 +99,7 @@ class CertificateController extends Controller
         }
         
         // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         $certificates = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Get events based on user role

@@ -67,15 +67,12 @@
                 </label>
                 <div class="flex-1">
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">password</span>
-                        </div>
                         <input 
                             type="text" 
                             id="telegram_bot_token" 
                             name="telegram_bot_token" 
                             value="{{ old('telegram_bot_token', $config->telegram_bot_token ?? '') }}" 
-                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                            class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                             placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
                         >
                     </div>
@@ -101,15 +98,12 @@
                 </label>
                 <div class="flex-1">
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">person</span>
-                        </div>
                         <input 
                             type="text" 
                             id="telegram_bot_username" 
                             name="telegram_bot_username" 
                             value="{{ old('telegram_bot_username', $config->telegram_bot_username ?? '') }}" 
-                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                            class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                             placeholder="@your_bot_username"
                         >
                     </div>
@@ -135,15 +129,12 @@
                 </label>
                 <div class="flex-1">
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">numbers</span>
-                        </div>
                         <input 
                             type="text" 
                             id="telegram_channel_id" 
                             name="telegram_channel_id" 
                             value="{{ old('telegram_channel_id', $config->telegram_channel_id ?? '') }}" 
-                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                            class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                             placeholder="-1001234567890"
                         >
                     </div>
@@ -169,15 +160,12 @@
                 </label>
                 <div class="flex-1">
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">badge</span>
-                        </div>
                         <input 
                             type="text" 
                             id="telegram_owner_user_id" 
                             name="telegram_owner_user_id" 
                             value="{{ old('telegram_owner_user_id', $config->telegram_owner_user_id ?? '') }}" 
-                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                            class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                             placeholder="123456789"
                         >
                     </div>
@@ -203,15 +191,12 @@
                 </label>
                 <div class="flex-1">
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">person_outline</span>
-                        </div>
                         <input 
                             type="text" 
                             id="telegram_owner_username" 
                             name="telegram_owner_username" 
                             value="{{ old('telegram_owner_username', $config->telegram_owner_username ?? '') }}" 
-                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                            class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
                             placeholder="@your_username"
                         >
                     </div>

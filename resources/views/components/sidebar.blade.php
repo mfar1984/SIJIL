@@ -4,7 +4,14 @@
     <div class="px-4 py-3 border-b border-gray-100 relative">
         <div class="flex items-center justify-center">
             <div>
-                <img src="{{ asset('images/logo.png') }}" alt="Logo" style="height: 52px; width: auto;" onerror="this.src='https://placeholder.co/180x60?text=LOGO'">
+                {{-- Uses the Sidebar Logo from Settings > Global Config >
+                     Appearance, falling back to the organisation logo and then to
+                     the bundled file. This was hard-coded, so uploading a logo
+                     changed nothing. --}}
+                <img src="{{ \App\Support\Branding::logo('sidebar_logo') }}"
+                     alt="{{ \App\Models\GlobalConfig::getConfig()->org_name ?? config('app.name') }}"
+                     style="height: 52px; width: auto;"
+                     onerror="this.src='{{ asset('images/logo.png') }}'">
             </div>
         </div>
     </div>

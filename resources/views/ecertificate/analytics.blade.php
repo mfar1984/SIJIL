@@ -1,561 +1,607 @@
 <x-app-layout>
     <x-slot name="breadcrumb">
-        <span>PWA Management</span>
-        <span class="mx-2">/</span>
+        <span>PWA</span>
+        <span class="mx-2 text-gray-500">/</span>
         <span>Analytics</span>
     </x-slot>
 
-    <x-slot name="title">PWA Analytics</x-slot>
+    <x-slot name="title">App Analytics</x-slot>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <div class="bg-white rounded shadow-md border border-gray-300">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex flex-wrap justify-between items-start gap-3">
-                <div>
-                    <div class="flex items-center">
-                        <span class="material-icons-outlined mr-2 text-indigo-500">analytics</span>
-                        <h1 class="text-xl font-bold text-gray-800">PWA Analytics</h1>
+    @php
+        $isCustom = request('date_range') === 'custom';
+        $hasFilters = request()->filled('event_id') || request()->filled('date_range');
+
+        // Profile fields are optional, and most are empty. Reporting how complete
+        // they are is more useful than a chart of nine answers, and it tells an
+        // organizer what to chase.
+        $completeness = [
+            ['Gender', $summary['total'] - ($demographics['gender']->firstWhere('blank', true)['count'] ?? 0), 'wc'],
+            ['Date of birth', $demographics['with_date_of_birth'], 'cake'],
+            ['Race', $summary['total'] - ($demographics['race']->firstWhere('blank', true)['count'] ?? 0), 'diversity_3'],
+        ];
+    @endphp
+
+    <div class="space-y-3">
+        {{-- Header, filter and headline figures --}}
+        <div class="bg-white rounded shadow-md border border-gray-300">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex flex-wrap justify-between items-start gap-3">
+                    <div>
+                        <div class="flex items-center">
+                            <span class="material-icons-outlined mr-2 text-primary-DEFAULT">phone_android</span>
+                            <h1 class="text-xl font-bold text-gray-800">App Analytics</h1>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 ml-8">
+                            @if($selectedEventName)
+                                Accounts reachable from <span class="font-medium">{{ $selectedEventName }}</span>.
+                            @else
+                                Every app account you can see.
+                            @endif
+                            Accounts are matched to participants by email address, which is how the app
+                            itself resolves who owns which certificate.
+                        </p>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1 ml-8">
-                        How the mobile app is being used: who has an account, who has signed in, and what they can see.
-                    </p>
+
+                    <a href="{{ route('pwa.participants') }}"
+                       class="h-9 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center shrink-0">
+                        <span class="material-icons-outlined text-sm mr-1">groups</span>
+                        Manage accounts
+                    </a>
                 </div>
-                @can('pwa_analytics.export')
-                <a href="{{ route('pwa.analytics.export', request()->query()) }}"
-                   class="bg-primary-DEFAULT hover:bg-primary-dark text-white h-9 px-3 rounded text-xs font-medium inline-flex items-center shrink-0">
-                    <span class="material-icons-outlined text-sm mr-1">download</span>
-                    Export CSV
-                </a>
-                @endcan
+            </div>
+
+            <div class="p-4">
+                @if(!$tablesExist)
+                    <div class="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded text-xs">
+                        The app account tables are not present on this installation, so there is nothing to report yet.
+                    </div>
+                @else
+                    <form method="GET" action="{{ route('pwa.analytics') }}" class="space-y-2 mb-4"
+                          x-data="{ custom: {{ $isCustom ? 'true' : 'false' }} }">
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if($events->isNotEmpty())
+                                <select name="event_id"
+                                        class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[16rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                    <option value="">All events</option>
+                                    @foreach($events as $event)
+                                        <option value="{{ $event->id }}" @selected($selectedEventId === $event->id)>{{ $event->name }}</option>
+                                    @endforeach
+                                </select>
+                            @endif
+
+                            <select name="date_range"
+                                    @change="custom = ($event.target.value === 'custom')"
+                                    class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[11rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                                @foreach($ranges as $value => $label)
+                                    <option value="{{ $value }}" @selected((string) $dateRange === (string) $value)>{{ $label }}</option>
+                                @endforeach
+                                <option value="custom" @selected($isCustom)>Custom range</option>
+                            </select>
+
+                            <button type="submit"
+                                    class="h-9 px-3 bg-primary-DEFAULT hover:bg-primary-dark text-white rounded text-xs flex items-center shrink-0">
+                                <span class="material-icons-outlined text-xs mr-1">filter_alt</span>
+                                Apply
+                            </button>
+
+                            @if($hasFilters)
+                                <a href="{{ route('pwa.analytics') }}" class="text-xs text-gray-500 underline shrink-0">Reset</a>
+                            @endif
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2" x-show="custom" x-cloak>
+                            <label class="text-xs text-gray-600">From</label>
+                            <input type="date" name="start_date" value="{{ $startDate }}"
+                                   class="h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <label class="text-xs text-gray-600">to</label>
+                            <input type="date" name="end_date" value="{{ $endDate }}"
+                                   class="h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                            <span class="text-[11px] text-gray-500">Press Apply to use this range.</span>
+                        </div>
+                    </form>
+
+                    {{-- Each tile says which period it answers. The date filter used to
+                         reach only the activity chart, so these looked inert. --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="border border-gray-200 rounded p-4">
+                            <div class="flex items-start justify-between">
+                                <p class="text-xs text-gray-500">App accounts</p>
+                                <span class="material-icons-outlined text-gray-300 text-base">phone_android</span>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800 mt-0.5" data-count-to="{{ $summary['total'] }}">0</p>
+                            <p class="text-[11px] text-gray-500 mt-1">
+                                All time.
+                                @if($summary['created_in_range'] !== $summary['total'])
+                                    {{ number_format($summary['created_in_range']) }} created in this range.
+                                @endif
+                            </p>
+                        </div>
+
+                        <div class="border border-gray-200 rounded p-4">
+                            <div class="flex items-start justify-between">
+                                <p class="text-xs text-gray-500">Signed in at least once</p>
+                                <span class="material-icons-outlined text-gray-300 text-base">login</span>
+                            </div>
+                            <p class="text-2xl font-bold {{ $summary['signed_in'] > 0 ? 'text-green-600' : 'text-gray-800' }} mt-0.5"
+                               data-count-to="{{ $summary['signed_in'] }}">0</p>
+                            <p class="text-[11px] text-gray-500 mt-1">
+                                {{ $summary['signed_in_percent'] }}% of accounts, all time.
+                                @if($summary['signed_in_range'] !== $summary['signed_in'])
+                                    {{ number_format($summary['signed_in_range']) }} in this range.
+                                @endif
+                            </p>
+                        </div>
+
+                        <div class="border border-gray-200 rounded p-4">
+                            <div class="flex items-start justify-between">
+                                <p class="text-xs text-gray-500">Linked to a participant</p>
+                                <span class="material-icons-outlined text-gray-300 text-base">link</span>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800 mt-0.5" data-count-to="{{ $summary['linked'] }}">0</p>
+                            <p class="text-[11px] {{ $summary['unlinked'] > 0 ? 'text-amber-600' : 'text-gray-500' }} mt-1">
+                                @if($summary['unlinked'] > 0)
+                                    {{ number_format($summary['unlinked']) }} see an empty app
+                                @else
+                                    every account has records
+                                @endif
+                            </p>
+                        </div>
+
+                        <div class="border border-gray-200 rounded p-4">
+                            <div class="flex items-start justify-between">
+                                <p class="text-xs text-gray-500">Certificates in reach</p>
+                                <span class="material-icons-outlined text-gray-300 text-base">card_membership</span>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-800 mt-0.5" data-count-to="{{ $summary['certificates_reachable'] }}">0</p>
+                            <p class="text-[11px] text-gray-500 mt-1">Downloadable by an account holder</p>
+                        </div>
+                    </div>
+
+                    @if($summary['unlinked'] > 0)
+                        <div class="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded mt-3 text-xs">
+                            {{ number_format($summary['unlinked']) }}
+                            {{ $summary['unlinked'] === 1 ? 'account has' : 'accounts have' }}
+                            no matching participant record, so signing in shows an empty list. That happens when
+                            the account email differs from the one used to register.
+                        </div>
+                    @endif
+
+                    @if($summary['inactive'] > 0)
+                        <p class="text-[11px] text-gray-500 mt-3">
+                            {{ number_format($summary['inactive']) }} of these
+                            {{ $summary['inactive'] === 1 ? 'account is' : 'accounts are' }}
+                            inactive or suspended and cannot sign in.
+                        </p>
+                    @endif
+                @endif
             </div>
         </div>
 
-        <div class="p-6">
-            @if(!$tablesExist)
-                <div class="bg-yellow-50 border border-yellow-200 rounded p-6">
-                    <div class="flex items-start">
-                        <span class="material-icons-outlined text-yellow-600 mr-3">warning</span>
-                        <div>
-                            <h3 class="text-sm font-semibold text-yellow-800">Database setup required</h3>
-                            <p class="text-xs text-yellow-700 mt-1">
-                                The PWA tables are missing. Run <code>php artisan migrate</code> to create them.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            @else
-                {{-- Filters --}}
-                <form method="GET" class="flex flex-wrap items-center gap-2 mb-6">
-                    @if($events->count() > 0)
-                    <select name="event_id"
-                            class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[16rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                        <option value="">All events</option>
-                        @foreach($events as $event)
-                            <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>
-                                {{ $event->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @endif
-
-                    <select name="date_range" id="dateRange"
-                            class="h-9 text-xs border-gray-300 rounded pl-3 pr-8 w-[11rem] shrink-0 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                        @foreach($ranges as $value => $label)
-                            <option value="{{ $value }}" {{ $dateRange === (string) $value ? 'selected' : '' }}>{{ $label }}</option>
-                        @endforeach
-                        <option value="custom" {{ $dateRange === 'custom' ? 'selected' : '' }}>Custom range</option>
-                    </select>
-
-                    <div id="customDateContainer" class="flex items-center gap-2 {{ $dateRange === 'custom' ? '' : 'hidden' }}">
-                        <input type="date" name="start_date" value="{{ $startDate }}"
-                               class="h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                        <span class="text-xs text-gray-500">to</span>
-                        <input type="date" name="end_date" value="{{ $endDate }}"
-                               class="h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
-                    </div>
-
-                    <button type="submit"
-                            class="h-9 px-3 bg-primary-DEFAULT hover:bg-primary-dark text-white rounded text-xs font-medium inline-flex items-center shrink-0">
-                        <span class="material-icons-outlined text-sm mr-1">filter_alt</span>
-                        Apply
-                    </button>
-
-                    @if($selectedEventId || $dateRange !== '30')
-                    <a href="{{ route('pwa.analytics') }}"
-                       class="h-9 px-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded text-xs font-medium inline-flex items-center shrink-0">
-                        Reset
-                    </a>
-                    @endif
-                </form>
-
-                @if($selectedEventName)
-                <p class="text-xs text-gray-600 mb-4">
-                    Showing accounts reachable from <span class="font-medium">{{ $selectedEventName }}</span>.
+        @if($tablesExist && $summary['total'] === 0)
+            <div class="bg-white rounded shadow-md border border-gray-300 p-10 text-center">
+                <span class="material-icons-outlined text-4xl text-gray-300">phonelink_erase</span>
+                <p class="text-sm text-gray-600 mt-2">No app accounts to report on.</p>
+                <p class="text-xs text-gray-500 mt-1">
+                    Create them under PWA › Participants, or switch on "Create mobile app account" on an event.
                 </p>
-                @endif
-
-                {{-- Headline numbers --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div class="border border-gray-200 rounded p-4">
-                        <p class="text-xs text-gray-500">App accounts</p>
-                        <p class="text-2xl font-bold text-gray-800 mt-1">{{ number_format($summary['total']) }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Participants who can sign in to the app</p>
-                    </div>
-
-                    <div class="border border-gray-200 rounded p-4">
-                        <p class="text-xs text-gray-500">Signed in at least once</p>
-                        <p class="text-2xl font-bold text-green-600 mt-1">{{ number_format($summary['signed_in']) }}</p>
-                        <p class="text-xs text-gray-500 mt-1">{{ $summary['signed_in_percent'] }}% of all accounts</p>
-                    </div>
-
-                    <div class="border border-gray-200 rounded p-4">
-                        <p class="text-xs text-gray-500">Never signed in</p>
-                        <p class="text-2xl font-bold {{ $summary['never_signed_in'] > 0 ? 'text-amber-600' : 'text-gray-800' }} mt-1">
-                            {{ number_format($summary['never_signed_in']) }}
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">
-                            @if($summary['never_signed_in'] > 0)
-                                They may not have their password yet
-                            @else
-                                Everyone has signed in
-                            @endif
-                        </p>
-                    </div>
-
-                    <div class="border border-gray-200 rounded p-4">
-                        <p class="text-xs text-gray-500">Certificates visible in the app</p>
-                        <p class="text-2xl font-bold text-gray-800 mt-1">{{ number_format($summary['certificates_reachable']) }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Downloadable by an account holder</p>
-                    </div>
-                </div>
-
-                {{-- Account health --}}
-                <div class="border border-gray-200 rounded mb-6">
+            </div>
+        @elseif($tablesExist)
+            {{-- Accounts over time, and how far the app reaches into each event --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div class="bg-white rounded shadow-md border border-gray-300">
                     <div class="px-4 py-3 border-b border-gray-200">
-                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                            <span class="material-icons-outlined text-sm text-indigo-500 mr-2">fact_check</span>
-                            Account health
-                        </h3>
+                        <h2 class="text-sm font-semibold text-gray-700">Accounts created</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">Last 12 months, whatever range is selected above.</p>
                     </div>
-                    <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <p class="text-xs text-gray-500">Matched to a participant record</p>
-                            <p class="text-lg font-semibold text-gray-800">{{ number_format($summary['linked']) }}
-                                <span class="text-xs font-normal text-gray-500">({{ $summary['linked_percent'] }}%)</span>
-                            </p>
-                            <p class="text-xs text-gray-500 mt-1">These accounts see their events and certificates</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">No matching participant</p>
-                            <p class="text-lg font-semibold {{ $summary['unlinked'] > 0 ? 'text-amber-600' : 'text-gray-800' }}">
-                                {{ number_format($summary['unlinked']) }}
-                            </p>
-                            <p class="text-xs text-gray-500 mt-1">They sign in but the app looks empty</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Changed their password</p>
-                            <p class="text-lg font-semibold text-gray-800">{{ number_format($summary['changed_password']) }}</p>
-                            <p class="text-xs text-gray-500 mt-1">Still on the generated password otherwise</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Deactivated</p>
-                            <p class="text-lg font-semibold text-gray-800">{{ number_format($summary['inactive']) }}</p>
-                            <p class="text-xs text-gray-500 mt-1">Cannot sign in</p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Demographics --}}
-                <div class="border border-gray-200 rounded mb-6">
-                    <div class="px-4 py-3 border-b border-gray-200">
-                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                            <span class="material-icons-outlined text-sm text-indigo-500 mr-2">groups</span>
-                            Who uses the app
-                        </h3>
-                    </div>
-
-                    <div class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {{-- Gender --}}
-                        <div>
-                            <p class="text-xs font-medium text-gray-700 mb-3">Gender</p>
-                            @forelse($demographics['gender'] as $row)
-                                <div class="mb-2">
-                                    <div class="flex items-center justify-between text-xs mb-1">
-                                        <span class="{{ !empty($row['blank']) ? 'text-gray-400' : 'text-gray-700' }}">{{ $row['label'] }}</span>
-                                        <span class="text-gray-600">{{ number_format($row['count']) }} <span class="text-gray-400">({{ $row['percent'] }}%)</span></span>
-                                    </div>
-                                    <div class="h-1.5 bg-gray-200 rounded overflow-hidden">
-                                        <div class="h-full {{ !empty($row['blank']) ? 'bg-gray-300' : 'bg-primary-DEFAULT' }}"
-                                             style="width: {{ min(100, $row['percent']) }}%"></div>
-                                    </div>
-                                </div>
-                            @empty
-                                <p class="text-xs text-gray-400">No accounts yet</p>
-                            @endforelse
-                        </div>
-
-                        {{--
-                            Race is a doughnut rather than a bar list: there are 14 possible
-                            values, so stacked bars would run off the card as soon as a few
-                            different races are recorded.
-                        --}}
-                        <div>
-                            <p class="text-xs font-medium text-gray-700 mb-3">Race</p>
-                            @if($demographics['race']->count() > 0)
-                                <div style="position: relative; height: 190px;">
-                                    <canvas id="raceChart"></canvas>
-                                </div>
-                            @else
-                                <div class="flex flex-col items-center justify-center h-[190px] text-gray-400">
-                                    <span class="material-icons-outlined text-3xl mb-1">pie_chart</span>
-                                    <p class="text-xs">No accounts yet</p>
-                                </div>
-                            @endif
-                        </div>
-
-                        {{-- Age bands as a bar chart, ordered youngest to oldest. --}}
-                        <div>
-                            <p class="text-xs font-medium text-gray-700 mb-3">Age</p>
-                            @if($demographics['age_bands']->count() > 0)
-                                <div style="position: relative; height: 190px;">
-                                    <canvas id="ageChart"></canvas>
-                                </div>
-                                @if($demographics['without_date_of_birth'] > 0)
-                                    <p class="text-xs text-gray-400 mt-2">
-                                        {{ number_format($demographics['without_date_of_birth']) }} account(s) have no date of birth
-                                    </p>
-                                @endif
-                            @else
-                                <div class="flex flex-col items-center justify-center h-[190px] text-gray-400">
-                                    <span class="material-icons-outlined text-3xl mb-1">bar_chart</span>
-                                    <p class="text-xs">Nobody has given a date of birth</p>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="px-4 py-3 border-t border-gray-200">
-                        <p class="text-xs text-gray-500">
-                            Gender, race and date of birth are optional. Participants fill them in from
-                            Settings &rsaquo; Personal Information in the app, so "Not stated" shrinks as profiles get completed.
-                        </p>
-                    </div>
-                </div>
-
-                {{-- Charts --}}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="border border-gray-200 rounded">
-                        <div class="px-4 py-3 border-b border-gray-200">
-                            <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                                <span class="material-icons-outlined text-sm text-indigo-500 mr-2">show_chart</span>
-                                New accounts, last 12 months
-                            </h3>
-                        </div>
-                        <div class="p-4">
-                            @if($accountsByMonth->sum('count') > 0)
-                                <div style="position: relative; height: 260px;">
-                                    <canvas id="accountsByMonthChart"></canvas>
-                                </div>
-                            @else
-                                <div class="flex flex-col items-center justify-center h-[260px] text-gray-400">
-                                    <span class="material-icons-outlined text-4xl mb-2">show_chart</span>
-                                    <p class="text-xs">No accounts were created in the last 12 months</p>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="border border-gray-200 rounded">
-                        <div class="px-4 py-3 border-b border-gray-200">
-                            <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                                <span class="material-icons-outlined text-sm text-indigo-500 mr-2">trending_up</span>
-                                Activity
-                                <span class="font-normal text-gray-500 ml-1">
-                                    ({{ \Carbon\Carbon::parse($startDate)->format('j M Y') }} &ndash; {{ \Carbon\Carbon::parse($endDate)->format('j M Y') }})
-                                </span>
-                            </h3>
-                        </div>
-                        <div class="p-4">
-                            @if($dailyActivity->sum('new_accounts') + $dailyActivity->sum('sign_ins') > 0)
-                                <div style="position: relative; height: 260px;">
-                                    <canvas id="dailyActivityChart"></canvas>
-                                </div>
-                            @else
-                                <div class="flex flex-col items-center justify-center h-[260px] text-gray-400">
-                                    <span class="material-icons-outlined text-4xl mb-2">trending_flat</span>
-                                    <p class="text-xs">Nothing happened in this range</p>
-                                </div>
-                            @endif
-                            <p class="text-xs text-gray-500 mt-3">
-                                Sign-ins count accounts whose most recent sign-in falls on that day. The app stores only
-                                the latest sign-in, not a full history.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Event reach --}}
-                <div class="border border-gray-200 rounded mb-6">
-                    <div class="px-4 py-3 border-b border-gray-200">
-                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                            <span class="material-icons-outlined text-sm text-indigo-500 mr-2">event_available</span>
-                            App coverage by event
-                        </h3>
-                    </div>
-
-                    @if($eventReach->count() > 0)
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-xs">
-                            <thead class="bg-gray-50 text-gray-600">
-                                <tr>
-                                    <th class="text-left font-medium py-2 px-4">Event</th>
-                                    <th class="text-right font-medium py-2 px-4 w-32">Participants</th>
-                                    <th class="text-right font-medium py-2 px-4 w-32">With an account</th>
-                                    <th class="text-left font-medium py-2 px-4 w-48">Coverage</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                @foreach($eventReach as $row)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-2 px-4 text-gray-800">{{ $row['name'] }}</td>
-                                    <td class="py-2 px-4 text-right text-gray-700">{{ number_format($row['participants']) }}</td>
-                                    <td class="py-2 px-4 text-right text-gray-700">{{ number_format($row['accounts']) }}</td>
-                                    <td class="py-2 px-4">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex-1 h-1.5 bg-gray-200 rounded overflow-hidden">
-                                                <div class="h-full bg-primary-DEFAULT" style="width: {{ min(100, $row['coverage']) }}%"></div>
-                                            </div>
-                                            <span class="text-gray-600 w-10 text-right">{{ $row['coverage'] }}%</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-4 py-3 border-t border-gray-200">
-                        <p class="text-xs text-gray-500">
-                            An account is counted against an event when its email matches a participant on that event.
-                            This is the same rule the mobile app uses to decide what a participant can see.
-                        </p>
-                    </div>
-                    @else
-                    <div class="p-6 text-center text-gray-400">
-                        <span class="material-icons-outlined text-4xl mb-2">event_busy</span>
-                        <p class="text-xs">No events with participants yet</p>
-                    </div>
-                    @endif
-                </div>
-
-                {{-- Recent activity --}}
-                <div class="border border-gray-200 rounded">
-                    <div class="px-4 py-3 border-b border-gray-200">
-                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                            <span class="material-icons-outlined text-sm text-indigo-500 mr-2">history</span>
-                            Recent activity
-                        </h3>
-                    </div>
-
-                    @if($recentActivity->count() > 0)
-                    <ul class="divide-y divide-gray-100">
-                        @foreach($recentActivity as $item)
-                        <li class="flex items-start gap-3 px-4 py-3">
-                            <span class="material-icons-outlined text-base {{ $item['type'] === 'sign_in' ? 'text-green-600' : 'text-indigo-500' }}">
-                                {{ $item['icon'] }}
-                            </span>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-gray-800">{{ $item['title'] }}</p>
-                                <p class="text-xs text-gray-500 truncate">{{ $item['detail'] }}</p>
+                    <div class="p-4">
+                        @if($accountsByMonth->sum('count') > 0)
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="accountsChart"></canvas>
                             </div>
-                            <span class="text-xs text-gray-400 shrink-0">
-                                {{ $item['at']->diffForHumans() }}
-                            </span>
-                        </li>
-                        @endforeach
-                    </ul>
-                    @else
-                    <div class="p-6 text-center text-gray-400">
-                        <span class="material-icons-outlined text-4xl mb-2">inbox</span>
-                        <p class="text-xs">No app activity recorded yet</p>
+                        @else
+                            <div class="flex flex-col items-center justify-center h-[260px] text-gray-400">
+                                <span class="material-icons-outlined text-3xl mb-1">show_chart</span>
+                                <p class="text-xs">No accounts created in the last 12 months</p>
+                            </div>
+                        @endif
                     </div>
+                </div>
+
+                <div class="bg-white rounded shadow-md border border-gray-300">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h2 class="text-sm font-semibold text-gray-700">App reach by event</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            How many of each event's participants hold an account. Ranks events against
+                            each other, so the event filter does not apply here.
+                        </p>
+                    </div>
+                    <div class="p-4">
+                        @if($eventReach->isNotEmpty())
+                            <div class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                                @foreach($eventReach as $row)
+                                    <div>
+                                        <div class="flex items-center justify-between text-xs mb-1">
+                                            <span class="text-gray-700 truncate pr-2">{{ $row['name'] }}</span>
+                                            <span class="text-gray-500 shrink-0">
+                                                {{ number_format($row['accounts']) }} of {{ number_format($row['participants']) }}
+                                                ({{ $row['coverage'] }}%)
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-gray-100 rounded-full h-2">
+                                            <div class="h-2 rounded-full transition-all duration-700 ease-out {{ $row['coverage'] >= 75 ? 'bg-green-600' : ($row['coverage'] >= 30 ? 'bg-amber-500' : 'bg-red-500') }}"
+                                                 data-bar-to="{{ min(100, $row['coverage']) }}"
+                                                 style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="flex flex-col items-center justify-center h-[260px] text-gray-400">
+                                <span class="material-icons-outlined text-3xl mb-1">event_busy</span>
+                                <p class="text-xs">No events with participants yet</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- Day by day --}}
+            <div class="bg-white rounded shadow-md border border-gray-300">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-sm font-semibold text-gray-700">Activity</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">
+                        {{ \Carbon\Carbon::parse($startDate)->format('j M Y') }} –
+                        {{ \Carbon\Carbon::parse($endDate)->format('j M Y') }}.
+                        Sign-ins count accounts whose most recent sign-in fell on that day: the app keeps
+                        only the latest timestamp, not a history.
+                    </p>
+                </div>
+                <div class="p-4">
+                    @if($dailyActivity->sum('new_accounts') > 0 || $dailyActivity->sum('sign_ins') > 0)
+                        <div style="position: relative; height: 240px;">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    @else
+                        <div class="flex flex-col items-center justify-center h-[240px] text-gray-400">
+                            <span class="material-icons-outlined text-3xl mb-1">timeline</span>
+                            <p class="text-xs">Nothing happened in this range</p>
+                            <p class="text-[11px] mt-1">Widen the range, or check that participants have been told their password.</p>
+                        </div>
                     @endif
                 </div>
-            @endif
-        </div>
+            </div>
+
+            {{-- Profile completeness, then whatever demographics are worth drawing --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div class="bg-white rounded shadow-md border border-gray-300">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h2 class="text-sm font-semibold text-gray-700">Profile completeness</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            These fields are optional and filled in by the account holder from
+                            Settings › Personal Information in the app.
+                        </p>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        @foreach($completeness as [$label, $filled, $icon])
+                            @php $percent = $summary['total'] > 0 ? round($filled / $summary['total'] * 100) : 0; @endphp
+                            <div>
+                                <div class="flex items-center justify-between text-xs mb-1">
+                                    <span class="text-gray-700 flex items-center">
+                                        <span class="material-icons-outlined text-gray-400 text-sm mr-1">{{ $icon }}</span>
+                                        {{ $label }}
+                                    </span>
+                                    <span class="text-gray-500">
+                                        {{ number_format($filled) }} of {{ number_format($summary['total']) }} ({{ $percent }}%)
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                    <div class="h-2 rounded-full bg-primary-DEFAULT transition-all duration-700 ease-out"
+                                         data-bar-to="{{ $percent }}" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        @endforeach
+
+                        <p class="text-[11px] text-gray-500 pt-1">
+                            Low numbers here are why the breakdowns opposite are thin. Nothing is broken:
+                            most people have simply not opened their profile.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded shadow-md border border-gray-300">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h2 class="text-sm font-semibold text-gray-700">Who holds an account</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            Drawn only where enough people have answered. "Not stated" is shown rather
+                            than hidden, so the shape of the gap is visible.
+                        </p>
+                    </div>
+                    <div class="p-4">
+                        @if($demographics['age_bands']->isNotEmpty())
+                            <p class="text-xs font-medium text-gray-700 mb-2">
+                                Age
+                                <span class="font-normal text-gray-400">
+                                    &middot; {{ number_format($demographics['with_date_of_birth']) }} of {{ number_format($summary['total']) }} gave a date of birth
+                                </span>
+                            </p>
+                            <div style="position: relative; height: 170px;">
+                                <canvas id="ageChart"></canvas>
+                            </div>
+                        @else
+                            <div class="flex flex-col items-center justify-center h-[100px] text-gray-400">
+                                <span class="material-icons-outlined text-2xl mb-1">cake</span>
+                                <p class="text-xs">No dates of birth recorded</p>
+                            </div>
+                        @endif
+
+                        {{-- Gender as bars, not a doughnut: with a handful of answers a
+                             pie chart implies a precision the data has not earned. --}}
+                        @if($demographics['gender']->isNotEmpty())
+                            <p class="text-xs font-medium text-gray-700 mt-4 mb-2">Gender</p>
+                            <div class="space-y-1.5">
+                                @foreach($demographics['gender'] as $row)
+                                    <div>
+                                        <div class="flex items-center justify-between text-[11px] mb-0.5">
+                                            <span class="{{ ($row['blank'] ?? false) ? 'text-gray-400' : 'text-gray-700' }}">{{ $row['label'] }}</span>
+                                            <span class="text-gray-500">{{ number_format($row['count']) }} ({{ $row['percent'] }}%)</span>
+                                        </div>
+                                        <div class="w-full bg-gray-100 rounded-full h-1.5">
+                                            <div class="h-1.5 rounded-full transition-all duration-700 ease-out {{ ($row['blank'] ?? false) ? 'bg-gray-300' : 'bg-indigo-500' }}"
+                                                 data-bar-to="{{ $row['percent'] }}" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- Feed --}}
+            <div class="bg-white rounded shadow-md border border-gray-300">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-sm font-semibold text-gray-700">Recent activity</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Newest accounts and most recent sign-ins, together.</p>
+                </div>
+                <div class="p-4">
+                    @if($recentActivity->isNotEmpty())
+                        <div class="space-y-2.5">
+                            @foreach($recentActivity as $item)
+                                <div class="flex items-start gap-3">
+                                    <span class="material-icons-outlined text-base shrink-0 mt-0.5 {{ $item['type'] === 'account' ? 'text-indigo-400' : 'text-green-500' }}">
+                                        {{ $item['icon'] }}
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-xs text-gray-800">{{ $item['title'] }}</p>
+                                        <p class="text-[11px] text-gray-500 truncate">{{ $item['detail'] }}</p>
+                                    </div>
+                                    <p class="text-[11px] text-gray-400 shrink-0"
+                                       title="{{ \Carbon\Carbon::parse($item['at'])->format('j M Y, H:i') }}">
+                                        {{ \Carbon\Carbon::parse($item['at'])->diffForHumans(short: true) }}
+                                    </p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="flex flex-col items-center justify-center h-[140px] text-gray-400">
+                            <span class="material-icons-outlined text-3xl mb-1">history</span>
+                            <p class="text-xs">Nothing recorded yet</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Show the custom date inputs only when "Custom range" is picked.
-            const rangeSelect = document.getElementById('dateRange');
-            const customBox = document.getElementById('customDateContainer');
+            const gridColour = 'rgba(0, 0, 0, 0.06)';
+            const ease = { duration: 900, easing: 'easeOutQuart' };
 
-            if (rangeSelect && customBox) {
-                rangeSelect.addEventListener('change', function () {
-                    customBox.classList.toggle('hidden', this.value !== 'custom');
+            /**
+             * Build once, the first time the element is scrolled into view, so the
+             * entry animation is actually seen rather than finishing off-screen.
+             */
+            function whenVisible(el, build) {
+                if (!el) {
+                    return;
+                }
+
+                if (!('IntersectionObserver' in window)) {
+                    build();
+                    return;
+                }
+
+                const observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            observer.unobserve(entry.target);
+                            build();
+                        }
+                    });
+                }, { threshold: 0.25 });
+
+                observer.observe(el);
+            }
+
+            document.querySelectorAll('[data-count-to]').forEach(function (el) {
+                const target = parseInt(el.dataset.countTo, 10) || 0;
+
+                whenVisible(el, function () {
+                    if (target === 0) {
+                        el.textContent = '0';
+                        return;
+                    }
+
+                    const started = performance.now();
+
+                    function step(now) {
+                        const progress = Math.min(1, (now - started) / 900);
+                        const eased = 1 - Math.pow(1 - progress, 4);
+                        el.textContent = Math.round(target * eased).toLocaleString();
+
+                        if (progress < 1) {
+                            requestAnimationFrame(step);
+                        }
+                    }
+
+                    requestAnimationFrame(step);
+                });
+            });
+
+            document.querySelectorAll('[data-bar-to]').forEach(function (el) {
+                whenVisible(el, function () {
+                    requestAnimationFrame(() => { el.style.width = el.dataset.barTo + '%'; });
+                });
+            });
+
+            @if($tablesExist && $summary['total'] > 0)
+            // ---- accounts created per month ----
+            const accountsCanvas = document.getElementById('accountsChart');
+
+            if (accountsCanvas) {
+                const rows = @json($accountsByMonth);
+
+                whenVisible(accountsCanvas, function () {
+                    const ctx = accountsCanvas.getContext('2d');
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+                    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.28)');
+                    gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: rows.map(r => r.label),
+                            datasets: [{
+                                label: 'Accounts created',
+                                data: rows.map(r => r.count),
+                                borderColor: '#4f46e5',
+                                backgroundColor: gradient,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: '#4f46e5'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: ease,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColour } },
+                                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                            }
+                        }
+                    });
                 });
             }
 
-            const gridColour = 'rgba(0, 0, 0, 0.06)';
+            // ---- day by day activity ----
+            const activityCanvas = document.getElementById('activityChart');
 
-            @if($tablesExist && $demographics['race']->count() > 0)
-            const raceCanvas = document.getElementById('raceChart');
-            if (raceCanvas) {
-                const race = @json($demographics['race']);
+            if (activityCanvas) {
+                const rows = @json($dailyActivity);
 
-                // A fixed palette so a race keeps the same colour between loads.
-                const palette = [
-                    '#4f46e5', '#0d9488', '#f59e0b', '#ef4444', '#8b5cf6',
-                    '#06b6d4', '#65a30d', '#db2777', '#0284c7', '#ea580c',
-                    '#7c3aed', '#059669', '#c026d3', '#475569'
-                ];
+                whenVisible(activityCanvas, function () {
+                    const ctx = activityCanvas.getContext('2d');
 
-                let next = 0;
-                const colours = race.map(r => r.blank ? '#d1d5db' : palette[next++ % palette.length]);
+                    const fill = (hex) => {
+                        const g = ctx.createLinearGradient(0, 0, 0, 240);
+                        g.addColorStop(0, hex + '40');
+                        g.addColorStop(1, hex + '00');
+                        return g;
+                    };
 
-                new Chart(raceCanvas.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: race.map(r => r.label),
-                        datasets: [{
-                            data: race.map(r => r.count),
-                            backgroundColor: colours,
-                            borderColor: '#fff',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '55%',
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: {
-                                    boxWidth: 10,
-                                    padding: 8,
-                                    font: { size: 10 }
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: rows.map(r => r.label),
+                            datasets: [
+                                {
+                                    label: 'New accounts',
+                                    data: rows.map(r => r.new_accounts),
+                                    borderColor: '#4f46e5',
+                                    backgroundColor: fill('#4f46e5'),
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.35,
+                                    pointRadius: rows.length > 40 ? 0 : 3,
+                                    pointHoverRadius: 5
+                                },
+                                {
+                                    label: 'Sign-ins',
+                                    data: rows.map(r => r.sign_ins),
+                                    borderColor: '#0d9488',
+                                    backgroundColor: fill('#0d9488'),
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.35,
+                                    pointRadius: rows.length > 40 ? 0 : 3,
+                                    pointHoverRadius: 5
                                 }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: ease,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } }
                             },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => {
-                                        const row = race[ctx.dataIndex];
-                                        return ` ${row.label}: ${row.count} (${row.percent}%)`;
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColour } },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        font: { size: 10 },
+                                        autoSkip: true,
+                                        maxTicksLimit: 12,
+                                        maxRotation: 0
                                     }
                                 }
                             }
                         }
-                    }
+                    });
                 });
             }
-            @endif
 
-            @if($tablesExist && $demographics['age_bands']->count() > 0)
+            // ---- age bands ----
             const ageCanvas = document.getElementById('ageChart');
+
             if (ageCanvas) {
-                const ages = @json($demographics['age_bands']);
+                const rows = @json($demographics['age_bands']);
 
-                new Chart(ageCanvas.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ages.map(r => r.label),
-                        datasets: [{
-                            label: 'Accounts',
-                            data: ages.map(r => r.count),
-                            backgroundColor: 'rgba(13, 148, 136, 0.75)',
-                            borderRadius: 3,
-                            maxBarThickness: 32
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColour } },
-                            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                        }
-                    }
-                });
-            }
-            @endif
-
-            @if($tablesExist && $accountsByMonth->sum('count') > 0)
-            const monthCanvas = document.getElementById('accountsByMonthChart');
-            if (monthCanvas) {
-                const monthly = @json($accountsByMonth);
-
-                new Chart(monthCanvas.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: monthly.map(r => r.label),
-                        datasets: [{
-                            label: 'New accounts',
-                            data: monthly.map(r => r.count),
-                            backgroundColor: 'rgba(79, 70, 229, 0.75)',
-                            borderRadius: 3,
-                            maxBarThickness: 28
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: gridColour } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
-            }
-            @endif
-
-            @if($tablesExist && $dailyActivity->sum('new_accounts') + $dailyActivity->sum('sign_ins') > 0)
-            const dailyCanvas = document.getElementById('dailyActivityChart');
-            if (dailyCanvas) {
-                const daily = @json($dailyActivity);
-
-                new Chart(dailyCanvas.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: daily.map(r => r.label),
-                        datasets: [
-                            {
-                                label: 'New accounts',
-                                data: daily.map(r => r.new_accounts),
-                                borderColor: 'rgb(79, 70, 229)',
-                                backgroundColor: 'rgba(79, 70, 229, 0.12)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.3,
-                                pointRadius: daily.length > 60 ? 0 : 3
-                            },
-                            {
-                                label: 'Sign-ins',
-                                data: daily.map(r => r.sign_ins),
-                                borderColor: 'rgb(16, 185, 129)',
-                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.3,
-                                pointRadius: daily.length > 60 ? 0 : 3
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } }
+                whenVisible(ageCanvas, function () {
+                    new Chart(ageCanvas.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: rows.map(r => r.label),
+                            datasets: [{
+                                label: 'Accounts',
+                                data: rows.map(r => r.count),
+                                backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                                borderRadius: 3,
+                                maxBarThickness: 34
+                            }]
                         },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: gridColour } },
-                            x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: ease,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColour } },
+                                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                            }
                         }
-                    }
+                    });
                 });
             }
             @endif

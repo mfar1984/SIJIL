@@ -23,6 +23,22 @@ use Illuminate\Support\Facades\Mail;
 class PwaMailer
 {
     /**
+     * Whether password reset emails may be sent at all.
+     *
+     * Defaults to true: an installation that has never touched the setting must
+     * keep working, and silently withholding a new password is worse than
+     * sending one.
+     */
+    public static function passwordResetEmailsEnabled(): bool
+    {
+        try {
+            return (bool) (\App\Models\GlobalConfig::getConfig()->email_password_reset ?? true);
+        } catch (\Throwable $e) {
+            return true;
+        }
+    }
+
+    /**
      * Send a templated PWA email.
      *
      * @param  string       $type         PwaEmailTemplate type, e.g. 'welcome'
@@ -43,6 +59,23 @@ class PwaMailer
             return [
                 'sent' => false,
                 'message' => 'Participant does not have an email address.',
+            ];
+        }
+
+        /*
+         * "Send password reset emails" on the Notifications tab was stored and
+         * never read. Four separate call sites send this type, so the switch is
+         * honoured here rather than at each of them.
+         *
+         * A reset generates a new password, so suppressing the email leaves the
+         * holder locked out. The caller is told plainly instead of the message
+         * silently vanishing.
+         */
+        if ($type === 'password_reset' && ! static::passwordResetEmailsEnabled()) {
+            return [
+                'sent' => false,
+                'message' => 'Password reset emails are switched off under Settings > Global Config > '
+                    . 'Notifications, so the new password was not sent.',
             ];
         }
 

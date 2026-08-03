@@ -11,7 +11,30 @@ use Spatie\Activitylog\Support\LogOptions;
 
 class Event extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes, \App\Models\Concerns\FiresWebhooks;
+
+    /**
+     * @return array<string, string>
+     */
+    public function webhookEvents(): array
+    {
+        return ['created' => 'event.created', 'updated' => 'event.updated'];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function webhookPayload(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'location' => $this->location,
+            'status' => $this->status,
+            'start_date' => optional($this->start_date)->toIso8601String(),
+            'end_date' => optional($this->end_date)->toIso8601String(),
+        ];
+    }
     
     public function getActivitylogOptions(): LogOptions
     {

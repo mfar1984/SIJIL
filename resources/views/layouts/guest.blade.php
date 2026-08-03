@@ -16,11 +16,28 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        {{-- Appearance settings: favicon, colours, font and custom CSS. --}}
+        @include('partials.branding-head')
     </head>
-    <body class="font-sans text-gray-900 antialiased">
+    @php
+        $orgName = \App\Models\GlobalConfig::getConfig()->org_name ?: config('app.name', 'E-Certificate');
+        $loginBackground = \App\Support\Branding::image('login_background');
+        $loginLogo = \App\Support\Branding::logo('login_logo');
+    @endphp
+    <body class="font-sans text-gray-900 antialiased {{ \App\Support\Branding::bodyClasses() }}">
         <div class="min-h-screen flex flex-row bg-gray-100">
             <!-- Left: 70% - Animated Background -->
-            <div class="hidden md:flex w-0 md:w-[70%] items-center justify-center bg-gradient-animated relative overflow-hidden">
+            {{-- The uploaded Login Background now covers the animated gradient
+                 when one is configured. It was stored and never displayed. --}}
+            <div class="hidden md:flex w-0 md:w-[70%] items-center justify-center relative overflow-hidden {{ $loginBackground ? 'bg-gray-900' : 'bg-gradient-animated' }}"
+                 @if($loginBackground)
+                     style="background-image: url('{{ $loginBackground }}'); background-size: cover; background-position: center;"
+                 @endif>
+                @if($loginBackground)
+                    {{-- Keeps the white heading legible over an arbitrary photo. --}}
+                    <div class="absolute inset-0 bg-black/45"></div>
+                @else
                 <!-- Animated gradient background -->
                 <div class="absolute inset-0 bg-gradient-animated-layer"></div>
                 
@@ -37,13 +54,15 @@
                 <!-- Geometric shapes -->
                 <div class="absolute top-10 right-40 w-32 h-32 bg-white opacity-5 rotate-45 animate-rotate-slow"></div>
                 <div class="absolute bottom-10 left-40 w-24 h-24 bg-blue-200 opacity-10 rotate-12 animate-rotate-reverse"></div>
+                @endif
                 
                 <!-- Logo/Branding -->
                 <div class="relative z-10 text-center text-white px-8">
                     <div class="w-40 h-40 mx-auto mb-6 bg-white rounded-2xl shadow-2xl flex items-center justify-center p-4">
-                        <img src="/images/logo.png" alt="Logo" class="w-full h-full object-contain" />
+                        <img src="{{ $loginLogo }}" alt="{{ $orgName }}" class="w-full h-full object-contain"
+                             onerror="this.src='{{ asset('images/logo.png') }}'" />
                     </div>
-                    <h1 class="text-5xl font-bold mb-4 drop-shadow-lg">E-Certificate</h1>
+                    <h1 class="text-5xl font-bold mb-4 drop-shadow-lg">{{ $orgName }}</h1>
                     <p class="text-xl opacity-90">Management System</p>
                     <div class="mt-8 text-sm opacity-75">Secure • Efficient • Professional</div>
                 </div>
@@ -56,9 +75,10 @@
                 <div class="w-full max-w-md p-8">
                     <div class="flex justify-center mb-6 flex-col items-center">
                         <a href="/" class="mb-0">
-                            <img src="/images/logo.png" alt="Logo" class="w-40 h-40 object-contain mb-0" />
+                            <img src="{{ $loginLogo }}" alt="{{ $orgName }}" class="w-40 h-40 object-contain mb-0"
+                                 onerror="this.src='{{ asset('images/logo.png') }}'" />
                         </a>
-                        <span class="mt-0 mb-0 text-2xl font-bold text-gray-800 font-data70" style="line-height:1;">E-Certificate</span>
+                        <span class="mt-0 mb-0 text-2xl font-bold text-gray-800 font-data70" style="line-height:1;">{{ $orgName }}</span>
                     </div>
                     {{ $slot }}
                 </div>

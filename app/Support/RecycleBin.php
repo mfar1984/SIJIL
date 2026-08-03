@@ -63,7 +63,22 @@ class RecycleBin
                 'label' => 'Attendance',
                 'plural' => 'Attendance Sessions',
                 'icon' => 'how_to_reg',
-                'title' => 'name',
+                // Sessions are almost never named: the form does not ask for one,
+                // so falling back to the column alone left every row reading "#15".
+                // The date and type are what the organiser actually recognises.
+                'title' => function (Model $m) {
+                    if (filled($m->name)) {
+                        return $m->name;
+                    }
+
+                    $parts = array_filter([
+                        $m->date ? \Illuminate\Support\Carbon::parse($m->date)->format('d M Y') : null,
+                        $m->attendance_type ? ucfirst(str_replace('_', ' ', $m->attendance_type)) : null,
+                        $m->unique_code,
+                    ]);
+
+                    return $parts ? implode(' · ', $parts) : null;
+                },
                 'subtitle' => fn(Model $m) => $m->event()->withTrashed()->first()?->name,
                 'owner_column' => 'created_by',
             ],
@@ -160,7 +175,15 @@ class RecycleBin
         }
 
         $user = auth()->user();
-        $isAdmin = $user && $user->hasRole('Administrator');
+
+        // Without a signed-in user there is no scope to apply, and the owner
+        // filters below would dereference null. The routes are behind auth, but
+        // payload() is also reachable from console context.
+        if (!$user) {
+            return null;
+        }
+
+        $isAdmin = $user->hasRole('Administrator');
 
         if (!empty($type['admin_only']) && !$isAdmin) {
             return null;
@@ -186,7 +209,17 @@ class RecycleBin
     public static function titleFor(string $slug, Model $model): string
     {
         $type = static::type($slug);
-        $value = $type ? ($model->{$type['title']} ?? null) : null;
+        $value = null;
+
+        if ($type) {
+            try {
+                $value = $type['title'] instanceof \Closure
+                    ? ($type['title'])($model)
+                    : ($model->{$type['title']} ?? null);
+            } catch (\Throwable $e) {
+                $value = null;
+            }
+        }
 
         return $value !== null && $value !== '' ? (string) $value : ('#' . $model->getKey());
     }

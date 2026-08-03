@@ -43,7 +43,7 @@ class CampaignController extends Controller
         }
         
         // Get per_page parameter with default 10
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         
         $campaigns = $query->with(['user', 'event'])
             ->orderBy('created_at', 'desc')

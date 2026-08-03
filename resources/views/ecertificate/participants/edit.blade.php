@@ -123,15 +123,11 @@
                                 </div>
                             </div>
 
-                            <!-- Username (readonly) -->
-                            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                <label for="username" class="text-xs font-medium text-gray-700 md:w-48 shrink-0">
-                                    Username
-                                </label>
-                                <div class="flex-1">
-                                    <input type="text" name="username" id="username" class="w-full h-9 text-xs border-gray-300 rounded focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 bg-gray-100" value="{{ old('username', $participant->username) }}" readonly>
-                                </div>
-                            </div>
+                            {{--
+                                The read-only username display was removed. update() never wrote to
+                                the column and sign-in is by email address, so the field showed a
+                                value that looked like a credential but was not one.
+                            --}}
 
                             <!-- Organization -->
                             <div class="flex flex-col md:flex-row md:items-center gap-3">

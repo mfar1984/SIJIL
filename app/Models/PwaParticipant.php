@@ -54,6 +54,22 @@ class PwaParticipant extends Authenticatable
         'password',
     ];
 
+    /*
+     * date_of_birth is deliberately NOT cast, even though App\Models\Participant
+     * casts its own copy to 'date'.
+     *
+     * Api\PwaParticipantController::profile() returns this column straight into
+     * the JSON the participant app reads. Casting it would change the value from
+     * "1990-05-12" to "1990-05-12T00:00:00.000000Z", which the app's profile form
+     * feeds into a date input, so adding the cast breaks a client that lives in a
+     * separate repository and deploys separately.
+     *
+     * The is_string() guard in resources/views/ecertificate/participants/edit.blade.php
+     * exists for the same reason and is load-bearing, not laziness.
+     *
+     * email_verified_at is left alone too: nothing reads it on this model, so a
+     * cast would be churn with no effect.
+     */
     protected $casts = [
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',

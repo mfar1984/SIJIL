@@ -117,7 +117,7 @@ class ReportsController extends Controller
 
         $sessions = $sessionQuery->with(['attendance:id,event_id', 'attendance.event:id,name,location'])
             ->orderByDesc('date')
-            ->paginate($request->get('per_page', 10))
+            ->paginate(\App\Support\SystemSettings::perPage($request, 10))
             ->withQueryString();
 
         $rows = $this->sessionRows($sessions->getCollection());

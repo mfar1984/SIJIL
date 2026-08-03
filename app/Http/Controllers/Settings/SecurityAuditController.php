@@ -10,153 +10,192 @@ use Carbon\Carbon;
 class SecurityAuditController extends Controller
 {
     /**
+     * The tabs, and how each one narrows the audit trail.
+     *
+     * Kept in one place because the tab label, the count beside it and the rows it
+     * shows must all come from the same condition. They previously did not: the
+     * tabs rendered four separate unfiltered ->get() collections while the footer
+     * and pager described a fifth, paginated query that no tab ever displayed. A
+     * tab holding one row sat above "Showing 1 to 10 of 44 entries" across five
+     * pages, and none of the filters changed anything on screen because they were
+     * only ever applied to that unseen query.
+     */
+    private const TABS = [
+        'all' => 'All events',
+        'auth' => 'Sign-in activity',
+        'role' => 'Roles and permissions',
+        'user' => 'User accounts',
+    ];
+
+    /**
      * Display the security audit page.
      *
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        $query = Activity::with(['causer', 'subject']);
+        $tab = array_key_exists($request->get('tab'), self::TABS) ? $request->get('tab') : 'all';
+        $perPage = max(5, min(100, (int) \App\Support\SystemSettings::perPage($request, 10)));
 
-        // Focus on security-related activities
-        $query->where(function($q) {
-            $q->where('log_name', 'auth')
-              ->orWhere('log_name', 'security')
-              ->orWhere('log_name', 'user')
-              ->orWhere('log_name', 'role')
-              ->orWhere('description', 'LIKE', '%login%')
-              ->orWhere('description', 'LIKE', '%logout%')
-              ->orWhere('description', 'LIKE', '%password%')
-              ->orWhere('description', 'LIKE', '%permission%')
-              ->orWhere('description', 'LIKE', '%role%')
-              ->orWhere('description', 'LIKE', '%user%');
+        // One builder, rebuilt per use so the filters can never drift apart.
+        $base = fn () => $this->scopedQuery($request);
+
+        $activities = $this->applyTab($base(), $tab)
+            ->with(['causer', 'subject'])
+            ->orderByDesc('created_at')
+            ->paginate($perPage)
+            ->appends($request->query());
+
+        // Counts come from the same filtered query as the rows, so a tab can no
+        // longer advertise a number it does not go on to show.
+        $tabCounts = [];
+
+        foreach (array_keys(self::TABS) as $key) {
+            $tabCounts[$key] = $this->applyTab($base(), $key)->count();
+        }
+
+        return view('settings.security-audit', [
+            'activities' => $activities,
+            'tabs' => self::TABS,
+            'tab' => $tab,
+            'tabCounts' => $tabCounts,
+            'perPage' => $perPage,
+
+            // Dropdown options taken from the rows in scope, so the filter cannot
+            // offer a value that matches nothing.
+            'logNames' => $this->scopedQuery($request, false)->distinct()->pluck('log_name')->filter()->sort()->values(),
+            'events' => $this->scopedQuery($request, false)->distinct()->pluck('event')->filter()->sort()->values(),
+
+            'stats' => $this->stats($request),
+        ]);
+    }
+
+    /**
+     * Everything the audit trail considers security related.
+     *
+     * The old page had two competing definitions of this: the statistic counted
+     * four log names and reported 30, while the pager also matched on description
+     * and reported 44, side by side on the same screen. This is the only
+     * definition now.
+     *
+     * @param  bool  $withFilters  false gives the unfiltered scope, for building
+     *                             the filter dropdowns themselves.
+     */
+    private function scopedQuery(Request $request, bool $withFilters = true)
+    {
+        $query = Activity::query()->where(function ($q) {
+            $q->whereIn('log_name', ['auth', 'security', 'user', 'role'])
+                ->orWhere('description', 'LIKE', '%login%')
+                ->orWhere('description', 'LIKE', '%logout%')
+                ->orWhere('description', 'LIKE', '%logged in%')
+                ->orWhere('description', 'LIKE', '%logged out%')
+                ->orWhere('description', 'LIKE', '%password%')
+                ->orWhere('description', 'LIKE', '%permission%')
+                ->orWhere('description', 'LIKE', '%role%')
+                ->orWhere('description', 'LIKE', '%user%');
         });
 
-        // Apply search filter
+        if (! $withFilters) {
+            return $query;
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('description', 'LIKE', "%{$search}%")
-                  ->orWhere('log_name', 'LIKE', "%{$search}%")
-                  ->orWhere('event', 'LIKE', "%{$search}%");
+                    ->orWhere('log_name', 'LIKE', "%{$search}%")
+                    ->orWhere('event', 'LIKE', "%{$search}%");
             });
         }
 
-        // Apply log name filter
         if ($request->filled('log_name')) {
             $query->where('log_name', $request->log_name);
         }
 
-        // Apply event filter
         if ($request->filled('event')) {
             $query->where('event', $request->event);
         }
 
-        // Apply severity filter
         if ($request->filled('severity')) {
-            switch ($request->severity) {
-                case 'high':
-                    $query->where(function($q) {
-                        $q->where('description', 'LIKE', '%failed login%')
-                          ->orWhere('description', 'LIKE', '%unauthorized%')
-                          ->orWhere('description', 'LIKE', '%suspicious%');
-                    });
-                    break;
-                case 'medium':
-                    $query->where(function($q) {
-                        $q->where('description', 'LIKE', '%password change%')
-                          ->orWhere('description', 'LIKE', '%role change%')
-                          ->orWhere('description', 'LIKE', '%permission%');
-                    });
-                    break;
-                case 'low':
-                    $query->where(function($q) {
-                        $q->where('description', 'LIKE', '%login%')
-                          ->orWhere('description', 'LIKE', '%logout%')
-                          ->where('description', 'NOT LIKE', '%failed%');
-                    });
-                    break;
-            }
+            $query->where(function ($q) use ($request) {
+                match ($request->severity) {
+                    'high' => $q->where('description', 'LIKE', '%failed%')
+                        ->orWhere('description', 'LIKE', '%unauthorized%')
+                        ->orWhere('description', 'LIKE', '%suspicious%')
+                        ->orWhere('description', 'LIKE', '%banned%'),
+                    'medium' => $q->where('description', 'LIKE', '%password%')
+                        ->orWhere('description', 'LIKE', '%role%')
+                        ->orWhere('description', 'LIKE', '%permission%'),
+                    'low' => $q->where('description', 'LIKE', '%logged in%')
+                        ->orWhere('description', 'LIKE', '%logged out%'),
+                    default => $q,
+                };
+            });
         }
 
-        // Apply date filter
         if ($request->filled('date_filter')) {
             $today = now()->startOfDay();
-            switch ($request->date_filter) {
-                case 'today':
-                    $query->whereDate('created_at', $today->format('Y-m-d'));
-                    break;
-                case 'week':
-                    $query->whereBetween('created_at', [$today->format('Y-m-d'), $today->addDays(7)->format('Y-m-d')]);
-                    break;
-                case 'month':
-                    $query->whereBetween('created_at', [$today->format('Y-m-d'), $today->addMonth()->format('Y-m-d')]);
-                    break;
-                case 'past':
-                    $query->where('created_at', '<', $today->format('Y-m-d'));
-                    break;
-            }
+
+            // These looked forward from today, so "last 7 days" selected the next
+            // seven and matched rows that cannot exist yet.
+            match ($request->date_filter) {
+                'today' => $query->whereDate('created_at', $today->toDateString()),
+                'week' => $query->where('created_at', '>=', $today->copy()->subDays(6)),
+                'month' => $query->where('created_at', '>=', $today->copy()->subDays(29)),
+                'past' => $query->where('created_at', '<', $today),
+                default => null,
+            };
         }
 
-        // Get per_page parameter with default 10
-        $perPage = $request->get('per_page', 10);
+        return $query;
+    }
 
-        $activities = $query->orderBy('created_at', 'desc')->paginate($perPage);
+    /**
+     * Narrow a query to one tab.
+     *
+     * User accounts matches on description as well as log name: nothing writes a
+     * 'user' log name on this installation, so that tab counted zero while the
+     * user records it was meant to show sat under the default log.
+     */
+    private function applyTab($query, string $tab)
+    {
+        return match ($tab) {
+            'auth' => $query->where('log_name', 'auth'),
+            'role' => $query->where(function ($q) {
+                $q->where('log_name', 'role')
+                    ->orWhere('description', 'LIKE', '%role%')
+                    ->orWhere('description', 'LIKE', '%permission%');
+            }),
+            'user' => $query->where(function ($q) {
+                $q->where('log_name', 'user')
+                    ->orWhere('description', 'LIKE', '%user%');
+            }),
+            default => $query,
+        };
+    }
 
-        // Get unique log names for filter dropdown
-        $logNames = Activity::where(function($q) {
-            $q->where('log_name', 'auth')
-              ->orWhere('log_name', 'security')
-              ->orWhere('log_name', 'user')
-              ->orWhere('log_name', 'role');
-        })->distinct()->pluck('log_name')->filter()->values();
-        
-        // Get unique events for filter dropdown
-        $events = Activity::where(function($q) {
-            $q->where('log_name', 'auth')
-              ->orWhere('log_name', 'security')
-              ->orWhere('log_name', 'user')
-              ->orWhere('log_name', 'role');
-        })->distinct()->pluck('event')->filter()->values();
+    /**
+     * The cards along the top, all measured within the same scope and honouring
+     * the same filters as the table. They used to search every row in the log and
+     * ignore the filters entirely.
+     */
+    private function stats(Request $request): array
+    {
+        $base = fn () => $this->scopedQuery($request);
 
-        // Get security statistics
-        $totalSecurityEvents = Activity::where(function($q) {
-            $q->where('log_name', 'auth')
-              ->orWhere('log_name', 'security')
-              ->orWhere('log_name', 'user')
-              ->orWhere('log_name', 'role');
-        })->count();
-
-        $failedLogins = Activity::where('description', 'LIKE', '%failed login%')->count();
-        $suspiciousActivities = Activity::where('description', 'LIKE', '%suspicious%')->count();
-        $passwordChanges = Activity::where('description', 'LIKE', '%password change%')->count();
-
-        // Get separate collections for each tab (without pagination for tab switching)
-        $userActivities = Activity::where('log_name', 'user')->orderBy('created_at', 'desc')->get();
-        $roleActivities = Activity::where('log_name', 'role')->orderBy('created_at', 'desc')->get();
-        $authActivities = Activity::where('log_name', 'auth')->orderBy('created_at', 'desc')->get();
-        
-        // Get all security events for the main tab (without pagination)
-        $allSecurityEvents = Activity::where(function($q) {
-            $q->where('log_name', 'auth')
-              ->orWhere('log_name', 'security')
-              ->orWhere('log_name', 'user')
-              ->orWhere('log_name', 'role');
-        })->orderBy('created_at', 'desc')->get();
-
-        return view('settings.security-audit', [
-            'activities' => $activities, // Keep for pagination in main view
-            'allSecurityEvents' => $allSecurityEvents, // For Security Events tab
-            'userActivities' => $userActivities,
-            'roleActivities' => $roleActivities,
-            'authActivities' => $authActivities,
-            'logNames' => $logNames,
-            'events' => $events,
-            'totalSecurityEvents' => $totalSecurityEvents,
-            'failedLogins' => $failedLogins,
-            'suspiciousActivities' => $suspiciousActivities,
-            'passwordChanges' => $passwordChanges
-        ]);
+        return [
+            'total' => $base()->count(),
+            'sign_ins' => $base()->where('description', 'LIKE', '%logged in%')->count(),
+            'failed' => (clone $base())->where(function ($q) {
+                $q->where('description', 'LIKE', '%failed%')
+                    ->orWhere('description', 'LIKE', '%unauthorized%')
+                    ->orWhere('description', 'LIKE', '%suspicious%');
+            })->count(),
+            'role_changes' => $base()->where(function ($q) {
+                $q->where('log_name', 'role')
+                    ->orWhere('description', 'LIKE', '%permission%');
+            })->count(),
+        ];
     }
 
     /**

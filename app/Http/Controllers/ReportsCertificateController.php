@@ -84,7 +84,7 @@ class ReportsCertificateController extends Controller
         $certificates = $this->filteredQuery($request, $eventIds)
             ->with(['event:id,name', 'participant:id,name,email', 'template:id,name'])
             ->orderByDesc('generated_at')
-            ->paginate($request->get('per_page', 10))
+            ->paginate(\App\Support\SystemSettings::perPage($request, 10))
             ->withQueryString();
 
         $events = Event::whereIn('id', $eventIds)->orderBy('name')->get(['id', 'name']);

@@ -137,7 +137,7 @@ class SurveyController extends Controller
         }
 
         $surveys = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 10))
+            ->paginate(\App\Support\SystemSettings::perPage($request, 10))
             ->withQueryString();
 
         return view('survey.index', [

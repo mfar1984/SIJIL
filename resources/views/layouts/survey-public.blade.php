@@ -14,6 +14,9 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined&display=block" rel="stylesheet">
 
     @vite(['resources/css/app.css'])
+
+    {{-- Appearance settings, so a public survey carries the same branding. --}}
+    @include('partials.branding-head')
 </head>
 <body class="font-sans text-gray-900 antialiased bg-gray-100">
     <div class="min-h-screen py-8 px-4">

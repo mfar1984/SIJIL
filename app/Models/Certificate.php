@@ -10,7 +10,29 @@ use Spatie\Activitylog\Support\LogOptions;
 
 class Certificate extends Model
 {
-    use LogsActivity, SoftDeletes;
+    use LogsActivity, SoftDeletes, \App\Models\Concerns\FiresWebhooks;
+
+    /**
+     * @return array<string, string>
+     */
+    public function webhookEvents(): array
+    {
+        return ['created' => 'certificate.generated'];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function webhookPayload(): array
+    {
+        return [
+            'id' => $this->id,
+            'certificate_number' => $this->certificate_number,
+            'event_id' => $this->event_id,
+            'participant_id' => $this->participant_id,
+            'generated_at' => optional($this->generated_at)->toIso8601String(),
+        ];
+    }
     
     public function getActivitylogOptions(): LogOptions
     {

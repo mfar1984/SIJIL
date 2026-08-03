@@ -140,7 +140,14 @@
                                 <td class="py-3 px-4">
                                     {{ $participant->identity_card ?: $participant->passport_no }}
                                 </td>
-                                <td class="py-3 px-4">{{ $participant->event?->name }}</td>
+                                {{-- The event may be sitting in the Recycle Bin; say so
+                                     rather than leaving the column blank. --}}
+                                <td class="py-3 px-4">
+                                    {{ $participant->event?->name ?? '—' }}
+                                    @if($participant->event && $participant->event->trashed())
+                                        <span class="ml-1 px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 rounded">In Recycle Bin</span>
+                                    @endif
+                                </td>
                                 <td class="py-3 px-4">
                                     @if($participant->status === 'active')
                                         <span class="bg-status-active-bg text-status-active-text px-2 py-1 rounded-full text-xs">Active</span>

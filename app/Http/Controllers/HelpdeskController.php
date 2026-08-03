@@ -51,7 +51,7 @@ class HelpdeskController extends Controller
         }
         
         // Clone the query for pagination
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         $tickets = (clone $baseQuery)->latest()->paginate($perPage);
         
         // Get tickets for different tabs (using pagination for consistency)

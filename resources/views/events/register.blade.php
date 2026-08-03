@@ -31,17 +31,23 @@
         id_type: '', // 'ic' or 'passport'
         identity: '', // normalized ic digits or passport string
     },
+    // Sent with every gate call so the endpoints only work as part of this
+    // registration, not as a general lookup service.
+    eventToken: '{{ $event->registration_link }}',
     auth: {
         open: false,
-        step: 'lookup', // lookup | login | register | reset | done
+        step: 'lookup', // lookup | login | register
         ic: '',
         passport: '',
         idType: 'ic',
         loading: false,
-        result: null,
-        emailChoice: '',
+        // Masked addresses only. The full address is never sent to the browser
+        // before the password has been checked, so sign-in refers to an account
+        // by id.
+        accounts: [],
+        accountId: null,
         message: '',
-        login: { email: '', password: '' },
+        login: { password: '' },
         register: { name: '', email: '', password: '' },
     },
     next() {
@@ -64,89 +70,134 @@
         this.auth.step = 'lookup';
         this.auth.ic = this.form.identity_card?.trim() || '';
         this.auth.message = '';
+        // Cleared so that reopening the modal cannot sign in against an account
+        // found by an earlier lookup, or leave a password sitting in memory.
+        this.auth.accounts = [];
+        this.auth.accountId = null;
+        this.auth.login.password = '';
+    },
+    // Shared request helper. Every gate call is a POST carrying the event token,
+    // and every one of them reports its own failure the same way, so this keeps
+    // the three steps below down to the part that differs.
+    async gateRequest(path, body) {
+        const res = await fetch(path, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                // Selector deliberately written without quotes around the
+                // attribute value. This whole object is the value of the x-data
+                // attribute, which is itself delimited by double quotes, so one
+                // double quote here ends the attribute and spills the rest of the
+                // script onto the page as visible text.
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '',
+            },
+            body: JSON.stringify({ event_token: this.eventToken, ...body }),
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch (e) { data = {}; }
+
+        // 429 comes from the rate limiter, which returns no message of its own.
+        if (res.status === 429) {
+            return { ok: false, status: res.status, data, message: 'Too many attempts. Please wait a minute and try again.' };
+        }
+
+        return {
+            ok: res.ok && data.success === true,
+            status: res.status,
+            data: data.data || {},
+            message: data.message || '',
+        };
     },
     async submitLookup() {
-        if (this.auth.idType === 'ic' && !this.auth.ic) { this.auth.message = 'Sila masukkan IC untuk semakan.'; return; }
-        if (this.auth.idType === 'passport' && !this.auth.passport) { this.auth.message = 'Sila masukkan Passport untuk semakan.'; return; }
+        if (this.auth.idType === 'ic' && !this.auth.ic) { this.auth.message = 'Please enter your IC number.'; return; }
+        if (this.auth.idType === 'passport' && !this.auth.passport) { this.auth.message = 'Please enter your passport number.'; return; }
         this.auth.loading = true; this.auth.message = '';
         try {
-            const params = new URLSearchParams();
-            params.append('id_type', this.auth.idType);
-            if (this.auth.idType === 'ic') {
-                const normalized = (this.auth.ic || '').replace(/\D/g,'');
-                params.append('ic', normalized);
-            } else {
-                params.append('passport', (this.auth.passport || '').trim());
-            }
-            const res = await fetch(`/api/participant/lookup?${params.toString()}`);
-            const data = await res.json();
-            if (!data.success) { this.auth.message = data.message || 'Semakan gagal.'; return; }
-            this.auth.result = data.data;
-            if (this.auth.result.exists) {
-                // Prefill nama dari rekod terakhir, pilih emel pertama sebagai default
-                this.auth.emailChoice = (this.auth.result.emails?.[0]) || '';
-                this.auth.login.email = this.auth.emailChoice;
+            const result = await this.gateRequest('/api/participant/lookup', {
+                id_type: this.auth.idType,
+                ic: this.auth.idType === 'ic' ? (this.auth.ic || '').replace(/\D/g, '') : null,
+                passport: this.auth.idType === 'passport' ? (this.auth.passport || '').trim() : null,
+            });
+
+            if (!result.ok) { this.auth.message = result.message || 'The check could not be completed.'; return; }
+
+            this.auth.accounts = result.data.accounts || [];
+
+            if (result.data.exists && this.auth.accounts.length) {
+                // Sign in to prove the account is theirs. Only after that is any
+                // of their information handed back.
+                this.auth.accountId = this.auth.accounts[0].id;
                 this.auth.step = 'login';
             } else {
-                // Daftar baru
                 this.auth.register.name = '';
                 this.auth.register.email = '';
+                this.auth.register.password = '';
                 this.auth.step = 'register';
             }
         } catch (e) {
-            this.auth.message = 'Ralat rangkaian semasa semakan.';
+            this.auth.message = 'Could not reach the server. Please check your connection and try again.';
         } finally {
             this.auth.loading = false;
         }
     },
-    prefillFromLastParticipant() {
-        const lp = this.auth.result?.last_participant; if (!lp) return;
-        this.form.name = lp.name || this.form.name;
-        this.form.email = this.auth.emailChoice || lp.email || this.form.email;
-        this.form.phone = lp.phone || this.form.phone;
-        // IC / Passport
-        if (lp.identity_card) {
-            this.form.id_type = 'ic';
-            // normalise then format with dashes
-            const digits = (lp.identity_card || '').replace(/\D/g,'');
-            let formatted = digits;
-            if (digits.length === 12) {
-                formatted = digits.substring(0,6) + '-' + digits.substring(6,8) + '-' + digits.substring(8,12);
-            }
-            this.form.identity_card = formatted;
-            this.form.passport_no = '';
-            this.locked.id_type = 'ic';
-            this.locked.identity = digits;
-        } else if (lp.passport_no) {
-            this.form.id_type = 'passport';
-            this.form.passport_no = lp.passport_no;
-            this.form.identity_card = '';
-            this.locked.id_type = 'passport';
-            this.locked.identity = (lp.passport_no || '').trim();
+    // Fill the form from what the server returned once ownership was proven.
+    //
+    // The IC is deliberately left unlocked. One account covers several people -
+    // a parent registering children, an office registering staff - so the person
+    // being registered is often not the account holder, and their document has to
+    // be editable. The email is locked, because that is what ties the
+    // registration back to the account.
+    applyPrefill(prefill, lockedEmail) {
+        if (!prefill) return;
+
+        const take = (field, value) => { if (value) { this.form[field] = value; } };
+
+        take('name', prefill.name);
+        take('phone', prefill.phone);
+        take('organization', prefill.organization);
+        take('job_title', prefill.job_title);
+        take('address1', prefill.address1);
+        take('address2', prefill.address2);
+        take('state', prefill.state);
+        take('city', prefill.city);
+        take('postcode', prefill.postcode);
+        take('gender', prefill.gender);
+        take('race', prefill.race);
+        this.form.country = prefill.country || this.form.country || 'Malaysia';
+
+        if (prefill.date_of_birth) {
+            this.form.date_of_birth = this.normalizeDateToYmd(prefill.date_of_birth);
         }
-        this.form.address1 = lp.address1 || this.form.address1;
-        this.form.address2 = lp.address2 || this.form.address2;
-        this.form.state = lp.state || this.form.state;
-        this.form.city = lp.city || this.form.city;
-        this.form.postcode = lp.postcode || this.form.postcode;
-        this.form.country = lp.country || this.form.country || 'Malaysia';
-        this.form.gender = lp.gender || this.form.gender;
-        this.form.date_of_birth = this.normalizeDateToYmd(lp.date_of_birth) || this.form.date_of_birth;
-        this.form.race = lp.race || this.form.race;
-        this.form.job_title = lp.job_title || this.form.job_title;
-        this.form.organization = lp.organization || this.form.organization;
-        // lock email to chosen
-        this.locked.email = this.auth.emailChoice || lp.email || this.form.email;
 
-        // Prefill DOB and Race if available
-        if (lp.date_of_birth) { this.form.date_of_birth = this.normalizeDateToYmd(lp.date_of_birth); }
-        if (lp.race) { this.form.race = lp.race; }
+        if (prefill.identity_card) {
+            this.form.id_type = 'ic';
+            const digits = (prefill.identity_card || '').replace(/\D/g, '');
+            this.form.identity_card = digits.length === 12
+                ? digits.substring(0, 6) + '-' + digits.substring(6, 8) + '-' + digits.substring(8, 12)
+                : digits;
+            this.form.passport_no = '';
+        } else if (prefill.passport_no) {
+            this.form.id_type = 'passport';
+            this.form.passport_no = prefill.passport_no;
+            this.form.identity_card = '';
+        }
 
-        // Ensure selects display values even if options belum dimuat
+        this.locked.email = lockedEmail || prefill.email || '';
+        this.form.email = this.locked.email || this.form.email;
+
+        // The state, city and postcode selects are populated asynchronously, so a
+        // value restored before the options exist would not display.
         this.ensureSelectOption('state', this.form.state);
         this.ensureSelectOption('city', this.form.city);
         this.ensureSelectOption('postcode', this.form.postcode);
         this.ensureSelectOption('country', this.form.country);
+    },
+    enterForm() {
+        this.auth.open = false;
+        this.step = 3;
+        setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 50);
     },
     ensureSelectOption(id, value) {
         if (!value) return;
@@ -162,88 +213,95 @@
         el.value = value;
     },
     async doLogin() {
-        if (!this.auth.login.email || !this.auth.login.password) { this.auth.message = 'Sila isi emel dan kata laluan.'; return; }
+        if (!this.auth.accountId) { this.auth.message = 'Please choose which account to sign in to.'; return; }
+        if (!this.auth.login.password) { this.auth.message = 'Please enter your password.'; return; }
         this.auth.loading = true; this.auth.message = '';
         try {
-            const res = await fetch('/api/participant/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: this.auth.login.email, password: this.auth.login.password })});
-            const data = await res.json();
-            if (!data.success) { this.auth.message = data.message || 'Log masuk gagal.'; return; }
-            this.prefillFromLastParticipant();
-            this.auth.open = false; this.step = 3;
-            // Scroll to top of Tab 3 for clarity
-            setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 50);
-            // Ensure locked email set for login path
-            this.locked.email = this.auth.login.email || this.locked.email;
+            // Sent as an account id rather than an address, so a correct IC never
+            // reveals a usable email address to whoever typed it.
+            const result = await this.gateRequest('/api/participant/verify', {
+                account_id: this.auth.accountId,
+                password: this.auth.login.password,
+            });
+
+            if (!result.ok) { this.auth.message = result.message || 'Sign-in failed.'; return; }
+
+            this.applyPrefill(result.data.prefill, result.data.email);
+            this.enterForm();
         } catch (e) {
-            this.auth.message = 'Ralat rangkaian semasa log masuk.';
+            this.auth.message = 'Could not reach the server. Please check your connection and try again.';
         } finally { this.auth.loading = false; }
     },
     async doRegister() {
-        if (!this.auth.register.name || !this.auth.register.email || !this.auth.register.password) { this.auth.message = 'Nama, emel dan kata laluan diperlukan.'; return; }
+        if (!this.auth.register.name || !this.auth.register.email || !this.auth.register.password) {
+            this.auth.message = 'Name, email and password are all required.'; return;
+        }
+        if (this.auth.register.password.length < 8) {
+            this.auth.message = 'Please choose a password of at least 8 characters.'; return;
+        }
         this.auth.loading = true; this.auth.message = '';
         try {
-            const res = await fetch('/api/participant/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: this.auth.register.name, email: this.auth.register.email, password: this.auth.register.password })});
-            const data = await res.json();
-            if (!data.success) {
-                // Map validation errors nicely
-                const firstError = (errs) => {
-                    if (!errs) return '';
-                    for (const k in errs) { if (errs[k] && errs[k][0]) return errs[k][0]; }
-                    return '';
-                };
-                const msg = firstError(data.errors) || data.message || 'Registration failed.';
-                // If email already registered, guide user to Login step
-                if ((data.errors && data.errors.email) || /already been taken/i.test(msg)) {
-                    this.auth.message = 'This email is already registered. Please login.';
-                    this.auth.login.email = this.auth.register.email;
-                    this.auth.step = 'login';
-                } else {
-                    this.auth.message = msg;
-                }
+            const result = await this.gateRequest('/api/participant/register', {
+                name: this.auth.register.name,
+                email: this.auth.register.email,
+                password: this.auth.register.password,
+                id_type: this.auth.idType,
+                ic: this.auth.idType === 'ic' ? (this.auth.ic || '').replace(/\D/g, '') : null,
+                passport: this.auth.idType === 'passport' ? (this.auth.passport || '').trim() : null,
+            });
+
+            // The address already has an account. Send them to sign in rather than
+            // leaving them to work out why creating one was refused.
+            if (!result.ok && result.status === 409 && result.data.account) {
+                this.auth.accounts = [result.data.account];
+                this.auth.accountId = result.data.account.id;
+                this.auth.login.password = '';
+                this.auth.step = 'login';
+                this.auth.message = result.message || 'This email already has an account. Please sign in.';
                 return;
             }
-            // Prefill daripada input daftar
+
+            if (!result.ok) { this.auth.message = result.message || 'The account could not be created.'; return; }
+
+            this.applyPrefill(result.data.prefill, result.data.email);
+
+            // A new account has nothing on file, so carry across what was just
+            // typed into the modal.
             this.form.name = this.auth.register.name;
-            this.form.email = this.auth.register.email;
-            // Also carry over ID type and value from lookup input
+
             if (this.auth.idType === 'ic') {
+                const digits = (this.auth.ic || '').replace(/\D/g, '');
                 this.form.id_type = 'ic';
-                const digits = (this.auth.ic || '').replace(/\D/g,'');
-                if (digits.length === 12) {
-                    this.form.identity_card = digits.substring(0,6) + '-' + digits.substring(6,8) + '-' + digits.substring(8,12);
-                } else {
-                    this.form.identity_card = digits;
-                }
+                this.form.identity_card = digits.length === 12
+                    ? digits.substring(0, 6) + '-' + digits.substring(6, 8) + '-' + digits.substring(8, 12)
+                    : digits;
                 this.form.passport_no = '';
             } else if (this.auth.idType === 'passport') {
                 this.form.id_type = 'passport';
-                const pass = (this.auth.passport || '').trim();
-                this.form.passport_no = pass;
+                this.form.passport_no = (this.auth.passport || '').trim();
                 this.form.identity_card = '';
             }
-            this.auth.open = false; this.step = 3;
-            setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 50);
-            // Lock based on registration inputs and current lookup idType
-            this.locked.email = this.auth.register.email; // keep email read-only after register
-            // Do NOT lock identity for new registration so user can edit the IC/Passport
-            this.locked.id_type = '';
-            this.locked.identity = '';
-            // Ensure default country is set and options exist
+
             if (!this.form.country) { this.form.country = 'Malaysia'; this.ensureSelectOption('country', 'Malaysia'); }
+
+            this.enterForm();
         } catch (e) {
-            this.auth.message = 'Network error during registration.';
+            this.auth.message = 'Could not reach the server. Please check your connection and try again.';
         } finally { this.auth.loading = false; }
     },
     async doResetPassword() {
-        if (!this.auth.emailChoice) { this.auth.message = 'Sila pilih emel untuk reset kata laluan.'; return; }
+        // Reset is keyed on the address, which the browser never sees in full, so
+        // the account chosen in the previous step is resolved server side.
+        if (!this.auth.accountId) { this.auth.message = 'Please choose an account first.'; return; }
         this.auth.loading = true; this.auth.message = '';
         try {
-            const eventToken = '{{ $event->registration_link }}';
-            const res = await fetch('/api/participant/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: this.auth.emailChoice, event_token: eventToken })});
-            const data = await res.json();
-            this.auth.message = data.message || 'Permintaan reset dihantar (jika emel wujud).';
+            const result = await this.gateRequest('/api/participant/reset-password-for-account', {
+                account_id: this.auth.accountId,
+            });
+            this.auth.message = result.message
+                || 'If that account exists, a new password has been emailed to it.';
         } catch (e) {
-            this.auth.message = 'Ralat rangkaian semasa reset.';
+            this.auth.message = 'Could not reach the server. Please check your connection and try again.';
         } finally { this.auth.loading = false; }
     },
     prev() { if (this.step > 1) this.step-- },
@@ -424,6 +482,44 @@
             .rich-content table, .rich-content th, .rich-content td { border: 1px solid #e5e7eb; }
             .rich-content th, .rich-content td { padding: 0.5rem; }
         </style>
+        {{--
+            Every rejection in registerSubmit() returns redirect()->back(), and
+            failed validation does the same. Neither this view nor its layout
+            rendered those messages, so a refused registration looked identical
+            to a successful one: the page reloaded, the wizard reset to its first
+            step, and nothing said why. Kept outside the x-show blocks so it is
+            visible wherever the wizard lands.
+        --}}
+        @if (session('error'))
+            <div class="bg-white shadow rounded-lg overflow-hidden mb-6 border-l-4 border-red-500" role="alert">
+                <div class="p-4 flex items-start">
+                    <span class="material-icons-outlined text-red-600 text-base mr-2 shrink-0">error_outline</span>
+                    <div class="text-xs">
+                        <p class="font-semibold text-red-700 mb-0.5">Your registration was not submitted</p>
+                        <p class="text-gray-700">{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="bg-white shadow rounded-lg overflow-hidden mb-6 border-l-4 border-red-500" role="alert">
+                <div class="p-4 flex items-start">
+                    <span class="material-icons-outlined text-red-600 text-base mr-2 shrink-0">error_outline</span>
+                    <div class="text-xs">
+                        <p class="font-semibold text-red-700 mb-1">
+                            Please correct {{ $errors->count() === 1 ? 'this detail' : 'these details' }} and submit again
+                        </p>
+                        <ul class="text-gray-700 list-disc pl-4 space-y-0.5">
+                            @foreach ($errors->all() as $message)
+                                <li>{{ $message }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Section 1: Banner & Event Info (Selalu di atas) -->
         <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3">
@@ -838,72 +934,97 @@
                                 <button type="button" @click="submitLookup()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
                                     <span class="material-icons-outlined text-[16px]" x-show="!auth.loading">search</span>
                                     <span x-show="auth.loading" class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                    <span x-show="!auth.loading">search</span>
+                                    <span>Search</span>
                                 </button>
                             </div>
                         </div>
                     </template>
 
-                    <!-- Step: Login (existing) -->
+                    <!-- Step: Sign in to the account this document belongs to -->
                     <template x-if="auth.step==='login'">
                         <div class="space-y-2">
-                            <div class="bg-gray-50 border rounded p-2" x-show="auth.result?.last_participant">
-                                <div><span class="font-semibold">Name:</span> <span x-text="auth.result.last_participant?.name"></span></div>
-                                <div class="mt-1">
-                                    <span class="font-semibold">Email:</span>
-                                    <template x-for="em in auth.result.emails" :key="em">
-                                        <label class="ml-2 inline-flex items-center gap-1"><input type="radio" x-model="auth.emailChoice" :value="em"> <span x-text="em"></span></label>
-                                    </template>
-                                </div>
+                            <div class="bg-gray-50 border rounded p-2">
+                                <p class="text-[11px] text-gray-600">
+                                    This IC or passport is already linked to an account. Sign in to confirm
+                                    it is yours, and we will fill in what we already have.
+                                </p>
                             </div>
-                            <div x-show="auth.result?.emails?.length > 1">
-                                <label class="block mb-1">Email</label>
-                                <input type="email" x-model="auth.login.email" class="w-full border border-gray-300 rounded-sm px-2 py-1">
+
+                            <div>
+                                <label class="block mb-1" x-text="auth.accounts.length > 1 ? 'Choose an account' : 'Account'"></label>
+                                <template x-if="auth.accounts.length > 1">
+                                    <div class="space-y-1">
+                                        <template x-for="acc in auth.accounts" :key="acc.id">
+                                            <label class="flex items-center gap-2">
+                                                <input type="radio" name="gate_account" x-model.number="auth.accountId" :value="acc.id">
+                                                <span x-text="acc.email_masked"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="auth.accounts.length === 1">
+                                    <div class="px-2 py-1 bg-gray-50 border border-gray-200 rounded-sm text-gray-700"
+                                         x-text="auth.accounts[0].email_masked"></div>
+                                </template>
+                                <p class="hint mt-1">Part of the address is hidden. Sign in to confirm it is yours.</p>
                             </div>
-                            <div x-show="!auth.result?.emails || auth.result?.emails?.length <= 1">
-                                <label class="block mb-1">Email</label>
-                                <input type="email" x-model="auth.login.email" class="w-full border border-gray-300 rounded-sm px-2 py-1" :readonly="auth.result?.emails?.length === 1">
-                            </div>
+
                             <div>
                                 <label class="block mb-1">Password</label>
-                                <input type="password" x-model="auth.login.password" class="w-full border border-gray-300 rounded-sm px-2 py-1">
+                                <input type="password" x-model="auth.login.password" class="w-full border border-gray-300 rounded-sm px-2 py-1"
+                                       @keydown.enter.prevent="doLogin()">
                             </div>
                             <div class="flex items-center justify-between mt-2">
                                 <button type="button" @click="doLogin()" class="btn btn-primary flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons-outlined text-[16px]">login</span>
-                                    <span>login</span>
+                                    <span class="material-icons-outlined text-[16px]" x-show="!auth.loading">login</span>
+                                    <span x-show="auth.loading" class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                    <span>Sign in</span>
                                 </button>
-                                <button type="button" @click="doResetPassword()" class="btn btn-danger flex items-center gap-1" :disabled="auth.loading">
+                                <button type="button" @click="doResetPassword()" class="btn btn-secondary flex items-center gap-1" :disabled="auth.loading">
                                     <span class="material-icons-outlined text-[16px]">lock_reset</span>
-                                    <span>lock_reset</span>
+                                    <span>Email me a new password</span>
                                 </button>
                             </div>
-                            <div class="text-[10px] text-gray-500">If this is not your account, you can register a new account.</div>
                             <div class="flex justify-end">
-                                <button type="button" @click="auth.step='register'" class="px-3 py-1 text-blue-600">Register new account</button>
+                                <button type="button" @click="auth.step='register'; auth.message=''" class="px-3 py-1 text-blue-600">
+                                    Use a different email instead
+                                </button>
                             </div>
                         </div>
                     </template>
 
-                    <!-- Step: Register (new) -->
+                    <!-- Step: No account yet, so create one -->
                     <template x-if="auth.step==='register'">
                         <div class="space-y-2">
+                            <div class="bg-gray-50 border rounded p-2">
+                                <p class="text-[11px] text-gray-600">
+                                    Enter the details of the person who will hold this account. One account
+                                    can register several people, so if you are signing up a child or someone
+                                    you are acting for, use your own name and email here.
+                                </p>
+                            </div>
                             <div>
-                                <label class="block mb-1">Nama Penuh</label>
+                                <label class="block mb-1">Account holder's full name</label>
                                 <input type="text" x-model="auth.register.name" class="w-full border border-gray-300 rounded-sm px-2 py-1">
                             </div>
                             <div>
-                                <label class="block mb-1">Emel</label>
+                                <label class="block mb-1">Email</label>
                                 <input type="email" x-model="auth.register.email" class="w-full border border-gray-300 rounded-sm px-2 py-1">
+                                <p class="hint mt-1">Certificates and event notices are sent here.</p>
                             </div>
                             <div>
-                                <label class="block mb-1">Kata Laluan</label>
-                                <input type="password" x-model="auth.register.password" class="w-full border border-gray-300 rounded-sm px-2 py-1">
+                                <label class="block mb-1">Password</label>
+                                <input type="password" x-model="auth.register.password" class="w-full border border-gray-300 rounded-sm px-2 py-1"
+                                       @keydown.enter.prevent="doRegister()">
+                                <p class="hint mt-1">At least 8 characters.</p>
                             </div>
-                            <div class="flex justify-end">
-                                <button type="button" @click="doRegister()" class="btn btn-success flex items-center gap-1" :disabled="auth.loading">
-                                    <span class="material-icons-outlined text-[16px]">person_add</span>
-                                    <span>person_add</span>
+                            <div class="flex items-center justify-between">
+                                <button type="button" x-show="auth.accounts.length" @click="auth.step='login'; auth.message=''"
+                                        class="px-3 py-1 text-blue-600">Back to sign in</button>
+                                <button type="button" @click="doRegister()" class="btn btn-success flex items-center gap-1 ml-auto" :disabled="auth.loading">
+                                    <span class="material-icons-outlined text-[16px]" x-show="!auth.loading">person_add</span>
+                                    <span x-show="auth.loading" class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                    <span>Create account</span>
                                 </button>
                             </div>
                         </div>

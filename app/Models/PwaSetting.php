@@ -85,7 +85,11 @@ class PwaSetting extends Model
         // Emails
         'send_welcome_email' => true,
         'include_app_link' => true,
-        'pwa_app_link' => 'https://apps.e-certificate.com.my',
+        // Where participants sign in, which is the app and not the admin site.
+        // This used to default to the admin host, so welcome emails sent people
+        // to the staff login page, where a participant's credentials cannot work:
+        // PWA accounts live in pwa_participants, not in users.
+        'pwa_app_link' => 'https://user.e-certificate.com.my',
         'support_email' => 'support@e-certificate.com.my',
     ];
 

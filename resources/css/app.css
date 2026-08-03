@@ -3,9 +3,25 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
+/* Brand palette, overridable at runtime.
+ *
+ * These sit outside @theme so the Appearance tab can replace them with a single
+ * :root block in the page head, with no rebuild. The @theme entries below point
+ * at them rather than holding a literal colour, which also stops Tailwind
+ * pre-computing the opacity variants: with a static hex it compiled
+ * bg-primary-DEFAULT/5 to a fixed #063c960d that ignored any override, whereas a
+ * var() forces a runtime color-mix that follows the configured colour. */
+:root {
+    --brand-primary: #063c96;
+    --brand-primary-light: #5170ff;
+    --brand-primary-accent: #2281c5;
+    --brand-primary-dark: #04266b;
+    --brand-font: 'Poppins', 'Figtree', ui-sans-serif, system-ui, sans-serif;
+}
+
 @theme {
     /* Font Family */
-    --font-sans: 'Poppins', 'Figtree', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-sans: var(--brand-font);
     
     /* Primary Colors
      *
@@ -14,11 +30,11 @@
      * without this entry every bg/text/border/ring-primary-DEFAULT silently
      * produced no CSS at all: invisible table headers, uncoloured icons and
      * unhighlighted active tabs. */
-    --color-primary: #063c96;
-    --color-primary-DEFAULT: #063c96;
-    --color-primary-light: #5170ff;
-    --color-primary-accent: #2281c5;
-    --color-primary-dark: #04266b;
+    --color-primary: var(--brand-primary);
+    --color-primary-DEFAULT: var(--brand-primary);
+    --color-primary-light: var(--brand-primary-light);
+    --color-primary-accent: var(--brand-primary-accent);
+    --color-primary-dark: var(--brand-primary-dark);
     
     /* Status Colors */
     --color-status-active-bg: #dcfce7;
@@ -30,12 +46,31 @@
     --color-status-inactive-bg: #fef2f2;
     --color-status-inactive-text: #dc2626;
     
-    /* Font Sizes */
-    --font-size-xs: 0.75rem;
-    --font-size-sm: 0.875rem;
-    --font-size-base: 1rem;
-    --font-size-lg: 1.125rem;
-    --font-size-xl: 1.25rem;
+    /* Font Sizes
+     *
+     * These were declared as --font-size-xs and so on, which Tailwind v4 never
+     * reads: it derives text-* utilities from --text-*. The old names produced no
+     * CSS at all, and the sizes silently came from Tailwind's own defaults.
+     *
+     * Corrected to the right names and raised one step. text-xs carries almost
+     * every label, table cell and form field in the application, so 12px was doing
+     * a lot of work at a size that reads as fine print.
+     *
+     * The line heights have to be declared alongside each size: the compiled
+     * utility is font-size:var(--text-xs);line-height:var(--text-xs--line-height),
+     * so a size without its pair leaves the line-height empty and the browser
+     * falls back to whatever it inherited.
+     */
+    --text-xs: 0.8125rem;           /* 13px, was 12px */
+    --text-xs--line-height: 1.125rem;
+    --text-sm: 0.9375rem;           /* 15px, was 14px */
+    --text-sm--line-height: 1.375rem;
+    --text-base: 1.0625rem;         /* 17px, was 16px */
+    --text-base--line-height: 1.5rem;
+    --text-lg: 1.1875rem;           /* 19px, was 18px */
+    --text-lg--line-height: 1.75rem;
+    --text-xl: 1.3125rem;           /* 21px, was 20px */
+    --text-xl--line-height: 1.75rem;
 }
 
 /* Alpine: hide elements until Alpine has initialised */
@@ -97,8 +132,15 @@ select {
 
 @layer base {
     html {
-        font-family: 'Poppins', system-ui, sans-serif;
+        /* Follows the Font Family setting on the Appearance tab. */
+        font-family: var(--brand-font);
     }
+}
+
+/* Hidden when "Show help icons" is unticked on the Appearance tab. The tooltip
+   wrapper is what carries the question-mark icon next to a field label. */
+body.hide-help-icons .tooltip-wrapper {
+    display: none !important;
 }
 
 @layer components {
@@ -171,27 +213,56 @@ select {
         @apply text-blue-700 font-medium;
     }
 
+    /* The vertical rail. Its left border sits at x=16px inside the sidebar,
+       which is what the connector offsets below are measured against. */
     .hierarchical-menu {
         @apply pl-6 border-l border-gray-200 ml-4 mt-1 mb-2;
     }
 
-    /* Small dot marker sitting on the vertical guide line */
+    /* Tree connector: a short horizontal branch running from the rail out to the
+       dot, so each child reads as attached to its parent rather than as a dot
+       floating beside a line.
+
+       Geometry, all relative to the item's box which starts at x=40px:
+         rail          x = 16px
+         branch  ::after   x = 16 -> 28px   (left: -24px, width 12px)
+         dot     ::before  x = 28 -> 33px   (left: -12px, width 5px) */
+    .sidebar-submenu-item::after {
+        content: '';
+        @apply absolute bg-gray-200;
+        width: 12px;
+        height: 1px;
+        top: 50%;
+        left: -24px;
+        transform: translateY(-50%);
+        transition: background-color 150ms ease;
+    }
+
     .sidebar-submenu-item::before {
         content: '';
         @apply absolute rounded-full bg-gray-300;
         width: 5px;
         height: 5px;
         top: 50%;
-        left: -27px;
+        left: -12px;
         transform: translateY(-50%);
+        transition: background-color 150ms ease;
     }
 
     .sidebar-submenu-item:hover::before {
         @apply bg-gray-400;
     }
 
+    .sidebar-submenu-item:hover::after {
+        @apply bg-gray-300;
+    }
+
     .sidebar-submenu-item.active::before {
         @apply bg-blue-600;
+    }
+
+    .sidebar-submenu-item.active::after {
+        @apply bg-blue-300;
     }
 
     .sidebar-separator {

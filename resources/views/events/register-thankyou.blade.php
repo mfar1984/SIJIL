@@ -10,6 +10,12 @@
             <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Thank You!</h1>
             <p class="text-gray-500 text-base sm:text-lg">Your response to <span class="font-semibold">{{ $event->name }}</span> has been submitted successfully.</p>
 
+            {{-- The message from Settings > Global Config > General. It was stored
+                 and shown nowhere, so editing it changed nothing a registrant saw. --}}
+            @if(filled($registrationMessage ?? null))
+                <p class="text-gray-600 text-sm mt-3 max-w-xl mx-auto">{{ $registrationMessage }}</p>
+            @endif
+
             <div class="mt-6 bg-green-50 border border-green-200 rounded-md p-5 text-green-800 text-sm">
                 <p>Your feedback is valuable to us and will help improve our services.</p>
                 <p class="mt-2">If you have any questions related to {{ $event->name }}, please contact the event organizer.</p>

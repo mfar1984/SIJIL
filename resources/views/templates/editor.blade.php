@@ -108,7 +108,13 @@
                             :src="backgroundImageUrl" 
                             class="absolute top-0 left-0 w-full h-full object-contain"
                             @load="backgroundLoaded"
-                            @error="imageLoadError"
+                            {{-- Longhand on purpose. Alpine's shorthand for this event is also the
+                                 name of a Blade validation directive, so Blade claimed it and
+                                 opened an if block waiting for a closing directive that a markup
+                                 attribute was never going to supply. The compiled template ended
+                                 mid-statement and would not parse. The x-on: form has no leading
+                                 symbol and cannot be mistaken for a directive. --}}
+                            x-on:error="imageLoadError"
                             style="z-index: 1;"
                         />
                     

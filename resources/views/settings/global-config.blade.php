@@ -20,7 +20,26 @@
             </div>
         </div>
         
-        <div class="p-4" x-data="{ activeTab: 'general' }">
+        {{--
+            The tab lives in the URL fragment so that a restore or a permanent
+            delete comes back to the Recycle Bin instead of dropping the user on
+            the General tab with a success message about a record they can no
+            longer see.
+        --}}
+        <div class="p-4"
+             x-data="{
+                tabs: ['general', 'security', 'appearance', 'notifications', 'telegram', 'api', 'recycle-bin'],
+                activeTab: 'general',
+                init() {
+                    const fromHash = window.location.hash.replace('#', '');
+                    if (this.tabs.includes(fromHash)) {
+                        this.activeTab = fromHash;
+                    }
+                    this.$watch('activeTab', value => {
+                        history.replaceState(null, '', '#' + value);
+                    });
+                }
+             }">
             <!-- Configuration Tabs -->
             <div class="border-b border-gray-200 mb-4">
                 <div class="flex flex-wrap -mb-px">
@@ -96,6 +115,11 @@
             @if(session('error'))
                 <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-4 text-xs">
                     {{ session('error') }}
+                </div>
+            @endif
+            @if(session('warning'))
+                <div class="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded mb-4 text-xs">
+                    {{ session('warning') }}
                 </div>
             @endif
             

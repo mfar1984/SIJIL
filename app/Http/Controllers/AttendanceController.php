@@ -74,7 +74,7 @@ class AttendanceController extends Controller
         }
 
         // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         $attendances = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->paginate($perPage);
 
         // Get events for filter dropdown
@@ -804,7 +804,7 @@ class AttendanceController extends Controller
                     );
                 
                 // Get paginated results with per_page parameter
-                $perPage = $request->get('per_page', 10);
+                $perPage = \App\Support\SystemSettings::perPage($request, 10);
                 $participants = $query->paginate($perPage);
             } else {
                 $participants = collect([]);
@@ -967,7 +967,7 @@ class AttendanceController extends Controller
         }
 
         // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         $attendances = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->paginate($perPage);
 
         // Get events for filter dropdown

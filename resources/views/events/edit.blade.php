@@ -641,7 +641,8 @@
                                         icon="phone_iphone"
                                         label="Create mobile app account"
                                         description="Creates the participant's E-Certificate app account and emails their sign-in details straight away."
-                                        note="Without this, an administrator has to create each account by hand under PWA &rsaquo; Participants."
+                                        {{-- Literal character, not an entity. See create.blade.php. --}}
+                                        note="Without this, an administrator has to create each account by hand under PWA › Participants."
                                         :checked="old('auto_pwa_registration', $event->auto_pwa_registration)" />
 
                                     <x-event-toggle
@@ -739,9 +740,11 @@
                     entity_encoding: 'raw',
                     resize: false,
                     skin: 'oxide',
-                    font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 28pt 36pt 48pt',
+                    {{-- px, matching create.blade.php. See the note there: 14pt rendered
+                         at roughly 18.7px and looked oversized next to every other field. --}}
+                    font_size_formats: '10px 12px 14px 16px 18px 20px 24px 28px 32px 48px',
                     font_family_formats: 'Arial=arial,helvetica,sans-serif; Courier New=courier new,courier,monospace; Georgia=georgia,palatino; Helvetica=helvetica; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva',
-                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14pt; line-height: 1.6; }',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
                     placeholder: 'Write event terms & conditions here...',
                     images_upload_handler: function (blobInfo, progress) {
                         return new Promise(function(resolve, reject) {

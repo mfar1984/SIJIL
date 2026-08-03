@@ -386,6 +386,13 @@
             remove_script_host: false,
             entity_encoding: 'raw',
             resize: false,
+            {{-- Matches the event terms editor. This one had no content_style at all,
+                 so the editing area fell back to the browser default and the same
+                 content looked different depending on which editor you opened it in.
+                 This styles the editing view only; it does not change the HTML that
+                 gets sent. --}}
+            font_size_formats: '10px 12px 14px 16px 18px 20px 24px 28px 32px 48px',
+            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
         });
 
         const layoutPicker = document.getElementById('email_layout');

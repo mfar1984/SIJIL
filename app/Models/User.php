@@ -32,7 +32,14 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        // The profile page has always offered a picture upload; until now there was
+        // no column to keep it in and nothing read the field.
+        'profile_image',
         'password',
+        // Written when a password is set, so password expiry has something to
+        // measure against. Without it here, mass assignment would drop the value
+        // silently and every account would keep counting from its creation date.
+        'password_changed_at',
         'role_id', // This will be kept for backward compatibility
         'phone',
         'organization',
@@ -79,6 +86,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_login_at' => 'datetime',
+            // Without this the column comes back as a string and any date
+            // arithmetic on it fails. Password expiry compares against it.
+            'password_changed_at' => 'datetime',
         ];
     }
     

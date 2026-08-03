@@ -10,7 +10,39 @@ use Spatie\Activitylog\Support\LogOptions;
 
 class Participant extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes, \App\Models\Concerns\FiresWebhooks;
+
+    /**
+     * Only creation is published. A participant row is edited often and for
+     * reasons a subscriber has no interest in, so publishing updates would be
+     * mostly noise.
+     *
+     * @return array<string, string>
+     */
+    public function webhookEvents(): array
+    {
+        return ['created' => 'registration.completed'];
+    }
+
+    /**
+     * No identity_card, passport_no, address or date_of_birth: a webhook lands
+     * in someone else's logs, so it carries only what is needed to identify the
+     * registration and fetch the rest deliberately.
+     *
+     * @return array<string, mixed>
+     */
+    public function webhookPayload(): array
+    {
+        return [
+            'id' => $this->id,
+            'event_id' => $this->event_id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'organization' => $this->organization,
+            'registration_type' => $this->registration_type,
+            'registered_at' => optional($this->registration_date)->toIso8601String(),
+        ];
+    }
     
     public function getActivitylogOptions(): LogOptions
     {

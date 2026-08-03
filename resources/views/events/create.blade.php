@@ -594,9 +594,13 @@
                                             class="w-full h-9 text-xs border-gray-300 rounded-[1px] px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50 leading-[1rem]" 
                                             required
                                         >
-                                            <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                                            <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                                            {{-- Pre-selects the Default Event Status from
+                                                 Settings > Global Config > General, which was
+                                                 stored and read by nothing. --}}
+                                            @php $defaultStatus = old('status', \App\Support\SystemSettings::defaultEventStatus()); @endphp
+                                            @foreach(\App\Support\SystemSettings::eventStatusOptions() as $value => $label)
+                                                <option value="{{ $value }}" {{ $defaultStatus === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -635,7 +639,10 @@
                                         icon="phone_iphone"
                                         label="Create mobile app account"
                                         description="Creates the participant's E-Certificate app account and emails their sign-in details straight away."
-                                        note="Without this, an administrator has to create each account by hand under PWA &rsaquo; Participants."
+                                        {{-- A literal character, not an HTML entity: the component
+                                             escapes this prop, so &rsaquo; appeared on screen as
+                                             those nine characters instead of a chevron. --}}
+                                        note="Without this, an administrator has to create each account by hand under PWA › Participants."
                                         :checked="old('auto_pwa_registration')" />
 
                                     <x-event-toggle
@@ -728,9 +735,14 @@
                     entity_encoding: 'raw',
                     resize: false,
                     skin: 'oxide',
-                    font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 28pt 36pt 48pt',
+                    {{-- Sizes are in px, not pt. The default was 14pt, which is about
+                         18.7px, so the terms read noticeably larger than every other
+                         field on the form. Keeping the dropdown in the same unit as
+                         content_style also means 14 shows as the current size rather
+                         than the list having no entry that matches. --}}
+                    font_size_formats: '10px 12px 14px 16px 18px 20px 24px 28px 32px 48px',
                     font_family_formats: 'Arial=arial,helvetica,sans-serif; Courier New=courier new,courier,monospace; Georgia=georgia,palatino; Helvetica=helvetica; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva',
-                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14pt; line-height: 1.6; }',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
                     placeholder: 'Write event terms & conditions here...',
                     images_upload_handler: function (blobInfo, progress) {
                         return new Promise(function(resolve, reject) {

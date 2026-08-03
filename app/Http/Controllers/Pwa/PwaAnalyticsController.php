@@ -54,7 +54,7 @@ class PwaAnalyticsController extends Controller
             $selectedEventId = null;
         }
 
-        $summary = $this->summary($user, $selectedEventId, $eventIds);
+        $summary = $this->summary($user, $selectedEventId, $eventIds, $start, $end);
 
         return view('ecertificate.analytics', [
             'tablesExist' => true,
@@ -83,8 +83,13 @@ class PwaAnalyticsController extends Controller
     /**
      * Headline numbers. Every one of these is about the app, not the system.
      */
-    protected function summary($user, ?int $selectedEventId, ?array $eventIds): array
-    {
+    protected function summary(
+        $user,
+        ?int $selectedEventId,
+        ?array $eventIds,
+        ?\Carbon\Carbon $start = null,
+        ?\Carbon\Carbon $end = null
+    ): array {
         $base = fn () => $this->accountQuery($user, $selectedEventId);
 
         $total = $base()->count();
@@ -99,9 +104,24 @@ class PwaAnalyticsController extends Controller
             $selectedEventId ? [$selectedEventId] : $eventIds
         )->count();
 
+        // The date filter used to reach only the activity chart, so every headline
+        // figure was a lifetime total sitting next to a date picker that appeared to
+        // do nothing. These two answer the range; the rest are labelled as all-time
+        // in the view, because "how many accounts exist" is the more useful number
+        // and narrowing it would hide most of them.
+        $createdInRange = ($start && $end)
+            ? $base()->whereBetween('pwa_participants.created_at', [$start, $end])->count()
+            : $total;
+
+        $signedInRange = ($start && $end)
+            ? $base()->whereBetween('pwa_participants.last_login_at', [$start, $end])->count()
+            : $signedIn;
+
         return [
             'total' => $total,
             'signed_in' => $signedIn,
+            'created_in_range' => $createdInRange,
+            'signed_in_range' => $signedInRange,
             'never_signed_in' => max(0, $total - $signedIn),
             'changed_password' => $changedPassword,
             'inactive' => $inactive,
@@ -525,6 +545,7 @@ class PwaAnalyticsController extends Controller
         return [
             'summary' => [
                 'total' => 0, 'signed_in' => 0, 'never_signed_in' => 0,
+                'created_in_range' => 0, 'signed_in_range' => 0,
                 'changed_password' => 0, 'inactive' => 0, 'linked' => 0,
                 'unlinked' => 0, 'certificates_reachable' => 0,
                 'signed_in_percent' => 0, 'linked_percent' => 0,

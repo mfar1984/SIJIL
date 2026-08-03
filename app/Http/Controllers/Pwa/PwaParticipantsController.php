@@ -69,7 +69,7 @@ class PwaParticipantsController extends Controller
         $filteredBanned = (clone $query)->banned()->count();
 
         // Pagination
-        $perPage = $request->get('per_page', 15);
+        $perPage = \App\Support\SystemSettings::perPage($request, 15);
         $participants = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Enrich the listing with phone/organization from the matching regular
@@ -200,7 +200,7 @@ class PwaParticipantsController extends Controller
 
             if ($trashed) {
                 return back()->withInput()->withErrors([
-                    'email' => "This email belongs to \"{$trashed->name}\", a PWA participant sitting in the Recycle Bin. Restore that record, or delete it permanently from Settings â†’ Global Config â†’ Recycle Bin to free up the email.",
+                    'email' => "This email belongs to \"{$trashed->name}\", a PWA participant sitting in the Recycle Bin. Restore that record, or delete it permanently from Settings > Global Config > Recycle Bin to free up the email.",
                 ]);
             }
         }
@@ -209,7 +209,9 @@ class PwaParticipantsController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:pwa_participants,email',
-            'username' => 'required|string|max:255|unique:pwa_participants,username',
+            // No username rule: the form no longer asks for one. Sign-in is by
+            // email address, and the holder was never told their username, so
+            // requiring the organizer to invent one achieved nothing.
             'phone' => 'nullable|string|max:20',
             'organization' => 'nullable|string|max:255',
             'identity_card' => 'nullable|string|max:255',
@@ -230,7 +232,6 @@ class PwaParticipantsController extends Controller
             'notes' => 'nullable|string|max:1000',
             'event_ids' => 'required|array',
             'event_ids.*' => 'exists:events,id',
-            'auto_generate_password' => 'boolean',
             'send_welcome_email' => 'boolean',
             'is_active' => 'boolean',
             'related_participant_id' => 'nullable|exists:participants,id'
@@ -247,11 +248,12 @@ class PwaParticipantsController extends Controller
             }
         }
 
-        // Generate password if auto-generate is enabled
-        $password = null;
-        if ($request->boolean('auto_generate_password')) {
-            $password = \App\Support\PwaPassword::generate($user ?? Auth::user());
-        }
+        // Always generated. This used to be conditional on an "auto-generate
+        // password" checkbox, but the form has no password field, so clearing the
+        // box left nothing to store: the insert put null into a NOT NULL column
+        // and failed on a raw integrity error rather than anything the organizer
+        // could act on. The checkbox has been removed.
+        $password = \App\Support\PwaPassword::generate($user ?? Auth::user());
 
         // Combine address fields
         $address = $this->combineAddressFields($request);
@@ -260,7 +262,9 @@ class PwaParticipantsController extends Controller
         $participant = PwaParticipant::create([
             'name' => $request->name,
             'email' => $request->email,
-            'username' => $request->username,
+            // Generated, because the column is NOT NULL and every other creation
+            // path already generates it this way.
+            'username' => \App\Support\PwaAccount::uniqueUsername($request->name, $request->email),
             'phone' => $request->phone,
             'organization' => $request->organization,
             'address' => $address,
@@ -277,9 +281,11 @@ class PwaParticipantsController extends Controller
             'postcode' => $request->postcode,
             'country' => $request->country,
             'notes' => $request->notes,
-            'password' => $password ? Hash::make($password) : null,
+            'password' => Hash::make($password),
             'is_active' => $request->boolean('is_active', true),
-            'password_changed_at' => $password ? now() : null,
+            // Null marks this as a generated password the holder has not replaced
+            // yet, which is what the participants list reports on.
+            'password_changed_at' => null,
             'created_by' => $user->id,
             'updated_by' => $user->id,
             'related_participant_id' => $request->related_participant_id ?? null
@@ -288,9 +294,10 @@ class PwaParticipantsController extends Controller
         // Assign to events
         $participant->events()->attach($request->event_ids);
 
-        // Send welcome email if enabled
+        // Send welcome email if enabled. No longer guarded on there being a
+        // password, because there always is one now.
         $emailNote = '';
-        if ($request->boolean('send_welcome_email') && $password) {
+        if ($request->boolean('send_welcome_email')) {
             $result = $this->sendWelcomeEmail($participant, $password);
             $emailNote = ' ' . $result['message'];
         }
@@ -372,32 +379,44 @@ class PwaParticipantsController extends Controller
                 // Generate password
                 $password = \App\Support\PwaPassword::generate($user ?? Auth::user());
 
-                // Generate unique username
-                $username = $this->generateUniqueUsername($regularParticipant->name, $regularParticipant->email);
+                $username = \App\Support\PwaAccount::uniqueUsername(
+                    $regularParticipant->name,
+                    $regularParticipant->email
+                );
 
                 // Create PWA participant
                 $participantId = $regularParticipant->id;
                 // Auto-assign: Regular participant ID
                 
+                // Values are copied across as-is. Coalescing a missing value to ''
+                // used to break the insert outright: gender is an enum and
+                // date_of_birth a date, and '' is a member of neither, so MySQL
+                // running with STRICT_TRANS_TABLES rejected the row with
+                // "1265 Data truncated". Every column here is nullable, so a
+                // participant with nothing recorded should simply carry null.
                 $pwaParticipant = PwaParticipant::create([
                     'name' => $regularParticipant->name,
                     'email' => $regularParticipant->email,
                     'username' => $username,
                     'phone' => $regularParticipant->phone,
                     'organization' => $regularParticipant->organization,
-                    'address' => $regularParticipant->address ?? '',
-                    'identity_card' => $regularParticipant->identity_card ?? '',
-                    'passport_no' => $regularParticipant->passport_no ?? '',
-                    'gender' => $regularParticipant->gender ?? '',
-                    'date_of_birth' => $regularParticipant->date_of_birth ?? '',
-                    'job_title' => $regularParticipant->job_title ?? '',
-                    'address1' => $regularParticipant->address1 ?? '',
-                    'address2' => $regularParticipant->address2 ?? '',
-                    'city' => $regularParticipant->city ?? '',
-                    'state' => $regularParticipant->state ?? '',
-                    'postcode' => $regularParticipant->postcode ?? '',
-                    'country' => $regularParticipant->country ?? '',
-                    'notes' => $regularParticipant->notes ?? '',
+                    'address' => $regularParticipant->address,
+                    'identity_card' => $regularParticipant->identity_card,
+                    'passport_no' => $regularParticipant->passport_no,
+                    'gender' => $regularParticipant->gender,
+                    // Was omitted entirely, so accounts created this way lost the
+                    // participant's race and the Race chart on the analytics page
+                    // undercounted them.
+                    'race' => $regularParticipant->race,
+                    'date_of_birth' => $regularParticipant->date_of_birth,
+                    'job_title' => $regularParticipant->job_title,
+                    'address1' => $regularParticipant->address1,
+                    'address2' => $regularParticipant->address2,
+                    'city' => $regularParticipant->city,
+                    'state' => $regularParticipant->state,
+                    'postcode' => $regularParticipant->postcode,
+                    'country' => $regularParticipant->country,
+                    'notes' => $regularParticipant->notes,
                     'password' => Hash::make($password),
                     'is_active' => $request->boolean('is_active', true),
                     'password_changed_at' => $request->boolean('force_password_change') ? null : now(),
@@ -473,6 +492,9 @@ class PwaParticipantsController extends Controller
         $user = Auth::user();
         $file = $request->file('file');
         $importedCount = 0;
+        // Rows whose address already had an account, so a participant was added
+        // under it rather than a second account being created.
+        $linkedCount = 0;
         $emailedCount = 0;
         $sendWelcomeEmail = $request->boolean(
             'send_welcome_email',
@@ -500,7 +522,12 @@ class PwaParticipantsController extends Controller
                     // Validate row data
                     $validator = Validator::make($row, [
                         'name' => 'required|string|max:255',
-                        'email' => 'required|email|unique:pwa_participants,email',
+                        // Not unique: a file listing a family or a group of
+                        // colleagues shares one address between several people,
+                        // and rejecting the second row onwards made importing such
+                        // a list impossible. An address that already has an account
+                        // reuses it below instead of failing.
+                        'email' => 'required|email',
                         'phone' => 'nullable|string|max:20',
                         'organization' => 'nullable|string|max:255',
                         'address' => 'nullable|string|max:500',
@@ -536,9 +563,33 @@ class PwaParticipantsController extends Controller
                         }
                     }
 
+                    // One account per address, several people under it. When the
+                    // address is already known, the account is reused and only the
+                    // participant row is added: issuing a new password would lock
+                    // the holder out of an account they are already using, and
+                    // there is nothing new to email them about.
+                    $existingAccount = PwaParticipant::withTrashed()
+                        ->whereRaw('LOWER(email) = ?', [strtolower(trim((string) $row['email']))])
+                        ->first();
+
+                    if ($existingAccount) {
+                        if ($existingAccount->trashed()) {
+                            $existingAccount->restore();
+                        }
+
+                        if ($eventId && !$existingAccount->events()->where('events.id', $eventId)->exists()) {
+                            $existingAccount->events()->attach($eventId);
+                        }
+
+                        $this->createRegularParticipant($existingAccount, $eventId, $row);
+
+                        $linkedCount++;
+                        continue;
+                    }
+
                     // Generate password and username
                     $password = \App\Support\PwaPassword::generate($user ?? Auth::user());
-                    $username = $this->generateUniqueUsername($row['name'], $row['email']);
+                    $username = \App\Support\PwaAccount::uniqueUsername($row['name'], $row['email']);
 
                     // Create PWA participant
                     $participant = PwaParticipant::create([
@@ -601,7 +652,12 @@ class PwaParticipantsController extends Controller
             ], 400);
         }
 
-        $message = "Successfully imported {$importedCount} participants.";
+        $message = "Created {$importedCount} account(s).";
+
+        if ($linkedCount) {
+            $message .= " {$linkedCount} participant(s) were added to an account that already existed.";
+        }
+
         if ($sendWelcomeEmail) {
             $message .= " {$emailedCount} welcome email(s) sent.";
         }
@@ -615,6 +671,7 @@ class PwaParticipantsController extends Controller
         return response()->json([
             'success' => true,
             'imported_count' => $importedCount,
+            'linked_count' => $linkedCount,
             'emailed_count' => $emailedCount,
             'message' => $message
         ]);
@@ -625,24 +682,121 @@ class PwaParticipantsController extends Controller
      */
     private function readImportFile($file)
     {
-        $extension = $file->getClientOriginalExtension();
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        $rows = $extension === 'csv'
+            ? $this->readCsvRows($file->getPathname())
+            : $this->readSpreadsheetRows($file->getPathname());
+
+        if (empty($rows)) {
+            throw new \Exception('The file is empty.');
+        }
+
+        $headers = array_map([$this, 'normaliseImportHeading'], array_shift($rows));
+
+        // Distinct from an empty file, and worth saying plainly: otherwise the
+        // import reports "Successfully imported 0 participants" and looks like it
+        // worked.
+        if (empty($rows)) {
+            throw new \Exception('The file has a header line but no participants below it.');
+        }
+
         $data = [];
 
-        if ($extension === 'csv') {
-            $handle = fopen($file->getPathname(), 'r');
-            $headers = fgetcsv($handle);
-            
-            while (($row = fgetcsv($handle)) !== false) {
-                $data[] = array_combine($headers, $row);
+        foreach ($rows as $row) {
+            // Trailing empty cells are common in spreadsheets, and a short row
+            // would make array_combine fail outright.
+            $row = array_slice(array_pad($row, count($headers), null), 0, count($headers));
+
+            $combined = array_combine($headers, $row);
+
+            // Skip blank lines rather than reporting them as validation failures.
+            if (count(array_filter($combined, fn ($v) => trim((string) $v) !== '')) === 0) {
+                continue;
             }
-            fclose($handle);
-        } else {
-            // For Excel files, you would need to install a package like PhpSpreadsheet
-            // For now, we'll throw an exception
-            throw new \Exception('Excel file import not implemented yet. Please use CSV format.');
+
+            $data[] = array_map(fn ($v) => is_string($v) ? trim($v) : $v, $combined);
         }
 
         return $data;
+    }
+
+    /**
+     * Turn a heading as typed into the key the validator expects.
+     *
+     * The downloadable template shipped headings like "Date of Birth" and
+     * "Event ID", while the rules ask for date_of_birth and event_id. Nothing
+     * reconciled the two, so array_combine produced keys no rule ever looked at
+     * and every single row failed as "name is required". Normalising here means
+     * the template works, and so do files people have already built by hand in
+     * whatever capitalisation they used.
+     */
+    private function normaliseImportHeading($heading): string
+    {
+        $key = strtolower(trim((string) $heading));
+        $key = preg_replace('/^\xEF\xBB\xBF/', '', $key);   // Excel's UTF-8 BOM
+        $key = preg_replace('/[^a-z0-9]+/', '_', $key);
+        $key = trim((string) $key, '_');
+
+        // Headings that do not simply snake_case into the field name.
+        return match ($key) {
+            'ic', 'ic_number', 'ic_no', 'identity_card_no' => 'identity_card',
+            'passport', 'passport_number' => 'passport_no',
+            'dob', 'birth_date' => 'date_of_birth',
+            'event' => 'event_id',
+            'phone_number', 'mobile', 'contact' => 'phone',
+            'company', 'company_government' => 'organization',
+            'position' => 'job_title',
+            'zip', 'zipcode', 'post_code' => 'postcode',
+            default => $key,
+        };
+    }
+
+    /**
+     * @return array<int, array<int, string|null>>
+     */
+    private function readCsvRows(string $path): array
+    {
+        $rows = [];
+        $handle = fopen($path, 'r');
+
+        if ($handle === false) {
+            throw new \Exception('The uploaded file could not be opened.');
+        }
+
+        try {
+            while (($row = fgetcsv($handle)) !== false) {
+                $rows[] = $row;
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Read .xlsx / .xls with PhpSpreadsheet, which is already present as a
+     * dependency of the export side. The upload validation has always accepted
+     * these extensions while the reader threw "not implemented yet", so the form
+     * offered a choice that could only fail.
+     *
+     * @return array<int, array<int, string|null>>
+     */
+    private function readSpreadsheetRows(string $path): array
+    {
+        try {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($path);
+            $reader->setReadDataOnly(true);
+
+            $sheet = $reader->load($path)->getActiveSheet();
+
+            // Dates arrive as serial numbers unless formatted, so read the
+            // displayed value; a date_of_birth of 31234 would fail validation.
+            return $sheet->toArray(null, true, true, false);
+        } catch (\Throwable $e) {
+            throw new \Exception('The spreadsheet could not be read: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -680,26 +834,11 @@ class PwaParticipantsController extends Controller
         );
     }
 
-    /**
-     * Generate unique username for PWA participant
-     */
-    private function generateUniqueUsername($name, $email)
-    {
-        // Create base username from name
-        $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name));
-        $baseUsername = substr($baseUsername, 0, 10); // Limit to 10 characters
-        
-        $username = $baseUsername;
-        $counter = 1;
-        
-        // Check if username exists and generate unique one
-        while (PwaParticipant::where('username', $username)->exists()) {
-            $username = $baseUsername . $counter;
-            $counter++;
-        }
-        
-        return $username;
-    }
+    // The private username generator that used to live here has been removed in
+    // favour of App\Support\PwaAccount::uniqueUsername, which the automatic
+    // account creation path already used. The two were near-identical except that
+    // this one checked only live rows, so it would happily hand back a name
+    // already held by an account sitting in the Recycle Bin.
 
     /**
      * Create regular participant record for consistency
@@ -707,16 +846,47 @@ class PwaParticipantsController extends Controller
     private function createRegularParticipant($pwaParticipant, $eventId, $request = null)
     {
         try {
-            // Check if regular participant already exists
-            $existingParticipant = Participant::where('email', $pwaParticipant->email)->first();
-            if (!$existingParticipant) {
+            $event = $eventId ? Event::find($eventId) : null;
+
+            if (!$event) {
+                return;
+            }
+
+            // The person being registered is not always the account holder. In an
+            // imported file one address can cover a whole family, so each row
+            // names its own person while the account is only the login. Where the
+            // caller supplied a name, it describes the participant and wins.
+            $read = fn (string $field) => is_array($request)
+                ? ($request[$field] ?? null)
+                : (is_object($request) ? ($request->{$field} ?? null) : null);
+
+            $name = $read('name') ?: $pwaParticipant->name;
+            $identityCard = $read('identity_card') ?: $pwaParticipant->identity_card;
+            $passportNo = $read('passport_no') ?: $pwaParticipant->passport_no;
+
+            // Decided by the same rule the registration forms use. Matching on
+            // email alone would have treated a second child on the family address
+            // as a row that already existed and quietly skipped them.
+            $alreadyThere = \App\Support\DuplicateRegistration::find($event, [
+                'name' => $name,
+                'email' => $pwaParticipant->email,
+                'identity_card' => $identityCard,
+                'passport_no' => $passportNo,
+            ]);
+
+            if (!$alreadyThere) {
                 $participantData = [
-                    'name' => $pwaParticipant->name,
+                    'name' => $name,
                     'email' => $pwaParticipant->email,
                     'phone' => $pwaParticipant->phone,
                     'organization' => $pwaParticipant->organization,
                     'event_id' => $eventId,
-                    'status' => 'registered',
+                    // 'registered' is not one of this column's values: it is
+                    // enum('active','inactive'). MySQL rejected every insert with
+                    // "1265 Data truncated", the exception was swallowed by the
+                    // catch below, and so no participant row was ever written for
+                    // an account created by hand or by import.
+                    'status' => 'active',
                     'registration_date' => now()
                 ];
 
@@ -763,10 +933,27 @@ class PwaParticipantsController extends Controller
                     if (isset($request['country'])) $participantData['country'] = $request['country'];
                 }
 
+                // Decides which tab the row appears under on the participants
+                // screen. The column defaults to 'verified', so leaving it unset
+                // filed people with no IC or passport under Verified anyway.
+                $participantData['registration_type'] =
+                    (filled($participantData['identity_card'] ?? null) || filled($participantData['passport_no'] ?? null))
+                        ? 'verified'
+                        : 'simplified';
+
                 Participant::create($participantData);
             }
-        } catch (\Exception $e) {
-            \Log::error('Failed to create regular participant: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            // Left as a warning rather than a failure: the app account itself was
+            // created successfully and the organizer should not lose that. The log
+            // line is the only trace, which is exactly how the status bug above
+            // stayed hidden, so it names the account to make the next one findable.
+            \Log::error('Failed to create the participant record for a PWA account', [
+                'pwa_participant_id' => $pwaParticipant->id ?? null,
+                'email' => $pwaParticipant->email ?? null,
+                'event_id' => $eventId,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

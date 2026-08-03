@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Support\SecurityAlert;
+use App\Support\SecurityPolicy;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -42,17 +44,18 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
-            
-            // Log failed login attempt
-            activity('security')
-                ->withProperties([
-                    'email' => $this->email,
-                    'ip_address' => $this->ip(),
-                    'user_agent' => $this->userAgent(),
-                    'reason' => 'Invalid credentials'
-                ])
-                ->log('Failed login attempt');
+            // The lockout length comes from the Security tab. Calling hit() with
+            // no decay used the framework default of one minute, so a configured
+            // 15 minute lockout released after 60 seconds.
+            RateLimiter::hit($this->throttleKey(), SecurityPolicy::lockoutSeconds());
+
+            SecurityPolicy::audit('failed_login', 'Failed login attempt', [
+                'email' => $this->email,
+                'ip_address' => $this->ip(),
+                'user_agent' => $this->userAgent(),
+                'reason' => 'Invalid credentials',
+                'attempts_remaining' => max(0, SecurityPolicy::maxLoginAttempts() - RateLimiter::attempts($this->throttleKey())),
+            ]);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -63,19 +66,17 @@ class LoginRequest extends FormRequest
         $user = Auth::user();
         if (isset($user->status) && in_array(strtolower($user->status), ['inactive', 'banned'])) {
             Auth::logout();
-            RateLimiter::hit($this->throttleKey());
-            
-            // Log blocked login attempt
-            activity('security')
-                ->causedBy($user)
-                ->withProperties([
-                    'email' => $this->email,
-                    'ip_address' => $this->ip(),
-                    'user_agent' => $this->userAgent(),
-                    'reason' => 'Account ' . $user->status,
-                    'status' => $user->status
-                ])
-                ->log('Login blocked - Account ' . $user->status);
+            RateLimiter::hit($this->throttleKey(), SecurityPolicy::lockoutSeconds());
+
+            // Always recorded, whatever the failed-login switch says: this is not
+            // a mistyped password, it is a disabled account being used.
+            SecurityPolicy::audit('blocked_login', 'Login blocked - Account ' . $user->status, [
+                'email' => $this->email,
+                'ip_address' => $this->ip(),
+                'user_agent' => $this->userAgent(),
+                'reason' => 'Account ' . $user->status,
+                'status' => $user->status,
+            ], $user);
             
             $message = $user->status === 'banned' ? 'Your account is banned. Please contact support.' : 'Your account is inactive. Please contact support.';
             throw ValidationException::withMessages([
@@ -97,21 +98,30 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        // Was a literal 5, so the Max Login Attempts setting did nothing.
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), SecurityPolicy::maxLoginAttempts())) {
             return;
         }
 
         event(new Lockout($this));
-        
-        // Log rate limit exceeded
-        activity('security')
-            ->withProperties([
-                'email' => $this->email,
-                'ip_address' => $this->ip(),
-                'user_agent' => $this->userAgent(),
-                'reason' => 'Too many login attempts'
-            ])
-            ->log('Login rate limit exceeded');
+
+        // A lockout is worth knowing about even with failed-login logging off,
+        // and it is what the security alert is for.
+        SecurityPolicy::audit('lockout', 'Login rate limit exceeded', [
+            'email' => $this->email,
+            'ip_address' => $this->ip(),
+            'user_agent' => $this->userAgent(),
+            'reason' => 'Too many login attempts',
+            'max_attempts' => SecurityPolicy::maxLoginAttempts(),
+            'lockout_minutes' => (int) round(SecurityPolicy::lockoutSeconds() / 60),
+        ]);
+
+        SecurityAlert::send('Account lockout triggered', [
+            'Email' => (string) $this->email,
+            'IP address' => (string) $this->ip(),
+            'Attempts allowed' => (string) SecurityPolicy::maxLoginAttempts(),
+            'Locked for' => (int) round(SecurityPolicy::lockoutSeconds() / 60) . ' minute(s)',
+        ]);
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
 

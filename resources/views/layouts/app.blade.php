@@ -52,8 +52,12 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        {{-- Appearance settings: favicon, colours, font and custom CSS. Must come
+             after the bundle so the :root overrides win. --}}
+        @include('partials.branding-head')
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased {{ \App\Support\Branding::bodyClasses() }}">
         <div class="min-h-screen bg-gray-50 flex">
             <!-- Sidebar -->
             @include('layouts.sidebar')
@@ -96,7 +100,16 @@
                                         </template>
                                         
                                         <template x-for="notification in notifications" :key="notification.id">
-                                            <a :href="notification.url" class="block py-2 px-3 hover:bg-gray-50 border-b border-gray-100 transition duration-150 ease-in-out" :class="{'bg-blue-50': !notification.read_at}">
+                                            {{-- The href is a path, produced by the model rather than
+                                                 taken from the stored column: the column holds absolute
+                                                 URLs baked with whatever APP_URL was current when the
+                                                 row was written, and most of them name the production
+                                                 host. Following one crossed to another site, where this
+                                                 session does not exist, which is why clicking appeared
+                                                 to sign you out. Marking read happens on the way out. --}}
+                                            <a :href="notification.url"
+                                               @click="window.markOneAsRead(notification)"
+                                               class="block py-2 px-3 hover:bg-gray-50 border-b border-gray-100 transition duration-150 ease-in-out" :class="{'bg-blue-50': !notification.read_at}">
                                                 <div class="flex items-start">
                                                     <div class="flex-shrink-0 mr-2">
                                                         <span class="material-icons-outlined text-primary-DEFAULT" x-text="notification.icon || 'forum'"></span>
@@ -114,7 +127,10 @@
                                         </template>
                                     </div>
                                     
-                                    <a href="{{ route('helpdesk.index') }}" class="block text-center py-2 text-xs text-primary-DEFAULT hover:bg-gray-50 font-medium">
+                                    {{-- Was route('helpdesk.index'), which is a different feature and
+                                         needs helpdesk.read, so anyone without that permission was
+                                         refused. There is a notifications page now. --}}
+                                    <a href="{{ route('notifications.index') }}" class="block text-center py-2 text-xs text-primary-DEFAULT hover:bg-gray-50 font-medium">
                                         View all notifications
                                     </a>
                                 </div>
@@ -256,13 +272,31 @@
                     return;
                 }
                 
+                /**
+                 * The Alpine data for the bell, or null.
+                 *
+                 * Alpine 3 exposes this through Alpine.$data(el). The previous code
+                 * read el.__x, which only exists in Alpine 2, so on this version it
+                 * was always undefined and every guarded block below was skipped:
+                 * the mark-all-read request succeeded while the badge never moved.
+                 */
+                function notifData() {
+                    try {
+                        return (window.Alpine && typeof window.Alpine.$data === 'function')
+                            ? window.Alpine.$data(notificationContainer)
+                            : null;
+                    } catch (e) {
+                        return null;
+                    }
+                }
+
                 // Function to add notification
                 function addNotification(notification) {
                     // Adding notification
                     
                     try {
-                        if (notificationContainer.__x) {
-                            const data = notificationContainer.__x.$data;
+                        if (notifData()) {
+                            const data = notifData();
                             
                             // Add notification to the list and increase unread count
                             data.notifications.unshift(notification);
@@ -283,6 +317,38 @@
                     }
                 }
                 
+                /**
+                 * Mark one notification read as it is opened.
+                 *
+                 * Fired from the link's click handler, so navigation continues while
+                 * this goes out. keepalive lets the request finish after the page
+                 * has started unloading, which a plain fetch here would not.
+                 */
+                window.markOneAsRead = function (notification) {
+                    if (!notification || notification.read_at) {
+                        return;
+                    }
+
+                    try {
+                        fetch('/notifications/' + notification.id + '/mark-read', {
+                            method: 'POST',
+                            keepalive: true,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                            }
+                        }).catch(() => {});
+                    } catch (e) {}
+
+                    const data = notifData();
+
+                    if (data) {
+                        notification.read_at = new Date().toISOString();
+                        data.unreadCount = Math.max(0, (data.unreadCount || 0) - 1);
+                        window.__lastUnreadCount = data.unreadCount;
+                    }
+                };
+
                 // Function to mark all as read
                 window.markAllAsRead = function() {
                     // Marking all as read
@@ -301,8 +367,8 @@
                         return response.json();
                     })
                     .then(() => {
-                        if (notificationContainer.__x) {
-                            const data = notificationContainer.__x.$data;
+                        if (notifData()) {
+                            const data = notifData();
                             const nowIso = new Date().toISOString();
                             // Reassign array to ensure Alpine reactivity updates
                             data.notifications = (data.notifications || []).map(n => Object.assign({}, n, { read_at: nowIso }));
@@ -311,12 +377,12 @@
                             // All notifications marked as read
                         }
                         // Force a fresh pull from server to keep UI consistent with backend
-                        return fetch('/notifications');
+                        return fetch('/notifications/feed');
                     })
                     .then(r => r && r.ok ? r.json() : null)
                     .then(fresh => {
-                        if (fresh && notificationContainer.__x) {
-                            const cd = notificationContainer.__x.$data;
+                        if (fresh && notifData()) {
+                            const cd = notifData();
                             cd.notifications = fresh.notifications || [];
                             cd.unreadCount = fresh.unreadCount || 0;
                             window.__lastUnreadCount = cd.unreadCount;
@@ -327,7 +393,7 @@
                 
                 // Fetch initial notifications
                 // Fetching initial notifications
-                fetch('/notifications')
+                fetch('/notifications/feed')
                     .then(response => {
                         if (!response.ok) {
                             // Silent fail if user doesn't have permission
@@ -345,8 +411,8 @@
                         // Initial notifications received
                         
                         // Update Alpine component directly if ready
-                        if (notificationContainer.__x) {
-                            const componentData = notificationContainer.__x.$data;
+                        if (notifData()) {
+                            const componentData = notifData();
                             componentData.notifications = data.notifications || [];
                             componentData.unreadCount = data.unreadCount || 0;
                             window.__lastUnreadCount = componentData.unreadCount;
@@ -368,7 +434,7 @@
                 // Fallback polling only; skip while the tab is hidden to avoid needless requests
                 setInterval(() => {
                     if (document.hidden) return;
-                    fetch('/notifications')
+                    fetch('/notifications/feed')
                         .then(r => {
                             if (!r.ok) return null;
                             return r.json();
@@ -376,8 +442,8 @@
                         .then(data => {
                             if (!data) return; // Skip if no data
                             
-                            if (notificationContainer.__x) {
-                                const cd = notificationContainer.__x.$data;
+                            if (notifData()) {
+                                const cd = notifData();
                                 const prev = typeof window.__lastUnreadCount === 'number' ? window.__lastUnreadCount : cd.unreadCount;
                                 cd.notifications = data.notifications || [];
                                 cd.unreadCount = data.unreadCount || 0;

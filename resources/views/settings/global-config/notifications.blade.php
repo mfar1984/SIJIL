@@ -1,426 +1,352 @@
-<div x-show="activeTab === 'notifications'" class="space-y-2">
-    <style>
-        /* Tooltip styles */
-        .tooltip-wrapper {
-            position: relative;
-            display: inline-flex;
-        }
-        
-        .tooltip-content {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(-4px);
-            background-color: #1f2937;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            white-space: nowrap;
-            z-index: 1000;
-            pointer-events: none;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        
-        .tooltip-content::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 4px solid transparent;
-            border-top-color: #1f2937;
-        }
-    </style>
-    
+{{--
+    Notifications tab.
+
+    Grouped by the moment that triggers the message rather than by channel, so it
+    is possible to see what a participant receives at each point instead of
+    reading three separate lists.
+
+    Six of the fifteen switches here did nothing at all: the event reminders and
+    their "hours before" value had no command, job or schedule behind them, the
+    welcome email for new backend users was never sent, system error reporting was
+    never wired to the exception handler, and password reset emails always went
+    out regardless. All are now honoured.
+--}}
+@php
+    $notif = $notificationPanel ?? \App\Support\NotificationSurface::payload();
+@endphp
+
+<div x-show="activeTab === 'notifications'" class="space-y-4">
+
+    {{-- ------------------------------------------------------------------
+         Channel readiness
+    ------------------------------------------------------------------- --}}
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons-outlined text-primary-DEFAULT mr-2">email</span>
-                Email Notifications
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">sensors</span>
+                Channels
             </h2>
         </div>
-        
+
         <div class="p-4">
-        <div class="grid grid-cols-1 gap-3">
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">person_add</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        New User Registration
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
+            <p class="text-[11px] text-gray-500 mb-3">
+                A switch below can only take effect if its channel can send. This is read from the delivery
+                configuration, not from the switches.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                @foreach([
+                    'email' => ['label' => 'Email', 'icon' => 'mail'],
+                    'sms' => ['label' => 'SMS', 'icon' => 'sms'],
+                    'telegram' => ['label' => 'Telegram', 'icon' => 'send'],
+                ] as $key => $meta)
+                    @php $channel = $notif[$key]; @endphp
+                    <div class="border rounded p-3 {{ $channel['ready'] ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50' }}">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-medium {{ $channel['ready'] ? 'text-green-800' : 'text-amber-800' }} flex items-center">
+                                <span class="material-icons-outlined text-sm mr-1">{{ $meta['icon'] }}</span>
+                                {{ $meta['label'] }}
                             </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send email when a new user registers
-                            </div>
+                            <span class="px-1.5 py-0.5 rounded text-[10px] {{ $channel['ready'] ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+                                {{ $channel['ready'] ? 'Ready' : 'Not ready' }}
+                            </span>
                         </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="email_new_user_registration" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="email_new_user_registration" value="1" class="sr-only peer" {{ (old('email_new_user_registration', $config->email_new_user_registration ?? true)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
+                        <p class="text-[11px] {{ $channel['ready'] ? 'text-green-700' : 'text-amber-700' }} leading-snug">
+                            {{ $channel['detail'] }}
+                        </p>
+                    </div>
+                @endforeach
             </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">event_available</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Event Registration
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send confirmation email after event registration
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="email_event_registration" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="email_event_registration" value="1" class="sr-only peer" {{ (old('email_event_registration', $config->email_event_registration ?? true)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">notifications</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Event Reminder
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send reminder email before event starts
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
+        </div>
+    </div>
+
+    {{-- ------------------------------------------------------------------
+         Per-event triggers
+    ------------------------------------------------------------------- --}}
+    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">event_available</span>
+                When Someone Registers
+            </h2>
+        </div>
+
+        <div class="p-4 space-y-2">
+            <label class="flex items-start">
+                <input type="hidden" name="email_event_registration" value="0">
+                <input type="checkbox" name="email_event_registration" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                       {{ (old('email_event_registration', $config->email_event_registration ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2">
+                    <span class="text-xs text-gray-700">Email the participant a confirmation</span>
+                    <span class="block text-[11px] text-gray-500">
+                        Uses the simplified template for events with identity verification switched off, and the full
+                        template otherwise.
+                    </span>
+                </span>
+            </label>
+
+            <label class="flex items-start">
+                <input type="hidden" name="sms_event_registration" value="0">
+                <input type="checkbox" name="sms_event_registration" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                       {{ (old('sms_event_registration', $config->sms_event_registration ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2">
+                    <span class="text-xs text-gray-700">Text the participant a confirmation</span>
+                    <span class="block text-[11px] text-gray-500">Only when a phone number was given.</span>
+                </span>
+            </label>
+
+            <label class="flex items-start">
+                <input type="hidden" name="telegram_event_registration" value="0">
+                <input type="checkbox" name="telegram_event_registration" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                       {{ (old('telegram_event_registration', $config->telegram_event_registration ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2">
+                    <span class="text-xs text-gray-700">Post to the Telegram channel</span>
+                    <span class="block text-[11px] text-gray-500">
+                        Goes to the configured channel, so everyone in it sees each registration.
+                    </span>
+                </span>
+            </label>
+
+            <label class="flex items-start">
+                <input type="hidden" name="admin_new_registrations" value="0">
+                <input type="checkbox" name="admin_new_registrations" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                       {{ (old('admin_new_registrations', $config->admin_new_registrations ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2">
+                    <span class="text-xs text-gray-700">Email the event organizer</span>
+                    <span class="block text-[11px] text-gray-500">
+                        Sent to whoever owns the event, not to the address at the bottom of this tab.
+                    </span>
+                </span>
+            </label>
+        </div>
+    </div>
+
+    {{-- ------------------------------------------------------------------
+         Reminders
+    ------------------------------------------------------------------- --}}
+    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">alarm</span>
+                Before an Event Starts
+            </h2>
+        </div>
+
+        <div class="p-4 space-y-3">
+            <div class="space-y-2">
+                <label class="flex items-start">
                     <input type="hidden" name="email_event_reminder" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="email_event_reminder" value="1" class="sr-only peer" {{ (old('email_event_reminder', $config->email_event_reminder ?? true)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">workspace_premium</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Certificate Generated
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send email when a certificate is generated
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="email_certificate_generated" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="email_certificate_generated" value="1" class="sr-only peer" {{ (old('email_certificate_generated', $config->email_certificate_generated ?? true)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">password</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Password Reset
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send email for password reset requests
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="email_password_reset" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="email_password_reset" value="1" class="sr-only peer" {{ (old('email_password_reset', $config->email_password_reset ?? true)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
-            </div>
-        </div>
-        </div>
-    </div>
-    
-    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
-        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
-            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons-outlined text-primary-DEFAULT mr-2">sms</span>
-                SMS Notifications
-            </h2>
-        </div>
-        
-        <div class="p-4">
-        <div class="grid grid-cols-1 gap-3 mb-4">
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">event_available</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Event Registration
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send SMS confirmation after registration
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="sms_event_registration" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="sms_event_registration" value="1" class="sr-only peer" {{ (old('sms_event_registration', $config->sms_event_registration ?? false)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">notifications</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Event Reminder
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send SMS reminder before event starts
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
+                    <input type="checkbox" name="email_event_reminder" value="1"
+                           class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                           {{ (old('email_event_reminder', $config->email_event_reminder ?? false)) ? 'checked' : '' }}>
+                    <span class="ml-2">
+                        <span class="text-xs text-gray-700">Email a reminder</span>
+                        <span class="block text-[11px] text-gray-500">Every active participant on the event.</span>
+                    </span>
+                </label>
+
+                <label class="flex items-start">
                     <input type="hidden" name="sms_event_reminder" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="sms_event_reminder" value="1" class="sr-only peer" {{ (old('sms_event_reminder', $config->sms_event_reminder ?? false)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
+                    <input type="checkbox" name="sms_event_reminder" value="1"
+                           class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                           {{ (old('sms_event_reminder', $config->sms_event_reminder ?? false)) ? 'checked' : '' }}>
+                    <span class="ml-2">
+                        <span class="text-xs text-gray-700">Text a reminder</span>
+                        <span class="block text-[11px] text-gray-500">Participants with a phone number.</span>
+                    </span>
+                </label>
             </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">workspace_premium</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Certificate Generated
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Send SMS when a certificate is generated
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="sms_certificate_generated" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="sms_certificate_generated" value="1" class="sr-only peer" {{ (old('sms_certificate_generated', $config->sms_certificate_generated ?? false)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
-            </div>
-        </div>
-        
-        <div class="space-y-3">
-            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                <label for="sms_reminder_hours" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
-                    SMS Reminder Time (hours before event)
-                    <div class="tooltip-wrapper" x-data="{ show: false }">
-                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                              @mouseenter="show = true" 
-                              @mouseleave="show = false">
-                            help_outline
-                        </span>
-                        <div x-show="show" x-transition class="tooltip-content">
-                            How many hours before the event to send SMS reminders
-                        </div>
-                    </div>
+
+            <div class="flex flex-col md:flex-row md:items-start gap-3 pt-1">
+                <label for="sms_reminder_hours" class="text-xs font-medium text-gray-700 md:w-40 md:pt-2">
+                    Send This Far Ahead
                 </label>
                 <div class="flex-1">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">access_time</span>
-                        </div>
-                        <input 
-                            type="number" 
-                            id="sms_reminder_hours" 
-                            name="sms_reminder_hours" 
-                            value="{{ old('sms_reminder_hours', $config->sms_reminder_hours ?? 24) }}" 
-                            min="1" 
-                            max="72" 
-                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                        >
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="sms_reminder_hours" name="sms_reminder_hours"
+                               value="{{ old('sms_reminder_hours', $config->sms_reminder_hours ?? 24) }}"
+                               min="1" max="72"
+                               class="w-32 h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                        <span class="text-xs text-gray-600">hours before the start</span>
                     </div>
+                    <p class="text-[11px] text-gray-500 mt-1">
+                        Applies to both the email and the SMS. Each participant is reminded once per event; the
+                        record of having been reminded is kept in the activity log.
+                    </p>
                 </div>
             </div>
-        </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded px-3 py-2">
+                <p class="text-[11px] text-blue-800">
+                    Reminders are sent by the hourly <span class="font-mono">events:remind</span> task, so the host
+                    must be running <span class="font-mono">php artisan schedule:run</span> every minute. Run
+                    <span class="font-mono">php artisan events:remind --dry-run</span> to see who would be contacted
+                    without sending anything.
+                </p>
+            </div>
         </div>
     </div>
-    
+
+    {{-- ------------------------------------------------------------------
+         Certificates
+    ------------------------------------------------------------------- --}}
     <div class="bg-white border border-gray-200 rounded-md shadow-sm">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-semibold text-gray-700 flex items-center">
-                <span class="material-icons-outlined text-primary-DEFAULT mr-2">admin_panel_settings</span>
-                Admin Notifications
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">workspace_premium</span>
+                When a Certificate Is Issued
             </h2>
         </div>
-        
-        <div class="p-4">
-        <div class="grid grid-cols-1 gap-3 mb-4">
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">warning</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        System Errors
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Notify admins about system errors
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
+
+        <div class="p-4 space-y-2">
+            <label class="flex items-start">
+                <input type="hidden" name="email_certificate_generated" value="0">
+                <input type="checkbox" name="email_certificate_generated" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                       {{ (old('email_certificate_generated', $config->email_certificate_generated ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2">
+                    <span class="text-xs text-gray-700">Email the certificate to the participant</span>
+                    <span class="block text-[11px] text-gray-500">
+                        Simplified participants receive a signed download link valid for 30 days; verified
+                        participants are pointed at the app.
+                    </span>
+                </span>
+            </label>
+
+            <label class="flex items-start">
+                <input type="hidden" name="sms_certificate_generated" value="0">
+                <input type="checkbox" name="sms_certificate_generated" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                       {{ (old('sms_certificate_generated', $config->sms_certificate_generated ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2">
+                    <span class="text-xs text-gray-700">Text the participant</span>
+                </span>
+            </label>
+
+            <label class="flex items-start">
+                <input type="hidden" name="telegram_certificate_generated" value="0">
+                <input type="checkbox" name="telegram_certificate_generated" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                       {{ (old('telegram_certificate_generated', $config->telegram_certificate_generated ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2">
+                    <span class="text-xs text-gray-700">Post to the Telegram channel</span>
+                </span>
+            </label>
+        </div>
+    </div>
+
+    {{-- ------------------------------------------------------------------
+         Accounts and system
+    ------------------------------------------------------------------- --}}
+    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">manage_accounts</span>
+                Accounts &amp; System
+            </h2>
+        </div>
+
+        <div class="p-4 space-y-3">
+            <div class="space-y-2">
+                <label class="flex items-start">
+                    <input type="hidden" name="email_new_user_registration" value="0">
+                    <input type="checkbox" name="email_new_user_registration" value="1"
+                           class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                           {{ (old('email_new_user_registration', $config->email_new_user_registration ?? false)) ? 'checked' : '' }}>
+                    <span class="ml-2">
+                        <span class="text-xs text-gray-700">Welcome new backend users</span>
+                        <span class="block text-[11px] text-gray-500">
+                            Sent when an administrator creates an account under User Management. Carries the sign-in
+                            address, the email address and the role, but deliberately not the password: that would
+                            leave a working credential sitting in a mailbox.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex items-start">
+                    <input type="hidden" name="email_password_reset" value="0">
+                    <input type="checkbox" name="email_password_reset" value="1"
+                           class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                           {{ (old('email_password_reset', $config->email_password_reset ?? true)) ? 'checked' : '' }}>
+                    <span class="ml-2">
+                        <span class="text-xs text-gray-700">Send password reset emails</span>
+                        <span class="block text-[11px] text-gray-500">
+                            Covers participant app resets, whether requested from the app or performed by an
+                            organizer. A reset generates a new password, so unticking this locks the holder out
+                            until someone reads it to them.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex items-start">
                     <input type="hidden" name="admin_system_errors" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="admin_system_errors" value="1" class="sr-only peer" {{ (old('admin_system_errors', $config->admin_system_errors ?? true)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
+                    <input type="checkbox" name="admin_system_errors" value="1"
+                           class="mt-0.5 rounded border-gray-300 text-primary-DEFAULT focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
+                           {{ (old('admin_system_errors', $config->admin_system_errors ?? false)) ? 'checked' : '' }}>
+                    <span class="ml-2">
+                        <span class="text-xs text-gray-700">Report system errors</span>
+                        <span class="block text-[11px] text-gray-500">
+                            Emails unhandled exceptions with the URL, the signed-in user and the location in the
+                            code. Repeats of the same error are suppressed for 30 minutes, because a broken page
+                            raises it on every request.
+                        </span>
+                    </span>
+                </label>
             </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">new_releases</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        New Registrations
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Notify admins about new user registrations
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="admin_new_registrations" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="admin_new_registrations" value="1" class="sr-only peer" {{ (old('admin_new_registrations', $config->admin_new_registrations ?? false)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <span class="material-icons-outlined text-primary-DEFAULT text-sm">security</span>
-                    <p class="text-xs font-medium text-gray-700 flex items-center gap-1">
-                        Security Alerts
-                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                  @mouseenter="show = true" 
-                                  @mouseleave="show = false">
-                                help_outline
-                            </span>
-                            <div x-show="show" x-transition class="tooltip-content">
-                                Notify admins about security-related events
-                            </div>
-                        </div>
-                    </p>
-                </div>
-                <div>
-                    <input type="hidden" name="admin_security_alerts" value="0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="admin_security_alerts" value="1" class="sr-only peer" {{ (old('admin_security_alerts', $config->admin_security_alerts ?? true)) ? 'checked' : '' }}>
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-focus:ring-4 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-                    </label>
-                </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded px-3 py-2">
+                <p class="text-[11px] text-gray-600">
+                    <span class="font-medium">Security alerts moved.</span> This tab also carried "Send security
+                    alerts to administrators", a second switch for the same thing as the one on the
+                    <span class="font-medium">Security</span> tab. Two controls for one behaviour is a trap, so the
+                    duplicate has been removed; lockouts, password changes and API key events are configured there.
+                </p>
             </div>
         </div>
-        
-        <div class="space-y-3">
-            <div class="flex flex-col md:flex-row md:items-center gap-3">
-                <label for="admin_notification_email" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">
-                    Admin Notification Email
-                    <div class="tooltip-wrapper" x-data="{ show: false }">
-                        <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                              @mouseenter="show = true" 
-                              @mouseleave="show = false">
-                            help_outline
-                        </span>
-                        <div x-show="show" x-transition class="tooltip-content">
-                            Email address for admin notifications
-                        </div>
-                    </div>
+    </div>
+
+    {{-- ------------------------------------------------------------------
+         Recipient
+    ------------------------------------------------------------------- --}}
+    <div class="bg-white border border-gray-200 rounded-md shadow-sm">
+        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-semibold text-gray-700 flex items-center">
+                <span class="material-icons-outlined text-primary-DEFAULT mr-2">alternate_email</span>
+                Administrator Address
+            </h2>
+        </div>
+
+        <div class="p-4">
+            <div class="flex flex-col md:flex-row md:items-start gap-3">
+                <label for="admin_notification_email" class="text-xs font-medium text-gray-700 md:w-40 md:pt-2">
+                    Send Alerts To
                 </label>
                 <div class="flex-1">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="material-icons-outlined text-[#004aad] text-base">email</span>
+                    <input type="email" id="admin_notification_email" name="admin_notification_email"
+                           value="{{ old('admin_notification_email', $config->admin_notification_email ?? '') }}"
+                           required
+                           class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+                    <p class="text-[11px] text-gray-500 mt-1">
+                        Where system errors and security alerts are sent. Organizer notifications go to the event
+                        owner instead.
+                    </p>
+
+                    @unless($notif['recipient_looks_real'])
+                        <div class="mt-2 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                            <p class="text-[11px] text-amber-800">
+                                <span class="font-medium">This looks like the seeded placeholder.</span>
+                                The default is <span class="font-mono">admin@sijilevents.com</span>, a domain that
+                                does not exist, so anything sent to it is discarded. Change it to a mailbox someone
+                                reads.
+                            </p>
                         </div>
-                        <input 
-                            type="email" 
-                            id="admin_notification_email" 
-                            name="admin_notification_email" 
-                            value="{{ old('admin_notification_email', $config->admin_notification_email ?? '') }}" 
-                            class="w-full text-xs border-gray-300 rounded-[1px] pl-12 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50"
-                        >
-                    </div>
+                    @endunless
                 </div>
             </div>
-        </div>
         </div>
     </div>
 </div>

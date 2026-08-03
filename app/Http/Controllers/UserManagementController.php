@@ -51,7 +51,7 @@ class UserManagementController extends Controller
         }
         
         // Get per_page parameter with default 10
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         
         $users = $query->orderBy('created_at', 'desc')->paginate($perPage);
         
@@ -95,7 +95,7 @@ class UserManagementController extends Controller
 
             if ($trashed) {
                 return back()->withInput()->withErrors([
-                    'email' => "This email belongs to \"{$trashed->name}\", a user sitting in the Recycle Bin. Restore that user, or delete it permanently from Settings → Global Config → Recycle Bin to free up the email.",
+                    'email' => "This email belongs to \"{$trashed->name}\", a user sitting in the Recycle Bin. Restore that user, or delete it permanently from Settings > Global Config > Recycle Bin to free up the email.",
                 ]);
             }
         }
@@ -132,8 +132,10 @@ class UserManagementController extends Controller
             'org_email' => 'nullable|email|max:255',
             'org_website' => 'nullable|url|max:255',
             
-            // Account Settings
-            'password' => 'required|min:8|confirmed',
+            // Account Settings. The rule comes from Settings > Global Config >
+            // Security; this was a hard-coded min:8 that ignored the configured
+            // length and every character requirement.
+            'password' => ['required', 'confirmed', \App\Support\SecurityPolicy::passwordRule()],
         ]);
         
         // Create the user
@@ -174,6 +176,10 @@ class UserManagementController extends Controller
             }
         }
         
+        // A newly set password starts the expiry clock from now, not from the
+        // account's creation date.
+        $user->forceFill(['password_changed_at' => now()])->save();
+
         // Log user creation
         activity('user')
             ->causedBy(auth()->user())
@@ -187,9 +193,29 @@ class UserManagementController extends Controller
                 ]
             ])
             ->log('User created');
-        
+
+        // Honours "Email new users a welcome message" on the Notifications tab,
+        // which was stored and read by nothing, so the switch did nothing.
+        $notice = '';
+
+        if (\App\Models\GlobalConfig::getConfig()->email_new_user_registration ?? false) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(
+                    new \App\Mail\UserWelcome($user, $role->name ?? null, auth()->user()?->name)
+                );
+                $notice = ' A welcome email was sent to ' . $user->email . '.';
+            } catch (\Throwable $e) {
+                // The account exists and is usable; only the email failed.
+                \Illuminate\Support\Facades\Log::error('Welcome email failed', [
+                    'user' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $notice = ' The account was created, but the welcome email could not be sent.';
+            }
+        }
+
         return redirect()->route('user.management')
-            ->with('success', 'User created successfully!');
+            ->with('success', 'User created successfully!' . $notice);
     }
     
     /**
@@ -285,7 +311,7 @@ class UserManagementController extends Controller
             'org_website' => 'nullable|url|max:255',
             
             // Account Settings - password is optional on update
-            'password' => 'nullable|min:8|confirmed',
+            'password' => ['nullable', 'confirmed', \App\Support\SecurityPolicy::passwordRule()],
         ]);
         
         // Update user data
@@ -320,6 +346,10 @@ class UserManagementController extends Controller
         $passwordChanged = false;
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
+            // Recorded so password expiry has something to measure against.
+            // Without it an administrator resetting a password left the account
+            // still counting from whenever it was created.
+            $userData['password_changed_at'] = now();
             $passwordChanged = true;
         }
         
@@ -359,6 +389,31 @@ class UserManagementController extends Controller
                     'changes' => $changes
                 ])
                 ->log('User updated: ' . implode(', ', $changes));
+        }
+
+        // A password reset by an administrator and a change of role are security
+        // events, and the Security Audit tab only reads the 'security' log. Both
+        // were recorded under 'user', so neither appeared there.
+        if ($passwordChanged) {
+            \App\Support\SecurityPolicy::audit('password', 'Password reset by administrator', [
+                'target' => $user->email,
+                'ip_address' => $request->ip(),
+            ], auth()->user(), $user);
+
+            \App\Support\SecurityAlert::send('Password reset by administrator', [
+                'Account' => (string) $user->email,
+                'Changed by' => (string) auth()->user()?->email,
+                'IP address' => (string) $request->ip(),
+            ]);
+        }
+
+        if ($roleChanged) {
+            \App\Support\SecurityPolicy::audit('permission', 'User role changed', [
+                'target' => $user->email,
+                'old_role_id' => $oldValues['role_id'],
+                'new_role_id' => $user->role_id,
+                'ip_address' => $request->ip(),
+            ], auth()->user(), $user);
         }
         
         return redirect()->route('user.management')

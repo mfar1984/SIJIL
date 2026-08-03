@@ -60,7 +60,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Notification Routes
 Route::middleware(['auth', 'verified'])->prefix('notifications')->name('notifications.')->group(function () {
-    Route::get('/', [App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+    // The page a person lands on from "View all notifications", which previously
+    // had nowhere to go and pointed at the helpdesk instead.
+    Route::get('/', [App\Http\Controllers\NotificationController::class, 'page'])->name('index');
+
+    // The JSON the bell polls. Separated from the page so neither has to guess
+    // which one the caller wanted from its Accept header.
+    Route::get('/feed', [App\Http\Controllers\NotificationController::class, 'feed'])->name('feed');
+
     Route::post('/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
     Route::post('/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark-read');
     Route::delete('/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
@@ -282,16 +289,17 @@ Route::get('/attendance-list', [AttendanceController::class, 'list'])
 | attendance.read, so that is what they ask for now.
 */
 Route::get('/api/attendance-sessions', [AttendanceController::class, 'apiSessions'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance.read'])
+    ->middleware(['auth', 'verified', 'throttle:api', PermissionMiddleware::class.':attendance.read'])
     ->name('api.attendance.sessions');
 Route::get('/api/attendance-participants', [AttendanceController::class, 'apiParticipants'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':attendance.read'])
+    ->middleware(['auth', 'verified', 'throttle:api', PermissionMiddleware::class.':attendance.read'])
     ->name('api.attendance.participants');
 
 // Profile routes
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/image', [ProfileController::class, 'destroyImage'])->name('profile.image.destroy');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Template Designer Routes
@@ -345,7 +353,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware(PermissionMiddleware::class.':certificates.create')
         ->name('certificates.preview');
     Route::get('/api/certificates/participants', [App\Http\Controllers\CertificateController::class, 'getParticipants'])
-        ->middleware(PermissionMiddleware::class.':certificates.create')
+        ->middleware(['throttle:api', PermissionMiddleware::class.':certificates.create'])
         ->name('api.certificates.participants');
     Route::delete('/certificates/{certificate}', [App\Http\Controllers\CertificateController::class, 'destroy'])
         ->middleware(PermissionMiddleware::class.':certificates.delete')
@@ -391,7 +399,7 @@ require __DIR__.'/auth.php';
 | The path keeps the /api prefix so the form's fetch call is unchanged.
 */
 Route::get('/api/participants/search', [App\Http\Controllers\Api\ParticipantSearchController::class, 'search'])
-    ->middleware(['auth', 'verified', PermissionMiddleware::class.':pwa_participants.create'])
+    ->middleware(['auth', 'verified', 'throttle:api', PermissionMiddleware::class.':pwa_participants.create'])
     ->name('api.participants.search');
 
 // Reports Routes (permission-gated)
@@ -607,6 +615,36 @@ Route::prefix('settings')->group(function () {
     Route::get('/global-config/api', [App\Http\Controllers\GlobalConfigController::class, 'getConfig'])
         ->middleware(['auth', 'verified', PermissionMiddleware::class.':global_config.read'])
         ->name('settings.global-config.api');
+
+    /*
+    | API keys and webhook endpoints, managed from the API & Integrations tab of
+    | the Global Config page. They reuse that page's own permissions rather than
+    | introducing new ones, because they are part of the same screen and a
+    | separate permission would have to be seeded and added to the role matrix
+    | before anyone could use it.
+    */
+    Route::middleware(['auth', 'verified', PermissionMiddleware::class.':global_config.update'])
+        ->prefix('api-integrations')
+        ->name('settings.api.')
+        ->group(function () {
+            Route::post('/keys', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'storeKey'])
+                ->name('keys.store');
+            Route::post('/keys/{apiKey}/regenerate', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'regenerateKey'])
+                ->name('keys.regenerate');
+            Route::post('/keys/{apiKey}/revoke', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'revokeKey'])
+                ->name('keys.revoke');
+
+            Route::post('/webhooks', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'storeWebhook'])
+                ->name('webhooks.store');
+            Route::put('/webhooks/{webhookEndpoint}', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'updateWebhook'])
+                ->name('webhooks.update');
+            Route::post('/webhooks/{webhookEndpoint}/rotate-secret', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'rotateWebhookSecret'])
+                ->name('webhooks.rotate');
+            Route::post('/webhooks/{webhookEndpoint}/test', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'testWebhook'])
+                ->name('webhooks.test');
+            Route::delete('/webhooks/{webhookEndpoint}', [App\Http\Controllers\Settings\ApiIntegrationController::class, 'destroyWebhook'])
+                ->name('webhooks.destroy');
+        });
 });
 
 /*

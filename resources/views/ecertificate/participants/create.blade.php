@@ -159,27 +159,14 @@
                                     </div>
                                 </div>
 
-                                <!-- Username -->
-                                <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                    <label for="username" class="text-xs font-medium text-gray-700 md:w-48 shrink-0 flex items-center gap-1">
-                                        Username <span class="text-red-500">*</span>
-                                        <div class="tooltip-wrapper" x-data="{ show: false }">
-                                            <span class="material-icons-outlined text-gray-400 text-sm cursor-help" 
-                                                  @mouseenter="show = true" 
-                                                  @mouseleave="show = false">
-                                                help_outline
-                                            </span>
-                                            <div x-show="show" x-transition class="tooltip-content">
-                                                Unique username for PWA login
-                                            </div>
-                                        </div>
-                                    </label>
-                                    <div class="flex-1">
-                                        <div class="relative">
-                                            <input type="text" name="username" id="username" class="w-full h-9 text-xs border-gray-300 rounded px-3 focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50" value="{{ old('username') }}" required>
-                                        </div>
-                                    </div>
-                                </div>
+                                {{--
+                                    The username field was removed. Participants sign in with their
+                                    email address; nothing anywhere accepts a username, and the
+                                    account holder was never told what theirs was, so asking an
+                                    organizer to invent one served no purpose. The column is still
+                                    populated, generated the same way the auto-assign and import
+                                    paths have always generated it.
+                                --}}
 
                                 <!-- Phone -->
                                 <div class="flex flex-col md:flex-row md:items-center gap-3">
@@ -525,13 +512,14 @@
                         
                         <div class="p-4">
                             <div class="space-y-3">
-                                <!-- Auto-generate Password -->
-                                <div class="flex items-center">
-                                    <input type="checkbox" name="auto_generate_password" id="auto_generate_password" value="1" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
-                                    <label for="auto_generate_password" class="ml-2 text-xs text-gray-700 cursor-pointer">
-                                        Auto-generate secure password
-                                    </label>
-                                </div>
+                                {{--
+                                    The "auto-generate secure password" checkbox was removed. There
+                                    is no password field on this form, so generating one was the
+                                    only way an account could get a password; clearing the box wrote
+                                    null into a NOT NULL column and the save failed on a raw database
+                                    error. A password is now always generated, which is what the
+                                    auto-assign and import paths have always done.
+                                --}}
 
                                 <!-- Send Welcome Email -->
                                 <div class="flex items-center">
@@ -629,10 +617,13 @@
                     <h3 class="text-sm font-semibold text-gray-700 mb-4">Account Settings</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-3">
-                            <div class="flex items-center">
-                                <input type="checkbox" id="auto_assign_generate_password" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
-                                <label class="ml-2 text-xs text-gray-700">Auto-generate passwords</label>
-                            </div>
+                            {{--
+                                "Auto-generate passwords" was removed here too. This path has always
+                                generated one unconditionally and never read the value, so the box
+                                could be cleared and nothing changed. Passwords are always generated;
+                                whether the holder must replace it is the "force password change"
+                                option opposite, which is read.
+                            --}}
                             <div class="flex items-center">
                                 <input type="checkbox" id="auto_assign_send_email" class="rounded border-gray-300 text-primary-DEFAULT focus:ring-primary-light" checked>
                                 <label class="ml-2 text-xs text-gray-700">Send welcome emails</label>
@@ -688,14 +679,16 @@
                     </div>
 
                     <!-- Template Download -->
-                    <div class="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <div class="flex items-center justify-between">
+                    <div class="mt-4 p-4 border border-gray-200 rounded">
+                        <div class="flex items-center justify-between gap-4">
                             <div>
-                                <h4 class="text-sm font-medium text-blue-800">Download Template</h4>
-                                <p class="text-xs text-blue-600">Get the correct format for your import file</p>
+                                <h4 class="text-sm font-medium text-gray-700">Download template</h4>
+                                <p class="text-xs text-gray-500">Name and email are required. Every other column may be left blank.</p>
                             </div>
-                            <button type="button" id="download-template-btn" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">
-                                Download CSV Template
+                            <button type="button" id="download-template-btn"
+                                    class="h-9 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center shrink-0">
+                                <span class="material-icons-outlined text-sm mr-1">download</span>
+                                CSV template
                             </button>
                         </div>
                     </div>
@@ -960,7 +953,6 @@
                 formData.append('_token', '{{ csrf_token() }}');
                 formData.append('registration_method', 'auto_assign');
                 formData.append('participant_ids', JSON.stringify(selectedParticipants));
-                formData.append('auto_generate_password', document.getElementById('auto_assign_generate_password').checked);
                 formData.append('send_welcome_email', document.getElementById('auto_assign_send_email').checked);
                 formData.append('is_active', document.getElementById('auto_assign_active').checked);
                 formData.append('force_password_change', document.getElementById('auto_assign_force_password_change').checked);
@@ -1003,13 +995,18 @@
                 }
             });
 
-            // Download template
+            // Download template.
+            // The headings must be the field names the importer validates against.
+            // They used to read "Name", "Event ID", "Date of Birth", which matched
+            // no rule, so every row of the official template was rejected as
+            // "name is required". The importer now also tolerates other
+            // capitalisations, but the file it hands out should be exact.
             document.getElementById('download-template-btn').addEventListener('click', function() {
-                const csvContent = `Name,Email,Phone,Organization,Address,Event ID,Identity Card,Passport No,Gender,Date of Birth,Job Title,Notes,Address1,Address2,State,City,Postcode,Country
-John Doe,john@example.com,60123456789,Company A,123 Main St Kuala Lumpur,1,851215-13-1234,,male,1985-12-15,Manager,Test participant,123 Main St,Suite 100,Kuala Lumpur,Kuala Lumpur,50000,Malaysia
-Jane Smith,jane@example.com,60123456788,Company B,456 Oak Ave Petaling Jaya,1,901010-14-5678,,female,1990-10-10,Director,Another test,456 Oak Ave,Apt 200,Petaling Jaya,Petaling Jaya,46000,Malaysia
-Ahmad Faizal,ahmad@example.com,60123456787,Company C,789 Pine Rd Shah Alam,2,881122-15-9012,,male,1988-11-22,Engineer,Third participant,789 Pine Rd,Block C,Shah Alam,Shah Alam,40000,Malaysia`;
-                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const csvContent = `name,email,phone,organization,event_id,identity_card,passport_no,gender,race,date_of_birth,job_title,address1,address2,state,city,postcode,country,notes
+John Doe,john@example.com,60123456789,Company A,1,851215-13-1234,,male,Malay,1985-12-15,Manager,123 Main St,Suite 100,Kuala Lumpur,Kuala Lumpur,50000,Malaysia,Test participant
+Jane Smith,jane@example.com,60123456788,Company B,1,,A12345678,female,Chinese,1990-10-10,Director,456 Oak Ave,Apt 200,Selangor,Petaling Jaya,46000,Malaysia,Passport instead of IC
+Minimal Entry,minimal@example.com,,,,,,,,,,,,,,,,Only name and email are required`;
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;

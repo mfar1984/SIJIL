@@ -67,31 +67,28 @@
         </div>
         
         <div class="p-4">
-            <!-- Security Summary -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-blue-50 rounded-md p-4 border border-blue-100">
-                    <p class="text-xs text-blue-700 font-medium">Total Security Events</p>
-                    <p class="text-2xl font-bold text-blue-800">{{ $totalSecurityEvents }}</p>
-                    <p class="text-[10px] text-blue-600 mt-1">All security-related activities</p>
-                </div>
-                
-                <div class="bg-red-50 rounded-md p-4 border border-red-100">
-                    <p class="text-xs text-red-700 font-medium">Failed Logins</p>
-                    <p class="text-2xl font-bold text-red-800">{{ $failedLogins }}</p>
-                    <p class="text-[10px] text-red-600 mt-1">Unsuccessful login attempts</p>
-                </div>
-                
-                <div class="bg-amber-50 rounded-md p-4 border border-amber-100">
-                    <p class="text-xs text-amber-700 font-medium">Suspicious Activities</p>
-                    <p class="text-2xl font-bold text-amber-800">{{ $suspiciousActivities }}</p>
-                    <p class="text-[10px] text-amber-600 mt-1">Potential security concerns</p>
-                </div>
-                
-                <div class="bg-green-50 rounded-md p-4 border border-green-100">
-                    <p class="text-xs text-green-700 font-medium">Password Changes</p>
-                    <p class="text-2xl font-bold text-green-800">{{ $passwordChanges }}</p>
-                    <p class="text-[10px] text-green-600 mt-1">Password update activities</p>
-                </div>
+            {{-- Every card is measured inside the same scope as the table and honours
+                 the same filters. They used to search the entire activity log and
+                 ignore the filters, which is why the total said 30 while the pager
+                 underneath it said 44. --}}
+            <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                @foreach([
+                    ['Security events', $stats['total'], 'security', 'matching the current filters'],
+                    ['Sign-ins', $stats['sign_ins'], 'login', 'successful authentications'],
+                    ['Failed or suspicious', $stats['failed'], 'gpp_maybe', $stats['failed'] === 0 ? 'nothing recorded' : 'worth a look'],
+                    ['Role and permission changes', $stats['role_changes'], 'admin_panel_settings', 'who can do what'],
+                ] as [$label, $value, $icon, $note])
+                    <div class="border border-gray-200 rounded p-4">
+                        <div class="flex items-start justify-between">
+                            <p class="text-xs text-gray-500">{{ $label }}</p>
+                            <span class="material-icons-outlined text-gray-300 text-base">{{ $icon }}</span>
+                        </div>
+                        <p class="text-2xl font-bold {{ $label === 'Failed or suspicious' && $value > 0 ? 'text-red-600' : 'text-gray-800' }} mt-0.5">
+                            {{ number_format($value) }}
+                        </p>
+                        <p class="text-[11px] text-gray-500 mt-1">{{ $note }}</p>
+                    </div>
+                @endforeach
             </div>
             
             {{-- Search takes the remaining space; the filters keep their own width. --}}
@@ -166,281 +163,135 @@
                 </div>
             @endif
 
-            <!-- Security Tabs -->
-            <div class="mb-4" id="security-tabs">
+            {{-- Tabs are links, not client-side toggles.
+                 They used to switch between four collections that had been fetched
+                 in full and unfiltered, while the pager below described a fifth
+                 query nobody could see. Now the tab is part of the request, so the
+                 count on the tab, the rows in the table and the pager underneath are
+                 all the same query. --}}
+            @php
+                $tabIcons = [
+                    'all' => 'security',
+                    'auth' => 'vpn_key',
+                    'role' => 'admin_panel_settings',
+                    'user' => 'person',
+                ];
+            @endphp
+
+            <div class="mb-4">
                 <div class="border-b border-gray-200">
                     <nav class="flex flex-wrap -mb-px">
-                        <button 
-                            onclick="switchTab('security-events')"
-                            class="inline-flex items-center whitespace-nowrap py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out text-primary-DEFAULT border-primary-DEFAULT"
-                            data-tab-button="security-events">
-                            <span class="material-icons-outlined text-sm mr-1.5">security</span>
-                            Security Events ({{ $allSecurityEvents->count() }})
-                        </button>
-                        <button 
-                            onclick="switchTab('user-activity')"
-                            class="inline-flex items-center whitespace-nowrap py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out text-gray-500 hover:text-primary-DEFAULT border-transparent"
-                            data-tab-button="user-activity">
-                            <span class="material-icons-outlined text-sm mr-1.5">person</span>
-                            User Activity ({{ $userActivities->count() }})
-                        </button>
-                        <button 
-                            onclick="switchTab('role-changes')"
-                            class="inline-flex items-center whitespace-nowrap py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out text-gray-500 hover:text-primary-DEFAULT border-transparent"
-                            data-tab-button="role-changes">
-                            <span class="material-icons-outlined text-sm mr-1.5">admin_panel_settings</span>
-                            Role Changes ({{ $roleActivities->count() }})
-                        </button>
-                        <button 
-                            onclick="switchTab('access-control')"
-                            class="inline-flex items-center whitespace-nowrap py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out text-gray-500 hover:text-primary-DEFAULT border-transparent"
-                            data-tab-button="access-control">
-                            <span class="material-icons-outlined text-sm mr-1.5">vpn_key</span>
-                            Access Control ({{ $authActivities->count() }})
-                        </button>
+                        @foreach($tabs as $key => $label)
+                            @php $active = $tab === $key; @endphp
+                            <a href="{{ route('settings.security-audit', array_merge(request()->except(['tab', 'page']), ['tab' => $key])) }}"
+                               class="inline-flex items-center whitespace-nowrap py-3 px-4 text-xs font-medium leading-5 border-b-2 transition duration-150 ease-in-out
+                                      {{ $active ? 'text-primary-DEFAULT border-primary-DEFAULT' : 'text-gray-500 hover:text-primary-DEFAULT border-transparent' }}">
+                                <span class="material-icons-outlined text-sm mr-1.5">{{ $tabIcons[$key] ?? 'label' }}</span>
+                                {{ $label }}
+                                <span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] {{ $active ? 'bg-primary-DEFAULT text-white' : 'bg-gray-100 text-gray-600' }}">
+                                    {{ number_format($tabCounts[$key]) }}
+                                </span>
+                            </a>
+                        @endforeach
                     </nav>
                 </div>
             </div>
             
-            <!-- Security Events Table -->
-            <div class="overflow-visible border border-gray-200 rounded">
-                <!-- Security Events Tab -->
-                <div id="tab-security-events" class="bg-blue-50 p-2" data-tab="security-events">
-                    <div class="mb-2 text-sm font-bold text-blue-800">Security Events Tab ({{ $allSecurityEvents->count() }} records)</div>
+            {{-- One table, showing the rows of the query that the tab count and the
+                 pager below both describe. There were four tables here, each fed by
+                 its own unfiltered ->get(), which is why a tab could show one row
+                 while the footer reported 44 across five pages. --}}
+            <div class="overflow-x-auto border border-gray-200 rounded">
                 <table class="min-w-full border-collapse">
                     <thead>
                         <tr class="bg-primary-light text-white text-xs uppercase">
                             <th class="py-3 px-4 text-left rounded-tl">ID</th>
-                            <th class="py-3 px-4 text-left">Timestamp</th>
-                            <th class="py-3 px-4 text-left">User</th>
-                            <th class="py-3 px-4 text-left">IP Address</th>
-                            <th class="py-3 px-4 text-left">Event</th>
+                            <th class="py-3 px-4 text-left">When</th>
+                            <th class="py-3 px-4 text-left">Who</th>
+                            <th class="py-3 px-4 text-left">What happened</th>
                             <th class="py-3 px-4 text-left">Category</th>
-                            <th class="py-3 px-4 text-left">Status</th>
+                            <th class="py-3 px-4 text-left">Outcome</th>
                             <th class="py-3 px-4 text-center rounded-tr">Details</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                            @forelse($allSecurityEvents as $activity)
-                        <tr class="text-xs hover:bg-gray-50">
-                                    <td class="py-3 px-4 font-medium">#SEC-{{ $activity->id }}</td>
-                                    <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
-                                    <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
-                                    <td class="py-3 px-4">{{ request()->ip() }}</td>
-                                    <td class="py-3 px-4">{{ $activity->description }}</td>
-                            <td class="py-3 px-4">
-                                        @if($activity->log_name == 'auth')
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Authentication</span>
-                                        @elseif($activity->log_name == 'security')
-                                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Security Alert</span>
-                                        @elseif($activity->log_name == 'user')
-                                            <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">User Management</span>
-                                        @elseif($activity->log_name == 'role')
-                                            <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">Role Management</span>
-                                        @else
-                                            <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{{ $activity->log_name ?: 'General' }}</span>
-                                        @endif
-                            </td>
-                            <td class="py-3 px-4">
-                                        @if(str_contains(strtolower($activity->description), 'failed') || str_contains(strtolower($activity->description), 'unauthorized') || str_contains(strtolower($activity->description), 'suspicious'))
-                                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Failed</span>
-                                        @else
-                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                                        @endif
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                            <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                            @empty
-                                <tr class="text-xs">
-                                    <td colspan="8" class="py-8 px-4 text-center text-gray-500">
-                                        <div class="flex flex-col items-center">
-                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">security</span>
-                                            <p class="text-sm">No security events found</p>
-                                            <p class="text-xs text-gray-400 mt-1">Security events will appear here when security-related activities occur</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                        @forelse($activities as $activity)
+                            @php
+                                $text = strtolower((string) $activity->description);
+                                $failed = str_contains($text, 'failed')
+                                    || str_contains($text, 'unauthorized')
+                                    || str_contains($text, 'suspicious')
+                                    || str_contains($text, 'banned');
 
-                <!-- User Activity Tab -->
-                <div id="tab-user-activity" class="bg-purple-50 p-2" data-tab="user-activity" style="display: none;">
-                    <div class="mb-2 text-sm font-bold text-purple-800">User Activity Tab ({{ $userActivities->count() }} records)</div>
-                    <table class="min-w-full border-collapse">
-                        <thead>
-                            <tr class="bg-primary-light text-white text-xs uppercase">
-                                <th class="py-3 px-4 text-left rounded-tl">ID</th>
-                                <th class="py-3 px-4 text-left">Timestamp</th>
-                                <th class="py-3 px-4 text-left">User</th>
-                                <th class="py-3 px-4 text-left">Activity</th>
-                                <th class="py-3 px-4 text-left">Type</th>
-                                <th class="py-3 px-4 text-left">Status</th>
-                                <th class="py-3 px-4 text-center rounded-tr">Details</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($userActivities as $activity)
-                        <tr class="text-xs hover:bg-gray-50">
-                                    <td class="py-3 px-4 font-medium">#USER-{{ $activity->id }}</td>
-                                    <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
-                                    <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
-                                    <td class="py-3 px-4">{{ $activity->description }}</td>
-                            <td class="py-3 px-4">
-                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">User Management</span>
-                            </td>
-                            <td class="py-3 px-4">
+                                $category = match ($activity->log_name) {
+                                    'auth' => ['Authentication', 'bg-blue-100 text-blue-800'],
+                                    'security' => ['Security alert', 'bg-red-100 text-red-800'],
+                                    'user' => ['User management', 'bg-purple-100 text-purple-800'],
+                                    'role' => ['Role management', 'bg-amber-100 text-amber-800'],
+                                    default => [$activity->log_name ?: 'General', 'bg-gray-100 text-gray-700'],
+                                };
+
+                                // The IP column used to print request()->ip(), which is the
+                                // address of whoever is reading the page, repeated on every
+                                // row. It is only shown when the entry actually recorded one.
+                                $properties = $activity->properties ?? collect();
+                                $ip = is_object($properties) ? ($properties['ip'] ?? $properties['ip_address'] ?? null) : null;
+                            @endphp
+                            <tr class="text-xs hover:bg-gray-50">
+                                <td class="py-3 px-4 font-medium text-gray-500">#{{ $activity->id }}</td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span title="{{ $activity->created_at->format('Y-m-d H:i:s') }}">
+                                        {{ $activity->created_at->format('j M Y, H:i') }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    {{ $activity->causer->email ?? 'System' }}
+                                    @if($ip)
+                                        <span class="block text-[10px] text-gray-400">{{ $ip }}</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4">{{ $activity->description }}</td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 rounded-full text-xs {{ $category[1] }}">{{ $category[0] }}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    @if($failed)
+                                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Failed</span>
+                                    @else
                                         <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                            <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                            @empty
-                                <tr class="text-xs">
-                                    <td colspan="7" class="py-8 px-4 text-center text-gray-500">
-                                        <div class="flex flex-col items-center">
-                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">person</span>
-                                            <p class="text-sm">No user activities found</p>
-                                            <p class="text-xs text-gray-400 mt-1">User activities will appear here when users perform actions</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Role Changes Tab -->
-                <div id="tab-role-changes" class="bg-amber-50 p-2" data-tab="role-changes" style="display: none;">
-                    <div class="mb-2 text-sm font-bold text-amber-800">Role Changes Tab ({{ $roleActivities->count() }} records)</div>
-                    <table class="min-w-full border-collapse">
-                        <thead>
-                            <tr class="bg-primary-light text-white text-xs uppercase">
-                                <th class="py-3 px-4 text-left rounded-tl">ID</th>
-                                <th class="py-3 px-4 text-left">Timestamp</th>
-                                <th class="py-3 px-4 text-left">User</th>
-                                <th class="py-3 px-4 text-left">Role Action</th>
-                                <th class="py-3 px-4 text-left">Role Name</th>
-                                <th class="py-3 px-4 text-left">Status</th>
-                                <th class="py-3 px-4 text-center rounded-tr">Details</th>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex justify-center">
+                                        <button type="button"
+                                                class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100"
+                                                title="View details"
+                                                onclick="showSecurityDetails({{ $activity->id }})">
+                                            <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($roleActivities as $activity)
-                        <tr class="text-xs hover:bg-gray-50">
-                                    <td class="py-3 px-4 font-medium">#ROLE-{{ $activity->id }}</td>
-                                    <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
-                                    <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
-                                    <td class="py-3 px-4">{{ $activity->description }}</td>
-                            <td class="py-3 px-4">
-                                        @if(isset($activity->properties['role_name']))
-                                            {{ $activity->properties['role_name'] }}
-                                        @else
-                                            N/A
-                                        @endif
-                            </td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                            <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                            @empty
-                                <tr class="text-xs">
-                                    <td colspan="7" class="py-8 px-4 text-center text-gray-500">
-                                        <div class="flex flex-col items-center">
-                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">admin_panel_settings</span>
-                                            <p class="text-sm">No role changes found</p>
-                                            <p class="text-xs text-gray-400 mt-1">Role changes will appear here when roles are modified</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Access Control Tab -->
-                <div id="tab-access-control" class="bg-green-50 p-2" data-tab="access-control" style="display: none;">
-                    <div class="mb-2 text-sm font-bold text-green-800">Access Control Tab ({{ $authActivities->count() }} records)</div>
-                    <table class="min-w-full border-collapse">
-                        <thead>
-                            <tr class="bg-primary-light text-white text-xs uppercase">
-                                <th class="py-3 px-4 text-left rounded-tl">ID</th>
-                                <th class="py-3 px-4 text-left">Timestamp</th>
-                                <th class="py-3 px-4 text-left">User</th>
-                                <th class="py-3 px-4 text-left">Access Event</th>
-                                <th class="py-3 px-4 text-left">Resource</th>
-                                <th class="py-3 px-4 text-left">Status</th>
-                                <th class="py-3 px-4 text-center rounded-tr">Details</th>
+                        @empty
+                            <tr class="text-xs">
+                                <td colspan="7" class="py-10 px-4 text-center text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <span class="material-icons-outlined text-gray-300 text-4xl mb-2">security</span>
+                                        <p class="text-sm">Nothing recorded for this tab.</p>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            @if(request()->hasAny(['search', 'log_name', 'event', 'severity', 'date_filter']))
+                                                Clear the filters to see more.
+                                            @else
+                                                Entries appear here as people sign in and permissions change.
+                                            @endif
+                                        </p>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($authActivities as $activity)
-                        <tr class="text-xs hover:bg-gray-50">
-                                    <td class="py-3 px-4 font-medium">#ACC-{{ $activity->id }}</td>
-                                    <td class="py-3 px-4">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
-                                    <td class="py-3 px-4">{{ $activity->causer ? $activity->causer->email : 'System' }}</td>
-                                    <td class="py-3 px-4">{{ $activity->description }}</td>
-                            <td class="py-3 px-4">
-                                        @if($activity->event == 'login')
-                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Login</span>
-                                        @elseif($activity->event == 'logout')
-                                            <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Logout</span>
-                                        @elseif($activity->event == 'failed_login')
-                                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Failed Login</span>
-                                        @else
-                                            <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{{ $activity->event }}</span>
-                                        @endif
-                            </td>
-                            <td class="py-3 px-4">
-                                        @if(str_contains(strtolower($activity->description), 'failed'))
-                                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Denied</span>
-                                        @else
-                                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Allowed</span>
-                                        @endif
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex justify-center">
-                                            <button class="p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View Details" onclick="showSecurityDetails({{ $activity->id }})">
-                                        <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                            @empty
-                                <tr class="text-xs">
-                                    <td colspan="7" class="py-8 px-4 text-center text-gray-500">
-                                        <div class="flex flex-col items-center">
-                                            <span class="material-icons-outlined text-gray-400 text-4xl mb-2">lock</span>
-                                            <p class="text-sm">No access control events found</p>
-                                            <p class="text-xs text-gray-400 mt-1">Access control events will appear here when authentication occurs</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
+                        @endforelse
                     </tbody>
                 </table>
-                </div>
             </div>
-            
             <!-- Pagination -->
             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-2 sm:mb-0 text-xs text-gray-500">
@@ -667,45 +518,12 @@
                         document.getElementById('securityModal').style.display = 'none';
                     };
 
-                    // Tab switching functionality
-                    function switchTab(tabName) {
-                        // Hide all tab contents
-                        const tabContents = document.querySelectorAll('[data-tab]');
-                        tabContents.forEach(content => {
-                            content.style.display = 'none';
-                        });
-                        
-                        // Show selected tab content
-                        const selectedContent = document.querySelector(`[data-tab="${tabName}"]`);
-                        if (selectedContent) {
-                            selectedContent.style.display = 'block';
-                        }
-                        
-                        // Update tab buttons
-                        const tabButtons = document.querySelectorAll('[data-tab-button]');
-                        tabButtons.forEach(button => {
-                            button.classList.remove('text-primary-DEFAULT', 'border-primary-DEFAULT');
-                            button.classList.add('text-gray-500', 'hover:text-primary-DEFAULT', 'border-transparent');
-                        });
-                        
-                        const selectedButton = document.querySelector(`[data-tab-button="${tabName}"]`);
-                        if (selectedButton) {
-                            selectedButton.classList.remove('text-gray-500', 'hover:text-primary-DEFAULT', 'border-transparent');
-                            selectedButton.classList.add('text-primary-DEFAULT', 'border-primary-DEFAULT');
-                        }
-                    }
-
-                    // Add click handlers to tab buttons
-                    const tabButtons = document.querySelectorAll('[data-tab-button]');
-                    tabButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                            const tabName = this.getAttribute('data-tab-button');
-                            switchTab(tabName);
-                        });
-                    });
-                    
-                    // Initialize first tab as active
-                    switchTab('security-events');
+                    // The tab switching script that used to sit here has been removed
+                    // along with the four hidden tables it toggled. Tabs are links
+                    // now, so the active tab is part of the request and the rows, the
+                    // count on the tab and the pager all come from one query. The
+                    // script also ran switchTab('security-events') on every load,
+                    // which after this change would have had nothing to act on.
 
                     // Clear security logs function
                     window.clearSecurityLogs = function(days) {

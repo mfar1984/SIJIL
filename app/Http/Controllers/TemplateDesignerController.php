@@ -57,7 +57,7 @@ class TemplateDesignerController extends Controller
         }
 
         // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         $templates = $query->orderBy('created_at', 'desc')->paginate($perPage);
         
         return view('templates.index', compact('templates'));

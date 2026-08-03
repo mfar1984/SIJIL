@@ -46,10 +46,17 @@ class GlobalConfig extends Model
         'lockout_duration', 'session_timeout', 'enable_2fa', 'force_ssl',
         'log_failed_logins', 'log_password_changes', 'log_permission_changes',
         'enable_security_alerts',
+        // Participant app token lifetime and audit retention, both previously
+        // unbounded: tokens never expired and the audit log never shrank.
+        'api_token_lifetime_days', 'log_retention_days',
         
         // Appearance Settings
+        // The five brand images live together under Branding Settings, so
+        // sidebar_logo and login_logo are listed here beside the other two rather
+        // than next to org_logo above.
         'primary_color', 'secondary_color', 'default_theme', 'font_family',
-        'allow_user_theme_choice', 'favicon', 'login_background', 'custom_css',
+        'allow_user_theme_choice', 'favicon', 'sidebar_logo',
+        'login_background', 'login_logo', 'custom_css',
         'sidebar_default', 'table_density', 'show_welcome_message', 'show_help_icons',
         
         // Notification Settings
@@ -120,11 +127,35 @@ class GlobalConfig extends Model
     /**
      * Get the first (and only) global config instance
      */
+    /**
+     * Cache key holding the configured lifetime, in seconds.
+     *
+     * Kept separate because the lifetime lives inside the row being cached: using
+     * it directly would require the row in order to know how long to cache the
+     * row. This entry is refreshed whenever the settings are saved.
+     */
+    private const TTL_KEY = 'global_config_ttl';
+
     public static function getConfig()
     {
-        return Cache::remember('global_config', 3600, function () {
+        // Cache Lifetime on the General tab was stored and never read; the value
+        // here was a hardcoded hour regardless of what the setting said.
+        $ttl = (int) Cache::get(self::TTL_KEY, 3600);
+        $ttl = max(60, min(86400, $ttl));
+
+        return Cache::remember('global_config', $ttl, function () {
             return self::first() ?? self::createDefault();
         });
+    }
+
+    /**
+     * Record the configured cache lifetime so the next read honours it.
+     */
+    public static function rememberCacheLifetime(?int $minutes): void
+    {
+        $minutes = max(1, min(1440, (int) ($minutes ?: 60)));
+
+        Cache::put(self::TTL_KEY, $minutes * 60, now()->addDay());
     }
 
     /**
@@ -143,8 +174,13 @@ class GlobalConfig extends Model
             'font_family' => 'inter',
             'admin_notification_email' => 'admin@sijilevents.com',
             'registration_message' => 'Thank you for registering for this event. Please check your email for confirmation details.',
-            'webhook_events' => 'event.created, event.updated, registration.completed, certificate.generated, attendance.recorded',
-            'cors_domains' => 'https://example.com, https://*.sijilevents.com',
+
+            // The origin this application is served from. The previous default was
+            // 'https://example.com, https://*.sijilevents.com', neither of which
+            // exists, so a reset left the allow-list describing nothing real while
+            // looking configured. Webhook subscriptions are now records rather than
+            // a comma separated string, so no event list is seeded here.
+            'cors_domains' => rtrim(config('app.url'), '/'),
         ]);
     }
 

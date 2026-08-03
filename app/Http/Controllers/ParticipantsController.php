@@ -23,12 +23,16 @@ class ParticipantsController extends Controller
      */
     public function index(Request $request)
     {
-        // Start with base query
-        $query = Participant::with('event');
+        // Deleting an event does not delete its participants, so the relation has
+        // to be loaded with trashed rows included. Without it the Event column
+        // rendered blank for every participant of a binned event, and organizers
+        // lost those participants from the list altogether while an administrator
+        // still saw them.
+        $query = Participant::with(['event' => fn($q) => $q->withTrashed()]);
 
         // For non-Administrator users, filter by their events
         if (!auth()->user()->hasRole('Administrator')) {
-            $userEvents = Event::where('user_id', auth()->id())->pluck('id');
+            $userEvents = Event::withTrashed()->where('user_id', auth()->id())->pluck('id');
             $query->whereIn('event_id', $userEvents);
         }
 
@@ -66,7 +70,7 @@ class ParticipantsController extends Controller
         }
 
         // Get paginated results with per_page parameter
-        $perPage = $request->get('per_page', 10);
+        $perPage = \App\Support\SystemSettings::perPage($request, 10);
         $participants = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Get events for filter dropdown
@@ -114,19 +118,18 @@ class ParticipantsController extends Controller
         // same event; soft-deleted rows in the Recycle Bin do not block reuse.
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => [
-                'required', 'email', 'max:255',
-                $this->uniqueWithinEvent('email', $request->event_id),
-            ],
+            // Email is deliberately not unique per event: one address legitimately
+            // covers several people, such as a parent registering children or an
+            // office registering staff. Who counts as a duplicate is decided by
+            // App\Support\DuplicateRegistration after validation, which compares
+            // IC and passport with formatting differences ignored - something a
+            // plain unique rule cannot do, and the reason the admin form and the
+            // public link used to disagree about "900101-01-1234" versus
+            // "900101011234".
+            'email' => ['required', 'email', 'max:255'],
             'phone' => 'nullable|string|max:20',
-            'identity_card' => [
-                'nullable', 'string', 'max:255',
-                $this->uniqueWithinEvent('identity_card', $request->event_id),
-            ],
-            'passport_no' => [
-                'nullable', 'string', 'max:255',
-                $this->uniqueWithinEvent('passport_no', $request->event_id),
-            ],
+            'identity_card' => ['nullable', 'string', 'max:255'],
+            'passport_no' => ['nullable', 'string', 'max:255'],
             'registration_type' => 'nullable|in:' . implode(',', self::REGISTRATION_TYPES),
             'date_of_birth' => 'nullable|date',
             'race' => 'nullable|string|max:100',
@@ -165,6 +168,20 @@ class ParticipantsController extends Controller
         if ($event->isFull()) {
             return back()->withInput()->withErrors([
                 'event_id' => "This event is full ({$event->max_participants} participants). Increase the limit on the event before adding more.",
+            ]);
+        }
+
+        // Same rule as the public registration link, from the same class.
+        $duplicate = \App\Support\DuplicateRegistration::find($event, [
+            'name' => $request->name,
+            'email' => $request->email,
+            'identity_card' => $request->identity_card,
+            'passport_no' => $request->passport_no,
+        ]);
+
+        if ($duplicate) {
+            return back()->withInput()->withErrors([
+                $duplicate['field'] => $duplicate['message'],
             ]);
         }
 
@@ -293,19 +310,12 @@ class ParticipantsController extends Controller
         // ignores the record being edited.
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => [
-                'required', 'email', 'max:255',
-                $this->uniqueWithinEvent('email', $request->event_id, $id),
-            ],
+            // See store(): duplicates are decided by App\Support\DuplicateRegistration
+            // below, so that editing cannot reject what creating accepts.
+            'email' => ['required', 'email', 'max:255'],
             'phone' => 'nullable|string|max:20',
-            'identity_card' => [
-                'nullable', 'string', 'max:255',
-                $this->uniqueWithinEvent('identity_card', $request->event_id, $id),
-            ],
-            'passport_no' => [
-                'nullable', 'string', 'max:255',
-                $this->uniqueWithinEvent('passport_no', $request->event_id, $id),
-            ],
+            'identity_card' => ['nullable', 'string', 'max:255'],
+            'passport_no' => ['nullable', 'string', 'max:255'],
             'registration_type' => 'nullable|in:' . implode(',', self::REGISTRATION_TYPES),
             'date_of_birth' => 'nullable|date',
             'race' => 'nullable|string|max:100',
@@ -348,6 +358,25 @@ class ParticipantsController extends Controller
                     'event_id' => "\"{$targetEvent->name}\" is full ({$targetEvent->max_participants} participants).",
                 ]);
             }
+        }
+
+        // Checked against the event being saved into, ignoring this row so it
+        // cannot report itself as its own duplicate.
+        $duplicate = \App\Support\DuplicateRegistration::find(
+            Event::findOrFail($request->event_id),
+            [
+                'name' => $request->name,
+                'email' => $request->email,
+                'identity_card' => $request->identity_card,
+                'passport_no' => $request->passport_no,
+            ],
+            (int) $id
+        );
+
+        if ($duplicate) {
+            return back()->withInput()->withErrors([
+                $duplicate['field'] => $duplicate['message'],
+            ]);
         }
 
         // Process address fields
@@ -452,20 +481,6 @@ class ParticipantsController extends Controller
     }
 
     /**
-     * Uniqueness rule for a column scoped to a single event.
-     *
-     * Blank values are skipped by Laravel's "nullable" handling, and rows
-     * sitting in the Recycle Bin never block a value from being reused.
-     */
-    private function uniqueWithinEvent(string $column, $eventId, $ignoreId = null): \Illuminate\Validation\Rules\Unique
-    {
-        $rule = Rule::unique('participants', $column)
-            ->where(fn($query) => $query->where('event_id', $eventId)->whereNull('deleted_at'));
-
-        return $ignoreId ? $rule->ignore($ignoreId) : $rule;
-    }
-
-    /**
      * Export participants to Excel based on current filters.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -473,12 +488,12 @@ class ParticipantsController extends Controller
      */
     public function export(Request $request)
     {
-        // Start with base query
-        $query = Participant::with('event');
+        // Same trashed-event handling as index(), so the export matches the page.
+        $query = Participant::with(['event' => fn($q) => $q->withTrashed()]);
 
         // For non-Administrator users, filter by their events
         if (!auth()->user()->hasRole('Administrator')) {
-            $userEvents = Event::where('user_id', auth()->id())->pluck('id');
+            $userEvents = Event::withTrashed()->where('user_id', auth()->id())->pluck('id');
             $query->whereIn('event_id', $userEvents);
         }
 

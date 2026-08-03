@@ -72,7 +72,7 @@ class ReportsStatisticsController extends Controller
             : 'participants';
 
         return view('reports.statistics', [
-            'events' => $this->eventTable($eventIds, $sort, (int) $request->get('per_page', 10), $request),
+            'events' => $this->eventTable($eventIds, $sort, (int) \App\Support\SystemSettings::perPage($request, 10), $request),
             'totals' => $totals,
             'previous' => $previous,
             'changes' => $this->changes($totals, $previous),

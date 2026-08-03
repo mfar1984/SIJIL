@@ -319,8 +319,41 @@ class GlobalConfigController extends Controller
 
             $securityChanges = [];
 
+            /*
+             * Six of these fifteen keys are cast to boolean on the model, so the
+             * old value reads back as true or false while the posted value is the
+             * string '1' or '0'. Casting both to string made (string) false === ''
+             * and never equal to '0', so every save logged "Security settings
+             * changed: force_ssl" and, with alerts on, emailed an administrator
+             * about a change that had not happened. An audit log that cries wolf
+             * on every save is worse than none.
+             *
+             * Comparing the normalised scalar instead: booleans and the strings
+             * they arrive as collapse to the same value, and genuine numeric or
+             * text changes still register.
+             */
+            $normalise = static function ($value) {
+                if (is_bool($value)) {
+                    return $value ? '1' : '0';
+                }
+
+                if ($value === null) {
+                    return '';
+                }
+
+                // '0' and 0 must compare equal, and so must '15' and 15.
+                return is_numeric($value) ? (string) (float) $value : (string) $value;
+            };
+
             foreach ($securityKeys as $key) {
-                if (array_key_exists($key, $data) && (string) $config->{$key} !== (string) $data[$key]) {
+                if (! array_key_exists($key, $data)) {
+                    continue;
+                }
+
+                $from = $normalise($config->{$key});
+                $to = $normalise($data[$key]);
+
+                if ($from !== $to) {
                     $securityChanges[$key] = ['from' => $config->{$key}, 'to' => $data[$key]];
                 }
             }

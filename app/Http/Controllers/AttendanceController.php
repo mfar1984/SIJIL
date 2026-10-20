@@ -94,12 +94,19 @@ class AttendanceController extends Controller
     {
         $events = $this->eventsAwaitingAttendance();
 
+        // The dates have to leave here as Y-m-d strings. This array is handed to
+        // @json in the view, which is plain json_encode over a plain array, so a
+        // Carbon instance would serialize itself as a UTC ISO-8601 timestamp —
+        // Event::serializeDate() only runs for model toArray()/toJson(), never
+        // for a Carbon sitting in an array. The form posts start_date straight
+        // back as sessions[0][date], and "2026-07-29T16:00:00.000000Z" is not a
+        // value the `date` column accepts.
         $eventsArray = $events->map(function($e) {
             return [
                 'id' => $e->id,
                 'name' => $e->name,
-                'start_date' => $e->start_date,
-                'end_date' => $e->end_date,
+                'start_date' => $e->start_date?->toDateString(),
+                'end_date' => $e->end_date?->toDateString(),
                 'start_time' => $e->start_time,
                 'end_time' => $e->end_time,
                 'location' => $e->location,
@@ -157,7 +164,10 @@ class AttendanceController extends Controller
             // event or there is one per day. It used to be discarded on submit.
             'attendance_type' => 'nullable|in:single,daily,custom',
             'sessions' => 'required|array|min:1',
-            'sessions.*.date' => 'required|date',
+            // date_format, not date: the loose `date` rule accepts ISO-8601, so a
+            // malformed value used to pass validation and die on the insert as a
+            // 500 instead of coming back as a form error.
+            'sessions.*.date' => 'required|date_format:Y-m-d',
             'sessions.*.checkin_start_time' => 'required',
             'sessions.*.checkin_end_time' => 'required',
             'sessions.*.checkout_start_time' => 'nullable',
@@ -260,12 +270,14 @@ class AttendanceController extends Controller
     {
         $events = \App\Models\Event::where('status', 'active')->orderBy('name')->get();
         $sessions = $attendance->sessions()->orderBy('date')->get();
+        // Same contract as create(): Y-m-d strings, never Carbon, because @json
+        // would turn a Carbon into a UTC timestamp and shift the day.
         $eventsArray = $events->map(function($e) {
             return [
                 'id' => $e->id,
                 'name' => $e->name,
-                'start_date' => $e->start_date,
-                'end_date' => $e->end_date,
+                'start_date' => $e->start_date?->toDateString(),
+                'end_date' => $e->end_date?->toDateString(),
                 'start_time' => $e->start_time,
                 'end_time' => $e->end_time,
                 'location' => $e->location,
@@ -284,7 +296,10 @@ class AttendanceController extends Controller
             'status' => 'required|in:active,expired,completed',
             'attendance_type' => 'nullable|in:single,daily,custom',
             'sessions' => 'required|array|min:1',
-            'sessions.*.date' => 'required|date',
+            // date_format, not date: the loose `date` rule accepts ISO-8601, so a
+            // malformed value used to pass validation and die on the insert as a
+            // 500 instead of coming back as a form error.
+            'sessions.*.date' => 'required|date_format:Y-m-d',
             'sessions.*.checkin_start_time' => 'required',
             'sessions.*.checkin_end_time' => 'required',
             'sessions.*.checkout_start_time' => 'nullable',

@@ -59,6 +59,10 @@ design.html
 *.sqlite
 *.sqlite-journal
 database.sqlite
+# Database dumps hold personal data and stored provider credentials. Never commit
+# them; this repository is public. database/schema/mysql-schema.sql is not
+# matched because it holds only the schema.
+/*.sql
 
 # Third-party admin tools. A full phpMyAdmin install (thousands of files) does not
 # belong in this repo, and shipping it to a public web root is a known attack

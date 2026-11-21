@@ -236,7 +236,9 @@ Route::prefix('public/v1')->group(function () {
 | server-side GET /purchases/{id}/. Register the webhook URL in the CHIP portal.
 | No CORS (server to server), exempt from the API kill switch.
 */
-Route::prefix('payments/chip')->group(function () {
+// Throttled per IP: CHIP sends a handful of deliveries per purchase, so 120 a
+// minute leaves ample headroom while capping how fast unsigned junk can arrive.
+Route::prefix('payments/chip')->middleware('throttle:120,1')->group(function () {
     Route::post('/callback', [App\Http\Controllers\Api\ChipWebhookController::class, 'callback'])
         ->name('api.payments.chip.callback');
     Route::post('/webhook', [App\Http\Controllers\Api\ChipWebhookController::class, 'webhook'])

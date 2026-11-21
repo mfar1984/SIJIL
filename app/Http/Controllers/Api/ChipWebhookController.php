@@ -103,7 +103,9 @@ class ChipWebhookController extends Controller
 
         if (! $valid) {
             $message = ($source === 'webhook' && ! filled($pem)) ? 'No webhook public key configured' : 'Signature verification failed';
-            $this->record($source, $eventType, $purchaseId, false, 'rejected', $message, $raw, $request);
+            // Keep only the first 2 KB of an unverified body: enough to diagnose a
+            // misconfigured key, too little for junk requests to fill the database.
+            $this->record($source, $eventType, $purchaseId, false, 'rejected', $message, substr($raw, 0, 2048), $request);
 
             SecurityPolicy::audit('payment', 'Payment webhook signature verification failed', array_filter([
                 'source' => $source,

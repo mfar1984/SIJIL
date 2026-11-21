@@ -96,6 +96,7 @@
                             <th class="py-3 px-4 text-left rounded-tl">Name</th>
                             <th class="py-3 px-4 text-left">Email</th>
                             <th class="py-3 px-4 text-left">Role</th>
+                            <th class="py-3 px-4 text-left">Package</th>
                             <th class="py-3 px-4 text-left">Create Date</th>
                             <th class="py-3 px-4 text-left">Last Login</th>
                             <th class="py-3 px-4 text-left">Status</th>
@@ -112,6 +113,18 @@
                                         {{ $user->getRoleNames()->first() }}
                                     @else
                                         No Role
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4">
+                                    @if($user->package_expires_at)
+                                        <span class="whitespace-nowrap">{{ $user->package?->name ?? 'Package' }} · {{ \App\Support\SystemSettings::date($user->package_expires_at) }}</span>
+                                        @if($user->package_expires_at->lte(now()))
+                                            <span class="ml-1 bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-[11px]">Expired</span>
+                                        @elseif($user->package_expires_at->lte(now()->addDays(7)))
+                                            <span class="ml-1 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[11px]">Expiring</span>
+                                        @endif
+                                    @else
+                                        <span class="text-gray-600">Permanent</span>
                                     @endif
                                 </td>
                                 <td class="py-3 px-4">{{ $user->created_at instanceof \DateTime ? $user->created_at->format('d M Y - H:i:s') : ($user->created_at ?? 'N/A') }}</td>

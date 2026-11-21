@@ -135,7 +135,7 @@
                 </div>
                 
                 <div class="p-4">
-                    <x-settings.partials.permissions-matrix :permissions="$permissions" :checkedPermissionNames="$rolePermissions" mode="show" />
+                    <x-settings.partials.permissions-matrix :permissions="$permissions" :checkedPermissionNames="$rolePermissions" mode="show" :roleName="$role->name" />
                 </div>
             </div>
             

@@ -388,6 +388,38 @@ Route::get('/certificates/{certificate}/download-simplified', [App\Http\Controll
     ->middleware('signed')
     ->name('certificates.download.simplified');
 
+/*
+| BILLING > Payment: transactions, subscriptions, packages and webhook logs.
+| Administrator only by default (granted by the add_payment_permissions
+| migration); other roles can be given these permissions in Role Management.
+*/
+Route::middleware(['auth', 'verified'])->prefix('payments')->name('payments.')->group(function () {
+    Route::get('/transactions', [App\Http\Controllers\Payments\TransactionController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':payment_transactions.read')
+        ->name('transactions.index');
+    Route::get('/transactions/{order:reference}', [App\Http\Controllers\Payments\TransactionController::class, 'show'])
+        ->middleware(PermissionMiddleware::class.':payment_transactions.read')
+        ->name('transactions.show');
+
+    Route::get('/subscriptions', [App\Http\Controllers\Payments\SubscriptionController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':payment_subscriptions.read')
+        ->name('subscriptions.index');
+
+    Route::get('/packages', [App\Http\Controllers\Payments\PackageController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':payment_packages.read')
+        ->name('packages.index');
+    Route::put('/packages/{package}', [App\Http\Controllers\Payments\PackageController::class, 'update'])
+        ->middleware(PermissionMiddleware::class.':payment_packages.update')
+        ->name('packages.update');
+
+    Route::get('/webhook-logs', [App\Http\Controllers\Payments\WebhookLogController::class, 'index'])
+        ->middleware(PermissionMiddleware::class.':payment_webhook_logs.read')
+        ->name('webhook-logs.index');
+    Route::get('/webhook-logs/{event}', [App\Http\Controllers\Payments\WebhookLogController::class, 'show'])
+        ->middleware(PermissionMiddleware::class.':payment_webhook_logs.read')
+        ->name('webhook-logs.show');
+});
+
 require __DIR__.'/auth.php';
 
 /*
@@ -615,6 +647,20 @@ Route::prefix('settings')->group(function () {
     Route::get('/global-config/api', [App\Http\Controllers\GlobalConfigController::class, 'getConfig'])
         ->middleware(['auth', 'verified', PermissionMiddleware::class.':global_config.read'])
         ->name('settings.global-config.api');
+
+    /*
+    | Global Config > Payment (CHIP Collect). It holds the CHIP secret key, so
+    | besides the permission every route requires the Administrator role itself:
+    | payment_settings.* cannot be granted to another role, and this holds even
+    | if a permission row were attached to one.
+    */
+    Route::post('/payment', [App\Http\Controllers\Settings\PaymentSettingsController::class, 'update'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':payment_settings.update', 'administrator'])
+        ->name('settings.payment.update');
+
+    Route::post('/payment/test', [App\Http\Controllers\Settings\PaymentSettingsController::class, 'testConnection'])
+        ->middleware(['auth', 'verified', PermissionMiddleware::class.':payment_settings.update', 'administrator', 'throttle:6,1'])
+        ->name('settings.payment.test');
 
     /*
     | API keys and webhook endpoints, managed from the API & Integrations tab of

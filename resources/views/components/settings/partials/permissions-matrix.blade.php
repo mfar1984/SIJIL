@@ -1,6 +1,13 @@
-@props(['permissions' => [], 'checkedPermissionNames' => [], 'mode' => 'edit'])
+@props(['permissions' => [], 'checkedPermissionNames' => [], 'mode' => 'edit', 'roleName' => null])
 
 @php
+    // Payment Settings permissions guard the CHIP secret key and belong to the
+    // Administrator role only. They render as a lock, never as a checkbox, so
+    // neither "Select all" nor the Organizer preset can tick them; the server
+    // drops them for every other role anyway (PaymentPermissions::filterRoleIds).
+    $lockedPermissionIds = \App\Support\PaymentPermissions::lockedIds();
+    $roleIsAdministrator = $roleName === \App\Support\PaymentPermissions::ADMINISTRATOR;
+
     // Helper to map action keywords to matrix columns
     $actionMap = [
         'create' => 'create',
@@ -47,6 +54,7 @@
         'pwa' => 6, // PWA Management
         'reports' => 7,
         'campaign' => 8,
+        'payment' => 8.5, // BILLING sits between Insights and System in the sidebar
         'helpdesk' => 9,
         'settings' => 10,
         'legacy' => 99, // hide by default
@@ -207,6 +215,11 @@
                                 'attendance_reports' => 'Attendance Reports',
                                 'event_statistics' => 'Event Statistics',
                                 'certificate_reports' => 'Certificate Reports',
+                                'payment_settings' => 'Payment Settings',
+                                'payment_transactions' => 'Transactions',
+                                'payment_subscriptions' => 'Subscriptions',
+                                'payment_packages' => 'Packages',
+                                'payment_webhook_logs' => 'Webhook Logs',
                             ];
                             $resourceLabel = $displayLabelMap[$canonicalKey] ?? ucwords(str_replace('_', ' ', $canonicalKey));
 
@@ -365,7 +378,15 @@
                                     $pid = $row['ids'][$col] ?? null;
                                     $isChecked = $row['checked'][$col] ?? false;
                                 @endphp
-                                @if($pid)
+                                @if($pid && in_array((int) $pid, $lockedPermissionIds, true))
+                                    <span class="inline-flex items-center gap-0.5" title="Administrator only">
+                                        @if($roleIsAdministrator)
+                                            <span class="material-icons-outlined text-green-600 text-base">check_circle</span>
+                                        @endif
+                                        <span class="material-icons-outlined text-gray-400 text-base">lock</span>
+                                        <span class="sr-only">Administrator only</span>
+                                    </span>
+                                @elseif($pid)
                                     @if($mode === 'show')
                                         @if($isChecked)
                                             <span class="material-icons-outlined text-green-600 text-base">check_circle</span>
@@ -401,10 +422,10 @@
                 applyOrganizer(){
                     // Start from clean slate
                     this.uncheckAll();
-                    // Tick all except Settings group
+                    // Tick all except the Settings and Payment groups
                     document.querySelectorAll('.perm-box').forEach(cb=>{
                         const g = cb.getAttribute('data-perm-group') || '';
-                        if(g !== 'settings') cb.checked = true;
+                        if(g !== 'settings' && g !== 'payment') cb.checked = true;
                     });
                 }
             }

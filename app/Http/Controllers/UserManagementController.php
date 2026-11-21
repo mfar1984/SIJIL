@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Package;
 use App\Models\User;
 use App\Models\Role;
+use App\Support\PackageAssignment;
+use App\Support\UserProfileRules;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -19,7 +23,7 @@ class UserManagementController extends Controller
     public function index(Request $request)
     {
         // Get users with their roles from database
-        $query = User::with('role');
+        $query = User::with(['role', 'package']);
         
         // Apply search filter
         if ($request->filled('search')) {
@@ -75,7 +79,8 @@ class UserManagementController extends Controller
         $roles = Role::all();
         
         return view('settings.user-create', [
-            'roles' => $roles
+            'roles' => $roles,
+            'packages' => $this->packageOptions(null),
         ]);
     }
     
@@ -100,43 +105,19 @@ class UserManagementController extends Controller
             }
         }
 
-        // Validate the request
-        $request->validate([
-            // Basic Information
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users',
-            'phone' => 'nullable|string|max:15',
+        // Validate the request. The profile rules are shared with the public
+        // checkout (UserProfileRules), so a buyer is validated exactly like an
+        // account created here.
+        $request->validate(UserProfileRules::rulesWithEmail('unique:users') + [
             'organization' => 'nullable|string|max:255',
             'role_id' => 'required|exists:roles,id',
             'status' => 'required|in:active,inactive,banned',
-            
-            // Address Information
-            'address_line1' => 'nullable|string|max:255',
-            'address_line2' => 'nullable|string|max:255',
-            'postcode' => 'nullable|string|max:10',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            
-            // Organization Information
-            'org_type' => 'nullable|string|in:company,government,ngo,other',
-            'org_name' => 'nullable|string|max:255',
-            'org_address_line1' => 'nullable|string|max:255',
-            'org_address_line2' => 'nullable|string|max:255',
-            'org_state' => 'nullable|string|max:100',
-            'org_city' => 'nullable|string|max:100',
-            'org_postcode' => 'nullable|string|max:10',
-            'org_country' => 'nullable|string|max:100',
-            'org_telephone' => 'nullable|string|max:20',
-            'org_fax' => 'nullable|string|max:20',
-            'org_email' => 'nullable|email|max:255',
-            'org_website' => 'nullable|url|max:255',
             
             // Account Settings. The rule comes from Settings > Global Config >
             // Security; this was a hard-coded min:8 that ignored the configured
             // length and every character requirement.
             'password' => ['required', 'confirmed', \App\Support\SecurityPolicy::passwordRule()],
-        ]);
+        ] + $this->packageRules(null));
         
         // Create the user
         $user = User::create([
@@ -179,6 +160,9 @@ class UserManagementController extends Controller
         // A newly set password starts the expiry clock from now, not from the
         // account's creation date.
         $user->forceFill(['password_changed_at' => now()])->save();
+
+        // Package (Organizers only; every other role stays Permanent).
+        $this->applyPackage($request, $user);
 
         // Log user creation
         activity('user')
@@ -227,7 +211,7 @@ class UserManagementController extends Controller
     public function show($id)
     {
         // Find the user by ID with their role
-        $user = User::with('role')->findOrFail($id);
+        $user = User::with(['role', 'package'])->findOrFail($id);
         
         // Get all roles for displaying
         $roles = Role::all();
@@ -254,7 +238,8 @@ class UserManagementController extends Controller
         
         return view('settings.user-edit', [
             'user' => $user,
-            'roles' => $roles
+            'roles' => $roles,
+            'packages' => $this->packageOptions($user),
         ]);
     }
     
@@ -278,41 +263,15 @@ class UserManagementController extends Controller
             'status' => $user->status
         ];
         
-        // Validate the request
-        $request->validate([
-            // Basic Information
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($id)],
-            'phone' => 'nullable|string|max:15',
+        // Validate the request (profile rules shared with the public checkout)
+        $request->validate(UserProfileRules::rulesWithEmail(Rule::unique('users')->ignore($id)) + [
             'organization' => 'nullable|string|max:255',
             'role_id' => 'required|exists:roles,id',
             'status' => 'required|in:active,inactive,banned',
             
-            // Address Information
-            'address_line1' => 'nullable|string|max:255',
-            'address_line2' => 'nullable|string|max:255',
-            'postcode' => 'nullable|string|max:10',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            
-            // Organization Information
-            'org_type' => 'nullable|string|in:company,government,ngo,other',
-            'org_name' => 'nullable|string|max:255',
-            'org_address_line1' => 'nullable|string|max:255',
-            'org_address_line2' => 'nullable|string|max:255',
-            'org_state' => 'nullable|string|max:100',
-            'org_city' => 'nullable|string|max:100',
-            'org_postcode' => 'nullable|string|max:10',
-            'org_country' => 'nullable|string|max:100',
-            'org_telephone' => 'nullable|string|max:20',
-            'org_fax' => 'nullable|string|max:20',
-            'org_email' => 'nullable|email|max:255',
-            'org_website' => 'nullable|url|max:255',
-            
             // Account Settings - password is optional on update
             'password' => ['nullable', 'confirmed', \App\Support\SecurityPolicy::passwordRule()],
-        ]);
+        ] + $this->packageRules($user));
         
         // Update user data
         $userData = [
@@ -364,6 +323,13 @@ class UserManagementController extends Controller
                 $user->syncRoles([$role->name]);
                 $roleChanged = $oldValues['role_id'] != $request->role_id;
             }
+        }
+
+        // Package. Nothing is written unless the package, start or expiry
+        // actually changed (PackageAssignment's no-op rule), and nobody can
+        // change their own package here.
+        if ($user->id !== Auth::id()) {
+            $this->applyPackage($request, $user);
         }
         
         // Log user update with changes
@@ -509,5 +475,60 @@ class UserManagementController extends Controller
         
         return redirect()->back()
             ->with('success', "User status changed to {$status} successfully.");
+    }
+
+    /**
+     * Packages offered in the Package dropdown: the active ones, plus the
+     * user's current package even if it has since been made inactive.
+     */
+    private function packageOptions(?User $user)
+    {
+        return Package::query()
+            ->where(function ($q) use ($user) {
+                $q->where('is_active', true);
+
+                if ($user?->package_id) {
+                    $q->orWhere('id', $user->package_id);
+                }
+            })
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    /**
+     * Validation for the Package field. An empty package means Permanent.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private function packageRules(?User $user): array
+    {
+        return [
+            'package_id' => ['nullable', 'integer', function ($attribute, $value, $fail) use ($user) {
+                $package = Package::find($value);
+
+                if (! $package) {
+                    $fail('Select a valid package.');
+                } elseif (! $package->is_active && (int) $user?->package_id !== (int) $package->id) {
+                    $fail('This package is no longer offered.');
+                }
+            }],
+            'package_started_at' => ['nullable', 'required_with:package_id', 'date_format:Y-m-d'],
+            'package_expires_at' => ['nullable', 'required_with:package_id', 'date_format:Y-m-d', 'after_or_equal:package_started_at'],
+        ];
+    }
+
+    /**
+     * Apply the posted Package field. Only an Organizer keeps a package; for any
+     * other role PackageAssignment makes the account Permanent.
+     */
+    private function applyPackage(Request $request, User $user): void
+    {
+        $package = $request->filled('package_id') ? Package::find($request->input('package_id')) : null;
+        $timezone = config('app.timezone');
+
+        $start = $package ? Carbon::createFromFormat('Y-m-d', $request->input('package_started_at'), $timezone) : null;
+        $end = $package ? Carbon::createFromFormat('Y-m-d', $request->input('package_expires_at'), $timezone) : null;
+
+        PackageAssignment::apply($user, $package, $start, $end, Auth::user());
     }
 }

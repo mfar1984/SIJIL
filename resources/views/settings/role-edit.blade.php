@@ -145,7 +145,7 @@
                     <div class="p-4">
                         <p class="text-xs text-gray-500 mb-4">Select the permissions this role will have in the system</p>
                         
-                        <x-settings.partials.permissions-matrix :permissions="$permissions" :checkedPermissionNames="$rolePermissions" mode="edit" />
+                        <x-settings.partials.permissions-matrix :permissions="$permissions" :checkedPermissionNames="$rolePermissions" mode="edit" :roleName="$role->name" />
                         
                         <div class="mt-6 bg-blue-50 border border-blue-100 rounded p-4">
                             <div class="flex items-center">

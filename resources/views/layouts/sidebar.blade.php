@@ -200,6 +200,43 @@
     </div>
     @endif
 
+    {{-- Billing: CHIP Collect orders, subscriptions, packages and webhook logs.
+         Payment settings stay on Settings > Global Config > Payment. --}}
+    @if(\App\Support\PaymentPermissions::canSeeBilling(auth()->user()))
+    <p class="sidebar-group-label">Billing</p>
+    <div class="category-header relative" onclick="toggleSection('payment-section', event)">
+        <div class="sidebar-link">
+            <div class="flex items-center">
+                <span class="material-icons-outlined sidebar-icon">payments</span>
+                <p class="sidebar-label">Payment</p>
+            </div>
+            <svg class="sidebar-chevron" id="payment-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5 12 15.5 18 9.5" /></svg>
+        </div>
+    </div>
+    <div id="payment-section" class="hierarchical-menu" style="display: none;">
+        @can('payment_transactions.read')
+        <x-sidebar-submenu-item href="{{ route('payments.transactions.index') }}" icon="receipt_long" :active="request()->routeIs('payments.transactions.*')">
+            Transactions
+        </x-sidebar-submenu-item>
+        @endcan
+        @can('payment_subscriptions.read')
+        <x-sidebar-submenu-item href="{{ route('payments.subscriptions.index') }}" icon="card_membership" :active="request()->routeIs('payments.subscriptions.*')">
+            Subscriptions
+        </x-sidebar-submenu-item>
+        @endcan
+        @can('payment_packages.read')
+        <x-sidebar-submenu-item href="{{ route('payments.packages.index') }}" icon="inventory_2" :active="request()->routeIs('payments.packages.*')">
+            Packages
+        </x-sidebar-submenu-item>
+        @endcan
+        @can('payment_webhook_logs.read')
+        <x-sidebar-submenu-item href="{{ route('payments.webhook-logs.index') }}" icon="webhook" :active="request()->routeIs('payments.webhook-logs.*')">
+            Webhook Logs
+        </x-sidebar-submenu-item>
+        @endcan
+    </div>
+    @endif
+
     @if(auth()->user()->can('helpdesk.read') || auth()->user()->can('global_config.read') || auth()->user()->can('roles.read') || auth()->user()->can('users.read') || auth()->user()->can('log_activity.read'))
     <p class="sidebar-group-label">System</p>
     @endif

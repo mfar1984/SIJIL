@@ -169,6 +169,21 @@ class ModernPermissionsSeeder extends Seeder
                 ['name' => 'security_audit.delete', 'display_name' => 'Delete Security Audit', 'description' => 'Clear security audit logs'],
                 ['name' => 'security_audit.export', 'display_name' => 'Export Security Audit', 'description' => 'Export security audit logs'],
             ],
+
+            // BILLING > Payment. Production gets these from the
+            // 2026_11_21_100500_add_payment_permissions migration; this keeps a
+            // fresh install identical. payment_settings.* is locked to the
+            // Administrator role (App\Support\PaymentPermissions).
+            'payment' => [
+                ['name' => 'payment_settings.read', 'display_name' => 'View Payment Settings', 'description' => 'View the CHIP Collect settings (Administrator only)'],
+                ['name' => 'payment_settings.update', 'display_name' => 'Manage Payment Settings', 'description' => 'Change the CHIP Collect settings (Administrator only)'],
+                ['name' => 'payment_transactions.read', 'display_name' => 'View Transactions', 'description' => 'View payment orders'],
+                ['name' => 'payment_transactions.update', 'display_name' => 'Re-check Transactions', 'description' => 'Re-check an order with CHIP and resend set-password links'],
+                ['name' => 'payment_subscriptions.read', 'display_name' => 'View Subscriptions', 'description' => 'View accounts that hold a package'],
+                ['name' => 'payment_packages.read', 'display_name' => 'View Packages', 'description' => 'View packages and prices'],
+                ['name' => 'payment_packages.update', 'display_name' => 'Edit Packages', 'description' => 'Change package names, prices and availability'],
+                ['name' => 'payment_webhook_logs.read', 'display_name' => 'View Webhook Logs', 'description' => 'View inbound CHIP deliveries'],
+            ],
         ];
 
         // Groups are numbered in blocks of 1000 so later inserts inside a group
@@ -234,6 +249,8 @@ class ModernPermissionsSeeder extends Seeder
                 // hyphenated name, so the Administrator could not open the Template
                 // Designer at all. Naming them here keeps that from recurring.
                 'templates.read', 'templates.create', 'templates.update', 'templates.delete',
+                // BILLING > Payment, Administrator only by default.
+                ...\App\Support\PaymentPermissions::ALL,
             ]);
         }
 

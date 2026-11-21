@@ -33,12 +33,19 @@ class GlobalConfigController extends Controller
         // Which delivery channels can actually carry a notification.
         $notificationPanel = \App\Support\NotificationSurface::payload();
 
+        // The Payment tab holds the CHIP secret key and is built for
+        // Administrators only; everyone else gets no payload at all.
+        $paymentPanel = \App\Support\PaymentPermissions::canViewSettings(auth()->user())
+            ? \App\Support\PaymentSurface::payload()
+            : null;
+
         return view('settings.global-config', compact(
             'config',
             'recycleBin',
             'apiPanel',
             'securityPanel',
-            'notificationPanel'
+            'notificationPanel',
+            'paymentPanel'
         ));
     }
 

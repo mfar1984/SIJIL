@@ -66,6 +66,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'api.key' => \App\Http\Middleware\AuthenticateApiKey::class,
+            // Global Config > Payment holds the CHIP secret key and is locked to
+            // the Administrator role, whatever permissions another role holds.
+            'administrator' => \App\Http\Middleware\EnsureAdministrator::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

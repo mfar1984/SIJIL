@@ -28,7 +28,7 @@
         --}}
         <div class="p-4"
              x-data="{
-                tabs: ['general', 'security', 'appearance', 'notifications', 'telegram', 'api', 'recycle-bin'],
+                tabs: ['general', 'security', 'appearance', 'notifications', 'telegram', 'api', 'payment', 'recycle-bin'],
                 activeTab: 'general',
                 init() {
                     const fromHash = window.location.hash.replace('#', '');
@@ -91,6 +91,17 @@
                         <span class="material-icons-outlined text-xs mr-2">code</span>
                         API & Integrations
                     </button>
+                    {{-- Holds the CHIP secret key: Administrator role only. --}}
+                    @if(\App\Support\PaymentPermissions::canViewSettings(auth()->user()))
+                    <button
+                        @click="activeTab = 'payment'"
+                        :class="{'border-primary-DEFAULT text-primary-DEFAULT': activeTab === 'payment', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'payment'}"
+                        class="inline-flex items-center py-3 px-4 text-xs font-medium leading-5 border-b-2 focus:outline-none transition duration-150 ease-in-out"
+                    >
+                        <span class="material-icons-outlined text-xs mr-2">payments</span>
+                        Payment
+                    </button>
+                    @endif
                     @can('recycle_bin.read')
                     <button 
                         @click="activeTab = 'recycle-bin'" 
@@ -124,7 +135,7 @@
             @endif
             
             @php $canUpdate = auth()->user()->can('global_config.update'); @endphp
-            <div x-show="activeTab !== 'recycle-bin'">
+            <div x-show="!['recycle-bin', 'payment'].includes(activeTab)">
                 <form method="POST" action="{{ route('settings.global-config.update') }}" enctype="multipart/form-data" id="globalConfigForm">
                     @csrf
                     <fieldset {{ $canUpdate ? '' : 'disabled' }}>
@@ -153,6 +164,8 @@
                     </fieldset>
                 </form>
             </div>
+
+            @include('settings.global-config.payment')
 
             @include('settings.global-config.recycle-bin')
         </div>

@@ -737,6 +737,9 @@
                     
                     <div class="p-4">
                         <div class="space-y-3">
+                            <!-- Package (Organizers only) -->
+                            @include('settings.partials.user-package-fields', ['packages' => $packages, 'user' => $user])
+
                             <!-- Password -->
                             <div class="flex flex-col md:flex-row md:items-center gap-3">
                                 <label for="password" class="text-xs font-medium text-gray-700 md:w-40 flex items-center gap-1">

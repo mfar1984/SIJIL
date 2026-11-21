@@ -94,6 +94,7 @@ class LogActivityController extends Controller
             'campaign' => 'Campaign Management',
             'attendance' => 'Attendance Management',
             'system' => 'System Activity',
+            'payment' => 'Payment',
             default => ucfirst($activity->log_name ?: 'General')
         };
 

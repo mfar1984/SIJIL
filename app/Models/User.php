@@ -89,7 +89,23 @@ class User extends Authenticatable
             // Without this the column comes back as a string and any date
             // arithmetic on it fails. Password expiry compares against it.
             'password_changed_at' => 'datetime',
+            // Package columns. NULL package_expires_at means Permanent. They are
+            // deliberately not in $fillable: only PackageAssignment (admin) and
+            // the purchase fulfilment write them, through forceFill().
+            'package_started_at' => 'datetime',
+            'package_expires_at' => 'datetime',
+            'package_reminder_7d_sent_at' => 'datetime',
+            'package_reminder_1d_sent_at' => 'datetime',
+            'package_expired_logged_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The package this account holds, if any.
+     */
+    public function package()
+    {
+        return $this->belongsTo(Package::class);
     }
     
     /**

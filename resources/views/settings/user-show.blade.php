@@ -419,6 +419,31 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Package -->
+                        @php
+                            $packageRows = $user->package_expires_at
+                                ? [
+                                    'Package' => $user->package?->name ?? 'Package',
+                                    'Package Started' => \App\Support\SystemSettings::dateTime($user->package_started_at),
+                                    'Package Expires' => \App\Support\SystemSettings::dateTime($user->package_expires_at)
+                                        . ($user->package_expires_at->lte(now()) ? ' (expired)' : ''),
+                                    'Package Source' => ['purchase' => 'Bought online', 'admin' => 'Assigned by an administrator'][$user->package_source] ?? '—',
+                                ]
+                                : ['Package' => 'Permanent (no expiry)'];
+                        @endphp
+                        @foreach($packageRows as $label => $value)
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <label class="text-xs font-medium text-gray-700 md:w-40">
+                                    {{ $label }}
+                                </label>
+                                <div class="flex-1">
+                                    <div class="w-full text-xs border-gray-200 bg-gray-50 rounded-[1px] px-3 py-2 border">
+                                        {{ $value }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>

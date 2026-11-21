@@ -74,6 +74,7 @@ class RoleManagementController extends Controller
             'role_description' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
             'permissions' => 'array',
+            'permissions.*' => 'integer',
         ]);
         
         // Create new role
@@ -84,10 +85,15 @@ class RoleManagementController extends Controller
             'created_by' => Auth::user()->name,
         ]);
         
-        // Attach permissions to role
-        if ($request->has('permissions')) {
-            $role->permissions()->attach($request->permissions);
+        // Attach permissions to role. The Payment Settings permissions guard the
+        // CHIP secret key and are dropped for every role except Administrator,
+        // whatever the form posted. The name is the stored one; a second role
+        // called Administrator cannot exist (unique name and guard).
+        $permissionIds = \App\Support\PaymentPermissions::filterRoleIds($request->input('permissions', []), $role->name);
+        if ($permissionIds !== []) {
+            $role->permissions()->attach($permissionIds);
         }
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
         
         // Log role creation
         activity('role')
@@ -95,7 +101,7 @@ class RoleManagementController extends Controller
             ->performedOn($role)
             ->withProperties([
                 'role_name' => $role->name,
-                'permissions_count' => count($request->permissions ?? []),
+                'permissions_count' => count($permissionIds),
                 'status' => $role->status
             ])
             ->log('Role created');
@@ -231,13 +237,14 @@ class RoleManagementController extends Controller
             'role_description' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
             'permissions' => 'array',
+            'permissions.*' => 'integer',
         ]);
         
         // Find the role
         $role = Role::findOrFail($id);
         
         // Store old values
-        $oldPermissions = $role->permissions->pluck('id')->toArray();
+        $oldPermissions = $role->permissions->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->toArray();
         $oldName = $role->name;
         $oldStatus = $role->status;
         
@@ -256,13 +263,14 @@ class RoleManagementController extends Controller
             'modified_by' => Auth::user()->name,
         ]);
         
-        // Sync permissions with role (detach all existing and attach new)
-        $newPermissions = $request->permissions ?? [];
-        if ($request->has('permissions')) {
-            $role->permissions()->sync($request->permissions);
-        } else {
-            $role->permissions()->detach();
-        }
+        // Sync permissions with role (detach all existing and attach new). The
+        // Payment Settings permissions are filtered by the role's stored name
+        // ($oldName, read before the update): only the Administrator keeps them,
+        // and always keeps them, since the matrix shows a lock instead of a
+        // checkbox for them and so never posts them.
+        $newPermissions = \App\Support\PaymentPermissions::filterRoleIds($request->input('permissions', []), $oldName);
+        $role->permissions()->sync($newPermissions);
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
         
         // Log role update
         $changes = [];

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="CSRF">
+
+    
+    <title>
+        Verify a certificate &middot;
+        e-Certificate
+    </title>
+
+    
+    <meta name="robots" content="noindex, nofollow">
+
+    
+    <meta property="og:title" content="Verify a certificate">
+    <meta property="og:description"
+          content="Check a certificate number against the issuing system.">
+    <meta property="og:type" content="website">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined&display=block" rel="stylesheet">
+
+    </head>
+<body class="font-sans text-gray-900 antialiased bg-gray-100">
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-xl mx-auto">
+            <div class="text-center mb-6">
+                <h1 class="text-lg font-semibold text-gray-800">Certificate verification</h1>
+                <p class="text-xs text-gray-500 mt-1">
+                    Checked against the e-Certificate record at the moment this page loaded.
+                </p>
+            </div>
+
+                            <div class="bg-white rounded shadow-sm border-t-4 border-red-500 border-x border-b border-gray-200">
+                    <div class="p-6 text-center">
+                        <div class="w-14 h-14 mx-auto rounded-full bg-red-100 flex items-center justify-center">
+                            <span class="material-icons-outlined text-red-600 text-3xl">error_outline</span>
+                        </div>
+                        <p class="text-base font-semibold text-red-700 mt-3">We cannot verify this</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            No certificate matches this number.
+                        </p>
+
+                        <p class="text-xs font-mono text-gray-700 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-4 break-all">
+                            CERT-20260313090000-DE1E7E
+                        </p>
+
+                        <p class="text-[11px] text-gray-500 mt-3">
+                            Check for a typo, or ask the holder to send the link again. A number that
+                            was valid before will still be valid now, so a mismatch usually means the
+                            number was transcribed rather than copied.
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                        <a href="http://localhost/verify"
+                           class="text-xs text-primary-DEFAULT hover:underline inline-flex items-center">
+                            <span class="material-icons-outlined text-sm mr-1">edit</span>
+                            Enter a different number
+                        </a>
+                    </div>
+                </div>
+            
+            <p class="text-center text-[11px] text-gray-400 mt-6">
+                Powered by e-Certificate
+            </p>
+        </div>
+    </div>
+</body>
+</html>

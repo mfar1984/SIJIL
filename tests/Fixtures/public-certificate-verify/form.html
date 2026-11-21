@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="CSRF">
+
+    
+    <title>
+        Verify a certificate &middot;
+        e-Certificate
+    </title>
+
+    
+    <meta name="robots" content="noindex, nofollow">
+
+    
+    <meta property="og:title" content="Verify a certificate">
+    <meta property="og:description"
+          content="Check a certificate number against the issuing system.">
+    <meta property="og:type" content="website">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined&display=block" rel="stylesheet">
+
+    </head>
+<body class="font-sans text-gray-900 antialiased bg-gray-100">
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-xl mx-auto">
+            <div class="text-center mb-6">
+                <h1 class="text-lg font-semibold text-gray-800">Certificate verification</h1>
+                <p class="text-xs text-gray-500 mt-1">
+                    Checked against the e-Certificate record at the moment this page loaded.
+                </p>
+            </div>
+
+                            
+                <div class="bg-white rounded shadow-sm border border-gray-200 p-6">
+                    <form method="POST" action="http://localhost/verify" class="space-y-3">
+                        <input type="hidden" name="_token" value="CSRF" autocomplete="off">
+                        <label for="certificate_number" class="block text-xs font-medium text-gray-700">
+                            Certificate number
+                        </label>
+                        <input type="text" name="certificate_number" id="certificate_number" required
+                               value=""
+                               placeholder="CERT-00000000000000-XXXXXX"
+                               class="w-full h-10 text-sm border-gray-300 rounded px-3 font-mono focus:border-primary-light focus:ring focus:ring-primary-light focus:ring-opacity-50">
+
+                        
+                        <p class="text-[11px] text-gray-500">
+                            The number is printed on the certificate itself.
+                        </p>
+
+                        <button type="submit"
+                                class="h-10 px-4 w-full rounded text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 inline-flex items-center justify-center">
+                            <span class="material-icons-outlined text-base mr-1">search</span>
+                            Check
+                        </button>
+                    </form>
+                </div>
+            
+            <p class="text-center text-[11px] text-gray-400 mt-6">
+                Powered by e-Certificate
+            </p>
+        </div>
+    </div>
+</body>
+</html>

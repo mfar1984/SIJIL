@@ -29,6 +29,7 @@ class ApiSurface
         'api/participant/verify',
         'api/participant/register',
         'api/participant/reset-password-for-account',
+        'api/public/v1/certificates/verify',
     ];
 
     /**
@@ -196,10 +197,13 @@ class ApiSurface
             // definition rather than in the route, so report the setting it reads.
             if ($argument === '' || ! str_contains($argument, ',')) {
                 // A named limiter. "api" follows the setting on this tab;
-                // "api-public" is a fixed tighter limit for open endpoints.
-                $labels[] = $argument === 'api-public'
-                    ? '30/min'
-                    : static::rateLimit() . '/min';
+                // "api-public" is a fixed tighter limit for open endpoints, and
+                // "public-verify" matches the 20/min of the /verify page.
+                $labels[] = match ($argument) {
+                    'api-public' => '30/min',
+                    'public-verify' => '20/min',
+                    default => static::rateLimit() . '/min',
+                };
 
                 continue;
             }
@@ -228,6 +232,7 @@ class ApiSurface
     {
         return match (true) {
             str_starts_with($uri, 'api/v1/') => 'Integration API',
+            str_starts_with($uri, 'api/public/') => 'Public website',
             str_starts_with($uri, 'api/participant/tickets') => 'Support',
             str_starts_with($uri, 'api/participant') => 'Participant app',
             str_starts_with($uri, 'api/attendance') => 'Attendance',

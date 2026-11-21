@@ -40,6 +40,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
         /*
+        | CORS for api/public/*, the endpoints the marketing website calls from the
+        | browser. Global rather than on the route so it can answer a preflight,
+        | which never reaches a GET-only route, and so it also stamps rate limit
+        | and error responses. Laravel's own HandleCors skips these paths; see
+        | AppServiceProvider::configurePublicApiCors().
+        */
+        $middleware->append(\App\Http\Middleware\PublicApiCors::class);
+
+        /*
         | Account status used to be checked only while signing in, so banning
         | someone had no effect until their session lapsed. This re-checks on
         | every session request, and enforces password expiry.

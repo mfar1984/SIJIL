@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PwaParticipantController;
 use App\Http\Controllers\Api\PwaHelpdeskController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\CertificateVerificationController;
+use App\Http\Controllers\Api\PublicCertificateVerificationController;
 use App\Http\Controllers\Api\EventRegistrationGateController;
 use App\Http\Controllers\Api\IntegrationController;
 
@@ -185,6 +186,29 @@ Route::middleware('auth:sanctum')->group(function () {
 */
 Route::middleware('throttle:api-public')
     ->post('/certificate/verify', [CertificateVerificationController::class, 'verify']);
+
+/*
+| Public endpoints for the marketing website (www.e-certificate.com.my).
+|
+| The site's /verify page used to send visitors here to the app. It now verifies
+| on its own page by calling this endpoint from the visitor's browser, with a
+| typed certificate number or the encrypted payload read from the certificate's
+| QR code. The lookup and the fields returned are the same as this app's public
+| /verify page, through App\Services\PublicCertificateVerifier.
+|
+| Kept under public/v1 so it never mixes with the API-key v1 group below, and so
+| one path prefix carries the CORS allow-list for the marketing origins
+| (config/public_api.php, App\Http\Middleware\PublicApiCors). The CHIP checkout
+| planned for the pricing page is meant to live under the same prefix.
+|
+| Limited to 20 per minute per IP, the same as the /verify page, on top of the
+| api group's limit. Exempt from the API kill switch for the same reason as the
+| verification endpoint above.
+*/
+Route::prefix('public/v1')->middleware('throttle:public-verify')->group(function () {
+    Route::get('/certificates/verify', [PublicCertificateVerificationController::class, 'verify'])
+        ->name('api.public.certificates.verify');
+});
 
 /*
 |--------------------------------------------------------------------------

@@ -31,6 +31,12 @@ class PublicCertificateVerifyPageTest extends TestCase
         // whatever APP_NAME and APP_URL the local environment happens to set.
         config(['app.name' => 'e-Certificate']);
 
+        // Cookies are encrypted with the app key. A throwaway key is used when the
+        // environment provides none, so the tests never depend on a real .env.
+        if (! config('app.key')) {
+            config(['app.key' => 'base64:' . base64_encode(str_repeat('t', 32))]);
+        }
+
         $this->createVerificationSchema();
         $this->seedSampleCertificates();
     }

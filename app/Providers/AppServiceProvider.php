@@ -55,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureRateLimiting();
         $this->configureCors();
+        $this->configurePublicApiCors();
         $this->configureSecurity();
         $this->configureGeneral();
     }
@@ -144,6 +145,36 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api-public', function (Request $request) {
             return Limit::perMinute(30)->by($request->ip());
         });
+
+        // Certificate verification called by the marketing website. The same
+        // 20 per minute per IP as the /verify page, because it is the same lookup
+        // and walking the number space is the same risk. The marketing page reads
+        // this JSON body, so the limit answers in the endpoint's own shape rather
+        // than with Laravel's default HTML "Too Many Attempts" page.
+        RateLimiter::for('public-verify', function (Request $request) {
+            return Limit::perMinute(20)
+                ->by('public-verify:' . $request->ip())
+                ->response(fn (Request $request, array $headers) => response()->json([
+                    'status' => 'rate_limited',
+                    'message' => 'Too many verification attempts. Please wait a minute and try again.',
+                ], 429, $headers + ['Cache-Control' => 'no-store']));
+        });
+    }
+
+    /**
+     * Keep Laravel's CORS handling off the marketing site's public endpoints.
+     *
+     * config/cors.php allows every origin on api/*, and the API tab may replace
+     * that with the participant app's domains. Either would be wrong for
+     * api/public/*, which must answer only the marketing site, so those paths are
+     * left to App\Http\Middleware\PublicApiCors and every other route keeps
+     * exactly the behaviour it had.
+     */
+    private function configurePublicApiCors(): void
+    {
+        \Illuminate\Http\Middleware\HandleCors::skipWhen(
+            fn ($request) => \App\Http\Middleware\PublicApiCors::appliesTo($request)
+        );
     }
 
     private function configuredApiRateLimit(): int

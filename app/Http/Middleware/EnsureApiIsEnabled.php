@@ -21,12 +21,14 @@ class EnsureApiIsEnabled
      * Certificate verification is how a third party confirms a certificate that
      * was handed to them is genuine. Blocking it turns every previously shared
      * verification link into an error, which is not what an operator switching
-     * off "the API" is asking for.
+     * off "the API" is asking for. The marketing website's verification page
+     * calls the public endpoint for the same purpose, so it stays open too.
      *
      * @var array<int, string>
      */
     private const ALWAYS_AVAILABLE = [
         'api/certificate/verify',
+        'api/public/v1/certificates/verify',
     ];
 
     public function handle(Request $request, Closure $next): Response

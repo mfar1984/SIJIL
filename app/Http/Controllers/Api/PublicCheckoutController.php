@@ -123,8 +123,8 @@ class PublicCheckoutController extends Controller
                 : 'Payment received. Check your inbox for the email to set your password.',
             'review' => 'Payment received. We are checking it and will contact you by email.',
             'failed' => 'The payment could not be completed.',
-            'cancelled' => 'The payment was cancelled.',
-            'expired' => 'The payment link has expired.',
+            'cancelled' => 'The order was cancelled; no payment was taken.',
+            'expired' => 'The order was not paid in time, so the payment link is closed.',
             default => 'Waiting for payment confirmation.',
         };
 

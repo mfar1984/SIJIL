@@ -25,8 +25,37 @@ trait CreatesCertificateVerificationSchema
 
     public const TRASHED_NUMBER = 'CERT-20260313090000-DE1E7E';
 
+    /**
+     * Refuses to create or fill any table unless the default connection is an
+     * in-memory SQLite database. Only the configuration is read, so no database
+     * connection is opened: a real MySQL or MariaDB database, a SQLite file or a
+     * DB_URL override can never receive these tables or the sample rows.
+     */
+    protected function assertInMemorySqliteConnection(): void
+    {
+        $name = (string) config('database.default');
+        $connection = config("database.connections.{$name}");
+        $driver = is_array($connection) ? ($connection['driver'] ?? null) : null;
+        $database = is_array($connection) ? ($connection['database'] ?? null) : null;
+        $url = is_array($connection) ? ($connection['url'] ?? null) : null;
+
+        if ($driver !== 'sqlite' || $database !== ':memory:' || ($url !== null && $url !== '')) {
+            throw new \RuntimeException(sprintf(
+                'Refusing to create the certificate verification test schema: the default connection "%s" '
+                . 'must be sqlite with database ":memory:" and no DB_URL, but it is driver "%s", database "%s"%s. '
+                . 'Run these tests with DB_CONNECTION=sqlite DB_DATABASE=:memory: so they can never write into a real database.',
+                $name,
+                is_string($driver) ? $driver : 'none',
+                is_string($database) ? $database : 'none',
+                $url !== null && $url !== '' ? ' and a DB_URL' : ''
+            ));
+        }
+    }
+
     protected function createVerificationSchema(): void
     {
+        $this->assertInMemorySqliteConnection();
+
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -74,6 +103,8 @@ trait CreatesCertificateVerificationSchema
      */
     protected function seedSampleCertificates(): void
     {
+        $this->assertInMemorySqliteConnection();
+
         $now = '2026-03-13 09:00:00';
 
         DB::table('users')->insert([

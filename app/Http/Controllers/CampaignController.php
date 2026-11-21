@@ -440,6 +440,11 @@ class CampaignController extends Controller
                 ->with('error', 'This campaign has already been sent.');
         }
 
+        if (\App\Support\PackageAccess::ownerExpired($campaign->user_id ? (int) $campaign->user_id : null)) {
+            return redirect()->route('campaign.show', $campaign->id)
+                ->with('error', "This campaign cannot be sent because its owner's package has expired.");
+        }
+
         $campaign->update(['status' => Campaign::STATUS_RUNNING]);
 
         $this->processCampaign($campaign);

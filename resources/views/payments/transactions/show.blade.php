@@ -35,10 +35,32 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1 ml-8">{{ $order->package_name }} · {{ $order->amountDisplay() }} · {{ $order->type === 'renewal' ? 'Renewal' : 'New account' }}</p>
                 </div>
-                <a href="{{ route('payments.transactions.index') }}" class="px-3 h-[36px] border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center">
-                    <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
-                    Back to Transactions
-                </a>
+                <div class="flex flex-wrap items-center gap-2">
+                    @can('payment_transactions.update')
+                        @if($order->chip_purchase_id && ! in_array($order->status, ['fulfilled', 'needs_review'], true))
+                            <form method="POST" action="{{ route('payments.transactions.recheck', $order) }}">
+                                @csrf
+                                <button type="submit" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 h-[36px] rounded shadow-sm text-xs font-medium inline-flex items-center">
+                                    <span class="material-icons-outlined text-xs mr-1">sync</span>
+                                    Re-check with CHIP
+                                </button>
+                            </form>
+                        @endif
+                        @if($order->status === 'fulfilled' && $order->type === 'new' && $order->user && ! $order->user->trashed() && ! $order->user->password_changed_at)
+                            <form method="POST" action="{{ route('payments.transactions.resend', $order) }}">
+                                @csrf
+                                <button type="submit" class="px-3 h-[36px] border border-blue-300 text-blue-700 rounded text-xs font-medium hover:bg-blue-50 inline-flex items-center">
+                                    <span class="material-icons-outlined text-xs mr-1">forward_to_inbox</span>
+                                    Resend set-password link
+                                </button>
+                            </form>
+                        @endif
+                    @endcan
+                    <a href="{{ route('payments.transactions.index') }}" class="px-3 h-[36px] border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center">
+                        <span class="material-icons-outlined text-xs mr-1">arrow_back</span>
+                        Back to Transactions
+                    </a>
+                </div>
             </div>
         </div>
 

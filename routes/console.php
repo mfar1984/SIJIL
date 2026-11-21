@@ -49,3 +49,22 @@ Schedule::command('audit:purge')
 Schedule::command('events:remind')
     ->hourly()
     ->withoutOverlapping();
+
+/*
+| CHIP Collect payments. Like everything above, these need the host cron:
+| cd /home/kflegacy/apps.e-certificate.com.my && /opt/cpanel/ea-php84/root/usr/bin/php artisan schedule:run >> /dev/null 2>&1
+*/
+
+// Re-checks unpaid orders with CHIP, so a missed webhook still fulfils.
+Schedule::command('payments:reconcile')
+    ->everyTenMinutes()
+    ->withoutOverlapping();
+
+// Emails Organizers 7 days and 1 day before their package expires.
+Schedule::command('packages:remind')
+    ->dailyAt('08:00')
+    ->withoutOverlapping();
+
+// Removes buyer details of unpaid orders older than 30 days.
+Schedule::command('payments:purge')
+    ->dailyAt('03:00');

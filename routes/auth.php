@@ -21,6 +21,18 @@ Route::middleware('guest')->group(function () {
     // Removed forgot-password and reset-password routes
 });
 
+/*
+| Set-password link emailed after a paid CHIP purchase created an Organizer
+| account (password broker "purchases", single use, 7 days). Outside the guest
+| group so a buyer who is signed in as someone else can still open it.
+*/
+Route::middleware('throttle:6,1')->group(function () {
+    Route::get('account/set-password/{token}', [App\Http\Controllers\Auth\SetPasswordController::class, 'create'])
+        ->name('account.set-password');
+    Route::post('account/set-password', [App\Http\Controllers\Auth\SetPasswordController::class, 'store'])
+        ->name('account.set-password.store');
+});
+
 Route::middleware('auth')->group(function () {
     // Route::get('verify-email', EmailVerificationPromptController::class)
     //     ->name('verification.notice');

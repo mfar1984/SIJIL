@@ -211,6 +211,39 @@ Route::prefix('public/v1')->middleware('throttle:public-verify')->group(function
 });
 
 /*
+| CHIP Collect checkout for the marketing site's /pricing, /checkout and
+| /payment/status pages. Same public/v1 prefix and CORS allow-list as the
+| verification endpoint, each route with its own limiter. The packages list is
+| read server-side by the site; checkout and status are called from the
+| visitor's browser. Exempt from the API kill switch (EnsureApiIsEnabled).
+*/
+Route::prefix('public/v1')->group(function () {
+    Route::get('/packages', [App\Http\Controllers\Api\PublicPackageController::class, 'index'])
+        ->middleware('throttle:public-packages')
+        ->name('api.public.packages');
+    Route::post('/checkout', [App\Http\Controllers\Api\PublicCheckoutController::class, 'store'])
+        ->middleware('throttle:public-checkout')
+        ->name('api.public.checkout');
+    Route::get('/checkout/{reference}', [App\Http\Controllers\Api\PublicCheckoutController::class, 'show'])
+        ->where('reference', '[0-9A-HJKMNP-TV-Z]{26}')
+        ->middleware('throttle:public-checkout-status')
+        ->name('api.public.checkout.show');
+});
+
+/*
+| Inbound CHIP deliveries: the per-purchase success_callback and the portal
+| webhook. Signed by CHIP (X-Signature); a valid delivery only triggers a
+| server-side GET /purchases/{id}/. Register the webhook URL in the CHIP portal.
+| No CORS (server to server), exempt from the API kill switch.
+*/
+Route::prefix('payments/chip')->group(function () {
+    Route::post('/callback', [App\Http\Controllers\Api\ChipWebhookController::class, 'callback'])
+        ->name('api.payments.chip.callback');
+    Route::post('/webhook', [App\Http\Controllers\Api\ChipWebhookController::class, 'webhook'])
+        ->name('api.payments.chip.webhook');
+});
+
+/*
 |--------------------------------------------------------------------------
 | Integration API (v1)
 |--------------------------------------------------------------------------

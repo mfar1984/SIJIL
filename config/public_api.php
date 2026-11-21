@@ -45,10 +45,12 @@ return [
         // reliably known yet while configuration files load.
         'local_origins' => ['http://127.0.0.1:4173'],
 
-        // GET keeps every call a simple request, so browsers send no preflight.
-        'allowed_methods' => ['GET'],
+        // GET for verification and packages (simple requests, no preflight).
+        // POST with a JSON body for the CHIP checkout, which the browser
+        // preflights; Content-Type is allowed for that reason.
+        'allowed_methods' => ['GET', 'POST'],
 
-        'allowed_headers' => ['Accept'],
+        'allowed_headers' => ['Accept', 'Content-Type'],
 
         'max_age' => 600,
 

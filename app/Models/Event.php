@@ -172,6 +172,12 @@ class Event extends Model
      */
     public function isRegistrationExpired()
     {
+        // Closed while the owning Organizer's package has expired, even with
+        // "Keep registration open" (disable_auto_expiry). A renewal reopens it.
+        if (\App\Support\PackageAccess::eventSuspended($this)) {
+            return true;
+        }
+
         // Always expired if status is completed
         if ($this->status === 'completed') {
             return true;

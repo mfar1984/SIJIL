@@ -55,7 +55,10 @@ class SendEventReminders extends Command
             ->where(function ($query) {
                 $query->whereNull('status')->orWhereNotIn('status', ['cancelled', 'completed', 'archived']);
             })
-            ->get();
+            ->get()
+            // Events of an Organizer whose package has expired send nothing.
+            ->reject(fn ($event) => \App\Support\PackageAccess::eventSuspended($event))
+            ->values();
 
         if ($events->isEmpty()) {
             $this->info(sprintf(

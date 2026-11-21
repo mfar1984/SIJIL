@@ -23,6 +23,15 @@ class EventAutomation
      */
     public static function runAfterRegistration(Event $event, Participant $participant): array
     {
+        // The owning Organizer's package has expired: no app account, no
+        // certificate, no attendance notice. Registration itself is already
+        // refused by Event::isRegistrationExpired(); this is defence in depth.
+        if (\App\Support\PackageAccess::eventSuspended($event)) {
+            $skipped = ['ran' => false, 'ok' => false, 'message' => \App\Support\PackageAccess::SUSPENDED_MESSAGE];
+
+            return ['pwa_account' => $skipped, 'certificate' => $skipped, 'attendance_notice' => $skipped];
+        }
+
         $results = [];
 
         // Cast explicitly: a freshly created model holds null for a column whose

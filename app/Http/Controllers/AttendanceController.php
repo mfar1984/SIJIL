@@ -658,6 +658,13 @@ class AttendanceController extends Controller
             $request->validate(['participant_id' => 'required|exists:participants,id']);
             $participantId = $request->participant_id;
 
+        if (\App\Support\PackageAccess::eventSuspended($attendance->event)) {
+            return response()->json([
+                'success' => false,
+                'message' => \App\Support\PackageAccess::SUSPENDED_MESSAGE,
+            ], 403);
+        }
+
         // Verify participant belongs to this event
         $participant = \App\Models\Participant::where('id', $participantId)
             ->where('event_id', $attendance->event_id)

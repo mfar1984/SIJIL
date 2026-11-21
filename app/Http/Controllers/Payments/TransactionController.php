@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Payments;
 use App\Http\Controllers\Controller;
 use App\Models\Package;
 use App\Models\PaymentOrder;
+use App\Services\Payments\OrderFulfilment;
+use App\Services\Payments\PaymentReconciler;
+use App\Services\Payments\ReconcileOutcome;
+use App\Support\PaymentLog;
 use App\Support\SystemSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -64,6 +68,55 @@ class TransactionController extends Controller
             'snapshot' => $order->safeSnapshot(),
             'timeline' => $this->timeline($order),
         ]);
+    }
+
+    /**
+     * "Re-check with CHIP": confirms the status server-side and fulfils if
+     * paid, to recover a missed webhook.
+     */
+    public function recheck(PaymentOrder $order, PaymentReconciler $reconciler)
+    {
+        if (! $order->chip_purchase_id || in_array($order->status, [PaymentOrder::STATUS_FULFILLED, PaymentOrder::STATUS_NEEDS_REVIEW], true)) {
+            return redirect()->route('payments.transactions.show', $order)
+                ->with('error', 'This order cannot be re-checked.');
+        }
+
+        $outcome = $reconciler->reconcile($order, 'recheck', null, auth()->user());
+        $order->refresh();
+
+        $good = in_array($outcome, [ReconcileOutcome::Fulfilled, ReconcileOutcome::AlreadyFulfilled, ReconcileOutcome::StillPending, ReconcileOutcome::Cancelled, ReconcileOutcome::Expired], true);
+
+        return redirect()->route('payments.transactions.show', $order)
+            ->with($good ? 'success' : 'error', $outcome->adminMessage($order->chip_status));
+    }
+
+    /**
+     * Sends a fresh set-password link for a fulfilled new-account order whose
+     * buyer has not set a password yet.
+     */
+    public function resendSetPassword(PaymentOrder $order, OrderFulfilment $fulfilment)
+    {
+        $user = $order->user;
+
+        if ($order->status !== PaymentOrder::STATUS_FULFILLED || $order->type !== 'new' || ! $user || $user->trashed() || $user->password_changed_at !== null) {
+            return redirect()->route('payments.transactions.show', $order)
+                ->with('error', 'A set-password link can only be resent for a new account that has not set its password yet.');
+        }
+
+        $sent = $fulfilment->sendSetPassword($order, $user);
+
+        if (! $sent) {
+            return redirect()->route('payments.transactions.show', $order)
+                ->with('error', 'Email could not be sent. Check Settings > Delivery for an active email configuration.');
+        }
+
+        PaymentLog::activity('Set-password link resent by administrator', [
+            'reference' => $order->reference,
+            'user_id' => $user->id,
+        ], $order);
+
+        return redirect()->route('payments.transactions.show', $order)
+            ->with('success', 'A new set-password link has been sent.');
     }
 
     /**

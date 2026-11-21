@@ -400,6 +400,12 @@ Route::middleware(['auth', 'verified'])->prefix('payments')->name('payments.')->
     Route::get('/transactions/{order:reference}', [App\Http\Controllers\Payments\TransactionController::class, 'show'])
         ->middleware(PermissionMiddleware::class.':payment_transactions.read')
         ->name('transactions.show');
+    Route::post('/transactions/{order:reference}/recheck', [App\Http\Controllers\Payments\TransactionController::class, 'recheck'])
+        ->middleware([PermissionMiddleware::class.':payment_transactions.update', 'throttle:10,1'])
+        ->name('transactions.recheck');
+    Route::post('/transactions/{order:reference}/resend-set-password', [App\Http\Controllers\Payments\TransactionController::class, 'resendSetPassword'])
+        ->middleware([PermissionMiddleware::class.':payment_transactions.update', 'throttle:6,1'])
+        ->name('transactions.resend');
 
     Route::get('/subscriptions', [App\Http\Controllers\Payments\SubscriptionController::class, 'index'])
         ->middleware(PermissionMiddleware::class.':payment_subscriptions.read')

@@ -662,7 +662,11 @@ class EventManagementController extends Controller
         }
         
         if ($event->isRegistrationExpired()) {
-            return view('events.registration-expired', compact('event'));
+            // Suspended because the organiser's package expired: say "closed",
+            // not "the event has started".
+            $closed = \App\Support\PackageAccess::eventSuspended($event);
+
+            return view('events.registration-expired', compact('event', 'closed'));
         }
         
         // The event page already advertises "spots remaining", so the limit is

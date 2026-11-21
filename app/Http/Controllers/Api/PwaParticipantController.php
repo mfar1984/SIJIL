@@ -491,6 +491,13 @@ class PwaParticipantController extends Controller
         $participant = $request->user();
         $event = Event::find($request->event_id);
 
+        if (\App\Support\PackageAccess::eventSuspended($event)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Check-in for this event is closed.',
+            ], 403);
+        }
+
         // Verify QR code (you can implement your own QR validation logic)
         if ($event->getQRCode() !== $request->qr_code) {
             return response()->json([
@@ -741,6 +748,13 @@ class PwaParticipantController extends Controller
                 'success' => false,
                 'message' => 'Attendance record not found.'
             ], 404);
+        }
+
+        if (\App\Support\PackageAccess::eventSuspended($attendance->event)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Check-in for this event is closed.',
+            ], 403);
         }
 
         // Find participant by IC/email for this event

@@ -74,6 +74,14 @@ class ProcessCampaigns extends Command
      */
     protected function processCampaign(Campaign $campaign)
     {
+        // The owner's package has expired. The status is left alone, so a
+        // scheduled campaign goes out on the first run after a renewal.
+        if (\App\Support\PackageAccess::ownerExpired($campaign->user_id ? (int) $campaign->user_id : null)) {
+            $this->line("Skipped campaign {$campaign->id}: owner's package has expired.");
+
+            return;
+        }
+
         $this->info("Processing campaign: {$campaign->name} (ID: {$campaign->id})");
 
         // A due scheduled campaign becomes running for the length of this pass, so

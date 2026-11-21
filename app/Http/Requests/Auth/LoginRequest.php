@@ -84,6 +84,27 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // An Organizer whose package has expired cannot use the account until it
+        // is renewed. Permanent accounts and Administrators are never affected.
+        // Not a rate-limiter hit: the password was right.
+        if (\App\Support\PackageAccess::isExpired($user)) {
+            Auth::logout();
+
+            SecurityPolicy::audit('blocked_login', 'Login blocked - Package expired', [
+                'email' => $this->email,
+                'ip_address' => $this->ip(),
+                'user_agent' => $this->userAgent(),
+                'reason' => 'Package expired',
+                'expired_at' => $user->package_expires_at?->toDateTimeString(),
+            ], $user);
+
+            \App\Support\PackageAccess::recordExpiry($user);
+
+            throw ValidationException::withMessages([
+                'email' => \App\Support\PackageAccess::message($user),
+            ]);
+        }
+
         // Update last login timestamp
         $user->last_login_at = now();
         $user->save();

@@ -25,6 +25,10 @@ class CertificateIssuer
      */
     public function issueFor(Event $event, Participant $participant): array
     {
+        if (\App\Support\PackageAccess::eventSuspended($event)) {
+            return [false, \App\Support\PackageAccess::SUSPENDED_MESSAGE];
+        }
+
         $template = $this->resolveTemplate($event);
 
         if (!$template) {

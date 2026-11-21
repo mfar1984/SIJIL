@@ -97,6 +97,16 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Set-password links emailed after a paid CHIP purchase creates an
+        // Organizer account. Valid 7 days, single use. The forgot/reset routes
+        // stay removed; this broker serves account/set-password only.
+        'purchases' => [
+            'provider' => 'users',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 10080,
+            'throttle' => 60,
+        ],
     ],
 
     /*

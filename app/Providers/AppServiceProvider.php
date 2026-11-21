@@ -159,6 +159,51 @@ class AppServiceProvider extends ServiceProvider
                     'message' => 'Too many verification attempts. Please wait a minute and try again.',
                 ], 429, $headers + ['Cache-Control' => 'no-store']));
         });
+
+        // CHIP checkout (api/public/v1/*). Keys are HMACs of the IP and the
+        // email (App\Support\PaymentPrivacy), so no raw IP address or email
+        // lands in the cache table.
+        RateLimiter::for('public-packages', function (Request $request) {
+            return Limit::perMinute(120)->by('pk-ip:' . \App\Support\PaymentPrivacy::hash((string) $request->ip()));
+        });
+
+        RateLimiter::for('public-checkout', function (Request $request) {
+            $ipHash = \App\Support\PaymentPrivacy::hash((string) $request->ip());
+            $email = $request->input('email');
+            $email = is_string($email) ? strtolower(trim($email)) : '';
+
+            $respond = function (Request $request, array $headers) use ($ipHash) {
+                // One Security Audit entry per hashed IP per 10 minutes.
+                if (\Illuminate\Support\Facades\Cache::add('co-audit:' . $ipHash, 1, 600)) {
+                    \App\Support\SecurityPolicy::audit('payment', 'Checkout rate limit exceeded', ['ip_hash' => $ipHash]);
+                }
+
+                $retry = (int) ($headers['Retry-After'] ?? 600);
+
+                return response()->json([
+                    'status' => 'rate_limited',
+                    'message' => 'Too many attempts. Please try again in ' . max(1, (int) ceil($retry / 60)) . ' minute(s).',
+                    'retry_after' => $retry,
+                ], 429, $headers + ['Cache-Control' => 'no-store']);
+            };
+
+            $limits = [Limit::perMinutes(10, 5)->by('co-ip:' . $ipHash)->response($respond)];
+
+            if ($email !== '') {
+                $limits[] = Limit::perMinutes(10, 3)->by('co-em:' . \App\Support\PaymentPrivacy::hash($email))->response($respond);
+            }
+
+            return $limits;
+        });
+
+        RateLimiter::for('public-checkout-status', function (Request $request) {
+            return Limit::perMinute(30)
+                ->by('cs-ip:' . \App\Support\PaymentPrivacy::hash((string) $request->ip()))
+                ->response(fn (Request $request, array $headers) => response()->json([
+                    'status' => 'rate_limited',
+                    'message' => 'Too many status checks. Please wait a minute.',
+                ], 429, $headers + ['Cache-Control' => 'no-store']));
+        });
     }
 
     /**

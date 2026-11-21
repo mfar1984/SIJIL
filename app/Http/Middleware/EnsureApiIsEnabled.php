@@ -29,6 +29,13 @@ class EnsureApiIsEnabled
     private const ALWAYS_AVAILABLE = [
         'api/certificate/verify',
         'api/public/v1/certificates/verify',
+        // Payments have their own Enable switch on the Payment tab. CHIP must
+        // never receive a 503 for a day and a half because of an unrelated
+        // switch, and the pricing page must keep reading its prices.
+        'api/public/v1/packages',
+        'api/public/v1/checkout',
+        'api/public/v1/checkout/*',
+        'api/payments/chip/*',
     ];
 
     public function handle(Request $request, Closure $next): Response

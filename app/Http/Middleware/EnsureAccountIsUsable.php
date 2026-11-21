@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PackageAccess;
 use App\Support\SecurityPolicy;
 use Closure;
 use Illuminate\Http\Request;
@@ -57,6 +58,30 @@ class EnsureAccountIsUsable
             $message = $status === 'banned'
                 ? 'Your account has been banned. Please contact support.'
                 : 'Your account has been deactivated. Please contact support.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 403);
+            }
+
+            return redirect('/')->withErrors(['email' => $message]);
+        }
+
+        // An Organizer whose package expired is signed out on the next request,
+        // not only at the next sign-in. Evaluated from the stored expiry date.
+        if (PackageAccess::isExpired($user)) {
+            $message = PackageAccess::message($user);
+
+            SecurityPolicy::audit('blocked_session', 'Session ended - package expired', [
+                'email' => $user->email,
+                'ip_address' => $request->ip(),
+                'expired_at' => $user->package_expires_at?->toDateTimeString(),
+            ], $user);
+
+            PackageAccess::recordExpiry($user);
+
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $message], 403);

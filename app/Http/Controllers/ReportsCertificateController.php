@@ -255,6 +255,10 @@ class ReportsCertificateController extends Controller
     {
         $certificate = $this->findCertificate($id, ['participant', 'event', 'template']);
 
+        if (\App\Support\PackageAccess::eventSuspended($certificate->event)) {
+            return response()->json(['success' => false, 'message' => \App\Support\PackageAccess::SUSPENDED_MESSAGE], 403);
+        }
+
         $email = $certificate->participant->email ?? null;
         if (!$email) {
             return response()->json(['success' => false, 'message' => 'No email address available for this participant.'], 422);

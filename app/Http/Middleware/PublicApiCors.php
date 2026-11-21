@@ -41,7 +41,7 @@ class PublicApiCors
         }
 
         $origin = $request->headers->get('Origin');
-        $allowed = is_string($origin) && in_array($origin, $this->allowedOrigins(), true);
+        $allowed = is_string($origin) && in_array($origin, static::allowedOrigins(), true);
 
         if ($request->isMethod('OPTIONS') && $request->headers->has('Access-Control-Request-Method')) {
             return $this->preflight($request, $allowed ? $origin : null);
@@ -63,7 +63,7 @@ class PublicApiCors
     }
 
     /**
-     * Answer a preflight without reaching the route, which accepts GET only.
+     * Answer a preflight without reaching the route.
      *
      * An unlisted origin or method still gets a 204, just without the headers
      * that would let the browser proceed.
@@ -99,7 +99,7 @@ class PublicApiCors
      *
      * @return array<int, string>
      */
-    private function allowedOrigins(): array
+    public static function allowedOrigins(): array
     {
         $origins = (array) config('public_api.cors.allowed_origins', []);
 

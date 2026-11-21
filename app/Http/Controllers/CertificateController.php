@@ -230,6 +230,13 @@ class CertificateController extends Controller
         }
         
         $event = Event::findOrFail($eventId);
+
+        // No certificates for an event whose Organizer's package has expired,
+        // whoever generates them.
+        if (\App\Support\PackageAccess::eventSuspended($event)) {
+            return back()->with('error', \App\Support\PackageAccess::SUSPENDED_MESSAGE);
+        }
+
         $template = CertificateTemplate::findOrFail($templateId);
         
         // Check if user has access to this template

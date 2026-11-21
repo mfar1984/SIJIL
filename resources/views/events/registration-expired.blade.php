@@ -21,10 +21,17 @@
                     <div class="mb-6 text-red-500">
                         <span class="material-icons-outlined text-6xl">access_time</span>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Registration Expired</h2>
-                    <p class="text-gray-600 mb-6">
-                        The registration period for this event has ended. The event has already started or is completed.
-                    </p>
+                    @if(! empty($closed))
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Registration Closed</h2>
+                        <p class="text-gray-600 mb-6">
+                            Registration for this event is currently closed.
+                        </p>
+                    @else
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Registration Expired</h2>
+                        <p class="text-gray-600 mb-6">
+                            The registration period for this event has ended. The event has already started or is completed.
+                        </p>
+                    @endif
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 text-center">
                         <div class="flex justify-center mb-3">
                             <span class="material-icons-outlined text-gray-500 text-4xl">calendar_today</span>

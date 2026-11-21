@@ -46,7 +46,7 @@ class PublicCheckoutController extends Controller
             return $this->json(['status' => 'unavailable', 'message' => 'Online payment is not available right now. Please contact us.'], 503);
         }
 
-        if (filled($request->input('hp_company'))) {
+        if (filled($request->input('ref_check'))) {
             Log::info('Checkout honeypot hit');
 
             return $this->json(['status' => 'invalid', 'message' => 'We could not process this request.'], 422);

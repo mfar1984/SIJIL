@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Certificate;
+use App\Services\PublicCertificateVerifier;
 use Illuminate\Http\Request;
 
 /**
@@ -33,16 +33,16 @@ class CertificateVerifyController extends Controller
      * Always answers with a page rather than a 404, so a mistyped number reads as
      * "we cannot verify this" rather than as a broken link.
      */
-    public function show(Request $request, string $number)
+    public function show(Request $request, string $number, PublicCertificateVerifier $verifier)
     {
-        $certificate = Certificate::query()
-            ->where('certificate_number', $number)
-            ->with(['event:id,name,start_date,end_date,location,user_id', 'event.user:id,name', 'participant:id,name'])
-            ->first();
+        $certificate = $verifier->find($number);
 
+        // The lookup and the public rows live in the verifier, so this page and the
+        // public verification API cannot drift apart in what they reveal.
         return view('public.certificate-verify', [
             'number' => $number,
             'certificate' => $certificate,
+            'rows' => $certificate ? $verifier->rows($certificate) : [],
         ]);
     }
 
@@ -54,6 +54,7 @@ class CertificateVerifyController extends Controller
         return view('public.certificate-verify', [
             'number' => null,
             'certificate' => null,
+            'rows' => [],
         ]);
     }
 

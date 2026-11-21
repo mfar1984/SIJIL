@@ -84,30 +84,10 @@
                     </div>
 
                     <dl class="divide-y divide-gray-100">
-                        @php
-                            $event = $certificate->event;
-
-                            $dates = null;
-                            if ($event?->start_date) {
-                                $dates = $event->start_date->format('j F Y');
-
-                                if ($event->end_date && ! $event->end_date->isSameDay($event->start_date)) {
-                                    $dates .= ' – ' . $event->end_date->format('j F Y');
-                                }
-                            }
-
-                            // Name, event, date and issuer. Nothing that could be used to
-                            // contact or identify the holder beyond their name.
-                            $rows = array_filter([
-                                'Awarded to' => $holder,
-                                'Event' => $eventName,
-                                'Held on' => $dates,
-                                'Location' => $event->location ?? null,
-                                'Issued by' => $event->user->name ?? null,
-                                'Issued on' => $certificate->generated_at?->format('j F Y'),
-                            ]);
-                        @endphp
-
+                        {{-- $rows comes from App\Services\PublicCertificateVerifier::rows(), which
+                             the public verification API also uses, so both always show the same
+                             fields. This comment sits where the old @php block did and renders as
+                             nothing, which keeps the page output byte-for-byte as it was. --}}
                         @foreach($rows as $label => $value)
                             <div class="px-6 py-3 flex flex-wrap justify-between gap-2">
                                 <dt class="text-xs text-gray-500">{{ $label }}</dt>

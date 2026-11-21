@@ -403,6 +403,9 @@ Route::middleware(['auth', 'verified'])->prefix('payments')->name('payments.')->
     Route::post('/transactions/{order:reference}/recheck', [App\Http\Controllers\Payments\TransactionController::class, 'recheck'])
         ->middleware([PermissionMiddleware::class.':payment_transactions.update', 'throttle:10,1'])
         ->name('transactions.recheck');
+    Route::post('/transactions/{order:reference}/cancel', [App\Http\Controllers\Payments\TransactionController::class, 'cancel'])
+        ->middleware([PermissionMiddleware::class.':payment_transactions.update', 'throttle:10,1'])
+        ->name('transactions.cancel');
     Route::post('/transactions/{order:reference}/resend-set-password', [App\Http\Controllers\Payments\TransactionController::class, 'resendSetPassword'])
         ->middleware([PermissionMiddleware::class.':payment_transactions.update', 'throttle:6,1'])
         ->name('transactions.resend');

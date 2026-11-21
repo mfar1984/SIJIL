@@ -331,6 +331,41 @@ class OrderFulfilment
     }
 
     /**
+     * Cancels an unpaid order on an administrator's request, recording who did
+     * it and when. The row is kept and no user account is touched.
+     */
+    public function cancelByAdmin(PaymentOrder $order, mixed $actor = null): bool
+    {
+        $changed = DB::transaction(function () use ($order, $actor) {
+            $locked = PaymentOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($locked->status, [PaymentOrder::STATUS_PENDING, PaymentOrder::STATUS_AWAITING_PAYMENT], true)) {
+                return false;
+            }
+
+            $locked->update([
+                'status' => PaymentOrder::STATUS_CANCELLED,
+                'cancelled_at' => now(),
+                'cancelled_by' => is_object($actor) ? $actor->id : null,
+            ]);
+
+            return true;
+        });
+
+        $order->refresh();
+
+        if ($changed) {
+            PaymentLog::activity('Payment cancelled by administrator', [
+                'reference' => $order->reference,
+                'package_code' => $order->package_code,
+                'chip_status' => $order->chip_status,
+            ], $order, $actor ?: false);
+        }
+
+        return $changed;
+    }
+
+    /**
      * @param  list<string>  $reasons
      */
     public static function auditNeedsReview(PaymentOrder $order, array $reasons): void

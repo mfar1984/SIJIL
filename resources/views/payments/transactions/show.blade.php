@@ -37,6 +37,15 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     @can('payment_transactions.update')
+                        @if($order->isCancellable())
+                            <form method="POST" action="{{ route('payments.transactions.cancel', $order) }}" onsubmit="return confirm('Cancel this order? The buyer will no longer be able to pay it. The record is kept.')" class="inline">
+                                @csrf
+                                <button type="submit" class="px-3 h-[36px] border border-red-300 text-red-700 rounded text-xs font-medium hover:bg-red-50 inline-flex items-center">
+                                    <span class="material-icons-outlined text-xs mr-1">cancel</span>
+                                    Cancel order
+                                </button>
+                            </form>
+                        @endif
                         @if($order->chip_purchase_id && ! in_array($order->status, ['fulfilled', 'needs_review'], true))
                             <form method="POST" action="{{ route('payments.transactions.recheck', $order) }}">
                                 @csrf
@@ -113,6 +122,10 @@
                         <dd class="col-span-2">{{ $order->is_test === null ? '—' : ($order->is_test ? 'Test' : 'Live') }}</dd>
                         <dt class="text-gray-500">Paid</dt>
                         <dd class="col-span-2">{{ $fmt($order->paid_at) }}</dd>
+                        @if($order->cancelled_at)
+                            <dt class="text-gray-500">Cancelled</dt>
+                            <dd class="col-span-2">{{ $fmt($order->cancelled_at) }} <span class="text-gray-400">by {{ $order->cancelledBy?->name ?? 'system' }}</span></dd>
+                        @endif
                         <dt class="text-gray-500">Last checked</dt>
                         <dd class="col-span-2">{{ $fmt($order->last_checked_at) }}</dd>
                         <dt class="text-gray-500">Consent given</dt>

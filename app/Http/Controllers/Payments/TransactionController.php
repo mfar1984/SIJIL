@@ -91,6 +91,28 @@ class TransactionController extends Controller
     }
 
     /**
+     * "Cancel order": stops an unpaid order from being paid. The row is kept
+     * for the record and no account is touched.
+     */
+    public function cancel(PaymentOrder $order, OrderFulfilment $fulfilment)
+    {
+        if (! $order->isCancellable()) {
+            return redirect()->route('payments.transactions.show', $order)
+                ->with('error', 'Only an order that is still pending or awaiting payment can be cancelled.');
+        }
+
+        $cancelled = $fulfilment->cancelByAdmin($order, auth()->user());
+
+        return redirect()->route('payments.transactions.show', $order)
+            ->with(
+                $cancelled ? 'success' : 'error',
+                $cancelled
+                    ? 'This order has been cancelled. The row is kept for the record.'
+                    : 'This order could no longer be cancelled; its status changed in the meantime.'
+            );
+    }
+
+    /**
      * Sends a fresh set-password link for a fulfilled new-account order whose
      * buyer has not set a password yet.
      */

@@ -104,6 +104,16 @@
                                     <a href="{{ route('payments.transactions.show', $order) }}" class="inline-block p-1 bg-blue-50 rounded hover:bg-blue-100 border border-blue-100" title="View">
                                         <span class="material-icons-outlined text-primary-DEFAULT text-xs">visibility</span>
                                     </a>
+                                    @can('payment_transactions.update')
+                                        @if($order->isCancellable())
+                                            <form method="POST" action="{{ route('payments.transactions.cancel', $order) }}" onsubmit="return confirm('Cancel this order? The buyer will no longer be able to pay it. The record is kept.')" class="inline">
+                                                @csrf
+                                                <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 border border-red-100" title="Cancel order">
+                                                    <span class="material-icons-outlined text-red-600 text-xs">cancel</span>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endcan
                                 </td>
                             </tr>
                         @empty

@@ -58,6 +58,9 @@ class PaymentOrder extends Model
         'checkout_url',
         'chip_status',
         'is_test',
+        'due_at',
+        'cancelled_at',
+        'cancelled_by',
         'user_id',
         'previous_expires_at',
         'package_started_at',
@@ -81,6 +84,8 @@ class PaymentOrder extends Model
             'amount_cents' => 'integer',
             'duration_months' => 'integer',
             'consent_at' => 'datetime',
+            'due_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'previous_expires_at' => 'datetime',
             'package_started_at' => 'datetime',
             'new_expires_at' => 'datetime',
@@ -107,6 +112,11 @@ class PaymentOrder extends Model
         return $this->belongsTo(User::class)->withTrashed();
     }
 
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by')->withTrashed();
+    }
+
     public function events(): HasMany
     {
         return $this->hasMany(PaymentEvent::class);
@@ -115,6 +125,15 @@ class PaymentOrder extends Model
     public function isTerminal(): bool
     {
         return in_array($this->status, self::TERMINAL, true);
+    }
+
+    /**
+     * Whether the order can still be cancelled: the one rule the views, the
+     * admin controller and the expiry pass share.
+     */
+    public function isCancellable(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_AWAITING_PAYMENT], true);
     }
 
     public function statusLabel(): string

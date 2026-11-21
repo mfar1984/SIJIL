@@ -107,6 +107,8 @@
                         <dd class="col-span-2 font-mono break-all">{{ $order->chip_purchase_id ?? '—' }}</dd>
                         <dt class="text-gray-500">CHIP status</dt>
                         <dd class="col-span-2">{{ $order->chip_status ?? '—' }}</dd>
+                        <dt class="text-gray-500">Deadline</dt>
+                        <dd class="col-span-2">{{ $fmt($order->due_at) }}</dd>
                         <dt class="text-gray-500">Mode</dt>
                         <dd class="col-span-2">{{ $order->is_test === null ? '—' : ($order->is_test ? 'Test' : 'Live') }}</dd>
                         <dt class="text-gray-500">Paid</dt>

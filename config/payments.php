@@ -33,7 +33,10 @@ return [
 
     'support_email' => env('PAYMENT_SUPPORT_EMAIL', 'support@e-certificate.com.my'),
 
-    'checkout_due_minutes' => 60,
+    // How long an unpaid order stays payable. Stored per order in
+    // payment_orders.due_at and sent to CHIP as the purchase `due`, so a
+    // later change to this value never moves an existing deadline.
+    'order_deadline_hours' => max(1, (int) env('PAYMENT_ORDER_DEADLINE_HOURS', 24)),
 
     'unpaid_purge_days' => 30,
 

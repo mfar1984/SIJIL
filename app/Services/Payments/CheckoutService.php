@@ -131,6 +131,7 @@ class CheckoutService
             'buyer_snapshot' => $snapshot,
             'ip_hash' => $ipHash,
             'consent_at' => now(),
+            'due_at' => now()->addHours((int) config('payments.order_deadline_hours')),
         ]);
 
         try {
@@ -225,7 +226,7 @@ class CheckoutService
                 'timezone' => 'Asia/Kuala_Lumpur',
                 'language' => 'en',
             ],
-            'due' => now()->addMinutes((int) config('payments.checkout_due_minutes', 60))->getTimestamp(),
+            'due' => ($order->due_at ?? now()->addHours((int) config('payments.order_deadline_hours')))->getTimestamp(),
             'send_receipt' => true,
             'success_redirect' => $back,
             'failure_redirect' => $back.'&result=failed',
